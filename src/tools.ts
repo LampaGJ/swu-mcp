@@ -3,6 +3,7 @@ import { z } from "zod";
 import { isFacet, splitCell, type CardRow, type CardStore } from "./data.js";
 import { INDEX_FACETS } from "./swu/llm-flatten.js";
 import { SYNERGY_TOOLS } from "./tools/synergy.js";
+import { VALUE_TOOLS } from "./tools/value.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -194,4 +195,5 @@ export const TOOLS = {
     handler: cardsByFacet,
   },
   ...SYNERGY_TOOLS,
+  ...VALUE_TOOLS,
 } as const;

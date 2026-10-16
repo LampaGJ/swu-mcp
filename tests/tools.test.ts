@@ -96,20 +96,27 @@ describe("cards_by_facet", () => {
 });
 
 describe("MCP protocol", () => {
-  it("lists the tools and answers a call", async () => {
+  it("lists every registered tool and answers a call", async () => {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test", version: "0.0.0" });
     await Promise.all([createServer(store).connect(serverSide), client.connect(clientSide)]);
     const tools = await client.listTools();
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "aspect_cover",
+      "card_features",
       "cards_by_facet",
+      "compare_cards",
+      "data_version",
+      "explain_rubric",
       "explain_synergy",
+      "find_by_effect",
       "find_pairings",
       "find_trios",
       "fungible_substitutes",
       "get_card",
       "list_facet",
+      "rank_cards",
+      "score_card",
       "search_cards",
     ]);
     const result = await client.callTool({ name: "get_card", arguments: { cardKey: "0101030" } });
