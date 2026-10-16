@@ -5,17 +5,17 @@
  * Input is a mault originals folder (pinned): swu-cards/raw-pages/{page-NNNN.json,manifest.json},
  * swu-cards/catalogue-snapshots/*.json (optional) and
  * tcgplayer-prices/{price-import,printings,corrections,quarantine}.json.
- * Staging goes to data/runs/<date>/ (kept: the MCP server reads llm/ from there);
- * the zip goes to --out as swu-data-<date>.zip.
+ * Output goes to data/runs/<date>/ (kept: the MCP server reads llm/ from there). The zip for readers is
+ * a separate step, `pnpm package:zip`.
  *
- * Usage: pnpm export:package [--originals <dir>] [--out <dir>] [--runs <dir>]
+ * Usage: pnpm export:package [--originals <dir>] [--runs <dir>] [--date <YYYY-MM-DD>]
  *   --originals  default: newest dated dir under /Volumes/Local Files/Projects/mault/data/swu-originals
- *   --out        default: ~/Library/Mobile Documents/com~apple~CloudDocs/_temp
  *   --runs       default: <repo>/data/runs
+ *   --date       default: the day the raw card-list run finished
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -141,12 +141,11 @@ function main(): void {
   const { values } = parseArgs({
     options: {
       originals: { type: "string" },
-      out: { type: "string", default: "~/Library/Mobile Documents/com~apple~CloudDocs/_temp" },
       runs: { type: "string" },
+      date: { type: "string" },
     },
   });
   const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
-  const outDir = path.resolve(expandHome(values.out));
   const runsRoot = path.resolve(expandHome(values.runs ?? path.join(REPO_ROOT, "data/runs")));
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
   const snapshotsDir = path.join(originalsDir, "swu-cards/catalogue-snapshots");
@@ -168,7 +167,7 @@ function main(): void {
       p.tick(index + 1, { phase: "verify-pages" });
       return { name, body };
     });
-  const packageDate = manifest.finishedAt.slice(0, 10);
+  const packageDate = z.iso.date().parse(values.date ?? manifest.finishedAt.slice(0, 10));
 
   const issues = newFlattenIssues();
   const printings: FlatRow[] = [];
@@ -292,16 +291,8 @@ function main(): void {
   writeOut(staging, "replay.json", `${JSON.stringify(replay, null, 2)}\n`);
 
   const files = listFiles(staging);
-  const fixed = new Date(manifest.finishedAt);
-  for (const file of files) utimesSync(path.join(staging, file), fixed, fixed);
-  mkdirSync(outDir, { recursive: true });
-  const zipPath = path.join(outDir, `swu-data-${packageDate}.zip`);
-  rmSync(zipPath, { force: true });
-  execFileSync("zip", ["-r", "-X", "-q", zipPath, "-@"], { cwd: staging, input: `${files.join("\n")}\n` });
-
   p.done({ files: files.length, logicalCards: split.kept.length });
-  console.log(`zip: ${zipPath}`);
-  console.log(`staging: ${staging}`);
+    console.log(`staging: ${staging}`);
   console.log(`originals: ${originalsDir}`);
   console.log(`files: ${files.length}`);
   console.log(`printings in raw pages: ${printings.length} (declared ${declaredTotal})`);
