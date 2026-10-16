@@ -1,0 +1,205 @@
+import type { SwuCardFeatures, SwuTarget } from "./deps.js";
+import { compareCodePoints } from "./deps.js";
+import { walkAbilities } from "./walk.js";
+
+const UNIT_TOKENS = new Set(["Battle Droid", "Clone Trooper", "TIE Fighter", "X-Wing", "Spy", "Beast", "Mandalorian"]);
+const FRIENDLYISH = new Set(["friendly", "self", "mixed"]);
+
+type Polarity = "any" | "self" | "friendly" | "enemy" | "ref";
+const pol = (t: SwuTarget | undefined): Polarity => {
+  if (!t) return "any";
+  if (t.side === "self" || t.side === "friendly" || t.side === "enemy" || t.side === "ref") return t.side;
+  return "any";
+};
+const isUnitKind = (t: SwuTarget | undefined): boolean =>
+  !!t && (t.kind === "unit" || t.kind === "unit_or_base" || t.kind === "ref" || t.kind === "leader");
+const traitsOf = (t: SwuTarget | undefined): string[] =>
+  (t?.restrict ?? []).filter((r) => r.startsWith("trait:")).map((r) => r.slice(6));
+const asTarget = (w: unknown): SwuTarget | undefined => (typeof w === "object" && w !== null ? (w as SwuTarget) : undefined);
+const keywordName = (k: string | { keyword: string }): string => (typeof k === "string" ? k : k.keyword);
+
+type TagInput = Omit<SwuCardFeatures, "tags">;
+
+/**
+ * @displayName SWU offers/wants tag builder
+ * @strategicPurpose Gives the pairing step a small vocabulary of what a card
+ * supplies (offers:*) and what it needs (wants:*), with explicit polarity so a
+ * sacrifice outlet is never confused with removal (LampaGJ/mault#325).
+ * @tacticalObjective Derives tags only from classified clause features, rung-1
+ * fields and curated entries; an unclassified clause contributes nothing. Each
+ * tag carries the clause or rule that produced it.
+ */
+export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
+  const offers = new Map<string, string>();
+  const wants = new Map<string, string>();
+  const add = (m: Map<string, string>, tag: string, why: string): void => {
+    if (!m.has(tag)) m.set(tag, why);
+  };
+  const s = card.structured;
+
+  if (card.type === "Upgrade" || card.keywords.some((k) => k.keyword === "Piloting" && !k.granted)) {
+    add(offers, "offers:upgrade-to-attach", "is an upgrade or Pilot");
+  }
+  for (const k of card.keywords) {
+    if (k.granted) continue;
+    if (k.keyword === "Grit") add(wants, "wants:self-damaged", "Grit");
+    if (k.keyword === "Shielded") add(offers, "offers:give-shield-self", "Shielded");
+  }
+
+  for (const face of Object.keys(card.faces) as (keyof typeof card.faces)[]) {
+    const nodes = card.faces[face];
+    if (!nodes) continue;
+    for (const { a, clauses } of walkAbilities(nodes, null)) {
+      for (const t of a.triggers) {
+        const tt = t.text ?? "";
+        if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted)) add(wants, "wants:self-defeated", `${face}: When Defeated`);
+        if (t.trigger === "when_defeated" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-defeated", `${face}: When Defeated`);
+        if (t.trigger === "when_played" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-played", `${face}: When Played`);
+        if (/when you use a when defeated|when defeated ability/i.test(tt)) add(wants, "wants:when-defeated-cards", tt);
+        if (t.trigger === "when_played" && card.type === "Unit") add(wants, "wants:replay-when-played", `${face}: When Played on a unit`);
+        if (t.trigger === "on_attack" || t.trigger === "attack_end" || t.trigger === "on_attack_kill") add(wants, "wants:extra-attacks", `${face}: ${t.trigger}`);
+        if (t.trigger === "action" && t.cost?.exhaust && card.type !== "Leader") add(wants, "wants:ready-unit", `${face}: Action [Exhaust]`);
+        if (/friendly unit is defeated|friendly .*unit is defeated/i.test(tt)) add(wants, "wants:friendly-unit-defeated", tt);
+        if (/enemy unit is defeated|unit .* among enemy units is defeated/i.test(tt)) add(wants, "wants:enemy-unit-defeated", tt);
+        if (/dealt damage and survives|damage is dealt to (?:this unit|a friendly)|non-combat damage is dealt to a friendly/i.test(tt)) add(wants, "wants:damage-friendly", tt);
+        if (/you play or create a unit|you play another .*unit|you play a .*unit/i.test(tt)) add(wants, "wants:units-entering", tt);
+        if (/upgrade attaches|you play an upgrade on|pilot .*attaches/i.test(tt)) add(wants, "wants:upgrades-attached", tt);
+        if (/use the force/i.test(tt) || t.cost?.force) add(wants, "wants:the-force", tt);
+        if (/draws? \d+ or more cards/i.test(tt)) add(wants, "wants:draw", tt);
+        if (/heal/i.test(tt)) add(wants, "wants:heal", tt);
+        if (/initiative/i.test(tt)) add(wants, "wants:initiative", tt);
+        if (/reveal or discard|discard/i.test(tt)) add(wants, "wants:discard-own", tt);
+        if (/friendly .*unit attacks|friendly unit's attack ends/i.test(tt)) add(wants, "wants:extra-attacks", tt);
+        if (/play a card from your resources|deploy a leader/i.test(tt)) add(wants, "wants:resource-ramp", tt);
+      }
+      for (const c of clauses) {
+        if (c.source === "none") continue;
+        for (const o of c.offers ?? []) add(offers, o, `curated ${c.curatedId}`);
+        for (const w of c.wants ?? []) add(wants, w, `curated ${c.curatedId}`);
+        for (const e of c.effects) {
+          const target = e.target;
+          const p = pol(target);
+          const why = `${face}: ${c.text}`;
+          switch (e.cat) {
+            case "defeat":
+              if (target?.kind === "upgrade" || (target?.kind === "token" && /\b(?:experience|shield|advantage|weakness)\b/i.test(target.text))) {
+                add(offers, p === "friendly" ? "offers:defeat-own-upgrade" : "offers:defeat-upgrade", why);
+              } else if (isUnitKind(target) || target?.kind === "token") {
+                if (p === "friendly") add(offers, "offers:defeat-friendly-unit", why);
+                else if (p === "enemy") add(offers, "offers:defeat-enemy-unit", why);
+                else if (p === "any") add(offers, "offers:defeat-any-unit", why);
+                if (target?.kind === "token" && /credit/i.test(target.text)) add(wants, "wants:credit-tokens", why);
+              }
+              break;
+            case "self_defeat": add(offers, "offers:defeat-self", why); break;
+            case "damage":
+            case "indirect_damage":
+              if (target?.kind === "base" && p === "enemy") add(offers, "offers:damage-enemy-base", why);
+              else if (p === "friendly" || p === "self") add(offers, "offers:damage-friendly-unit", why);
+              else if (p === "enemy") add(offers, "offers:damage-enemy-unit", why);
+              else add(offers, "offers:damage-any-unit", why);
+              break;
+            case "heal": add(offers, "offers:heal", why); break;
+            case "draw": add(offers, "offers:draw", why); break;
+            case "search": add(offers, "offers:tutor", why); break;
+            case "discard_self": add(offers, "offers:discard-own", why); break;
+            case "discard_opponent": add(offers, "offers:discard-opponent", why); break;
+            case "mill": add(offers, e.whose === "your" ? "offers:self-mill" : "offers:mill-opponent", why); break;
+            case "recursion": add(offers, "offers:return-from-discard", why); add(wants, "wants:cards-in-discard", why); break;
+            case "create_token": {
+              const token = e.token ?? "";
+              if (UNIT_TOKENS.has(token)) add(offers, "offers:create-token-units", why);
+              else if (token === "Credit") add(offers, "offers:credit-tokens", why);
+              else if (token === "Force") add(offers, "offers:the-force", why);
+              else add(offers, `offers:create-${token.toLowerCase()}-token`, why);
+              break;
+            }
+            case "give_token":
+              for (const [tok] of e.tokens ?? []) {
+                const tp = p === "enemy" ? "enemy" : "friendly";
+                if (tok === "Experience") add(offers, tp === "enemy" ? "offers:give-experience-enemy" : "offers:give-experience", why);
+                else if (tok === "Shield") add(offers, tp === "enemy" ? "offers:give-shield-enemy" : "offers:give-shield", why);
+                else if (tok === "Weakness") add(offers, "offers:give-weakness", why);
+                else add(offers, `offers:give-${tok.toLowerCase()}`, why);
+              }
+              break;
+            case "gain_force": add(offers, "offers:the-force", why); break;
+            case "ready": if (p !== "enemy" && p !== "self") add(offers, "offers:ready-unit", why); break;
+            case "exhaust": add(offers, p === "friendly" ? "offers:exhaust-own" : p === "enemy" ? "offers:exhaust-enemy" : "offers:exhaust-any", why); break;
+            case "self_exhaust": add(offers, "offers:exhaust-own", why); break;
+            case "bounce": add(offers, p === "friendly" || p === "self" ? "offers:return-own-to-hand" : p === "enemy" ? "offers:bounce-enemy" : "offers:return-any-to-hand", why); break;
+            case "play_extra": {
+              const zone = e.zone ?? "";
+              if (/discard/.test(zone)) { add(offers, "offers:play-from-discard", why); add(wants, "wants:cards-in-discard", why); }
+              else if (/resources/.test(zone)) add(offers, "offers:play-from-resources", why);
+              else add(offers, "offers:cheat-play", why);
+              if (/\bunits?\b/.test(typeof e.what === "string" ? e.what : "")) add(offers, "offers:units-entering", why);
+              break;
+            }
+            case "ramp": add(offers, "offers:resource-ramp", why); break;
+            case "ready_resource": add(offers, "offers:resource-ramp", why); break;
+            case "extra_attack": add(offers, "offers:extra-attack", why); break;
+            case "take_initiative": add(offers, "offers:initiative", why); break;
+            case "capture": add(offers, p === "friendly" ? "offers:capture-own" : "offers:capture", why); break;
+            case "stat_mod": if (e.sign === "buff" && p !== "enemy") add(offers, "offers:buff", why); break;
+            case "grant_keyword":
+              for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
+              break;
+            case "cost_reduction": if (/credit/i.test(c.text)) add(wants, "wants:credit-tokens", why); break;
+            default: break;
+          }
+          const restr = target?.restrict ?? [];
+          if (restr.includes("damaged") && p !== "enemy") add(wants, "wants:damaged-units", why);
+          if (restr.includes("exhausted") && target && FRIENDLYISH.has(target.side)) add(wants, "wants:exhausted-own", why);
+          if ((target && FRIENDLYISH.has(target.side)) || (target?.side === "any" && e.cat !== "damage" && e.cat !== "defeat")) {
+            for (const tr of traitsOf(target)) add(wants, `wants:trait-${tr}`, why);
+          }
+          if (target?.kind === "token" && target && FRIENDLYISH.has(target.side)) add(wants, "wants:tokens", why);
+        }
+        for (const k of c.conditions) {
+          const why = `${face}: ${c.text}`;
+          if (k.cat === "control") {
+            const what = asTarget(k.what);
+            for (const tr of traitsOf(what)) add(wants, `wants:trait-${tr}`, why);
+            if (what?.kind === "token" || /token/i.test(what?.text ?? "")) add(wants, "wants:tokens", why);
+            if (what?.restrict.includes("damaged")) add(wants, "wants:damaged-units", why);
+            if (what?.restrict.includes("exhausted")) add(wants, "wants:exhausted-own", why);
+            if (/upgrade/i.test(what?.text ?? "")) add(wants, "wants:upgrades-attached", why);
+            if (typeof k.n === "number" && k.n >= 2) add(wants, "wants:wide-board", why);
+          }
+          if (k.cat === "control_resources" && face !== "epicAction") add(wants, "wants:resource-ramp", why);
+          if (k.cat === "initiative") add(wants, "wants:initiative", why);
+          if (k.cat === "force") add(wants, "wants:the-force", why);
+          const state = k.state ?? "";
+          if (k.cat === "self_state" && /damaged$|^damaged/.test(state) && state !== "undamaged") add(wants, "wants:self-damaged", why);
+          if (k.cat === "self_state" && state === "upgraded") add(wants, "wants:upgrades-attached", why);
+          if (k.cat === "self_state" && state === "exhausted") add(wants, "wants:exhausted-own", why);
+          if (k.cat === "event_this_phase" && /friendly[^,]*defeated/i.test(c.text)) add(wants, "wants:friendly-unit-defeated", why);
+          if (k.cat === "event_this_phase" && /enemy[^,]*defeated/i.test(c.text)) add(wants, "wants:enemy-unit-defeated", why);
+          if (k.cat === "scaling") {
+            const per = (k.per ?? "").toLowerCase();
+            if (/damage on/.test(per)) add(wants, "wants:self-damaged", why);
+            if (/damaged/.test(per)) add(wants, "wants:damaged-units", why);
+            if (/upgrade|experience|shield/.test(per)) add(wants, "wants:upgrades-attached", why);
+            if (/token/.test(per)) add(wants, "wants:tokens", why);
+            if (/card in your hand|cards in your hand/.test(per)) add(wants, "wants:cards-in-hand", why);
+            if (/discard pile/.test(per)) add(wants, "wants:cards-in-discard", why);
+            if (/(?:other )?friendly .*units?|unit you control/.test(per)) add(wants, "wants:wide-board", why);
+            if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);
+            if (/exhausted/.test(per)) add(wants, "wants:exhausted-own", why);
+          }
+        }
+        for (const st of c.structure) {
+          if (st.cat === "force_cost") add(wants, "wants:the-force", `${face}: ${c.text}`);
+          if (st.cat === "select" && st.target && FRIENDLYISH.has(st.target.side)) for (const tr of traitsOf(st.target)) add(wants, `wants:trait-${tr}`, `${face}: ${c.text}`);
+          if (st.cat === "attach_restriction") for (const tr of traitsOf(st.target)) add(wants, `wants:trait-${tr}`, `${face}: ${c.text}`);
+        }
+      }
+    }
+  }
+  if (offers.has("offers:defeat-friendly-unit")) add(wants, "wants:sac-fodder", "defeats your own units");
+  if (card.type === "Unit" || card.type === "Token Unit") for (const tr of s.traits) add(offers, `offers:is-trait-${tr}`, "printed trait");
+  const asList = (m: Map<string, string>): { tag: string; why: string }[] =>
+    [...m.keys()].sort(compareCodePoints).map((tag) => ({ tag, why: m.get(tag) as string }));
+  return { offers: asList(offers), wants: asList(wants) };
+}
