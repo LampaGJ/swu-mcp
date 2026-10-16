@@ -18,6 +18,7 @@ export const renderCardSchema = z.looseObject({
   cardKey: z.string().min(1),
   title: z.string(),
   type: z.string(),
+  arenas: nullableText,
   traits: nullableText,
   keywords: nullableText,
   aspects: nullableText,
@@ -32,7 +33,13 @@ export function parseRenderCards(cards: readonly unknown[]): RenderCard[] {
 }
 
 const clean = (value: string | null | undefined): string => (typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "");
-const list = (value: string | null | undefined): string => (typeof value === "string" ? value.split("|").filter((part) => part !== "").join(", ") : "");
+const list = (value: string | null | undefined): string =>
+  typeof value === "string"
+    ? value
+        .split("|")
+        .filter((part) => part !== "")
+        .join(", ")
+    : "";
 
 const noAbility = (card: RenderCard): string => `${card.type} with no ability text.`;
 
@@ -73,7 +80,8 @@ export function buildAbstractRules(cards: readonly RenderCard[]): Rule[] {
   for (const name of ASPECT_NAMES) aspects.add(name);
   const names = new Set(cards.filter((card) => !card.type.includes("Token")).map((card) => card.title));
   for (const leader of cards.filter((card) => card.type === "Leader")) {
-    for (const first of [leader.title.split(",")[0].split(" ")[0], leader.title.split(" ")[0]]) if (codePointLength(first) > 3) names.add(first);
+    for (const first of [leader.title.split(",")[0].split(" ")[0], leader.title.split(" ")[0]])
+      if (codePointLength(first) > 3) names.add(first);
   }
   const bounded = (words: Set<string>): string => `(?<!${WORD})(${alternation(words)})(?!${WORD})`;
   return [
@@ -88,7 +96,9 @@ export function buildAbstractRules(cards: readonly RenderCard[]): Rule[] {
 }
 
 export function renderAbstract(card: RenderCard, rules: readonly Rule[]): string {
-  let text = [card.text, card.deployBox, card.epicAction].filter((part): part is string => typeof part === "string" && part !== "").join(" ");
+  let text = [card.text, card.deployBox, card.epicAction]
+    .filter((part): part is string => typeof part === "string" && part !== "")
+    .join(" ");
   for (const [pattern, replacement] of rules) text = text.replace(pattern, replacement);
   text = text.replace(/(KEYWORD[ ,.]*){2,}/g, "KEYWORD ");
   return clean(text) || noAbility(card);
@@ -118,5 +128,10 @@ export function inputHashOf(renderings: Renderings): { ability: string; abstract
   const ability = hashTexts(renderings.ability);
   const abstract = hashTexts(renderings.abstract);
   const keys = sha256Hex(renderings.keys.join("\n"));
-  return { ability, abstract, keys, inputHash: sha256Hex(`v${renderings.renderVersion}\nability:${ability}\nabstract:${abstract}\nkeys:${keys}`) };
+  return {
+    ability,
+    abstract,
+    keys,
+    inputHash: sha256Hex(`v${renderings.renderVersion}\nability:${ability}\nabstract:${abstract}\nkeys:${keys}`),
+  };
 }

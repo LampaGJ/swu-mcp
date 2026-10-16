@@ -14,7 +14,16 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { loadStore, resolveDataDir } from "../src/data.js";
-import { captureDirName, CAPTURE_ROOT, captureIndexSchema, captureReplaySchema, floatsToBytes, sha256Bytes, type CaptureIndex, type CaptureReplay } from "../src/embed/pinned.js";
+import {
+  captureDirName,
+  CAPTURE_ROOT,
+  captureIndexSchema,
+  captureReplaySchema,
+  floatsToBytes,
+  sha256Bytes,
+  type CaptureIndex,
+  type CaptureReplay,
+} from "../src/embed/pinned.js";
 import { inputHashOf, parseRenderCards, renderAll } from "../src/embed/render.js";
 import { progress } from "./lib/progress.mjs";
 
@@ -30,7 +39,11 @@ const tagsResponse = z.object({ models: z.array(z.object({ name: z.string(), dig
 const versionResponse = z.object({ version: z.string() });
 
 async function post(base: string, route: string, body: unknown): Promise<unknown> {
-  const response = await fetch(`${base}${route}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const response = await fetch(`${base}${route}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   if (!response.ok) throw new Error(`${route} answered ${response.status}: ${await response.text()}`);
   return response.json();
 }
@@ -46,7 +59,9 @@ async function embedAll(base: string, texts: readonly string[], job: string): Pr
   const out = new Float32Array(texts.length * DIMS);
   for (let start = 0; start < texts.length; start += BATCH) {
     const batch = texts.slice(start, start + BATCH);
-    const { embeddings } = embedResponse.parse(await post(base, "/api/embed", { model: MODEL, input: batch.map((text) => PREFIX + text), keep_alive: "5m" }));
+    const { embeddings } = embedResponse.parse(
+      await post(base, "/api/embed", { model: MODEL, input: batch.map((text) => PREFIX + text), keep_alive: "5m" }),
+    );
     if (embeddings.length !== batch.length) throw new Error(`asked for ${batch.length} embeddings, got ${embeddings.length}`);
     embeddings.forEach((vector, i) => {
       if (vector.length !== DIMS) throw new Error(`expected ${DIMS} dimensions, got ${vector.length}`);
@@ -112,7 +127,9 @@ async function main(): Promise<void> {
       const file = path.join(dir, name);
       const wanted = Buffer.isBuffer(content) ? content : Buffer.from(content);
       if (!existsSync(file) || !readFileSync(file).equals(wanted)) {
-        throw new Error(`${file} already exists with different bytes; a pinned capture is never overwritten. Pick a new renderVersion or remove the capture deliberately.`);
+        throw new Error(
+          `${file} already exists with different bytes; a pinned capture is never overwritten. Pick a new renderVersion or remove the capture deliberately.`,
+        );
       }
     }
     console.log(JSON.stringify({ dir, status: "identical to the existing capture", replay }, null, 1));

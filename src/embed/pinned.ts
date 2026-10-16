@@ -74,11 +74,13 @@ export function loadCapture(dir: string): Capture {
   const files: Record<string, Buffer> = {};
   for (const name of ["ability.f32", "abstract.f32"] as const) {
     const file = path.join(dir, name);
-    if (!existsSync(file)) throw new Error(`${file} is missing; re-capture with "pnpm embed:capture" (see data/pinned/embeddings/README.md)`);
+    if (!existsSync(file))
+      throw new Error(`${file} is missing; re-capture with "pnpm embed:capture" (see data/pinned/embeddings/README.md)`);
     files[name] = readFileSync(file);
     const actual = sha256Bytes(files[name]);
     if (actual !== replay.outputHash[name]) throw new Error(`${file} hashes to ${actual}, replay.json pins ${replay.outputHash[name]}`);
-    if (files[name].length !== index.count * index.dims * 4) throw new Error(`${file} is ${files[name].length} bytes, expected ${index.count * index.dims * 4}`);
+    if (files[name].length !== index.count * index.dims * 4)
+      throw new Error(`${file} is ${files[name].length} bytes, expected ${index.count * index.dims * 4}`);
   }
   if (index.keys.length !== index.count) throw new Error("index.json keys length differs from count");
   return { dir, index, replay, ability: bytesToFloats(files["ability.f32"]), abstract: bytesToFloats(files["abstract.f32"]) };
