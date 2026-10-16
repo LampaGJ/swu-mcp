@@ -1,0 +1,5 @@
+keyword[4]{value,cards,definition,cardKeys}:
+  Ambush,1,"Reminder text on the cards: Ambush (After you play this unit, he may ready and attack an enemy unit.)","04010087"
+  Fortify,1,"Reminder text on the cards: Fortify (Attach this to your base, not a unit.)","09010004"
+  Grit,2,"Reminder text on the cards: Grit (This unit gets +1/+0 for each damage on it.)",0101165|04010001
+  Restore,1,"Reminder text on the cards: Restore 1 (When this unit attacks, heal 1 damage from your base.)","0101070"

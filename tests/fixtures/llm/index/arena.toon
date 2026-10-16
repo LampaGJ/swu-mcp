@@ -1,0 +1,3 @@
+arena[2]{value,cards,definition,cardKeys}:
+  Ground,3,The shared zone where ground units fight. Units attack within it or at the enemy base; the first unit played decides which side is whose. 5731 printings are Ground.,0101033|0101165|04010001
+  Space,2,"The shared zone where space units fight, on the opposite side from the ground arena. 1841 printings are Space.",04010087|09010004

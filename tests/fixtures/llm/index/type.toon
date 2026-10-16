@@ -1,0 +1,7 @@
+type[6]{value,cards,definition,cardKeys}:
+  Base,1,"Your base: one per deck, it starts in the base zone and has HP and an aspect icon. You lose when its damage reaches its HP.","0101030"
+  Event,2,A one-time effect played from hand that goes to the discard pile and never enters play.,0101074|09010218
+  Leader,2,"Your leader: a double-sided card, one per deck (two in Twin Suns), that provides aspect icons and can deploy as a unit.",04010001|09010004
+  Leader Unit,2,The deployed side of a Leader card; the API records it as a second type (type2) on 512 leaders.,04010001|09010004
+  Unit,3,"A character or vehicle with power and HP that enters play exhausted, then attacks and blocks in the ground or space arena.",0101033|0101165|04010087
+  Upgrade,1,"A card that attaches to a unit, changes its stats and can grant abilities; it is defeated when the unit leaves play and can be played on enemy units.","0101070"

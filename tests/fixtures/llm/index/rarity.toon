@@ -1,0 +1,5 @@
+rarity[4]{value,cards,definition,cardKeys}:
+  Common,6,The most plentiful tier (letter C). Common cards fill most of every pack. Printed on the credit line (rules digest section 2).,0101030|0101033|0101074|0101165|04010087|09010218
+  Rare,1,"The third tier (letter R), scarcer than Uncommon. Printed on the credit line (rules digest section 2).","04010001"
+  Special,1,"A tier (letter S) used for the extra cards in Spotlight Decks, for Intro Battle cards, for 66 leaders and for some promo printings; most Special cards are units. Printed on the credit line (rules digest section 2).","09010004"
+  Uncommon,1,"The second tier (letter U), scarcer than Common. Printed on the credit line (rules digest section 2).","0101070"

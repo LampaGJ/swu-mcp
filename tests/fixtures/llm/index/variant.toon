@@ -1,0 +1,8 @@
+variant[7]{value,cards,definition,cardKeys}:
+  Hyperspace,9,An alternate full-art version of the card in non-foil. Variant code 02; 2372 printings.,0101030|0101033|0101070|0101074|0101165|04010001|04010087|09010004|09010218
+  Hyperspace Foil,6,The foil version of the Hyperspace art. Variant code 32; 2088 printings.,0101033|0101070|0101074|0101165|04010087|09010218
+  Showcase,2,A special alternate-art variant; all 162 are Leaders in the export. Variant code 03; 162 printings.,04010001|09010004
+  Standard,9,"The regular-art, non-foil printing of a card. Variant code 01; 2632 printings.",0101030|0101033|0101070|0101074|0101165|04010001|04010087|09010004|09010218
+  Standard Foil,5,The foil version of the standard art. Variant code 31; 1368 printings.,0101033|0101070|0101074|0101165|04010087
+  Weekly Play,2,A promo printing given as a prize in Weekly Play organized play. Variant code 60; 156 printings.,0101033|09010218
+  Weekly Play Foil,2,The foil Weekly Play promo printing. Variant code 35; 147 printings.,0101033|09010218
