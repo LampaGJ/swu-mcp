@@ -11,6 +11,7 @@ pnpm test
 pnpm lint
 pnpm mcp                      # stdio MCP server (src/server.ts)
 pnpm export:package [--originals <dir>] [--out <dir>]   # build the LLM data package from mault's originals
+pnpm rules:fetch [--url <pdf>] [--pdf <file>] [--originals <dir>]   # Comprehensive Rules PDF -> data/runs/<date>/rules (sections, card rulings, keyword links, core primer)
 ```
 
 The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
@@ -19,6 +20,7 @@ The system disk is full: work only under `/Volumes/Local Files/Projects`, and ru
 
 - `src/` library and MCP server. `src/swu/` holds the flatten pipeline (ported from mault) and package README builder.
 - `scripts/export-swu-data-package.ts` builds the package. `scripts/curation/`, `scripts/rubric/`, `scripts/embed/` are research scripts (Node `.mjs`, Python).
+- `src/rules/` parses the Comprehensive Rules; `src/tools/rules.ts` serves them. `data/rules-core.json` is the ordered core-rule list (boosts search, feeds the primer). The CR PDF lives in git-ignored `data/originals/rules/<version>/`.
 - `data/curated-rules.json` is the curated ability table (pinned input). `data/runs/<date>/` is generated output (git-ignored). `data/pinned/` holds small pinned captures.
 - `docs/` field guide, JSON Schemas, glossary, value rubric. Copied from mault; edit here from now on.
 
