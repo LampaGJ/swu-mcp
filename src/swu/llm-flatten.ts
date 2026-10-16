@@ -68,7 +68,7 @@ interface UploadAttributes {
 }
 
 const relationSchema = z.object({
-  data: z.union([z.null(), z.array(z.any()), z.object({ attributes: z.record(z.string(), z.unknown()) })]),
+  data: z.union([z.null(), z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()).optional() })), z.object({ attributes: z.record(z.string(), z.unknown()) })]),
 });
 
 function isRelation(value: unknown): value is z.infer<typeof relationSchema> {
@@ -310,7 +310,7 @@ export function buildLogicalCards(printings: FlatRow[], prices: ReadonlyMap<stri
 
 export const swuGlossarySchema = z.object({
   version: z.literal(1),
-  facets: z.record(z.string(), z.array(z.object({ value: z.string(), definition: z.string().nullish() }).passthrough())),
+  facets: z.record(z.string(), z.array(z.looseObject({ value: z.string(), definition: z.string().nullish() }))),
 });
 export type SwuGlossary = z.infer<typeof swuGlossarySchema>;
 
