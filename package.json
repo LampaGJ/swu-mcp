@@ -16,6 +16,7 @@
     "format": "prettier --check .",
     "mcp": "tsx src/server.ts",
     "build:data": "tsx scripts/build-data.ts",
+    "package:zip": "tsx scripts/package-zip.ts",
     "export:package": "tsx scripts/export-swu-data-package.ts",
     "card-features": "tsx scripts/card-features.ts",
     "synergy": "tsx scripts/synergy.ts",
