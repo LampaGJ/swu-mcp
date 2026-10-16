@@ -2,6 +2,7 @@ import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { isFacet, splitCell, type CardRow, type CardStore } from "./data.js";
 import { INDEX_FACETS } from "./swu/llm-flatten.js";
+import { SYNERGY_TOOLS } from "./tools/synergy.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -192,4 +193,5 @@ export const TOOLS = {
     shape: cardsByFacetShape,
     handler: cardsByFacet,
   },
+  ...SYNERGY_TOOLS,
 } as const;

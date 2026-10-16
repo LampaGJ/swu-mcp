@@ -96,12 +96,22 @@ describe("cards_by_facet", () => {
 });
 
 describe("MCP protocol", () => {
-  it("lists the four tools and answers a call", async () => {
+  it("lists the tools and answers a call", async () => {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test", version: "0.0.0" });
     await Promise.all([createServer(store).connect(serverSide), client.connect(clientSide)]);
     const tools = await client.listTools();
-    expect(tools.tools.map((tool) => tool.name).sort()).toEqual(["cards_by_facet", "get_card", "list_facet", "search_cards"]);
+    expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
+      "aspect_cover",
+      "cards_by_facet",
+      "explain_synergy",
+      "find_pairings",
+      "find_trios",
+      "fungible_substitutes",
+      "get_card",
+      "list_facet",
+      "search_cards",
+    ]);
     const result = await client.callTool({ name: "get_card", arguments: { cardKey: "0101030" } });
     expect(JSON.stringify(result.content)).toContain("Chopper Base");
     await client.close();
