@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "mcp": "tsx src/server.ts",
-    "export:package": "tsx scripts/export-swu-data-package.ts"
+    "export:package": "tsx scripts/export-swu-data-package.ts",
+    "card-features": "tsx scripts/card-features.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
