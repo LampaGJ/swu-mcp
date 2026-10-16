@@ -1,0 +1,3396 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mault.local/docs/concepts/swu-card-data.schema.json",
+  "title": "SWU card and TCGplayer price export",
+  "description": "JSON Schema for the mault SWU export: the official card list (and older catalogue snapshots), and the conformed TCGplayer price files. Correct through set 9 Homeworlds (HMW, HMWP). Companion to swu-card-data-fields.md. RawPage describes the untouched API pages saved by the raw cache. Card image metadata (artFront, artBack, artThumbnail, variant icons) is permitted but out of scope. Validate a file against one of the $defs by reference, for example #/$defs/OfficialCardList.",
+  "$defs": {
+    "RawCard": {
+      "type": "object",
+      "description": "One printing as the official Strapi API returns it, untouched: scalar attributes plus relations. See swu-card-data-fields.md, section Raw API page.",
+      "required": [
+        "id",
+        "attributes"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Strapi record id of the printing."
+        },
+        "attributes": {
+          "type": "object",
+          "description": "All 49 attributes of the printing.",
+          "required": [
+            "title",
+            "subtitle",
+            "cardNumber",
+            "cardCount",
+            "artist",
+            "artFrontHorizontal",
+            "artBackHorizontal",
+            "hasFoil",
+            "cost",
+            "hp",
+            "power",
+            "upgradeHp",
+            "upgradePower",
+            "text",
+            "textStyled",
+            "deployBox",
+            "deployBoxStyled",
+            "epicAction",
+            "epicActionStyled",
+            "rules",
+            "rulesStyled",
+            "linkHtml",
+            "cardId",
+            "cardUid",
+            "validationId",
+            "serialCode",
+            "hyperspace",
+            "showcase",
+            "unique",
+            "createdAt",
+            "updatedAt",
+            "publishedAt",
+            "locale",
+            "aspects",
+            "aspectDuplicates",
+            "traits",
+            "keywords",
+            "arenas",
+            "type",
+            "type2",
+            "rarity",
+            "expansion",
+            "variantTypes",
+            "variantOf",
+            "reprintOf",
+            "localizations",
+            "artFront",
+            "artBack",
+            "artThumbnail"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Card name."
+            },
+            "subtitle": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Second line of the name; empty string or null when none."
+            },
+            "cardNumber": {
+              "type": "integer",
+              "description": "Collector number inside the expansion."
+            },
+            "cardCount": {
+              "type": "integer",
+              "description": "Size of the set the card belongs to; 0 for promos.",
+              "minimum": 0
+            },
+            "artist": {
+              "type": "string",
+              "description": "Credited illustrator."
+            },
+            "artFrontHorizontal": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Front art orientation flag (image field, out of scope)."
+            },
+            "artBackHorizontal": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Back art orientation flag (image field, out of scope)."
+            },
+            "hasFoil": {
+              "type": "boolean",
+              "description": "True if a foil version of this printing exists."
+            },
+            "cost": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Resources to play the card; null for Bases, Credit and Force tokens and a few Leaders.",
+              "minimum": 0
+            },
+            "hp": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Hit points; null for Events, Upgrades, tokens and some Leaders.",
+              "minimum": 0
+            },
+            "power": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Combat damage; null for Bases, Events, Upgrades, tokens and some Leaders.",
+              "minimum": 0
+            },
+            "upgradeHp": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "HP modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+            },
+            "upgradePower": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Power modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+            },
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Rules text box, plain text."
+            },
+            "textStyled": {
+              "type": "string",
+              "description": "Rules text box as HTML with keyword and icon markup."
+            },
+            "deployBox": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Leader back-side text; non-null only on Leaders."
+            },
+            "deployBoxStyled": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Leader back-side text as HTML."
+            },
+            "epicAction": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Once-per-game Epic Action text, also Pilot text on some Units."
+            },
+            "epicActionStyled": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Epic Action text as HTML."
+            },
+            "rules": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Official rulings and clarifications for the card, plain text."
+            },
+            "rulesStyled": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Official rulings as HTML, with a date table."
+            },
+            "linkHtml": {
+              "type": "string",
+              "description": "HTML anchor the official site uses to link to the card."
+            },
+            "cardId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Older numeric card id; set on only 135 printings."
+            },
+            "cardUid": {
+              "type": "string",
+              "description": "Official card id; unique per printing."
+            },
+            "validationId": {
+              "type": "string",
+              "description": "Official validation id shared by printings of the same card."
+            },
+            "serialCode": {
+              "type": "string",
+              "description": "Unique printing id; the join key to tcg_printings.card_id.",
+              "minLength": 7
+            },
+            "hyperspace": {
+              "type": "boolean",
+              "description": "True for printings flagged Hyperspace by the API."
+            },
+            "showcase": {
+              "type": "boolean",
+              "description": "True for printings flagged Showcase by the API."
+            },
+            "unique": {
+              "type": "boolean",
+              "description": "True if the card has the Unique icon: one copy per player in play."
+            },
+            "createdAt": {
+              "type": "string",
+              "description": "Strapi creation timestamp (ISO 8601, UTC)."
+            },
+            "updatedAt": {
+              "type": "string",
+              "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+            },
+            "publishedAt": {
+              "type": "string",
+              "description": "Strapi publication timestamp (ISO 8601, UTC)."
+            },
+            "locale": {
+              "type": "string",
+              "description": "Strapi locale of the record; en for English records."
+            },
+            "aspects": {
+              "type": "object",
+              "description": "Aspect icons on the card (zero to three). Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One aspect.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Aspect name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                            "enum": [
+                              "Aggression",
+                              "Command",
+                              "Cunning",
+                              "Heroism",
+                              "Vigilance",
+                              "Villainy"
+                            ]
+                          },
+                          "englishName": {
+                            "type": "string",
+                            "description": "English aspect name.",
+                            "enum": [
+                              "Aggression",
+                              "Command",
+                              "Cunning",
+                              "Heroism",
+                              "Vigilance",
+                              "Villainy"
+                            ]
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Official description of what the aspect plays like."
+                          },
+                          "color": {
+                            "type": "string",
+                            "description": "Hex colour the official site uses for the aspect."
+                          },
+                          "sortValue": {
+                            "type": "integer",
+                            "description": "Display order of the aspect."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "aspectDuplicates": {
+              "type": "object",
+              "description": "Aspects the card prints a second time (a double icon); empty on most cards. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One aspect.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Aspect name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                            "enum": [
+                              "Aggression",
+                              "Command",
+                              "Cunning",
+                              "Heroism",
+                              "Vigilance",
+                              "Villainy"
+                            ]
+                          },
+                          "englishName": {
+                            "type": "string",
+                            "description": "English aspect name.",
+                            "enum": [
+                              "Aggression",
+                              "Command",
+                              "Cunning",
+                              "Heroism",
+                              "Vigilance",
+                              "Villainy"
+                            ]
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Official description of what the aspect plays like."
+                          },
+                          "color": {
+                            "type": "string",
+                            "description": "Hex colour the official site uses for the aspect."
+                          },
+                          "sortValue": {
+                            "type": "integer",
+                            "description": "Display order of the aspect."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "traits": {
+              "type": "object",
+              "description": "Thematic traits printed under the art. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One trait.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Trait name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                            "enum": [
+                              "Armor",
+                              "Bounty",
+                              "Bounty Hunter",
+                              "Capital Ship",
+                              "Clone",
+                              "Condition",
+                              "Creature",
+                              "Disaster",
+                              "Droid",
+                              "Ewok",
+                              "Fighter",
+                              "First Order",
+                              "Force",
+                              "Fortification",
+                              "Fringe",
+                              "Gambit",
+                              "Gungan",
+                              "Hutt",
+                              "Imperial",
+                              "Innate",
+                              "Inquisitor",
+                              "Item",
+                              "Jawa",
+                              "Jedi",
+                              "Kaminoan",
+                              "Law",
+                              "Learned",
+                              "Lightsaber",
+                              "Mandalorian",
+                              "Modification",
+                              "Musician",
+                              "Naboo",
+                              "New Republic",
+                              "Night",
+                              "Nihil",
+                              "Official",
+                              "Pilot",
+                              "Plan",
+                              "Rebel",
+                              "Republic",
+                              "Resistance",
+                              "Separatist",
+                              "Sith",
+                              "Spectre",
+                              "Speeder",
+                              "Supply",
+                              "Tactic",
+                              "Tank",
+                              "Transport",
+                              "Trick",
+                              "Trooper",
+                              "Tusken",
+                              "Twi'lek",
+                              "Undead",
+                              "Underworld",
+                              "Vehicle",
+                              "Walker",
+                              "Weapon",
+                              "Wookiee"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Official description; null for almost every trait."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "keywords": {
+              "type": "object",
+              "description": "Keyword abilities on the card. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One keyword.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Keyword name; Fortify first appears in Homeworlds and Support in Ashes of the Empire. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                            "enum": [
+                              "Ambush",
+                              "Bounty",
+                              "Coordinate",
+                              "Exploit",
+                              "Fortify",
+                              "Grit",
+                              "Hidden",
+                              "Overwhelm",
+                              "Piloting",
+                              "Plot",
+                              "Raid",
+                              "Restore",
+                              "Saboteur",
+                              "Sentinel",
+                              "Shielded",
+                              "Smuggle",
+                              "Support"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Official description; mostly empty or null."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "arenas": {
+              "type": "object",
+              "description": "Arenas the card can be in: Ground, Space, or empty for Events, Bases, Upgrades and Credit and Force tokens. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One arena.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Arena name.",
+                            "enum": [
+                              "Ground",
+                              "Space"
+                            ]
+                          },
+                          "description": {
+                            "type": "null",
+                            "description": "Always null in the pages."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "type": {
+              "type": "object",
+              "description": "Card type. Strapi relation wrapper holding one entry.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "description": "The card type.",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id of the related entry."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Attributes of the related entry.",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Card type name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                          "enum": [
+                            "Base",
+                            "Credit Token",
+                            "Event",
+                            "Force Token",
+                            "Leader",
+                            "Token Unit",
+                            "Token Upgrade",
+                            "Unit",
+                            "Upgrade"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "description": "Type group: Leader, Base, Unit, Event, Upgrade, Leader Unit or Token."
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official description; usually the empty string."
+                        },
+                        "sortValue": {
+                          "type": "integer",
+                          "description": "Display order of the type."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "type2": {
+              "type": "object",
+              "description": "Second type: Leader Unit on Leaders, Upgrade on two token upgrades. Strapi relation wrapper holding one entry or null.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "description": "The second type.",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id of the related entry."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Attributes of the related entry.",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Card type name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                          "enum": [
+                            "Leader",
+                            "Leader Unit",
+                            "Upgrade"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "description": "Type group: Leader, Base, Unit, Event, Upgrade, Leader Unit or Token."
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official description; usually the empty string."
+                        },
+                        "sortValue": {
+                          "type": "integer",
+                          "description": "Display order of the type."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "rarity": {
+              "type": "object",
+              "description": "Rarity tier. Strapi relation wrapper holding one entry.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "description": "The rarity tier.",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id of the related entry."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Attributes of the related entry.",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Rarity name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                          "enum": [
+                            "Common",
+                            "Legendary",
+                            "Rare",
+                            "Special",
+                            "Uncommon"
+                          ]
+                        },
+                        "englishName": {
+                          "type": "string",
+                          "description": "English rarity name.",
+                          "enum": [
+                            "Common",
+                            "Legendary",
+                            "Rare",
+                            "Special",
+                            "Uncommon"
+                          ]
+                        },
+                        "character": {
+                          "type": "string",
+                          "description": "Single letter printed for the rarity (C, U, R, L or S)."
+                        },
+                        "color": {
+                          "type": "string",
+                          "description": "Hex colour the official site uses for the rarity."
+                        },
+                        "sortValue": {
+                          "type": "integer",
+                          "description": "Display order of the rarity."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "expansion": {
+              "type": "object",
+              "description": "Expansion (set). Strapi relation wrapper holding one entry.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "description": "The expansion (set).",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id of the related entry."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Attributes of the related entry.",
+                      "required": [
+                        "name",
+                        "code"
+                      ],
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Set display name.",
+                          "enum": [
+                            "2024 Convention Exclusive",
+                            "2024 Judge Program",
+                            "2025 Convention Exclusive",
+                            "2025 Gift Box",
+                            "2025 Judge Program",
+                            "2025 Promo",
+                            "2026 Convention Exclusive",
+                            "2026 Promo",
+                            "2026 Twin Suns",
+                            "A Lawless Time",
+                            "A Lawless Time Weekly Play",
+                            "Ashes of the Empire",
+                            "Ashes of the Empire Weekly Play",
+                            "Costco Exclusive",
+                            "Gamegenic",
+                            "Homeworlds",
+                            "Homeworlds Weekly Play",
+                            "Icons 2027 Edition",
+                            "Intro Battle: Hoth",
+                            "Jump to Lightspeed",
+                            "Jump to Lightspeed Weekly Play",
+                            "Legends of the Force",
+                            "Legends of the Force Weekly Play",
+                            "Secrets of Power",
+                            "Secrets of Power Weekly Play",
+                            "Shadows of the Galaxy",
+                            "Spark of Rebellion",
+                            "The Mandalorian and Grogu Movie Promo",
+                            "Twilight of the Republic"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Set code. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                          "enum": [
+                            "ASH",
+                            "ASHP",
+                            "C24",
+                            "C25",
+                            "C26",
+                            "CST",
+                            "G25",
+                            "GG",
+                            "HMW",
+                            "HMWP",
+                            "IBH",
+                            "IC27",
+                            "J24",
+                            "J25",
+                            "JTL",
+                            "JTLP",
+                            "LAW",
+                            "LAWP",
+                            "LOF",
+                            "LOFP",
+                            "MV26",
+                            "P25",
+                            "P26",
+                            "SEC",
+                            "SECP",
+                            "SHD",
+                            "SOR",
+                            "TS26",
+                            "TWI"
+                          ]
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official description; present for about half of the sets."
+                        },
+                        "sortValue": {
+                          "type": "integer",
+                          "description": "Release-order key; higher is later."
+                        },
+                        "leaderboardStartDate": {
+                          "type": "null",
+                          "description": "Always null in the pages."
+                        },
+                        "leaderboardEndDate": {
+                          "type": "null",
+                          "description": "Always null in the pages."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "variantTypes": {
+              "type": "object",
+              "description": "Finish or tier of this printing; empty for some promos. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One variant type.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id of the related entry."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes of the related entry.",
+                        "required": [
+                          "name",
+                          "variantId"
+                        ],
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Strapi locale of the record; en for English records."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Variant name. The set is closed in the 2026-10-16 pages; a new set can add values.",
+                            "enum": [
+                              "Convention Exclusive",
+                              "Costco Exclusive",
+                              "Event Exclusive",
+                              "Foil Prestige",
+                              "GC Champion",
+                              "GC Day Three",
+                              "GC Event Pack",
+                              "GC Finalist",
+                              "GC Judge",
+                              "GC Participation",
+                              "GC Prize Wall",
+                              "GC Top 4",
+                              "GC Top 64",
+                              "GC Top 8",
+                              "GC VIP Promo",
+                              "Hyperspace",
+                              "Hyperspace Foil",
+                              "Judge Program",
+                              "Movie Promo",
+                              "PQ Champion",
+                              "PQ Finalist",
+                              "PQ Judge",
+                              "PQ Participation",
+                              "PQ Top 16",
+                              "PQ Top 4",
+                              "PQ Top 8",
+                              "Prerelease Judge",
+                              "Prerelease Promo",
+                              "RQ Champion",
+                              "RQ Day Two",
+                              "RQ Finalist",
+                              "RQ Judge",
+                              "RQ Participation",
+                              "RQ Prize Wall",
+                              "RQ Top 4",
+                              "RQ Top 8",
+                              "SQ Champion",
+                              "SQ Day Two",
+                              "SQ Event Pack",
+                              "SQ Finalist",
+                              "SQ Judge",
+                              "SQ Participation",
+                              "SQ Prize Wall",
+                              "SQ Top 4",
+                              "SQ Top 8",
+                              "SS Champion",
+                              "SS Finalist",
+                              "SS Judge",
+                              "SS Participation",
+                              "SS Top 4",
+                              "SS Top 8",
+                              "Serialized Prestige",
+                              "Showcase",
+                              "Standard",
+                              "Standard Foil",
+                              "Standard Prestige",
+                              "Weekly Play",
+                              "Weekly Play Foil"
+                            ]
+                          },
+                          "variantId": {
+                            "type": "string",
+                            "description": "Two-digit variant type code.",
+                            "enum": [
+                              "00",
+                              "01",
+                              "02",
+                              "03",
+                              "04",
+                              "05",
+                              "06",
+                              "07",
+                              "08",
+                              "10",
+                              "11",
+                              "31",
+                              "32",
+                              "33",
+                              "34",
+                              "35",
+                              "40",
+                              "41",
+                              "42",
+                              "43",
+                              "44",
+                              "45",
+                              "50",
+                              "51",
+                              "52",
+                              "53",
+                              "54",
+                              "55",
+                              "56",
+                              "60",
+                              "61",
+                              "70",
+                              "71",
+                              "72",
+                              "73",
+                              "74",
+                              "75",
+                              "76",
+                              "77",
+                              "78",
+                              "80",
+                              "81",
+                              "82",
+                              "83",
+                              "84",
+                              "85",
+                              "86",
+                              "87",
+                              "90",
+                              "91",
+                              "92",
+                              "93",
+                              "94",
+                              "95",
+                              "96",
+                              "97",
+                              "98",
+                              "99"
+                            ]
+                          },
+                          "foil": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "True for foil variants, false for non-foil, null where the API does not say."
+                          },
+                          "description": {
+                            "type": "null",
+                            "description": "Always null in the pages."
+                          },
+                          "sortValue": {
+                            "type": "integer",
+                            "description": "Display order of the variant."
+                          },
+                          "icon": {
+                            "description": "Variant icon. image metadata, out of scope"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "variantOf": {
+              "type": "object",
+              "description": "The standard printing this variant belongs to; null on the standard printing itself. Strapi relation wrapper holding one entry or null.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "description": "The root printing.",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Scalar attributes of the copied card.",
+                      "required": [
+                        "title",
+                        "subtitle",
+                        "cardNumber",
+                        "cardCount",
+                        "artist",
+                        "artFrontHorizontal",
+                        "artBackHorizontal",
+                        "hasFoil",
+                        "cost",
+                        "hp",
+                        "power",
+                        "upgradeHp",
+                        "upgradePower",
+                        "text",
+                        "textStyled",
+                        "deployBox",
+                        "deployBoxStyled",
+                        "epicAction",
+                        "epicActionStyled",
+                        "rules",
+                        "rulesStyled",
+                        "linkHtml",
+                        "cardId",
+                        "cardUid",
+                        "serialCode",
+                        "hyperspace",
+                        "showcase",
+                        "unique",
+                        "createdAt",
+                        "updatedAt",
+                        "publishedAt",
+                        "locale"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Card name."
+                        },
+                        "subtitle": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Second line of the name; empty string or null when none."
+                        },
+                        "cardNumber": {
+                          "type": "integer",
+                          "description": "Collector number inside the expansion."
+                        },
+                        "cardCount": {
+                          "type": "integer",
+                          "description": "Size of the set the card belongs to; 0 for promos.",
+                          "minimum": 0
+                        },
+                        "artist": {
+                          "type": "string",
+                          "description": "Credited illustrator."
+                        },
+                        "artFrontHorizontal": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ],
+                          "description": "Front art orientation flag (image field, out of scope)."
+                        },
+                        "artBackHorizontal": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ],
+                          "description": "Back art orientation flag (image field, out of scope)."
+                        },
+                        "hasFoil": {
+                          "type": "boolean",
+                          "description": "True if a foil version of this printing exists."
+                        },
+                        "cost": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Resources to play the card; null for Bases, Credit and Force tokens and a few Leaders.",
+                          "minimum": 0
+                        },
+                        "hp": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Hit points; null for Events, Upgrades, tokens and some Leaders.",
+                          "minimum": 0
+                        },
+                        "power": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Combat damage; null for Bases, Events, Upgrades, tokens and some Leaders.",
+                          "minimum": 0
+                        },
+                        "upgradeHp": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "HP modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                        },
+                        "upgradePower": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Power modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                        },
+                        "text": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Rules text box, plain text."
+                        },
+                        "textStyled": {
+                          "type": "string",
+                          "description": "Rules text box as HTML with keyword and icon markup."
+                        },
+                        "deployBox": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Leader back-side text; non-null only on Leaders."
+                        },
+                        "deployBoxStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Leader back-side text as HTML."
+                        },
+                        "epicAction": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Once-per-game Epic Action text, also Pilot text on some Units."
+                        },
+                        "epicActionStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Epic Action text as HTML."
+                        },
+                        "rules": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official rulings and clarifications for the card, plain text."
+                        },
+                        "rulesStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official rulings as HTML, with a date table."
+                        },
+                        "linkHtml": {
+                          "type": "string",
+                          "description": "HTML anchor the official site uses to link to the card."
+                        },
+                        "cardId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Older numeric card id; set on only 135 printings."
+                        },
+                        "cardUid": {
+                          "type": "string",
+                          "description": "Official card id; unique per printing."
+                        },
+                        "validationId": {
+                          "type": "string",
+                          "description": "Official validation id shared by printings of the same card."
+                        },
+                        "serialCode": {
+                          "type": "string",
+                          "description": "Unique printing id; the join key to tcg_printings.card_id.",
+                          "minLength": 7
+                        },
+                        "hyperspace": {
+                          "type": "boolean",
+                          "description": "True for printings flagged Hyperspace by the API."
+                        },
+                        "showcase": {
+                          "type": "boolean",
+                          "description": "True for printings flagged Showcase by the API."
+                        },
+                        "unique": {
+                          "type": "boolean",
+                          "description": "True if the card has the Unique icon: one copy per player in play."
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "reprintOf": {
+              "type": "object",
+              "description": "The earlier printing this card reprints; null when not a reprint. Strapi relation wrapper holding one entry or null.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "description": "The earlier printing.",
+                  "required": [
+                    "id",
+                    "attributes"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Strapi record id."
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "Scalar attributes of the copied card.",
+                      "required": [
+                        "title",
+                        "subtitle",
+                        "cardNumber",
+                        "cardCount",
+                        "artist",
+                        "artFrontHorizontal",
+                        "artBackHorizontal",
+                        "hasFoil",
+                        "cost",
+                        "hp",
+                        "power",
+                        "upgradeHp",
+                        "upgradePower",
+                        "text",
+                        "textStyled",
+                        "deployBox",
+                        "deployBoxStyled",
+                        "epicAction",
+                        "epicActionStyled",
+                        "rules",
+                        "rulesStyled",
+                        "linkHtml",
+                        "cardId",
+                        "cardUid",
+                        "serialCode",
+                        "hyperspace",
+                        "showcase",
+                        "unique",
+                        "createdAt",
+                        "updatedAt",
+                        "publishedAt",
+                        "locale"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Card name."
+                        },
+                        "subtitle": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Second line of the name; empty string or null when none."
+                        },
+                        "cardNumber": {
+                          "type": "integer",
+                          "description": "Collector number inside the expansion."
+                        },
+                        "cardCount": {
+                          "type": "integer",
+                          "description": "Size of the set the card belongs to; 0 for promos.",
+                          "minimum": 0
+                        },
+                        "artist": {
+                          "type": "string",
+                          "description": "Credited illustrator."
+                        },
+                        "artFrontHorizontal": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ],
+                          "description": "Front art orientation flag (image field, out of scope)."
+                        },
+                        "artBackHorizontal": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ],
+                          "description": "Back art orientation flag (image field, out of scope)."
+                        },
+                        "hasFoil": {
+                          "type": "boolean",
+                          "description": "True if a foil version of this printing exists."
+                        },
+                        "cost": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Resources to play the card; null for Bases, Credit and Force tokens and a few Leaders.",
+                          "minimum": 0
+                        },
+                        "hp": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Hit points; null for Events, Upgrades, tokens and some Leaders.",
+                          "minimum": 0
+                        },
+                        "power": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Combat damage; null for Bases, Events, Upgrades, tokens and some Leaders.",
+                          "minimum": 0
+                        },
+                        "upgradeHp": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "HP modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                        },
+                        "upgradePower": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Power modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                        },
+                        "text": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Rules text box, plain text."
+                        },
+                        "textStyled": {
+                          "type": "string",
+                          "description": "Rules text box as HTML with keyword and icon markup."
+                        },
+                        "deployBox": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Leader back-side text; non-null only on Leaders."
+                        },
+                        "deployBoxStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Leader back-side text as HTML."
+                        },
+                        "epicAction": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Once-per-game Epic Action text, also Pilot text on some Units."
+                        },
+                        "epicActionStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Epic Action text as HTML."
+                        },
+                        "rules": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official rulings and clarifications for the card, plain text."
+                        },
+                        "rulesStyled": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Official rulings as HTML, with a date table."
+                        },
+                        "linkHtml": {
+                          "type": "string",
+                          "description": "HTML anchor the official site uses to link to the card."
+                        },
+                        "cardId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Older numeric card id; set on only 135 printings."
+                        },
+                        "cardUid": {
+                          "type": "string",
+                          "description": "Official card id; unique per printing."
+                        },
+                        "validationId": {
+                          "type": "string",
+                          "description": "Official validation id shared by printings of the same card."
+                        },
+                        "serialCode": {
+                          "type": "string",
+                          "description": "Unique printing id; the join key to tcg_printings.card_id.",
+                          "minLength": 7
+                        },
+                        "hyperspace": {
+                          "type": "boolean",
+                          "description": "True for printings flagged Hyperspace by the API."
+                        },
+                        "showcase": {
+                          "type": "boolean",
+                          "description": "True for printings flagged Showcase by the API."
+                        },
+                        "unique": {
+                          "type": "boolean",
+                          "description": "True if the card has the Unique icon: one copy per player in play."
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                        },
+                        "publishedAt": {
+                          "type": "string",
+                          "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                        },
+                        "locale": {
+                          "type": "string",
+                          "description": "Strapi locale of the record; en for English records."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "localizations": {
+              "type": "object",
+              "description": "The same card in other languages. Strapi relation wrapper holding an array.",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Related entries, possibly empty.",
+                  "items": {
+                    "type": "object",
+                    "description": "One localized copy.",
+                    "required": [
+                      "id",
+                      "attributes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Strapi record id."
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "description": "Scalar attributes in the other language.",
+                        "required": [
+                          "title",
+                          "locale",
+                          "serialCode"
+                        ],
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "description": "Card name."
+                          },
+                          "subtitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Second line of the name; empty string or null when none."
+                          },
+                          "cardNumber": {
+                            "type": "integer",
+                            "description": "Collector number inside the expansion."
+                          },
+                          "cardCount": {
+                            "type": "integer",
+                            "description": "Size of the set the card belongs to; 0 for promos.",
+                            "minimum": 0
+                          },
+                          "artist": {
+                            "type": "string",
+                            "description": "Credited illustrator."
+                          },
+                          "artFrontHorizontal": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "Front art orientation flag (image field, out of scope)."
+                          },
+                          "artBackHorizontal": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "Back art orientation flag (image field, out of scope)."
+                          },
+                          "hasFoil": {
+                            "type": "boolean",
+                            "description": "True if a foil version of this printing exists."
+                          },
+                          "cost": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Resources to play the card; null for Bases, Credit and Force tokens and a few Leaders.",
+                            "minimum": 0
+                          },
+                          "hp": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Hit points; null for Events, Upgrades, tokens and some Leaders.",
+                            "minimum": 0
+                          },
+                          "power": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Combat damage; null for Bases, Events, Upgrades, tokens and some Leaders.",
+                            "minimum": 0
+                          },
+                          "upgradeHp": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "HP modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                          },
+                          "upgradePower": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Power modifier an Upgrade, token upgrade or Pilot or Leader Unit side gives; negative on Weakness and similar."
+                          },
+                          "text": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Rules text box, plain text."
+                          },
+                          "textStyled": {
+                            "type": "string",
+                            "description": "Rules text box as HTML with keyword and icon markup."
+                          },
+                          "deployBox": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Leader back-side text; non-null only on Leaders."
+                          },
+                          "deployBoxStyled": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Leader back-side text as HTML."
+                          },
+                          "epicAction": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Once-per-game Epic Action text, also Pilot text on some Units."
+                          },
+                          "epicActionStyled": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Epic Action text as HTML."
+                          },
+                          "rules": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Official rulings and clarifications for the card, plain text."
+                          },
+                          "rulesStyled": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Official rulings as HTML, with a date table."
+                          },
+                          "linkHtml": {
+                            "type": "string",
+                            "description": "HTML anchor the official site uses to link to the card."
+                          },
+                          "cardId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Older numeric card id; set on only 135 printings."
+                          },
+                          "cardUid": {
+                            "type": "string",
+                            "description": "Official card id; unique per printing."
+                          },
+                          "validationId": {
+                            "type": "string",
+                            "description": "Official validation id shared by printings of the same card."
+                          },
+                          "serialCode": {
+                            "type": "string",
+                            "description": "Unique printing id; the join key to tcg_printings.card_id.",
+                            "minLength": 7
+                          },
+                          "hyperspace": {
+                            "type": "boolean",
+                            "description": "True for printings flagged Hyperspace by the API."
+                          },
+                          "showcase": {
+                            "type": "boolean",
+                            "description": "True for printings flagged Showcase by the API."
+                          },
+                          "unique": {
+                            "type": "boolean",
+                            "description": "True if the card has the Unique icon: one copy per player in play."
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "Strapi creation timestamp (ISO 8601, UTC)."
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "description": "Strapi last-update timestamp (ISO 8601, UTC)."
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "description": "Strapi publication timestamp (ISO 8601, UTC)."
+                          },
+                          "locale": {
+                            "type": "string",
+                            "description": "Language code.",
+                            "enum": [
+                              "de",
+                              "es",
+                              "fr",
+                              "it"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "artFront": {
+              "description": "Front card art. image metadata, out of scope"
+            },
+            "artBack": {
+              "description": "Back card art. image metadata, out of scope"
+            },
+            "artThumbnail": {
+              "description": "Thumbnail card art. image metadata, out of scope"
+            }
+          }
+        }
+      }
+    },
+    "RawPage": {
+      "type": "object",
+      "description": "One untouched API page body: { data, meta }, as saved gzipped by the raw cache (page-NNNN.json.gz).",
+      "required": [
+        "data",
+        "meta"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Up to 100 printings.",
+          "items": {
+            "$ref": "#/$defs/RawCard"
+          }
+        },
+        "meta": {
+          "type": "object",
+          "description": "Strapi paging metadata.",
+          "required": [
+            "pagination"
+          ],
+          "properties": {
+            "pagination": {
+              "type": "object",
+              "description": "Paging counters.",
+              "required": [
+                "page",
+                "pageSize",
+                "pageCount",
+                "total"
+              ],
+              "properties": {
+                "page": {
+                  "type": "integer",
+                  "description": "This page number, from 1.",
+                  "minimum": 1
+                },
+                "pageSize": {
+                  "type": "integer",
+                  "description": "Records per page; 100."
+                },
+                "pageCount": {
+                  "type": "integer",
+                  "description": "Total pages."
+                },
+                "total": {
+                  "type": "integer",
+                  "description": "Total printings across all pages."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "OfficialPrinting": {
+      "type": "object",
+      "description": "One official SWU printing (one specific version of a card). Snapshots hold a subset of these properties, so only serialCode, cardNumber and title are required. See swu-card-data-fields.md, section Printing.",
+      "required": [
+        "serialCode",
+        "cardNumber",
+        "title"
+      ],
+      "properties": {
+        "serialCode": {
+          "type": "string",
+          "description": "Unique printing id and the join key to tcg_printings.card_id. Characters 3-4 are the variant-type digits; promo serials start with a lowercase letter code.",
+          "minLength": 7
+        },
+        "cardNumber": {
+          "type": "integer",
+          "description": "Collector number inside the expansion as the official API gives it; can differ from the number in the serial."
+        },
+        "title": {
+          "type": "string",
+          "description": "Card name."
+        },
+        "subtitle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Second line of the name; empty string or null when the card has none (Bases are null)."
+        },
+        "artist": {
+          "type": "string",
+          "description": "Credited illustrator (snapshots only)."
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Rules text box. Paragraphs are separated by a blank line; empty string or null when the card has no text (snapshots only)."
+        },
+        "deployBox": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Leader back-side (Leader Unit) text; non-null only on Leaders (snapshots abba1a4e and a9fa9369)."
+        },
+        "epicAction": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Once-per-game Epic Action text: the deploy condition on Leaders, Pilot text on some Units (snapshots abba1a4e and a9fa9369)."
+        },
+        "cost": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Resources to play the card. Null for Bases, Credit and Force tokens and a few Leaders."
+        },
+        "power": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Combat damage. Null for Bases, Events, Upgrades, tokens and some Leaders."
+        },
+        "hp": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Hit points. Null for Events, Upgrades, tokens and some Leaders."
+        },
+        "type": {
+          "type": "object",
+          "description": "Card type. Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "object",
+              "description": "Relation payload.",
+              "properties": {
+                "attributes": {
+                  "type": "object",
+                  "description": "Attributes of the related record.",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Card type name. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                      "enum": [
+                        "Leader",
+                        "Base",
+                        "Unit",
+                        "Event",
+                        "Upgrade",
+                        "Token Upgrade",
+                        "Token Unit",
+                        "Force Token",
+                        "Credit Token"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "attributes"
+              ]
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "rarity": {
+          "type": "object",
+          "description": "Rarity tier. Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "object",
+              "description": "Relation payload.",
+              "properties": {
+                "attributes": {
+                  "type": "object",
+                  "description": "Attributes of the related record.",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Rarity name. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                      "enum": [
+                        "Common",
+                        "Rare",
+                        "Special",
+                        "Uncommon",
+                        "Legendary"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "attributes"
+              ]
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "aspects": {
+          "type": "object",
+          "description": "Aspect icons on the card (zero to three, no repeats). Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "array",
+              "description": "Related records, possibly empty.",
+              "items": {
+                "type": "object",
+                "description": "One related record.",
+                "properties": {
+                  "attributes": {
+                    "type": "object",
+                    "description": "Attributes of the related record.",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Aspect name. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                        "enum": [
+                          "Aggression",
+                          "Command",
+                          "Cunning",
+                          "Heroism",
+                          "Vigilance",
+                          "Villainy"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "attributes"
+                ]
+              }
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "expansion": {
+          "type": "object",
+          "description": "Expansion (set) the printing belongs to. Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "object",
+              "description": "Relation payload.",
+              "properties": {
+                "attributes": {
+                  "type": "object",
+                  "description": "Set attributes.",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "Set code. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                      "enum": [
+                        "SOR",
+                        "SHD",
+                        "TWI",
+                        "JTL",
+                        "JTLP",
+                        "LOF",
+                        "LOFP",
+                        "SEC",
+                        "SECP",
+                        "LAW",
+                        "LAWP",
+                        "ASH",
+                        "ASHP",
+                        "HMW",
+                        "HMWP",
+                        "C24",
+                        "C25",
+                        "C26",
+                        "CST",
+                        "G25",
+                        "GG",
+                        "IBH",
+                        "IC27",
+                        "J24",
+                        "J25",
+                        "MV26",
+                        "P25",
+                        "P26",
+                        "TS26"
+                      ]
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Set display name, one-to-one with code: SOR=Spark of Rebellion; SHD=Shadows of the Galaxy; TWI=Twilight of the Republic; JTL=Jump to Lightspeed; JTLP=Jump to Lightspeed Weekly Play; LOF=Legends of the Force; LOFP=Legends of the Force Weekly Play; SEC=Secrets of Power; SECP=Secrets of Power Weekly Play; LAW=A Lawless Time; LAWP=A Lawless Time Weekly Play; ASH=Ashes of the Empire; ASHP=Ashes of the Empire Weekly Play; HMW=Homeworlds; HMWP=Homeworlds Weekly Play; C24=2024 Convention Exclusive; C25=2025 Convention Exclusive; C26=2026 Convention Exclusive; CST=Costco Exclusive; G25=2025 Gift Box; GG=Gamegenic; IBH=Intro Battle: Hoth; IC27=Icons 2027 Edition; J24=2024 Judge Program; J25=2025 Judge Program; MV26=The Mandalorian and Grogu Movie Promo; P25=2025 Promo; P26=2026 Promo; TS26=2026 Twin Suns.",
+                      "enum": [
+                        "Spark of Rebellion",
+                        "Shadows of the Galaxy",
+                        "Twilight of the Republic",
+                        "Jump to Lightspeed",
+                        "Jump to Lightspeed Weekly Play",
+                        "Legends of the Force",
+                        "Legends of the Force Weekly Play",
+                        "Secrets of Power",
+                        "Secrets of Power Weekly Play",
+                        "A Lawless Time",
+                        "A Lawless Time Weekly Play",
+                        "Ashes of the Empire",
+                        "Ashes of the Empire Weekly Play",
+                        "Homeworlds",
+                        "Homeworlds Weekly Play",
+                        "2024 Convention Exclusive",
+                        "2025 Convention Exclusive",
+                        "2026 Convention Exclusive",
+                        "Costco Exclusive",
+                        "2025 Gift Box",
+                        "Gamegenic",
+                        "Intro Battle: Hoth",
+                        "Icons 2027 Edition",
+                        "2024 Judge Program",
+                        "2025 Judge Program",
+                        "The Mandalorian and Grogu Movie Promo",
+                        "2025 Promo",
+                        "2026 Promo",
+                        "2026 Twin Suns"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "attributes"
+              ]
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "variantTypes": {
+          "type": "object",
+          "description": "Finish or tier of this printing. Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "array",
+              "description": "One entry for most printings; empty for some promos.",
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "description": "The variant record.",
+                "properties": {
+                  "attributes": {
+                    "type": "object",
+                    "description": "Variant attributes.",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Variant name. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                        "enum": [
+                          "Standard",
+                          "Hyperspace",
+                          "Showcase",
+                          "Prerelease Promo",
+                          "Standard Foil",
+                          "Hyperspace Foil",
+                          "Weekly Play Foil",
+                          "Weekly Play",
+                          "SS Participation",
+                          "SS Judge",
+                          "Prerelease Judge",
+                          "SS Top 8",
+                          "SS Top 4",
+                          "SS Finalist",
+                          "SS Champion",
+                          "Event Exclusive",
+                          "PQ Participation",
+                          "PQ Judge",
+                          "PQ Top 16",
+                          "PQ Top 8",
+                          "PQ Top 4",
+                          "PQ Finalist",
+                          "PQ Champion",
+                          "Standard Prestige",
+                          "Foil Prestige",
+                          "Serialized Prestige",
+                          "Convention Exclusive",
+                          "Costco Exclusive",
+                          "Judge Program",
+                          "Movie Promo",
+                          "GC Top 64",
+                          "SQ Participation",
+                          "SQ Top 8",
+                          "SQ Top 4",
+                          "SQ Finalist",
+                          "SQ Champion",
+                          "SQ Judge",
+                          "SQ Day Two",
+                          "SQ Prize Wall",
+                          "SQ Event Pack",
+                          "RQ Participation",
+                          "RQ Top 8",
+                          "RQ Top 4",
+                          "RQ Finalist",
+                          "RQ Champion",
+                          "RQ Judge",
+                          "RQ Day Two",
+                          "RQ Prize Wall",
+                          "GC Participation",
+                          "GC Top 8",
+                          "GC Top 4",
+                          "GC Finalist",
+                          "GC Champion",
+                          "GC Judge",
+                          "GC Day Three",
+                          "GC Prize Wall",
+                          "GC Event Pack",
+                          "GC VIP Promo"
+                        ]
+                      },
+                      "variantId": {
+                        "type": "string",
+                        "description": "Two-digit variant type code, also the serialCode digits 3-4 for standard-form serials.",
+                        "enum": [
+                          "00",
+                          "01",
+                          "02",
+                          "03",
+                          "04",
+                          "05",
+                          "06",
+                          "07",
+                          "08",
+                          "10",
+                          "11",
+                          "31",
+                          "32",
+                          "33",
+                          "34",
+                          "35",
+                          "40",
+                          "41",
+                          "42",
+                          "43",
+                          "44",
+                          "45",
+                          "50",
+                          "51",
+                          "52",
+                          "53",
+                          "54",
+                          "55",
+                          "56",
+                          "60",
+                          "61",
+                          "70",
+                          "71",
+                          "72",
+                          "73",
+                          "74",
+                          "75",
+                          "76",
+                          "77",
+                          "78",
+                          "80",
+                          "81",
+                          "82",
+                          "83",
+                          "84",
+                          "85",
+                          "86",
+                          "87",
+                          "90",
+                          "91",
+                          "92",
+                          "93",
+                          "94",
+                          "95",
+                          "96",
+                          "97",
+                          "98",
+                          "99"
+                        ]
+                      },
+                      "foil": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ],
+                        "description": "True for foil variants, false for non-foil, null where the API does not say (promo tiers)."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "variantId"
+                    ]
+                  }
+                },
+                "required": [
+                  "attributes"
+                ]
+              }
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "keywords": {
+          "type": "object",
+          "description": "Keyword abilities on the card (snapshot abba1a4e only). Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "array",
+              "description": "Related records, possibly empty.",
+              "items": {
+                "type": "object",
+                "description": "One related record.",
+                "properties": {
+                  "attributes": {
+                    "type": "object",
+                    "description": "Attributes of the related record.",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Keyword name; Fortify first appears in Homeworlds and Support in Ashes of the Empire. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                        "enum": [
+                          "Ambush",
+                          "Bounty",
+                          "Coordinate",
+                          "Exploit",
+                          "Fortify",
+                          "Grit",
+                          "Hidden",
+                          "Overwhelm",
+                          "Piloting",
+                          "Plot",
+                          "Raid",
+                          "Restore",
+                          "Saboteur",
+                          "Sentinel",
+                          "Shielded",
+                          "Smuggle",
+                          "Support"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "attributes"
+                ]
+              }
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "traits": {
+          "type": "object",
+          "description": "Thematic traits printed under the art (snapshot abba1a4e only; empty on all Bases and Force tokens in the export). Fortification first appears in Homeworlds. Strapi relation wrapper.",
+          "properties": {
+            "data": {
+              "type": "array",
+              "description": "Related records, possibly empty.",
+              "items": {
+                "type": "object",
+                "description": "One related record.",
+                "properties": {
+                  "attributes": {
+                    "type": "object",
+                    "description": "Attributes of the related record.",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Trait name. The set is closed in the exported data but a new set can add values (api-types.ts validates it as a plain string).",
+                        "enum": [
+                          "Armor",
+                          "Bounty",
+                          "Bounty Hunter",
+                          "Capital Ship",
+                          "Clone",
+                          "Condition",
+                          "Creature",
+                          "Disaster",
+                          "Droid",
+                          "Ewok",
+                          "Fighter",
+                          "First Order",
+                          "Force",
+                          "Fortification",
+                          "Fringe",
+                          "Gambit",
+                          "Gungan",
+                          "Hutt",
+                          "Imperial",
+                          "Innate",
+                          "Inquisitor",
+                          "Item",
+                          "Jawa",
+                          "Jedi",
+                          "Kaminoan",
+                          "Law",
+                          "Learned",
+                          "Lightsaber",
+                          "Mandalorian",
+                          "Modification",
+                          "Musician",
+                          "Naboo",
+                          "New Republic",
+                          "Night",
+                          "Nihil",
+                          "Official",
+                          "Pilot",
+                          "Plan",
+                          "Rebel",
+                          "Republic",
+                          "Resistance",
+                          "Separatist",
+                          "Sith",
+                          "Spectre",
+                          "Speeder",
+                          "Supply",
+                          "Tactic",
+                          "Tank",
+                          "Transport",
+                          "Trick",
+                          "Trooper",
+                          "Tusken",
+                          "Twi'lek",
+                          "Undead",
+                          "Underworld",
+                          "Vehicle",
+                          "Walker",
+                          "Weapon",
+                          "Wookiee"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "attributes"
+                ]
+              }
+            }
+          },
+          "required": [
+            "data"
+          ]
+        },
+        "artFront": {
+          "description": "image metadata, out of scope"
+        },
+        "artBack": {
+          "description": "image metadata, out of scope"
+        }
+      }
+    },
+    "OfficialCardList": {
+      "type": "object",
+      "description": "Official card list or catalogue snapshot: an object holding the printings array.",
+      "required": [
+        "printings"
+      ],
+      "properties": {
+        "printings": {
+          "type": "array",
+          "description": "Every printing, sorted by serial code.",
+          "items": {
+            "$ref": "#/$defs/OfficialPrinting"
+          }
+        }
+      }
+    },
+    "PriceImport": {
+      "type": "object",
+      "description": "One price_imports row: a single run of the TCGplayer conformance import. See swu-card-data-fields.md, section Price import.",
+      "required": [
+        "id",
+        "game_key",
+        "status",
+        "started_at",
+        "counts"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Import id; every other price row carries it as import_id."
+        },
+        "game_key": {
+          "type": "string",
+          "description": "Game key; always swu in this export."
+        },
+        "status": {
+          "type": "string",
+          "description": "Run lifecycle state.",
+          "enum": [
+            "running",
+            "succeeded",
+            "failed"
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "description": "Run start, UTC timestamp without timezone suffix."
+        },
+        "finished_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Run finish, UTC timestamp without timezone suffix; null while running."
+        },
+        "tcg_blob_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of the pinned TCGCSV snapshot the run consumed.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "official_blob_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of the pinned official card list the run consumed.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "code_commit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Git commit of the conform code; a -dirty suffix means uncommitted changes (inferred)."
+        },
+        "output_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 of the conformed output; the replay proof.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "counts": {
+          "type": "object",
+          "description": "Per-class totals of the run.",
+          "required": [
+            "products",
+            "skippedNoNumber",
+            "conformant",
+            "corrected",
+            "quarantined",
+            "pointsPriced",
+            "suspect",
+            "byRule",
+            "byReason"
+          ],
+          "properties": {
+            "products": {
+              "type": "integer",
+              "description": "TCGplayer products read.",
+              "minimum": 0
+            },
+            "skippedNoNumber": {
+              "type": "integer",
+              "description": "Products with no card number, not conformed.",
+              "minimum": 0
+            },
+            "conformant": {
+              "type": "integer",
+              "description": "Listings matched with no correction and no drift.",
+              "minimum": 0
+            },
+            "corrected": {
+              "type": "integer",
+              "description": "Listings matched after at least one rule fired.",
+              "minimum": 0
+            },
+            "descriptiveDrift": {
+              "type": "integer",
+              "description": "Listings matched but disagreeing with the official card on a printed stat.",
+              "minimum": 0
+            },
+            "driftWarnings": {
+              "type": "integer",
+              "description": "Drift on 3 or more fields; price kept but flagged.",
+              "minimum": 0
+            },
+            "quarantined": {
+              "type": "integer",
+              "description": "Listings rejected into quarantine.",
+              "minimum": 0
+            },
+            "pointsPriced": {
+              "type": "integer",
+              "description": "Cards that received a price point.",
+              "minimum": 0
+            },
+            "suspect": {
+              "type": "integer",
+              "description": "Price points flagged by the movement check.",
+              "minimum": 0
+            },
+            "byRule": {
+              "type": "object",
+              "description": "Corrections applied per rule id.",
+              "properties": {
+                "promo-group": {
+                  "type": "integer",
+                  "description": "Corrections by rule promo-group. Promo group abbreviation rewritten to the official set code.",
+                  "minimum": 0
+                },
+                "combo-base": {
+                  "type": "integer",
+                  "description": "Corrections by rule combo-base. priceSource changed from direct to combo for a card-plus-token listing.",
+                  "minimum": 0
+                },
+                "group-set": {
+                  "type": "integer",
+                  "description": "Corrections by rule group-set. Group names a set directly; expansion set from it.",
+                  "minimum": 0
+                },
+                "exclusive-set": {
+                  "type": "integer",
+                  "description": "Corrections by rule exclusive-set. Variant suffix names a different set than the group.",
+                  "minimum": 0
+                },
+                "token-number": {
+                  "type": "integer",
+                  "description": "Corrections by rule token-number. Token listed as T<n> mapped to the same-titled token at that number.",
+                  "minimum": 0
+                },
+                "title-drift": {
+                  "type": "integer",
+                  "description": "Corrections by rule title-drift. TCGplayer title typo within edit distance 2 of the official title.",
+                  "minimum": 0
+                },
+                "number-shift": {
+                  "type": "integer",
+                  "description": "Corrections by rule number-shift. TCGplayer number one off; neighbour is the single exact match.",
+                  "minimum": 0
+                },
+                "promo-number": {
+                  "type": "integer",
+                  "description": "Corrections by rule promo-number. Labelled promo listing up to 20 numbers from its printing.",
+                  "minimum": 0
+                },
+                "verified-listing": {
+                  "type": "integer",
+                  "description": "Corrections by rule verified-listing. Hand-verified exception from the committed VERIFIED_LISTINGS table.",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "promo-group",
+                "combo-base",
+                "group-set",
+                "exclusive-set",
+                "token-number",
+                "title-drift",
+                "number-shift",
+                "promo-number",
+                "verified-listing"
+              ]
+            },
+            "byReason": {
+              "type": "object",
+              "description": "Quarantined listings per reason.",
+              "properties": {
+                "unparseable-number": {
+                  "type": "integer",
+                  "description": "Quarantines with reason unparseable-number.",
+                  "minimum": 0
+                },
+                "unmapped-group": {
+                  "type": "integer",
+                  "description": "Quarantines with reason unmapped-group.",
+                  "minimum": 0
+                },
+                "unknown-variant-suffix": {
+                  "type": "integer",
+                  "description": "Quarantines with reason unknown-variant-suffix.",
+                  "minimum": 0
+                },
+                "no-candidate": {
+                  "type": "integer",
+                  "description": "Quarantines with reason no-candidate.",
+                  "minimum": 0
+                },
+                "field-disagreement": {
+                  "type": "integer",
+                  "description": "Quarantines with reason field-disagreement.",
+                  "minimum": 0
+                },
+                "ambiguous": {
+                  "type": "integer",
+                  "description": "Quarantines with reason ambiguous.",
+                  "minimum": 0
+                },
+                "duplicate-claim": {
+                  "type": "integer",
+                  "description": "Quarantines with reason duplicate-claim.",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "unparseable-number",
+                "unmapped-group",
+                "unknown-variant-suffix",
+                "no-candidate",
+                "field-disagreement",
+                "ambiguous",
+                "duplicate-claim"
+              ]
+            },
+            "byDriftField": {
+              "type": "object",
+              "description": "Drifted listings per stat field.",
+              "properties": {
+                "type": {
+                  "type": "integer",
+                  "description": "Drift entries on field type.",
+                  "minimum": 0
+                },
+                "rarity": {
+                  "type": "integer",
+                  "description": "Drift entries on field rarity.",
+                  "minimum": 0
+                },
+                "aspects": {
+                  "type": "integer",
+                  "description": "Drift entries on field aspects.",
+                  "minimum": 0
+                },
+                "cost": {
+                  "type": "integer",
+                  "description": "Drift entries on field cost.",
+                  "minimum": 0
+                },
+                "power": {
+                  "type": "integer",
+                  "description": "Drift entries on field power.",
+                  "minimum": 0
+                },
+                "hp": {
+                  "type": "integer",
+                  "description": "Drift entries on field hp.",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "type",
+                "rarity",
+                "aspects",
+                "cost",
+                "power",
+                "hp"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "TcgPrinting": {
+      "type": "object",
+      "description": "One tcg_printings row: one TCGplayer product matched to one official printing. See swu-card-data-fields.md, section TCG printing.",
+      "required": [
+        "import_id",
+        "card_id",
+        "product_id",
+        "group_id",
+        "variant",
+        "price_normal",
+        "price_foil",
+        "price_source",
+        "combo_token_ref",
+        "conformance",
+        "applied_rules",
+        "drift"
+      ],
+      "properties": {
+        "import_id": {
+          "type": "integer",
+          "description": "Import that produced the row; equals import.id."
+        },
+        "card_id": {
+          "type": "string",
+          "description": "Official serialCode of the matched printing; several products can share one."
+        },
+        "product_id": {
+          "type": "integer",
+          "description": "TCGplayer product id; unique per row."
+        },
+        "group_id": {
+          "type": "integer",
+          "description": "TCGplayer group id (roughly one per set or promo family)."
+        },
+        "variant": {
+          "type": "string",
+          "description": "Shared printing-variant vocabulary.",
+          "enum": [
+            "standard",
+            "standard-foil",
+            "hyperspace",
+            "hyperspace-foil",
+            "showcase",
+            "prestige",
+            "prestige-foil",
+            "prestige-serialized",
+            "weekly-play",
+            "weekly-play-foil",
+            "promo"
+          ]
+        },
+        "price_normal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Non-foil market price in US dollars; null when none."
+        },
+        "price_foil": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Foil market price in US dollars; null when none."
+        },
+        "price_source": {
+          "type": "string",
+          "description": "direct is a single-card listing; combo is a card-plus-token listing.",
+          "enum": [
+            "direct",
+            "combo"
+          ]
+        },
+        "combo_token_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Token(s) a combo listing includes, such as T04 or T03/T04; null for direct listings."
+        },
+        "conformance": {
+          "type": "string",
+          "description": "How the match was reached.",
+          "enum": [
+            "conformant",
+            "corrected",
+            "descriptive-drift"
+          ]
+        },
+        "applied_rules": {
+          "type": "array",
+          "description": "Correction rules applied to this listing, in run order; empty when none.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "promo-group",
+              "combo-base",
+              "group-set",
+              "exclusive-set",
+              "token-number",
+              "title-drift",
+              "number-shift",
+              "promo-number",
+              "verified-listing"
+            ],
+            "description": "Committed correction rule id, in the order the rules run. promo-group: Promo group abbreviation rewritten to the official set code. combo-base: priceSource changed from direct to combo for a card-plus-token listing. group-set: Group names a set directly; expansion set from it. exclusive-set: Variant suffix names a different set than the group. token-number: Token listed as T<n> mapped to the same-titled token at that number. title-drift: TCGplayer title typo within edit distance 2 of the official title. number-shift: TCGplayer number one off; neighbour is the single exact match. promo-number: Labelled promo listing up to 20 numbers from its printing. verified-listing: Hand-verified exception from the committed VERIFIED_LISTINGS table."
+          }
+        },
+        "drift": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Where TCGplayer printed stats differ from the official card; null when there is no drift.",
+          "required": [
+            "drift",
+            "driftWarning"
+          ],
+          "properties": {
+            "drift": {
+              "type": "array",
+              "minItems": 1,
+              "description": "One entry per disagreeing field.",
+              "items": {
+                "type": "object",
+                "description": "One field on which TCGplayer and the official list disagree.",
+                "required": [
+                  "field",
+                  "tcg",
+                  "official"
+                ],
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "Stat that disagrees.",
+                    "enum": [
+                      "type",
+                      "rarity",
+                      "aspects",
+                      "cost",
+                      "power",
+                      "hp"
+                    ]
+                  },
+                  "tcg": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "TCGplayer value as text; null when TCGplayer lists none. Aspects are joined with a semicolon."
+                  },
+                  "official": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Official value as text; null when the card has none."
+                  }
+                }
+              }
+            },
+            "driftWarning": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "Set when drift touches 3 or more fields; null otherwise.",
+              "required": [
+                "count",
+                "fields"
+              ],
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "description": "Number of drifted fields; equals fields.length.",
+                  "minimum": 3
+                },
+                "fields": {
+                  "type": "array",
+                  "description": "Names of the drifted fields.",
+                  "items": {
+                    "type": "string",
+                    "description": "Drifted field name.",
+                    "enum": [
+                      "type",
+                      "rarity",
+                      "aspects",
+                      "cost",
+                      "power",
+                      "hp"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "PriceExport": {
+      "type": "object",
+      "description": "tcgplayer-prices-rectified file: the import row plus its matched printings.",
+      "required": [
+        "import",
+        "printings"
+      ],
+      "properties": {
+        "import": {
+          "$ref": "#/$defs/PriceImport",
+          "description": "The price_imports row of this run."
+        },
+        "printings": {
+          "type": "array",
+          "description": "All tcg_printings rows of the import.",
+          "items": {
+            "$ref": "#/$defs/TcgPrinting"
+          }
+        }
+      }
+    },
+    "Correction": {
+      "type": "object",
+      "description": "One tcg_corrections row: a committed rule rewriting one field of one TCGplayer listing. See swu-card-data-fields.md, section Correction.",
+      "required": [
+        "id",
+        "import_id",
+        "product_id",
+        "seq",
+        "rule_id",
+        "field",
+        "before",
+        "after"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Row id; unique."
+        },
+        "import_id": {
+          "type": "integer",
+          "description": "Import that applied the correction."
+        },
+        "product_id": {
+          "type": "integer",
+          "description": "TCGplayer product id; joins tcg_printings.product_id."
+        },
+        "seq": {
+          "type": "integer",
+          "description": "Position of this correction among the product's corrections.",
+          "minimum": 0
+        },
+        "rule_id": {
+          "type": "string",
+          "enum": [
+            "promo-group",
+            "combo-base",
+            "group-set",
+            "exclusive-set",
+            "token-number",
+            "title-drift",
+            "number-shift",
+            "promo-number",
+            "verified-listing"
+          ],
+          "description": "Committed correction rule id, in the order the rules run. promo-group: Promo group abbreviation rewritten to the official set code. combo-base: priceSource changed from direct to combo for a card-plus-token listing. group-set: Group names a set directly; expansion set from it. exclusive-set: Variant suffix names a different set than the group. token-number: Token listed as T<n> mapped to the same-titled token at that number. title-drift: TCGplayer title typo within edit distance 2 of the official title. number-shift: TCGplayer number one off; neighbour is the single exact match. promo-number: Labelled promo listing up to 20 numbers from its printing. verified-listing: Hand-verified exception from the committed VERIFIED_LISTINGS table."
+        },
+        "field": {
+          "type": "string",
+          "description": "Attribute the rule changed.",
+          "enum": [
+            "expansion",
+            "priceSource",
+            "number",
+            "title"
+          ]
+        },
+        "before": {
+          "type": "string",
+          "description": "TCGplayer value, stored as text."
+        },
+        "after": {
+          "type": "string",
+          "description": "Corrected (official) value, stored as text."
+        }
+      }
+    },
+    "CorrectionsFile": {
+      "type": "array",
+      "description": "corrections file: tcg_corrections rows of one import.",
+      "items": {
+        "$ref": "#/$defs/Correction"
+      }
+    },
+    "Quarantine": {
+      "type": "object",
+      "description": "One tcg_quarantine row: a TCGplayer listing that could not be matched safely and received no price. See swu-card-data-fields.md, section Quarantine.",
+      "required": [
+        "id",
+        "import_id",
+        "product_id",
+        "group_id",
+        "product_name",
+        "number",
+        "variant",
+        "reason",
+        "candidate_card_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Row id; unique."
+        },
+        "import_id": {
+          "type": "integer",
+          "description": "Import that quarantined the listing."
+        },
+        "product_id": {
+          "type": "integer",
+          "description": "TCGplayer product id."
+        },
+        "group_id": {
+          "type": "integer",
+          "description": "TCGplayer group id."
+        },
+        "product_name": {
+          "type": "string",
+          "description": "TCGplayer listing title with its finish and tier suffixes."
+        },
+        "number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "TCGplayer card number text, such as 1125 or T01 // T02."
+        },
+        "variant": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "standard",
+            "standard-foil",
+            "hyperspace",
+            "hyperspace-foil",
+            "showcase",
+            "prestige",
+            "prestige-foil",
+            "prestige-serialized",
+            "weekly-play",
+            "weekly-play-foil",
+            "promo",
+            null
+          ],
+          "description": "Variant read from the listing suffix before quarantine; null when none could be read."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the listing was quarantined. unparseable-number, unmapped-group, unknown-variant-suffix, no-candidate, field-disagreement, ambiguous, duplicate-claim.",
+          "enum": [
+            "unparseable-number",
+            "unmapped-group",
+            "unknown-variant-suffix",
+            "no-candidate",
+            "field-disagreement",
+            "ambiguous",
+            "duplicate-claim"
+          ]
+        },
+        "candidate_card_ids": {
+          "type": "array",
+          "description": "Official serialCodes the listing might have meant; often empty.",
+          "items": {
+            "type": "string",
+            "description": "An official serialCode."
+          }
+        }
+      }
+    },
+    "QuarantineFile": {
+      "type": "array",
+      "description": "quarantine file: tcg_quarantine rows of one import.",
+      "items": {
+        "$ref": "#/$defs/Quarantine"
+      }
+    }
+  }
+}

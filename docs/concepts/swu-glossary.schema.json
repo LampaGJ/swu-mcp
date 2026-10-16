@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mault.local/docs/concepts/swu-glossary.schema.json",
+  "title": "SWU glossary",
+  "description": "Schema for swu-glossary.json: one entry per distinct value of each card facet, read by the export script to build per-facet indexes. Entries inside a facet are sorted by value in code point order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "facets"],
+  "properties": {
+    "version": { "const": 1, "description": "Glossary format version." },
+    "facets": {
+      "type": "object",
+      "description": "The facets, each an array of value entries.",
+      "additionalProperties": false,
+      "required": ["aspect", "trait", "keyword", "type", "arena", "rarity", "expansion", "variant", "token"],
+      "properties": {
+        "aspect": { "$ref": "#/$defs/Facet", "description": "The six aspects." },
+        "trait": { "$ref": "#/$defs/Facet", "description": "Every trait carried by a printing." },
+        "keyword": { "$ref": "#/$defs/Facet", "description": "Every keyword ability." },
+        "type": { "$ref": "#/$defs/Facet", "description": "Every card type, plus Leader Unit (the type2 value)." },
+        "arena": { "$ref": "#/$defs/Facet", "description": "Ground and Space." },
+        "rarity": { "$ref": "#/$defs/Facet", "description": "Every rarity tier." },
+        "expansion": { "$ref": "#/$defs/Facet", "description": "Every expansion, keyed by its code." },
+        "variant": { "$ref": "#/$defs/Facet", "description": "Every variant type name." },
+        "token": { "$ref": "#/$defs/Facet", "description": "Every token, keyed by the token card's title." }
+      }
+    }
+  },
+  "$defs": {
+    "Facet": {
+      "type": "array",
+      "description": "Entries for one facet, sorted by value in code point order.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Entry" }
+    },
+    "Entry": {
+      "type": "object",
+      "description": "One facet value with its meaning.",
+      "additionalProperties": false,
+      "required": ["value", "definition", "strategicValue", "source", "inScope"],
+      "properties": {
+        "value": { "type": "string", "minLength": 1, "description": "The value exactly as it appears in the data." },
+        "definition": { "type": "string", "minLength": 1, "description": "What the value means in play, in plain sentences." },
+        "strategicValue": { "type": "string", "minLength": 1, "description": "What a collector, player or the sorter decides with it." },
+        "source": { "type": "string", "minLength": 1, "description": "Where the meaning comes from: a full URL, a rules digest section, or card text." },
+        "inScope": { "type": "boolean", "description": "True when the value appears in the delivered LLM package scope: cards with a printing in Jump to Lightspeed or later (JTL, LOF, SEC, LAW, ASH, HMW and their Weekly Play sets). For aspect, trait, keyword, type, arena and token the test is card-level (any printing of a card that has an in-scope printing). For expansion, variant and rarity it is printing-level (the value appears on a printing that is itself in an in-scope set)." }
+      }
+    }
+  }
+}
