@@ -1,0 +1,956 @@
+{
+ "designer": {
+  "base": {
+   "dependent": "baseHp",
+   "intercept": {
+    "b": 30.09756098,
+    "se": 0.09779155,
+    "support": 69
+   },
+   "n": 69,
+   "r2": 0.46812182,
+   "terms": {
+    "hasAbility": {
+     "b": -2.70470383,
+     "se": 0.41317301,
+     "support": 28
+    }
+   }
+  },
+  "event": {
+   "dependent": "cost",
+   "intercept": {
+    "b": 2.79310677,
+    "se": 0.21887901,
+    "support": 258
+   },
+   "n": 258,
+   "r2": 0.29926846,
+   "terms": {
+    "aspects": {
+     "b": 0.57027368,
+     "se": 0.2452366,
+     "support": 74
+    },
+    "fx:bounce": {
+     "b": 0.31428373,
+     "se": 0.39429022,
+     "support": 14
+    },
+    "fx:cost_reduction": {
+     "b": 1.86642822,
+     "se": 0.81049671,
+     "support": 16
+    },
+    "fx:damage": {
+     "b": 0.00955248,
+     "se": 0.09077211,
+     "support": 52
+    },
+    "fx:defeat": {
+     "b": 0.90879339,
+     "se": 0.36806496,
+     "support": 34
+    },
+    "fx:draw": {
+     "b": -0.13881322,
+     "se": 0.12698337,
+     "support": 20
+    },
+    "fx:exhaust": {
+     "b": -0.93989919,
+     "se": 0.24450787,
+     "support": 21
+    },
+    "fx:extra_attack": {
+     "b": -1.35428708,
+     "se": 0.21937209,
+     "support": 28
+    },
+    "fx:grant_keyword": {
+     "b": -0.41790213,
+     "se": 0.32148915,
+     "support": 14
+    },
+    "fx:heal": {
+     "b": -0.15096376,
+     "se": 0.10980458,
+     "support": 12
+    },
+    "fx:play_extra": {
+     "b": -2.26668553,
+     "se": 0.50667515,
+     "support": 20
+    },
+    "fx:ready": {
+     "b": 0.44701404,
+     "se": 0.3796108,
+     "support": 13
+    },
+    "fx:restriction": {
+     "b": -0.73659241,
+     "se": 0.50550089,
+     "support": 11
+    },
+    "fx:search": {
+     "b": -0.15296813,
+     "se": 0.05384298,
+     "support": 10
+    },
+    "fx:stat_mod": {
+     "b": -0.00617455,
+     "se": 0.22129608,
+     "support": 30
+    },
+    "tok:Experience": {
+     "b": -0.4330927,
+     "se": 0.26511844,
+     "support": 13
+    },
+    "tok:Shield": {
+     "b": 0.00260678,
+     "se": 0.35327855,
+     "support": 10
+    },
+    "tokenUnit": {
+     "b": 0.16157535,
+     "se": 0.06427937,
+     "support": 26
+    }
+   }
+  },
+  "fittedPowerHpRatio": 1.11623084,
+  "hpWeight": 1,
+  "leader": {
+   "dependent": "leaderUnitStats",
+   "intercept": {
+    "b": 2.08507387,
+    "se": 1.26343544,
+    "support": 108
+   },
+   "n": 108,
+   "r2": 0.56563031,
+   "terms": {
+    "cost": {
+     "b": 1.37001189,
+     "se": 0.22989489,
+     "support": 108
+    },
+    "space": {
+     "b": -0.41518085,
+     "se": 0.82062605,
+     "support": 1
+    }
+   }
+  },
+  "powerWeight": 1.17,
+  "statPointsPerResource": 1.99329868,
+  "unit": {
+   "dependent": "statSurplus",
+   "intercept": {
+    "b": -0.60853244,
+    "se": 0.15574533,
+    "support": 1044
+   },
+   "n": 1044,
+   "r2": 0.44513361,
+   "terms": {
+    "aspects": {
+     "b": 0.26279264,
+     "se": 0.0842501,
+     "support": 563
+    },
+    "credit": {
+     "b": 0.06929112,
+     "se": 0.36007364,
+     "support": 18
+    },
+    "fx:bounce": {
+     "b": -0.17779957,
+     "se": 0.46287646,
+     "support": 18
+    },
+    "fx:cost_reduction": {
+     "b": -0.29484333,
+     "se": 0.31555304,
+     "support": 45
+    },
+    "fx:damage": {
+     "b": -0.0912007,
+     "se": 0.08297603,
+     "support": 119
+    },
+    "fx:damage_base": {
+     "b": 0.03941575,
+     "se": 0.12999201,
+     "support": 30
+    },
+    "fx:defeat": {
+     "b": -0.27499874,
+     "se": 0.35936796,
+     "support": 47
+    },
+    "fx:draw": {
+     "b": 0.16729617,
+     "se": 0.20123602,
+     "support": 45
+    },
+    "fx:exhaust": {
+     "b": -0.06541069,
+     "se": 0.21155279,
+     "support": 31
+    },
+    "fx:extra_attack": {
+     "b": -0.03998883,
+     "se": 0.35653409,
+     "support": 17
+    },
+    "fx:grant_keyword": {
+     "b": 0.495447,
+     "se": 0.17180039,
+     "support": 95
+    },
+    "fx:heal": {
+     "b": 0.08924822,
+     "se": 0.09397922,
+     "support": 36
+    },
+    "fx:play_extra": {
+     "b": -0.48676173,
+     "se": 0.45625934,
+     "support": 15
+    },
+    "fx:ready": {
+     "b": -0.68618184,
+     "se": 0.33674343,
+     "support": 39
+    },
+    "fx:restriction": {
+     "b": 0.98680188,
+     "se": 0.50352748,
+     "support": 24
+    },
+    "fx:search": {
+     "b": -0.1314587,
+     "se": 0.11424846,
+     "support": 20
+    },
+    "fx:stat_debuff": {
+     "b": 0.11003855,
+     "se": 0.29697574,
+     "support": 31
+    },
+    "fx:stat_mod": {
+     "b": -0.22184251,
+     "se": 0.17394662,
+     "support": 84
+    },
+    "kw:Ambush": {
+     "b": -1.51357856,
+     "se": 0.19091876,
+     "support": 53
+    },
+    "kw:Grit": {
+     "b": -1.28863725,
+     "se": 0.21272756,
+     "support": 29
+    },
+    "kw:Hidden": {
+     "b": -0.40784718,
+     "se": 0.18218357,
+     "support": 56
+    },
+    "kw:Overwhelm": {
+     "b": -0.04904154,
+     "se": 0.20574463,
+     "support": 52
+    },
+    "kw:Piloting": {
+     "b": -0.43650407,
+     "se": 0.27419223,
+     "support": 38
+    },
+    "kw:Plot": {
+     "b": -1.36400203,
+     "se": 0.22362649,
+     "support": 20
+    },
+    "kw:Raid": {
+     "b": -0.04144136,
+     "se": 0.1515808,
+     "support": 52
+    },
+    "kw:Restore": {
+     "b": -0.54379892,
+     "se": 0.16169065,
+     "support": 58
+    },
+    "kw:Saboteur": {
+     "b": -0.02134731,
+     "se": 0.17686623,
+     "support": 38
+    },
+    "kw:Sentinel": {
+     "b": -1.08623937,
+     "se": 0.21468061,
+     "support": 61
+    },
+    "kw:Shielded": {
+     "b": -1.3945231,
+     "se": 0.17153367,
+     "support": 39
+    },
+    "kw:Support": {
+     "b": -1.30314611,
+     "se": 0.2120814,
+     "support": 25
+    },
+    "kwn:Piloting": {
+     "b": -0.28706157,
+     "se": 0.18854914,
+     "support": 27
+    },
+    "kwn:Raid": {
+     "b": -1.04547522,
+     "se": 0.09331448,
+     "support": 28
+    },
+    "kwn:Restore": {
+     "b": -0.64781531,
+     "se": 0.28045603,
+     "support": 24
+    },
+    "line": {
+     "b": -0.62841,
+     "se": 0.30411469,
+     "support": 784
+    },
+    "set:ASH": {
+     "b": 0.2768653,
+     "se": 0.17358726,
+     "support": 179
+    },
+    "set:HMW": {
+     "b": 0.15302158,
+     "se": 0.17482114,
+     "support": 180
+    },
+    "set:LAW": {
+     "b": -0.34995304,
+     "se": 0.17932834,
+     "support": 181
+    },
+    "set:LOF": {
+     "b": 0.0069742,
+     "se": 0.15916339,
+     "support": 166
+    },
+    "set:SEC": {
+     "b": -0.08239635,
+     "se": 0.16398211,
+     "support": 171
+    },
+    "t:action": {
+     "b": 0.20721587,
+     "se": 0.36322754,
+     "support": 24
+    },
+    "t:attackEnd": {
+     "b": -0.8017843,
+     "se": 0.4702424,
+     "support": 20
+    },
+    "t:constant": {
+     "b": -0.21992498,
+     "se": 0.32337703,
+     "support": 182
+    },
+    "t:onAttack": {
+     "b": 0.15651398,
+     "se": 0.3219206,
+     "support": 119
+    },
+    "t:other": {
+     "b": 0.09478264,
+     "se": 0.44898134,
+     "support": 24
+    },
+    "t:reactive": {
+     "b": -0.0696383,
+     "se": 0.35150521,
+     "support": 57
+    },
+    "t:whenDefeated": {
+     "b": 0.08034971,
+     "se": 0.3445964,
+     "support": 71
+    },
+    "t:whenPlayed": {
+     "b": -0.79155329,
+     "se": 0.32142939,
+     "support": 333
+    },
+    "tok:Advantage": {
+     "b": -0.24113041,
+     "se": 0.09776193,
+     "support": 25
+    },
+    "tok:Experience": {
+     "b": -0.58343523,
+     "se": 0.25076905,
+     "support": 51
+    },
+    "tok:Shield": {
+     "b": -0.37126634,
+     "se": 0.37093447,
+     "support": 28
+    },
+    "tok:Weakness": {
+     "b": -0.54212165,
+     "se": 0.4197231,
+     "support": 15
+    },
+    "tokenUnit": {
+     "b": -0.34941631,
+     "se": 0.09088232,
+     "support": 42
+    },
+    "unique": {
+     "b": -1.20474119,
+     "se": 0.11350863,
+     "support": 499
+    }
+   }
+  },
+  "upgrade": {
+   "dependent": "cost",
+   "intercept": {
+    "b": 1.52298147,
+    "se": 0.21942509,
+    "support": 110
+   },
+   "n": 110,
+   "r2": 0.24674164,
+   "terms": {
+    "aspects": {
+     "b": 0.14133811,
+     "se": 0.1920074,
+     "support": 51
+    },
+    "fx:damage": {
+     "b": 0.24698919,
+     "se": 0.14553125,
+     "support": 14
+    },
+    "fx:grant_keyword": {
+     "b": -0.31928111,
+     "se": 0.29850372,
+     "support": 17
+    },
+    "kw:Fortify": {
+     "b": 0.07882877,
+     "se": 0.34446354,
+     "support": 15
+    },
+    "t:constant": {
+     "b": 0.39290182,
+     "se": 0.29020177,
+     "support": 30
+    },
+    "t:onAttack": {
+     "b": -0.46818583,
+     "se": 0.27028669,
+     "support": 13
+    },
+    "t:other": {
+     "b": 0.41992511,
+     "se": 0.42645282,
+     "support": 10
+    },
+    "t:reactive": {
+     "b": -0.16700419,
+     "se": 0.39419037,
+     "support": 9
+    },
+    "t:whenPlayed": {
+     "b": 0.13885406,
+     "se": 0.22416231,
+     "support": 30
+    },
+    "unique": {
+     "b": -0.17240832,
+     "se": 0.23537708,
+     "support": 19
+    },
+    "upgradeStats": {
+     "b": 0.2006951,
+     "se": 0.05352418,
+     "support": 78
+    }
+   }
+  }
+ },
+ "play": {
+  "cost": {
+   "applied": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": -0.42831294,
+    "6": -0.86013764,
+    "7": -0.87122175
+   },
+   "appliedFrom": 5,
+   "fitted": {
+    "1": {
+     "b": -0.42684832,
+     "se": 0.22093433,
+     "support": 153
+    },
+    "3": {
+     "b": -0.2357263,
+     "se": 0.1914839,
+     "support": 239
+    },
+    "4": {
+     "b": -0.19283311,
+     "se": 0.21059941,
+     "support": 164
+    },
+    "5": {
+     "b": -0.42831294,
+     "se": 0.2215737,
+     "support": 133
+    },
+    "6": {
+     "b": -0.86013764,
+     "se": 0.25623427,
+     "support": 93
+    },
+    "7": {
+     "b": -0.87122175,
+     "se": 0.29137888,
+     "support": 96
+    }
+   }
+  },
+  "games": 275851,
+  "heldOutSpearman": [
+   {
+    "baseline": 0.12074079,
+    "full": 0.22421553,
+    "heldOut": "JTL",
+    "n": 231
+   },
+   {
+    "baseline": 0.21112478,
+    "full": 0.4573056,
+    "heldOut": "LOF",
+    "n": 234
+   },
+   {
+    "baseline": 0.1721385,
+    "full": 0.2600343,
+    "heldOut": "SEC",
+    "n": 238
+   },
+   {
+    "baseline": 0.00529994,
+    "full": 0.3483855,
+    "heldOut": "LAW",
+    "n": 233
+   },
+   {
+    "baseline": 0.29367096,
+    "full": 0.53822081,
+    "heldOut": "ASH",
+    "n": 238
+   }
+  ],
+  "n": 1174,
+  "perStatPoint": 0.19920375,
+  "r2": 0.28184535,
+  "terms": {
+   "credit": {
+    "b": -0.20392218,
+    "se": 0.27770043,
+    "support": 23
+   },
+   "fx:attach": {
+    "b": -0.76771205,
+    "se": 0.88974797,
+    "support": 7
+   },
+   "fx:blank": {
+    "b": 0.58231579,
+    "se": 0.71788702,
+    "support": 8
+   },
+   "fx:bounce": {
+    "b": 0.23963786,
+    "se": 0.45744431,
+    "support": 30
+   },
+   "fx:capture": {
+    "b": 0.70480959,
+    "se": 0.75276538,
+    "support": 11
+   },
+   "fx:copy_ability": {
+    "b": -0.3340485,
+    "se": 0.63413367,
+    "support": 5
+   },
+   "fx:cost_reduction": {
+    "b": 0.12746376,
+    "se": 0.3808348,
+    "support": 54
+   },
+   "fx:damage": {
+    "b": 0.23907576,
+    "se": 0.08622732,
+    "support": 152
+   },
+   "fx:damage_base": {
+    "b": 0.04697842,
+    "se": 0.16688089,
+    "support": 32
+   },
+   "fx:defeat": {
+    "b": 1.20394744,
+    "se": 0.31446435,
+    "support": 69
+   },
+   "fx:discard_opponent": {
+    "b": 1.48530327,
+    "se": 0.49905133,
+    "support": 16
+   },
+   "fx:discard_self": {
+    "b": -0.12387043,
+    "se": 0.60245814,
+    "support": 13
+   },
+   "fx:draw": {
+    "b": 0.01217778,
+    "se": 0.2080051,
+    "support": 57
+   },
+   "fx:exhaust": {
+    "b": -0.00311272,
+    "se": 0.37893083,
+    "support": 50
+   },
+   "fx:extra_attack": {
+    "b": 1.09869196,
+    "se": 0.4280377,
+    "support": 38
+   },
+   "fx:gain_force": {
+    "b": 0.83373131,
+    "se": 0.77983933,
+    "support": 10
+   },
+   "fx:grant_keyword": {
+    "b": -0.01582343,
+    "se": 0.30240008,
+    "support": 96
+   },
+   "fx:heal": {
+    "b": 0.22637323,
+    "se": 0.14017147,
+    "support": 40
+   },
+   "fx:indirect_damage": {
+    "b": 0.57460695,
+    "se": 0.14270032,
+    "support": 15
+   },
+   "fx:look": {
+    "b": 0.24925894,
+    "se": 0.34385221,
+    "support": 22
+   },
+   "fx:mill": {
+    "b": -0.66656104,
+    "se": 0.63284542,
+    "support": 12
+   },
+   "fx:play_extra": {
+    "b": -0.25191092,
+    "se": 0.46432195,
+    "support": 30
+   },
+   "fx:prevent_damage": {
+    "b": 0.82466967,
+    "se": 0.67051463,
+    "support": 11
+   },
+   "fx:ramp": {
+    "b": 0.47218099,
+    "se": 0.74917299,
+    "support": 13
+   },
+   "fx:ready": {
+    "b": 0.47485623,
+    "se": 0.33239044,
+    "support": 39
+   },
+   "fx:ready_resource": {
+    "b": -0.72816185,
+    "se": 1.47642152,
+    "support": 5
+   },
+   "fx:recursion": {
+    "b": -0.51395735,
+    "se": 0.48853552,
+    "support": 8
+   },
+   "fx:remove_keyword": {
+    "b": 0.37908392,
+    "se": 1.12118673,
+    "support": 7
+   },
+   "fx:restriction": {
+    "b": -0.54469592,
+    "se": 0.404115,
+    "support": 34
+   },
+   "fx:search": {
+    "b": 0.07991286,
+    "se": 0.10277497,
+    "support": 30
+   },
+   "fx:self_defeat": {
+    "b": 0.86905362,
+    "se": 0.703233,
+    "support": 8
+   },
+   "fx:self_exhaust": {
+    "b": 0.27917098,
+    "se": 0.75717728,
+    "support": 8
+   },
+   "fx:stat_debuff": {
+    "b": 0.99686502,
+    "se": 0.4302064,
+    "support": 39
+   },
+   "fx:stat_mod": {
+    "b": -0.17025548,
+    "se": 0.23246345,
+    "support": 100
+   },
+   "fx:take_control": {
+    "b": 1.44129048,
+    "se": 0.49150752,
+    "support": 17
+   },
+   "fx:tuck": {
+    "b": 0.69980263,
+    "se": 0.78829858,
+    "support": 7
+   },
+   "hpSurplus": {
+    "b": 0.12677235,
+    "se": 0.07567788,
+    "support": 864
+   },
+   "kw:Ambush": {
+    "b": 1.88684124,
+    "se": 0.26293959,
+    "support": 46
+   },
+   "kw:Grit": {
+    "b": -0.02276086,
+    "se": 0.38245101,
+    "support": 21
+   },
+   "kw:Hidden": {
+    "b": -0.20063038,
+    "se": 0.3009838,
+    "support": 47
+   },
+   "kw:Overwhelm": {
+    "b": -0.2407643,
+    "se": 0.2955898,
+    "support": 42
+   },
+   "kw:Piloting": {
+    "b": -0.01057344,
+    "se": 0.54048299,
+    "support": 38
+   },
+   "kw:Plot": {
+    "b": 1.20228063,
+    "se": 0.42034269,
+    "support": 29
+   },
+   "kw:Raid": {
+    "b": 1.318485,
+    "se": 0.37447758,
+    "support": 33
+   },
+   "kw:Restore": {
+    "b": 0.54196676,
+    "se": 0.36700337,
+    "support": 44
+   },
+   "kw:Saboteur": {
+    "b": 0.58996995,
+    "se": 0.32420097,
+    "support": 32
+   },
+   "kw:Sentinel": {
+    "b": 1.34803336,
+    "se": 0.28349941,
+    "support": 54
+   },
+   "kw:Shielded": {
+    "b": 1.72441331,
+    "se": 0.37659343,
+    "support": 34
+   },
+   "kw:Support": {
+    "b": 0.72857588,
+    "se": 0.42761466,
+    "support": 25
+   },
+   "kwn:Piloting": {
+    "b": -0.08987876,
+    "se": 0.47630694,
+    "support": 27
+   },
+   "kwn:Raid": {
+    "b": -0.06726469,
+    "se": 0.31384922,
+    "support": 16
+   },
+   "kwn:Restore": {
+    "b": 0.24997508,
+    "se": 0.3726279,
+    "support": 18
+   },
+   "powerSurplus": {
+    "b": 0.27163514,
+    "se": 0.08002536,
+    "support": 864
+   },
+   "space": {
+    "b": 0.48371348,
+    "se": 0.17366824,
+    "support": 261
+   },
+   "t:action": {
+    "b": -0.48816498,
+    "se": 0.41828769,
+    "support": 26
+   },
+   "t:attackEnd": {
+    "b": -0.05044076,
+    "se": 0.41513928,
+    "support": 22
+   },
+   "t:constant": {
+    "b": 0.29729396,
+    "se": 0.2642551,
+    "support": 165
+   },
+   "t:onAttack": {
+    "b": 0.38743918,
+    "se": 0.29719171,
+    "support": 123
+   },
+   "t:other": {
+    "b": 0.81607618,
+    "se": 0.41978968,
+    "support": 29
+   },
+   "t:reactive": {
+    "b": 0.95001425,
+    "se": 0.29900702,
+    "support": 50
+   },
+   "t:whenDefeated": {
+    "b": 0.80743424,
+    "se": 0.33450662,
+    "support": 72
+   },
+   "t:whenPlayed": {
+    "b": 0.71603608,
+    "se": 0.24246581,
+    "support": 286
+   },
+   "tok:Advantage": {
+    "b": 0.06434956,
+    "se": 0.15378114,
+    "support": 34
+   },
+   "tok:Experience": {
+    "b": -0.10791567,
+    "se": 0.20112663,
+    "support": 64
+   },
+   "tok:Shield": {
+    "b": -0.31887431,
+    "se": 0.29854874,
+    "support": 34
+   },
+   "tokenUnit": {
+    "b": 0.01856193,
+    "se": 0.06502036,
+    "support": 57
+   },
+   "type:Event": {
+    "b": 0.13363681,
+    "se": 0.30822542,
+    "support": 227
+   },
+   "type:Upgrade": {
+    "b": -0.94748444,
+    "se": 0.47281597,
+    "support": 83
+   },
+   "unique": {
+    "b": 1.40734541,
+    "se": 0.17944198,
+    "support": 429
+   },
+   "upgradeStats": {
+    "b": 0.43422994,
+    "se": 0.13401012,
+    "support": 66
+   }
+  },
+  "window": "w29-55"
+ },
+ "rubricVersion": "2026-10-16.1",
+ "schemaVersion": 1,
+ "source": {
+  "cardsToonSha256": "b144603ace83a9a846eff960c582903de05b7f2a67bf78e56dc39c8aa674ef5a",
+  "featuresJsonSha256": "ce7df430393bfa0841854d39572e1f1ec69411fe54b274cb5b54bcad96d5a4e1",
+  "featuresModuleSha256": "7577ccbceb05ea9332db80fd61b951ccbe527176f68738995ebad9f1ae97972d",
+  "featuresReplayInputHash": "dbee595105f919cddeb70f45d224820d5c5b14d6b57af1904027a6fd7b443796",
+  "rubricDoc": "docs/research/swu-card-value-rubric.md",
+  "scriptSha256": "bb983de095e71997d35e6e1d35efad70ad2a21ab3e728852232db5523d46000e",
+  "swuStatsCapture": "data/pinned/gt/swustats-premier-w29-55.json",
+  "swuStatsCaptureSha256": "757e28024d28152e864a56074193a67be6462ac9242e6f1729811506ca5d6cc2"
+ },
+ "vanilla": {
+  "hp": {
+   "cost": 0.97405164,
+   "intercept": 0.98490596,
+   "space": 0.2704176,
+   "unique": 1.57996493
+  },
+  "n": 50,
+  "power": {
+   "cost": 0.98744023,
+   "intercept": 0.7568218,
+   "space": -0.54724259,
+   "unique": 0.10791096
+  }
+ }
+}
