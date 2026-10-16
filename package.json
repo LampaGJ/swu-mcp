@@ -21,6 +21,7 @@
     "fit:coefficients": "tsx scripts/fit-coefficients.ts",
     "score": "tsx scripts/score.ts",
     "rules:fetch": "tsx scripts/rules-fetch.ts",
+    "rules:check": "tsx scripts/rules-check.ts",
     "market": "tsx scripts/market.ts"
   },
   "dependencies": {
