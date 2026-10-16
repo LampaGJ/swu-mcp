@@ -1,0 +1,290 @@
+{
+ "schemaVersion": 1,
+ "tableVersion": 2,
+ "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row.",
+ "rows": [
+  {
+   "id": "sac-outlet-when-defeated",
+   "offers": {
+    "offers:defeat-friendly-unit": 1,
+    "offers:defeat-any-unit": 0.6
+   },
+   "wants": {
+    "wants:self-defeated": 1,
+    "wants:friendly-unit-defeated": 1
+   },
+   "strength": 1,
+   "reason": "A sacrifice outlet turns your own unit's When Defeated (or a defeat-watcher) into a triggered payoff on demand.",
+   "example": [
+    "Always Two",
+    "Desperate Commando"
+   ]
+  },
+  {
+   "id": "self-defeat-defeat-watcher",
+   "offers": {
+    "offers:defeat-self": 1
+   },
+   "wants": {
+    "wants:friendly-unit-defeated": 1
+   },
+   "strength": 0.8,
+   "reason": "A unit that defeats itself feeds cards that trigger when a friendly unit is defeated.",
+   "example": null
+  },
+  {
+   "id": "when-defeated-doubler",
+   "offers": {
+    "offers:has-when-defeated": 1
+   },
+   "wants": {
+    "wants:when-defeated-cards": 1
+   },
+   "strength": 0.9,
+   "reason": "Cards that repeat or reward When Defeated abilities need units that carry one.",
+   "example": [
+    "Desperate Commando",
+    "Grand Admiral Thrawn"
+   ]
+  },
+  {
+   "id": "ping-own-damage-payoff",
+   "offers": {
+    "offers:damage-friendly-unit": 1,
+    "offers:damage-any-unit": 0.5
+   },
+   "wants": {
+    "wants:self-damaged": 1,
+    "wants:damaged-units": 0.7,
+    "wants:damage-friendly": 1
+   },
+   "strength": 0.9,
+   "reason": "Damaging your own unit switches on Grit, 'while damaged' and damage-taken triggers.",
+   "example": [
+    "Death Trooper",
+    "The Elite Squad"
+   ]
+  },
+  {
+   "id": "fodder-for-outlet",
+   "offers": {
+    "offers:create-token-units": 1
+   },
+   "wants": {
+    "wants:sac-fodder": 1,
+    "wants:tokens": 0.7,
+    "wants:wide-board": 0.5,
+    "wants:units-entering": 0.7
+   },
+   "strength": 0.8,
+   "reason": "Token units are cheap bodies to sacrifice, count, or trigger enter-play payoffs.",
+   "example": null
+  },
+  {
+   "id": "upgrade-stacking",
+   "offers": {
+    "offers:give-experience": 1,
+    "offers:give-shield": 0.8,
+    "offers:upgrade-to-attach": 1
+   },
+   "wants": {
+    "wants:upgrades-attached": 1
+   },
+   "strength": 0.8,
+   "reason": "Experience, Shield tokens and upgrades all count as upgrades for 'upgraded' payoffs.",
+   "example": null
+  },
+  {
+   "id": "ready-reuse",
+   "offers": {
+    "offers:ready-unit": 1
+   },
+   "wants": {
+    "wants:ready-unit": 1,
+    "wants:extra-attacks": 0.5
+   },
+   "strength": 0.9,
+   "reason": "Readying a unit re-uses its Action [Exhaust] or lets an On Attack unit swing again.",
+   "example": null
+  },
+  {
+   "id": "extra-attack-on-attack",
+   "offers": {
+    "offers:extra-attack": 1
+   },
+   "wants": {
+    "wants:extra-attacks": 0.5
+   },
+   "strength": 0.7,
+   "reason": "An extra attack fires On Attack and attack-end triggers an extra time.",
+   "example": null
+  },
+  {
+   "id": "bounce-replay",
+   "offers": {
+    "offers:return-own-to-hand": 1,
+    "offers:return-any-to-hand": 0.6
+   },
+   "wants": {
+    "wants:replay-when-played": 0.7
+   },
+   "strength": 0.8,
+   "reason": "Returning your own unit to hand lets you replay its When Played ability.",
+   "example": null
+  },
+  {
+   "id": "fill-discard",
+   "offers": {
+    "offers:self-mill": 1,
+    "offers:discard-own": 1,
+    "offers:defeat-friendly-unit": 0.4
+   },
+   "wants": {
+    "wants:cards-in-discard": 1
+   },
+   "strength": 0.7,
+   "reason": "Putting cards in your own discard pile feeds play-from-discard and recursion.",
+   "example": null
+  },
+  {
+   "id": "discard-payoff",
+   "offers": {
+    "offers:discard-own": 1
+   },
+   "wants": {
+    "wants:discard-own": 1
+   },
+   "strength": 0.8,
+   "reason": "Discard outlets trigger 'when you discard' payoffs.",
+   "example": null
+  },
+  {
+   "id": "draw-hand-size",
+   "offers": {
+    "offers:draw": 1,
+    "offers:tutor": 0.6
+   },
+   "wants": {
+    "wants:cards-in-hand": 0.6,
+    "wants:draw": 1
+   },
+   "strength": 0.6,
+   "reason": "Card draw fills the hand that hand-size and draw-trigger cards count.",
+   "example": null
+  },
+  {
+   "id": "ramp-threshold",
+   "offers": {
+    "offers:resource-ramp": 1
+   },
+   "wants": {
+    "wants:resource-ramp": 1
+   },
+   "strength": 0.7,
+   "reason": "Extra resources reach 'control N or more resources' thresholds sooner.",
+   "example": null
+  },
+  {
+   "id": "exhaust-own-payoff",
+   "offers": {
+    "offers:exhaust-own": 1
+   },
+   "wants": {
+    "wants:exhausted-own": 1
+   },
+   "strength": 0.7,
+   "reason": "Exhausting your own unit switches on 'while exhausted' and exhausted-unit payoffs.",
+   "example": null
+  },
+  {
+   "id": "credits",
+   "offers": {
+    "offers:credit-tokens": 1
+   },
+   "wants": {
+    "wants:credit-tokens": 1
+   },
+   "strength": 0.9,
+   "reason": "Credit producers fund Credit spenders.",
+   "example": null
+  },
+  {
+   "id": "the-force",
+   "offers": {
+    "offers:the-force": 1
+   },
+   "wants": {
+    "wants:the-force": 1
+   },
+   "strength": 0.9,
+   "reason": "Cards that grant the Force fuel 'use the Force' costs and 'while the Force is with you'.",
+   "example": null
+  },
+  {
+   "id": "initiative",
+   "offers": {
+    "offers:initiative": 1
+   },
+   "wants": {
+    "wants:initiative": 1
+   },
+   "strength": 0.6,
+   "reason": "Taking the initiative switches on initiative-gated abilities.",
+   "example": null
+  },
+  {
+   "id": "heal-payoff",
+   "offers": {
+    "offers:heal": 1
+   },
+   "wants": {
+    "wants:heal": 1
+   },
+   "strength": 0.7,
+   "reason": "Healing triggers 'when damage is healed' payoffs.",
+   "example": null
+  },
+  {
+   "id": "enter-play-triggers",
+   "offers": {
+    "offers:cheat-play": 0.7,
+    "offers:units-entering": 1,
+    "offers:play-from-discard": 0.7,
+    "offers:play-from-resources": 0.7
+   },
+   "wants": {
+    "wants:units-entering": 0.7
+   },
+   "strength": 0.7,
+   "reason": "Extra unit plays trigger 'when you play a unit' payoffs.",
+   "example": null
+  },
+  {
+   "id": "removal-defeat-watcher",
+   "offers": {
+    "offers:defeat-enemy-unit": 1,
+    "offers:defeat-any-unit": 0.8,
+    "offers:damage-enemy-unit": 0.4
+   },
+   "wants": {
+    "wants:enemy-unit-defeated": 1
+   },
+   "strength": 0.5,
+   "reason": "Removal triggers 'when an enemy unit is defeated' payoffs.",
+   "example": null
+  },
+  {
+   "id": "trait-reference",
+   "family": "trait",
+   "offers": {
+    "offers:is-trait-*": 1
+   },
+   "wants": [
+    "wants:trait-*"
+   ],
+   "strength": 0.35,
+   "reason": "A card that references a trait wants units with that trait (tribal; ranks as obvious).",
+   "example": null
+  }
+ ]
+}
