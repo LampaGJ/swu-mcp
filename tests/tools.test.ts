@@ -104,6 +104,7 @@ describe("MCP protocol", () => {
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "aspect_cover",
       "card_features",
+      "card_price",
       "card_rulings",
       "cards_by_facet",
       "compare_cards",
@@ -118,12 +119,14 @@ describe("MCP protocol", () => {
       "get_rule",
       "keyword_rules",
       "list_facet",
+      "play_stats",
       "rank_cards",
       "rules_core",
       "rules_search",
       "rules_version",
       "score_card",
       "search_cards",
+      "value_vs_price",
     ]);
     const result = await client.callTool({ name: "get_card", arguments: { cardKey: "0101030" } });
     expect(JSON.stringify(result.content)).toContain("Chopper Base");
