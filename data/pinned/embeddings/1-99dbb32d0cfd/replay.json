@@ -1,0 +1,22 @@
+{
+ "model": "nomic-embed-text",
+ "ollamaVersion": "0.32.14",
+ "ollamaDigest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+ "weightsBlobSha256": "970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6",
+ "prefix": "search_document: ",
+ "endpoint": "/api/embed",
+ "batchSize": 32,
+ "renderVersion": 1,
+ "dims": 768,
+ "count": 1609,
+ "inputHash": "99dbb32d0cfdabe730a90b00ad0f3b03f691f2508fe60e6e58e06f741a157149",
+ "inputHashes": {
+  "ability": "52f8c4fd0ef51c6b3f85f178368454be2027a64fa15f8841f8eb7940db4fc863",
+  "abstract": "629b213013e2f733edfd4b582220600a97f4d4d4c367aa21a9b8b5e230af207b",
+  "keys": "170214930830f056d9302b95f5fe52188dfeb0a1a598d6b1913feecd5963077a"
+ },
+ "outputHash": {
+  "ability.f32": "42fcf4150206b02be54be84e4bc6407ad61b7f137daa707f707e25996171891f",
+  "abstract.f32": "91df1687fb289043d911a4cb3d6cb0fc96a403a88d13332ccb532793cc61ddf4"
+ }
+}
