@@ -1,4 +1,4 @@
-import sys; sys.path.insert(0, "/Volumes/Local Files/Projects/mault-train/swu-card-data/embed/scripts")
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json, re, math, base64, numpy as np
 from collections import Counter
 from sklearn.cluster import KMeans

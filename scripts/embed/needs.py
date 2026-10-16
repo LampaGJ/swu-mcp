@@ -1,4 +1,4 @@
-import sys; sys.path.insert(0, "/Volumes/Local Files/Projects/mault-train/swu-card-data/embed/scripts")
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json, re, urllib.request, hashlib, numpy as np
 from render import S, load
 cards = load(); N = len(cards)

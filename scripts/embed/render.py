@@ -1,6 +1,6 @@
-import json, re, hashlib, sys
+import json, re, hashlib, sys, os
 RENDER_VERSION = 1
-S = "/Volumes/Local Files/Projects/mault-train/swu-card-data/embed"
+S = os.environ.get("EMBED_WORK") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tmp", "embed-work")
 def ws(s):
     return re.sub(r"\s+", " ", (s or "").replace("|", ", ")).strip() if s else ""
 def clean(s):
