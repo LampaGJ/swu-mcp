@@ -3,5 +3,8 @@ dist/
 /data/originals/
 /data/runs/
 /tmp/
+/reports/
 .env
 .DS_Store
+__pycache__/
+.venv/
