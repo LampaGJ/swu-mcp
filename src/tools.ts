@@ -2,6 +2,7 @@ import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { isFacet, splitCell, type CardRow, type CardStore } from "./data.js";
 import { INDEX_FACETS } from "./swu/llm-flatten.js";
+import { SIMILARITY_TOOLS } from "./tools/similarity.js";
 import { SYNERGY_TOOLS } from "./tools/synergy.js";
 import { MARKET_TOOLS } from "./tools/market.js";
 import { VALUE_TOOLS } from "./tools/value.js";
@@ -200,4 +201,5 @@ export const TOOLS = {
   ...VALUE_TOOLS,
   ...MARKET_TOOLS,
   ...RULES_TOOLS,
+  ...SIMILARITY_TOOLS,
 } as const;
