@@ -208,17 +208,7 @@ function findRoot(parent: Map<string, string>, serial: string): string {
   return current;
 }
 
-/**
- * @displayName SWU logical card builder
- * @strategicPurpose Folds every printing of one game card (foil, hyperspace,
- * showcase, promo, reprint) into one row, because a model needs each card once.
- * @tacticalObjective Groups printings connected by variantOf/reprintOf, picks
- * the canonical printing (the one linking to no other; else earliest set by
- * release order, then lowest serialCode), keeps its values, and lists gameplay
- * fields where another printing disagrees after whitespace and list-order
- * normalisation. Output is sorted by cardKey.
- */
-export function buildLogicalCards(printings: FlatRow[], prices: ReadonlyMap<string, PriceCells>): LogicalCards {
+function groupPrintings(printings: FlatRow[]): FlatRow[][] {
   const bySerial = new Map<string, FlatRow>();
   for (const row of printings) {
     const serial = cellString(row, "serialCode");
@@ -240,19 +230,47 @@ export function buildLogicalCards(printings: FlatRow[], prices: ReadonlyMap<stri
     const root = findRoot(parent, serial);
     components.set(root, [...(components.get(root) ?? []), row]);
   }
+  return [...components.values()];
+}
 
+function pickCanonical(members: FlatRow[]): FlatRow {
+  const unlinked = members.filter((row) => cellString(row, "variantOf") === "" && cellString(row, "reprintOf") === "");
+  const pool = unlinked.length > 0 ? unlinked : members;
+  return [...pool].sort(
+    (a, b) => releaseOrder(a) - releaseOrder(b) || compareCodePoints(cellString(a, "serialCode"), cellString(b, "serialCode")),
+  )[0];
+}
+
+/** serialCode of every printing -> cardKey of its logical card, with the same grouping buildLogicalCards uses. */
+export function printingCardKeys(printings: FlatRow[]): Map<string, string> {
+  const keys = new Map<string, string>();
+  for (const members of groupPrintings(printings)) {
+    const cardKey = cellString(pickCanonical(members), "serialCode");
+    for (const row of members) keys.set(cellString(row, "serialCode"), cardKey);
+  }
+  return keys;
+}
+
+/**
+ * @displayName SWU logical card builder
+ * @strategicPurpose Folds every printing of one game card (foil, hyperspace,
+ * showcase, promo, reprint) into one row, because a model needs each card once.
+ * @tacticalObjective Groups printings connected by variantOf/reprintOf, picks
+ * the canonical printing (the one linking to no other; else earliest set by
+ * release order, then lowest serialCode), keeps its values, and lists gameplay
+ * fields where another printing disagrees after whitespace and list-order
+ * normalisation. Output is sorted by cardKey.
+ */
+export function buildLogicalCards(printings: FlatRow[], prices: ReadonlyMap<string, PriceCells>): LogicalCards {
   const cards: FlatRow[] = [];
   const mismatches: GameplayMismatch[] = [];
   let printingsFolded = 0;
   let nonStandardCanonical = 0;
   let multiRootComponents = 0;
-  for (const members of components.values()) {
+  for (const members of groupPrintings(printings)) {
     const unlinked = members.filter((row) => cellString(row, "variantOf") === "" && cellString(row, "reprintOf") === "");
     if (unlinked.length !== 1) multiRootComponents += 1;
-    const pool = unlinked.length > 0 ? unlinked : members;
-    const canonical = [...pool].sort(
-      (a, b) => releaseOrder(a) - releaseOrder(b) || compareCodePoints(cellString(a, "serialCode"), cellString(b, "serialCode")),
-    )[0];
+    const canonical = pickCanonical(members);
     const cardKey = cellString(canonical, "serialCode");
     printingsFolded += members.length - 1;
 
