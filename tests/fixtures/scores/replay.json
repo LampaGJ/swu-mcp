@@ -1,0 +1,14 @@
+{
+ "rubricVersion": "2026-10-16.1",
+ "inputHashes": {
+  "featuresJson": "d7dd475c0b487089dfa6263029df82d9e29c8c5197ca4e7d7d7ac0d807d65d17",
+  "cardsToon": "022c44cf43d9135df0e308fc3a795c1ede1852445707beb60fa97660a9fa5f80",
+  "featuresReplayInputHash": "dbee595105f919cddeb70f45d224820d5c5b14d6b57af1904027a6fd7b443796",
+  "coefficientsFile": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "swuStatsCapture": "757e28024d28152e864a56074193a67be6462ac9242e6f1729811506ca5d6cc2"
+ },
+ "codeCommit": "fixture",
+ "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+ "scoredCards": 9,
+ "outputHash": "6fd077c10a31c36fc55db1964e7c658b137923b70196db22dcc444c4271b6af5"
+}

@@ -1,0 +1,12 @@
+{
+ "inputHash": "dbee595105f919cddeb70f45d224820d5c5b14d6b57af1904027a6fd7b443796",
+ "codeCommit": "3bef224b217bbb2d73d9c8bcb8d752a66308d63c-dirty",
+ "curatedTableSha256": "da9e264639b4c1bd32e26b7f0d429032fe5804a425df94fcfa3b0acacc21cb96",
+ "curatedTableVersion": 2,
+ "grammarVersion": 1,
+ "outputHashes": {
+  "coverage.json": "cdbb00b2d965fa6fadec32247c473f885fde06212a526a7bb0a4593c86609c0c",
+  "features.json": "ce7df430393bfa0841854d39572e1f1ec69411fe54b274cb5b54bcad96d5a4e1",
+  "unclassified.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+ }
+}

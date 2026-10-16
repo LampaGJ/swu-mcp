@@ -1,0 +1,504 @@
+{
+ "rubricVersion": "2026-10-16.1",
+ "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+ "cards": [
+  {
+   "cardKey": "0101030",
+   "title": "Chopper Base",
+   "subtitle": null,
+   "type": "Base",
+   "cost": null,
+   "set": "JTL",
+   "scored": true,
+   "model": "base",
+   "components": {
+    "expectedStats": 30.0976,
+    "statSurplus": -0.0976,
+    "costTerm": 0,
+    "keywordPoints": 0,
+    "effectPoints": 0,
+    "modifiers": 0,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": -0.0976,
+   "total": -0.0976,
+   "playCalibrated": null,
+   "playCalibratedNoT": null,
+   "flags": [
+    "no_play_model"
+   ],
+   "unclassifiedClauses": 0,
+   "terms": [],
+   "percentile": {
+    "total": 100,
+    "playCalibrated": null
+   }
+  },
+  {
+   "cardKey": "0101033",
+   "title": "Death Trooper",
+   "subtitle": null,
+   "type": "Unit",
+   "cost": 3,
+   "set": "SEC",
+   "scored": true,
+   "model": "unit",
+   "components": {
+    "expectedStats": 7.6262,
+    "statSurplus": -1.7485,
+    "costTerm": 0,
+    "keywordPoints": 0,
+    "effectPoints": 1.7848,
+    "modifiers": 0.4281,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": 0.4644,
+   "total": 0.4644,
+   "playCalibrated": 1.362,
+   "playCalibratedNoT": 1.362,
+   "flags": [],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "fx:damage",
+     "component": "playCalibrated",
+     "value": 0.9563
+    },
+    {
+     "term": "t:whenPlayed",
+     "component": "effectPoints",
+     "value": 0.7916
+    },
+    {
+     "term": "t:whenPlayed",
+     "component": "playCalibrated",
+     "value": 0.716
+    },
+    {
+     "term": "line",
+     "component": "effectPoints",
+     "value": 0.6284
+    },
+    {
+     "term": "baseline",
+     "component": "modifiers",
+     "value": 0.6085
+    },
+    {
+     "term": "fx:damage",
+     "component": "effectPoints",
+     "value": 0.3648
+    },
+    {
+     "term": "aspects",
+     "component": "modifiers",
+     "value": -0.2628
+    },
+    {
+     "term": "powerSurplus",
+     "component": "playCalibrated",
+     "value": -0.1953
+    },
+    {
+     "term": "hpSurplus",
+     "component": "playCalibrated",
+     "value": -0.115
+    },
+    {
+     "term": "set:SEC",
+     "component": "modifiers",
+     "value": 0.0824
+    }
+   ],
+   "percentile": {
+    "total": 100,
+    "playCalibrated": 66.7
+   }
+  },
+  {
+   "cardKey": "0101070",
+   "title": "Devotion",
+   "subtitle": null,
+   "type": "Upgrade",
+   "cost": 2,
+   "set": "HMW",
+   "scored": true,
+   "model": "upgrade",
+   "components": {
+    "expectedStats": null,
+    "statSurplus": 0.8001,
+    "costTerm": -0.9508,
+    "keywordPoints": 0,
+    "effectPoints": 0.1467,
+    "modifiers": 0,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": -0.004,
+   "total": -0.004,
+   "playCalibrated": 0.2024,
+   "playCalibratedNoT": 0.2024,
+   "flags": [
+    "set_not_in_play_fit"
+   ],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "type:Upgrade",
+     "component": "playCalibrated",
+     "value": -0.9475
+    },
+    {
+     "term": "upgradeStats",
+     "component": "playCalibrated",
+     "value": 0.8685
+    },
+    {
+     "term": "upgradeStats",
+     "component": "statSurplus",
+     "value": 0.8001
+    },
+    {
+     "term": "t:constant",
+     "component": "effectPoints",
+     "value": 0.7832
+    },
+    {
+     "term": "fx:grant_keyword",
+     "component": "effectPoints",
+     "value": -0.6364
+    },
+    {
+     "term": "t:constant",
+     "component": "playCalibrated",
+     "value": 0.2973
+    },
+    {
+     "term": "fx:grant_keyword",
+     "component": "playCalibrated",
+     "value": -0.0158
+    }
+   ],
+   "percentile": {
+    "total": 100,
+    "playCalibrated": 100
+   }
+  },
+  {
+   "cardKey": "0101074",
+   "title": "Repair",
+   "subtitle": null,
+   "type": "Event",
+   "cost": 1,
+   "set": "JTL",
+   "scored": true,
+   "model": "event",
+   "components": {
+    "expectedStats": null,
+    "statSurplus": 0,
+    "costTerm": 3.5742,
+    "keywordPoints": 0,
+    "effectPoints": -0.9027,
+    "modifiers": 0,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": 2.6714,
+   "total": 2.6714,
+   "playCalibrated": 0.8128,
+   "playCalibratedNoT": 0.8128,
+   "flags": [],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "fx:heal",
+     "component": "effectPoints",
+     "value": -0.9027
+    },
+    {
+     "term": "fx:heal",
+     "component": "playCalibrated",
+     "value": 0.6791
+    },
+    {
+     "term": "type:Event",
+     "component": "playCalibrated",
+     "value": 0.1336
+    }
+   ],
+   "percentile": {
+    "total": 100,
+    "playCalibrated": 100
+   }
+  },
+  {
+   "cardKey": "0101165",
+   "title": "Occupier Siege Tank",
+   "subtitle": null,
+   "type": "Unit",
+   "cost": 5,
+   "set": "JTL",
+   "scored": true,
+   "model": "unit",
+   "components": {
+    "expectedStats": 11.5492,
+    "statSurplus": -2.6672,
+    "costTerm": 0,
+    "keywordPoints": 1.2886,
+    "effectPoints": 0,
+    "modifiers": 0.6085,
+    "playabilityT": -0.4283,
+    "playabilityTStat": -1.5768
+   },
+   "efficiency": -0.77,
+   "total": -2.3468,
+   "playCalibrated": -0.8748,
+   "playCalibratedNoT": -0.4465,
+   "flags": [],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "kw:Grit",
+     "component": "keywordPoints",
+     "value": 1.2886
+    },
+    {
+     "term": "baseline",
+     "component": "modifiers",
+     "value": 0.6085
+    },
+    {
+     "term": "hpSurplus",
+     "component": "playCalibrated",
+     "value": -0.2352
+    },
+    {
+     "term": "powerSurplus",
+     "component": "playCalibrated",
+     "value": -0.1885
+    },
+    {
+     "term": "kw:Grit",
+     "component": "playCalibrated",
+     "value": -0.0228
+    }
+   ],
+   "percentile": {
+    "total": 33.3,
+    "playCalibrated": 33.3
+   }
+  },
+  {
+   "cardKey": "04010001",
+   "title": "Asajj Ventress",
+   "subtitle": "I Work Alone",
+   "type": "Leader",
+   "cost": 6,
+   "set": "JTL",
+   "scored": true,
+   "model": "leader",
+   "components": {
+    "expectedStats": 10.3051,
+    "statSurplus": -0.3051,
+    "costTerm": 0,
+    "keywordPoints": 0,
+    "effectPoints": 0,
+    "modifiers": 0,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": -0.3051,
+   "total": -0.3051,
+   "playCalibrated": null,
+   "playCalibratedNoT": null,
+   "flags": [
+    "leader_effects_unpriced",
+    "no_play_model"
+   ],
+   "unclassifiedClauses": 0,
+   "terms": [],
+   "percentile": {
+    "total": 50,
+    "playCalibrated": null
+   }
+  },
+  {
+   "cardKey": "04010087",
+   "title": "TIE Ambush Squadron",
+   "subtitle": "",
+   "type": "Unit",
+   "cost": 4,
+   "set": "JTL",
+   "scored": true,
+   "model": "unit",
+   "components": {
+    "expectedStats": 9.3109,
+    "statSurplus": -4.678,
+    "costTerm": 0,
+    "keywordPoints": 1.5136,
+    "effectPoints": 2.1188,
+    "modifiers": 0.3457,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": -0.6998,
+   "total": -0.6998,
+   "playCalibrated": 2.2644,
+   "playCalibratedNoT": 2.2644,
+   "flags": [],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "kw:Ambush",
+     "component": "playCalibrated",
+     "value": 1.8868
+    },
+    {
+     "term": "kw:Ambush",
+     "component": "keywordPoints",
+     "value": 1.5136
+    },
+    {
+     "term": "t:whenPlayed",
+     "component": "effectPoints",
+     "value": 0.7916
+    },
+    {
+     "term": "t:whenPlayed",
+     "component": "playCalibrated",
+     "value": 0.716
+    },
+    {
+     "term": "tokenUnit",
+     "component": "effectPoints",
+     "value": 0.6988
+    },
+    {
+     "term": "line",
+     "component": "effectPoints",
+     "value": 0.6284
+    },
+    {
+     "term": "baseline",
+     "component": "modifiers",
+     "value": 0.6085
+    },
+    {
+     "term": "powerSurplus",
+     "component": "playCalibrated",
+     "value": -0.5866
+    },
+    {
+     "term": "space",
+     "component": "playCalibrated",
+     "value": 0.4837
+    },
+    {
+     "term": "hpSurplus",
+     "component": "playCalibrated",
+     "value": -0.2728
+    },
+    {
+     "term": "aspects",
+     "component": "modifiers",
+     "value": -0.2628
+    },
+    {
+     "term": "tokenUnit",
+     "component": "playCalibrated",
+     "value": 0.0371
+    }
+   ],
+   "percentile": {
+    "total": 66.7,
+    "playCalibrated": 100
+   }
+  },
+  {
+   "cardKey": "09010004",
+   "title": "Grand Moff Tarkin",
+   "subtitle": "Tyrant of the Outer Rim",
+   "type": "Leader",
+   "cost": 9,
+   "set": "HMW",
+   "scored": true,
+   "model": "leader",
+   "components": {
+    "expectedStats": 14,
+    "statSurplus": 0,
+    "costTerm": 0,
+    "keywordPoints": 0,
+    "effectPoints": 0,
+    "modifiers": 0,
+    "playabilityT": 0,
+    "playabilityTStat": 0
+   },
+   "efficiency": 0,
+   "total": 0,
+   "playCalibrated": null,
+   "playCalibratedNoT": null,
+   "flags": [
+    "set_not_in_play_fit",
+    "leader_effects_unpriced",
+    "no_play_model"
+   ],
+   "unclassifiedClauses": 0,
+   "terms": [],
+   "percentile": {
+    "total": 100,
+    "playCalibrated": null
+   }
+  },
+  {
+   "cardKey": "09010218",
+   "title": "New Tactics",
+   "subtitle": "",
+   "type": "Event",
+   "cost": 5,
+   "set": "HMW",
+   "scored": true,
+   "model": "event",
+   "components": {
+    "expectedStats": null,
+    "statSurplus": 0,
+    "costTerm": -4.399,
+    "keywordPoints": 0,
+    "effectPoints": 0,
+    "modifiers": 1.1367,
+    "playabilityT": -0.4283,
+    "playabilityTStat": -1.5768
+   },
+   "efficiency": -3.2623,
+   "total": -4.8391,
+   "playCalibrated": 0.4051,
+   "playCalibratedNoT": 0.8334,
+   "flags": [
+    "set_not_in_play_fit"
+   ],
+   "unclassifiedClauses": 0,
+   "terms": [
+    {
+     "term": "aspects",
+     "component": "modifiers",
+     "value": 1.1367
+    },
+    {
+     "term": "fx:tuck",
+     "component": "playCalibrated",
+     "value": 0.6998
+    },
+    {
+     "term": "type:Event",
+     "component": "playCalibrated",
+     "value": 0.1336
+    }
+   ],
+   "percentile": {
+    "total": 50,
+    "playCalibrated": 50
+   }
+  }
+ ]
+}

@@ -18,7 +18,8 @@
     "export:package": "tsx scripts/export-swu-data-package.ts",
     "card-features": "tsx scripts/card-features.ts",
     "synergy": "tsx scripts/synergy.ts",
-    "fit:coefficients": "tsx scripts/fit-coefficients.ts"
+    "fit:coefficients": "tsx scripts/fit-coefficients.ts",
+    "score": "tsx scripts/score.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
