@@ -4,6 +4,7 @@ import { isFacet, splitCell, type CardRow, type CardStore } from "./data.js";
 import { INDEX_FACETS } from "./swu/llm-flatten.js";
 import { SYNERGY_TOOLS } from "./tools/synergy.js";
 import { VALUE_TOOLS } from "./tools/value.js";
+import { RULES_TOOLS } from "./tools/rules.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -196,4 +197,5 @@ export const TOOLS = {
   },
   ...SYNERGY_TOOLS,
   ...VALUE_TOOLS,
+  ...RULES_TOOLS,
 } as const;

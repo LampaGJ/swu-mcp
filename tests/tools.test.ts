@@ -104,6 +104,7 @@ describe("MCP protocol", () => {
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "aspect_cover",
       "card_features",
+      "card_rulings",
       "cards_by_facet",
       "compare_cards",
       "data_version",
@@ -114,8 +115,13 @@ describe("MCP protocol", () => {
       "find_trios",
       "fungible_substitutes",
       "get_card",
+      "get_rule",
+      "keyword_rules",
       "list_facet",
       "rank_cards",
+      "rules_core",
+      "rules_search",
+      "rules_version",
       "score_card",
       "search_cards",
     ]);
