@@ -128,6 +128,7 @@ describe("MCP protocol", () => {
       "rules_version",
       "score_card",
       "search_cards",
+      "similar_cards",
       "value_vs_price",
     ]);
     const result = await client.callTool({ name: "get_card", arguments: { cardKey: "0101030" } });
