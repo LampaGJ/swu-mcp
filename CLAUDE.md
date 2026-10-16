@@ -10,7 +10,9 @@ pnpm typecheck
 pnpm test
 pnpm lint
 pnpm mcp                      # stdio MCP server (src/server.ts)
-pnpm export:package [--originals <dir>] [--out <dir>]   # build the LLM data package from mault's originals
+pnpm build:data [--originals <dir>] [--date <d>]   # rebuild every data product in order (export:package, card-features, score, synergy, market, rules:fetch, similarity) and write data/runs/<date>/build.json
+pnpm package:zip [--data <run dir>] [--out <dir>] [--no-zip]   # assemble the lean reader zip (llm/, optional/, audit/, docs/) from a built run
+pnpm export:package [--originals <dir>] [--runs <dir>] [--date <d>]   # build llm/ from mault's originals (no zip)
 pnpm rules:fetch [--url <pdf>] [--pdf <file>] [--originals <dir>]   # Comprehensive Rules PDF -> data/runs/<date>/rules (sections, card rulings, keyword links, core primer)
 pnpm rules:check [--data <dir>] [--verify-hash]   # is the pinned CR still the newest? exit 0 current, 10 newer, 2 error
 pnpm market [--data <dir>] [--originals <dir>] [--captures <dir>]   # prices.json, play.json -> data/runs/<date>/market
@@ -23,7 +25,7 @@ The system disk is full: work only under `/Volumes/Local Files/Projects`, and ru
 ## Layout
 
 - `src/` library and MCP server. `src/swu/` holds the flatten pipeline (ported from mault) and package README builder.
-- `scripts/export-swu-data-package.ts` builds the package. `scripts/curation/`, `scripts/rubric/`, `scripts/embed/` are research scripts (Node `.mjs`, Python).
+- `scripts/export-swu-data-package.ts` builds llm/; `scripts/build-data.ts` runs every step; `scripts/package-zip.ts` and `src/package/` build the reader zip. `scripts/curation/`, `scripts/rubric/`, `scripts/embed/` are research scripts (Node `.mjs`, Python).
 - `src/rules/` parses the Comprehensive Rules; `src/tools/rules.ts` serves them. `data/rules-core.json` is the ordered core-rule list (boosts search, feeds the primer). The CR PDF lives in git-ignored `data/originals/rules/<version>/`.
 - `data/curated-rules.json` is the curated ability table (pinned input). `data/runs/<date>/` is generated output (git-ignored). `data/pinned/` holds small pinned captures.
 - `docs/` field guide, JSON Schemas, glossary, value rubric. Copied from mault; edit here from now on.
