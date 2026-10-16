@@ -22,7 +22,9 @@
     "score": "tsx scripts/score.ts",
     "rules:fetch": "tsx scripts/rules-fetch.ts",
     "rules:check": "tsx scripts/rules-check.ts",
-    "market": "tsx scripts/market.ts"
+    "market": "tsx scripts/market.ts",
+    "embed:capture": "tsx scripts/embed-capture.ts",
+    "similarity": "tsx scripts/similarity.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
