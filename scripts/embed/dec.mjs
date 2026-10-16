@@ -1,0 +1,1 @@
+import {decode} from "/Volumes/Local Files/Projects/mault-train/swu-card-data/tokfmt/deps/node_modules/@toon-format/toon/dist/index.mjs";import fs from "fs";const d=decode(fs.readFileSync(process.argv[2],"utf8"));fs.writeFileSync(process.argv[3],JSON.stringify(d.cards));console.log(d.cards.length)

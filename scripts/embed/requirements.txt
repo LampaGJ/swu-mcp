@@ -1,0 +1,9 @@
+# Versions read from /Volumes/Local Files/Projects/mault-train/swu-card-embed/venv (Python 3.12.13) on 2026-10-16.
+# Limited to what scripts/embed/*.py import. mlx and mlx-lm (imported by embed.py for the Qwen3 run) are not installed in
+# that venv, so their versions are unknown and left unpinned.
+numpy==2.5.4
+rank-bm25==0.2.2
+scikit-learn==1.9.1
+sentence-transformers==6.1.0
+# mlx
+# mlx-lm
