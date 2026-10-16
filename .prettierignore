@@ -1,0 +1,10 @@
+docs
+pnpm-lock.yaml
+data
+tmp
+reports
+dist
+scripts/lib/progress.mjs
+scripts/curation
+scripts/rubric
+scripts/embed

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Star Wars: Unlimited card data, scoring and synergy tools served over MCP",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@10.27.0",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
