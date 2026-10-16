@@ -1,0 +1,452 @@
+COMPREHENSIVE RULES
+      7/8/26 – V 8.0
+    INTRODUCTION
+   This document is the comprehensive rulebook for Star Wars™: Unlimited, providing the most detailed explanation of the rules interactions found in the game.
+   Its focus is on completeness rather than accessibility, and it is intended for judges and those who seek to understand the game on a fundamental level. To
+   learn the game, we recommend reading the Quickstart rules, then referring to information on our website, StarWarsUnlimited.com, for further elaboration.
+   The rules in this document are organized by category, each having a unique number for ease of citation (for example, 1.1.2.). The document also features an
+   Index/Glossary of important terms and phrases at the end with hyperlinks for quick reference. Red text marks additions/changes since the previous version.
+   A red entry number/letter marks a new entry or an entry numbering/lettering change from the previous version.
+
+
+
+    CONTENTS
+
+     1.     GAME CONCEPTS                                                  4          4.     ZONES                                                           19
+             1.    GENERAL                                                 4                  1.     GENERAL                                                 19
+             2.    DECK                                                    4                  2.     BASE ZONE                                               19
+             3.    GOLDEN RULES                                            4                  3.     GROUND ARENA                                            19
+             4.    PLAYERS, ACTIVE PLAYER                                  4                  4.     SPACE ARENA                                             19
+             5.    CARDS                                                   4                  5.     RESOURCE ZONE                                           20
+             6.    ABILITIES                                               6                  6.     DECK                                                    20
+             7.    RESOURCES                                               6                  7.     HAND                                                    20
+             8.    COST                                                    6                  8.     DISCARD PILE                                            20
+             9.    DAMAGE                                                  7                  9.     IN-PLAY AND OUT-OF-PLAY                                 20
+            10.    POWER                                                   8                 10.     PLAY AREA                                               21
+             11.   HP                                                      8                  11.    SET ASIDE/BEING IN NO ZONE                              21
+            12.    COUNTERS                                                9
+                                                                                      5.     GAME STRUCTURE                                                  22
+            13.    DRAWING A CARD                                          9
+                                                                                              1.     GENERAL                                                 22
+            14.    DISCARDING A CARD                                       9
+                                                                                              2.     STARTING THE GAME AND SETUP                             22
+            15.    ACTIONS                                                10
+                                                                                              3.     ROUND                                                   22
+            16.    GAME STATE                                             10
+                                                                                              4.     ACTION PHASE                                            22
+            17.    OPEN AND HIDDEN INFORMATION                            11
+                                                                                              5.     REGROUP PHASE                                           23
+            18.    DETERMINING RESPONSIBILITY                             11
+                                                                                              6.     ENDING THE GAME                                         23
+     2.     CARD ANATOMY                                                  13
+                                                                                      6.     ACTION TIMING AND CLARIFICATIONS                                24
+             1.    GENERAL                                                13
+                                                                                              1.     GENERAL                                                 24
+             2.    NAME                                                   13
+                                                                                              2.     PLAY A CARD                                             24
+             3.    SUBTITLE                                               13
+                                                                                              3.     ATTACK WITH A UNIT                                      25
+             4.    CARD TYPE                                              13
+                                                                                              4.     USE AN ACTION ABILITY                                   27
+             5.    ARENA TYPE                                             13
+                                                                                      7.     ABILITIES AND EFFECTS                                           29
+             6.    COST                                                   13
+                                                                                              1.     GENERAL                                                 29
+             7.    ASPECTS                                                13
+                                                                                              2.     ACTION ABILITIES                                        29
+             8.    POWER                                                  13
+                                                                                              3.     CONSTANT ABILITIES                                      39
+             9.    POWER MODIFIER                                         13
+                                                                                              4.     EVENT ABILITIES                                         30
+            10.    HP                                                     13
+                                                                                              5.     KEYWORD ABILITIES                                       30
+             11.   HP MODIFIER                                            14
+                                                                                              6.     TRIGGERED ABILITIES                                     34
+            12.    TRAITS                                                 14
+                                                                                              7.     EFFECTS                                                 36
+            13.    TEXT BOX                                               14
+            14.    CREDIT LINE                                            14          8.     ADDITIONAL RULES                                                39
+                                                                                              1.     ASPECT PENALTIES                                        39
+     3.     CARD TYPES                                                    15
+                                                                                              2.     ATTRIBUTE                                               39
+             1.    GENERAL                                                15
+                                                                                              3.     “CAN” AND “CAN’T”                                       39
+             2.    BASE                                                   15
+                                                                                              4.     CHOOSE                                                  39
+             3.    EVENT                                                  15
+                                                                                              5.     COPY                                                    40
+             4.    LEADER                                                 15
+                                                                                              6.     EMPTY DECK                                              40
+             5.    UNIT                                                   16
+                                                                                              7.     ENTERS PLAY                                             40
+             6.    UPGRADE                                                16
+                                                                                              8.     FIRST, SECOND, ETC.                                     40
+             7.    TOKEN                                                  17
+
+
+
+CONTENTS                                                          CONTENTS          GLOSSARY                                             StarWarsUnlimited.com    2
+           9.     “IF YOU DO”                        41
+           10.    IGNORE                             41
+           11.    LAST KNOWN INFORMATION             41
+           12.    LEAVES PLAY                        41
+           13.    LOOK AT                            41
+           14.    LOSE, LOSES                        42
+           15.    MODIFIERS                          42
+           16.    “MUST”                             43
+           17.    “NAME”                             43
+           18.    OTHER, ANOTHER, DIFFERENT          43
+           19.    PLAY RESTRICTIONS                  43
+           20.    PREVENT (DAMAGE)                   44
+           21.    PRINTED                            44
+           22.    RANDOM                             44
+           23.    REFERENTIAL ABILITIES              44
+           24.    RETURN                             44
+           25.    REVEAL                             44
+           26.    SEARCH                             45
+           27.    TAKE CONTROL                       45
+           28.    “THEN”                             46
+           29.    UNIQUE, UNIQUE ICON ()            46
+           30.    UP TO X                            46
+           31.    YOU                                46
+           32.    “YOU MAY”                          46
+           33.    CAPTURE                            47
+           34.    “FOR EACH”                         47
+           35.    INDIRECT DAMAGE                    47
+           36.    MOVE                               48
+           37.    THE FORCE                          48
+           38.    DISCLOSE                           48
+
+     9.    TWO-PLAYER CONSTRUCTED FORMATS            49
+            1.    GENERAL                            49
+           2.     PREMIER & ETERNAL FORMATS          49
+           3.     TRILOGY FORMAT                     49
+
+     10.   LIMITED FORMATS                           51
+            1.    GENERAL                            51
+           2.     SEALED FORMAT                      51
+           3.     DRAFT FORMAT                       51
+
+     11.   PLAYING WITH MORE THAN TWO PLAYERS        53
+            1.    GENERAL                            53
+           2.     GAMEPLAY OVERVIEW                  53
+           3.     PLAYER ELIMINATION                 53
+           4.     ADDITIONAL CLARIFICATIONS          53
+
+     12.   TWIN SUNS (MULTIPLAYER FORMAT)            55
+            1.    GENERAL                            55
+           2.     DECKBUILDING                       55
+           3.     TWO LEADERS                        55
+           4.     SETUP                              55
+           5.     COUNTERS                           55
+           6.     ACTION PHASE                       56
+            7.    ENDING THE GAME                    56
+
+
+
+
+CONTENTS                                        CONTENTS   GLOSSARY   StarWarsUnlimited.com   3
+      1.        GAME CONCEPTS
+
+           1.    GENERAL
+                 1.     The rules in this Comprehensive Rules document apply to any game of Star Wars™: Unlimited, unless otherwise specified. The game
+                        is most commonly played between two players, so the language and examples used outside of Sections 11 and 12 assume that two
+                        people are playing the game. Multiplayer games use most of the same rules as two-player games.
+
+                 2.     To play a game, players need one deck each, an initiative counter, damage counters, and token cards matching any types created by
+                        their decks. Counters and tokens may be substituted with other objects, such as dice.
+
+
+
+        2.       DECK
+                 1.     There is no maximum number of cards a deck can have. The minimum number of cards in a deck varies by format.
+
+                 2.     Leaders and bases are considered part of a deck for deckbuilding, but are not considered part of a deck during gameplay.
+
+                 3.     Tokens are not part of a player’s deck and do not count toward deck size.
+
+                 4.     Players may include cards from any aspect in their deck, even cards with aspect icons that don’t match the ones provided by their
+                        leader and/or base (though playing these cards may incur the aspect penalty).
+
+
+
+           3.    GOLDEN RULES
+                 1.     Card and Rulebook Precedence: If the text of this Comprehensive Rules document directly contradicts the text of the Star Wars:
+                        Unlimited Quickstart rules, the text of the Comprehensive Rules takes precedence. If the text of a card directly contradicts the text
+                        of the Comprehensive Rules, the text of the card takes precedence.
+
+                 2.     Do as Much as You Can: While resolving a card ability, resolve as much of the ability as possible, and ignore any parts of the ability
+                        that cannot be resolved. (Note that you may choose to resolve abilities involving hidden information as though you have fewer
+                        options than you really do.)
+
+                 3.     Restrictions Override Permissions: In case of a conflict between a restrictive ability and a permissive ability, the restriction takes
+                        precedence. For instance, an ability that says a unit “can’t attack bases” would override an ability that allowed a unit to “attack an
+                        enemy base.”
+
+
+
+        4.       PLAYERS, ACTIVE PLAYER
+                 1.     A player is a person participating in the game.
+
+                 2.     A player’s opponent is the other person playing the game.
+
+                 3.     The active player is the player that is currently taking an action. Players take turns being the active player during the action phase.
+
+                 4.     The first active player in a game is the player that started the game with the initiative counter. Once that player takes their first
+                        action, their opponent becomes the active player and takes an action, then the first player becomes the active player again and takes
+                        an action, and so on. Players continue taking turns this way until each player has passed consecutively, which ends the action phase.
+
+                 5.     If no player is currently taking an action, such as during the regroup phase, the player with the initiative counter is considered to be
+                        the active player.
+
+
+
+           5.    CARDS
+                 1.     General
+
+                        a. Cards are used to play Star Wars: Unlimited. There are 6 different types of cards: bases, events, leaders, units, upgrades, and
+                            tokens. See 3. Card Types
+
+
+                        b. A card placed in a player’s resource zone is referred to as a “resource.” A resource is not a card type, but a game object that a card
+                            becomes when placed into the resource zone. Resources are used to pay the costs of cards and certain abilities. See 1.7. Resources
+
+                 2.     Ownership and Control
+
+                        a. A player is the “owner” of a card that started the game in their deck. This includes the deck’s leader, base, and any events, units, and
+                            upgrades that started the game in that deck. A player is also the owner of any non-upgrade token they create.
+
+
+
+
+1. GAME CONCEPTS                                                     CONTENTS          GLOSSARY                                               StarWarsUnlimited.com   4
+                    b. A player is the “controller” of a card they put into play. This includes their base, their leader, resources in their resource zone, and
+                        any events, units, and non-token upgrades they play or put into play. A player keeps control of a card until either that card leaves
+                        play or their opponent takes control of it.
+
+
+                    c. While a player controls a card, they may resolve action abilities on the card, attack with the card if it is a unit, and affect it with
+                        abilities that affect “friendly” cards. A player also must resolve any triggered abilities on a card they control.
+
+
+                    d. If an ability instructs a player to “take control” of a card, that player will become that card’s controller, and remain so until either
+                        that card leaves play or their opponent takes control of that card. The unit maintains its ready or exhausted status, all damage
+                        counters on it, and all upgrades attached to it. Its new controller orients it in its arena to face them.
+
+
+                    e. A player may play an upgrade onto an enemy unit. That player is still the controller of that upgrade, and remains so until otherwise
+                        specified. If that upgrade gives abilities to the attached unit, the unit’s controller resolves those abilities.
+
+
+                    f. A player owns and controls any token upgrades attached to units they control.
+
+               3.   Friendly and Enemy
+
+                    a. A card that a player controls is considered “friendly” for that player.
+
+                    b. A card that a player’s opponent controls is considered “enemy” for that player.
+
+               4.   Ready and Exhausted
+
+                    a. A card is considered “ready” when it is turned upright. A card is considered “exhausted” when it is turned sideways (rotated 90
+                        degrees).
+
+
+                    b. Each non-leader unit and resource enters play exhausted. Upgrades are neither ready nor exhausted.
+
+                    c. Exhausted cards ready through certain card abilities, or during the regroup phase each round. See 5.5. Regroup Phase
+
+                    d. A ready unit must exhaust when starting an attack, or when paying the cost of an action ability on it that uses an  icon. An
+                        exhausted unit cannot attack or be used to pay costs that require it to exhaust.
+
+
+                    e. A ready card can be chosen for a readying effect, but the chosen card does not change orientation and is not considered to have
+                        been readied for the purpose of “If you do” effects. An exhausted card can be chosen for an exhausting effect, but the chosen card
+                        does not change orientation and is not considered to have been exhausted for the purpose of “If you do” effects.
+
+
+                    f. When paying a card’s cost or the cost of an action ability that uses a  icon, the player must exhaust ready resources they control
+                        equal to the number indicated by the cost. An exhausted resource cannot be used to pay a cost.
+
+               5.   Defeating Cards
+
+                    a. Cards that are in-play, including bases, tokens, units, upgrades, and resources, can be defeated.
+
+                    b. A base is defeated when it has damage on it equal to or greater than its HP. When a base is defeated, its owner loses the game.
+
+                    c. A unit is defeated when it has damage on it equal to or greater than its HP, or when an ability defeats it directly. When a non-leader
+                        unit is defeated, it is moved to its owner’s discard pile. The unit’s abilities are no longer considered active (though some delayed
+                        effects may still be active). The unit loses all abilities and modifiers it was given by effects while in play. See 3.4. for more on Leader
+                        Units
+
+
+                    d. An upgrade is defeated when the unit it is attached to leaves play, or when an ability defeats it directly. When a non-leader upgrade
+                        is defeated, it is moved to its owner’s discard pile. The upgrade’s abilities are no longer considered active (though some delayed
+                        effects may still be active). See 3.4. for more on Leader Upgrades
+
+
+                    e. A token is defeated in the same manner as its non-token card type. When a token is defeated, it is set aside out-of-play.
+
+                    f. A resource is defeated when an ability defeats it. When a resource is defeated, it is moved to its owner’s discard pile faceup. When
+                        a resource is defeated, it does not trigger any “When Defeated” abilities on the facedown side of the card.
+
+
+
+
+1. GAME CONCEPTS                                                 CONTENTS           GLOSSARY                                                 StarWarsUnlimited.com    5
+               6.     Aspects
+
+                      a. Aspects are colored icons on a card that represent different philosophies or motivations that card embodies. The six aspects are:
+                          Vigilance , Command , Aggression 
+                                                                         , Cunning  , Villainy , and Heroism  .
+
+                      b. A deck’s leader and base provide their aspect icons to that deck. Although a player can include units, events, and upgrades of any
+                          aspect in their deck, if they play a card with aspect icons beyond those provided by the deck’s leader and/or base, they will incur
+                          aspect penalties: for each icon beyond those provided, the player must pay 2 additional resources in order to play that card. See
+                          8.1. Aspect Penalties
+
+
+                      c. Cards with no aspect icons, or “neutral” cards, are depicted with a gray border. Neutral cards do not incur the aspect penalties
+                          when played, as they have no aspect icons.
+
+
+
+        6.     ABILITIES
+               1.     An ability is special text on a card that explains how the card can affect the game. A card may have one or more abilities printed in its
+                      text box or gain an ability from other cards in play. If a card has multiple different abilities, each ability begins on a new line.
+
+               2.     When a player resolves an ability, they resolve as much of the ability as possible, and ignore any part of the ability that cannot be
+                      resolved.
+
+               3.     An ability that is able to be resolved must resolve, unless the ability includes the phrase “you may.” An ability that includes “you may”
+                      gives the player resolving the ability the option of whether or not to resolve that ability.
+
+                          For example, a unit with an ability that reads, “On Attack: You may deal 1 damage to another friendly unit and ready it,” allows the
+                          player to choose whether or not to deal 1 damage when the unit attacks.
+
+               4.     There are 5 types of abilities in the game: action abilities, constant abilities, event abilities, keyword abilities, and triggered abilities.
+                      See 7. Abilities and Effects
+
+
+
+        7.     RESOURCES
+               1.     A resource is a game object used to pay the costs of cards and certain abilities. A card becomes a resource when placed into a
+                      player’s resource zone.
+
+               2.     When paying a card’s cost or the cost of an ability that uses a  icon, a player must exhaust ready resources they control equal to
+                                                                                     
+                      the number indicated by the cost. An exhausted resource cannot be used to pay a cost.
+
+               3.     Resources are placed facedown and remain facedown while in a player’s resource zone. A player may view facedown resources they
+                      control at any time.
+
+               4.     The number of ready and exhausted resources in a player’s resource zone is public information. The order of those resources does
+                      not need to be maintained; a player may rearrange their resources at any time up to the point of a specific resource being chosen
+                      as part of an action. Before rearranging, a player must announce to their opponent their intent to rearrange resources. A player may
+                      change which of their resources are ready or exhausted during a rearrangement, so long as the number of ready and exhausted
+                      resources is the same after a rearrangement as prior to that rearrangement. A player may rearrange their resources after another
+                      player declares their intent to interact with those resources, but not after that player chooses specific resources to interact with.
+
+               5.     If a player controls cards in their resource zone that are owned by an opponent, the ownership of those cards is open information.
+
+               6.     Players can choose to add a card from their hand to their resource zone during each regroup phase. See 5.5. Regroup Phase
+
+               7.     If an ability instructs a player to resource a card, the card is placed facedown and exhausted in that player’s resource zone unless
+                      otherwise specified. The card is not considered “played” and no “When Played” abilities trigger.
+
+               8.     While a card is in play as a resource, it is considered a blank resource card. Its facedown side is considered out-of-play, and its
+                      printed attributes—including its name, aspects, traits, and abilities—are inactive and do not affect the game unless explicitly stated
+                      in the ability or the associated rules text (as with Smuggle).
+
+                          For example, a player can control one copy of a unique card faceup in an arena, as well as another copy of that unique card
+                          facedown as a resource, without needing to defeat one of those copies as per the rules of uniqueness.
+
+
+
+        8.     COST
+               1.     A card’s “cost” is the number of resources that must be exhausted in order to play that card. This is indicated with a numeral in a
+                      yellow box located in the top left corner of the card.
+
+
+
+
+1. GAME CONCEPTS                                                          CONTENTS              GLOSSARY                                        StarWarsUnlimited.com   6
+      2.        CARD ANATOMY
+
+           1.    GENERAL
+                  1.    The parts of a card include a card’s name, subtitle, card type, arena type, cost, aspect(s), power, power modifier, HP, HP modifier,
+                        trait(s), text box, and credit line. These parts, with the exception of the credit line, are also known as a card’s “attributes.” Each Star
+                        Wars: Unlimited card has at least a name, card type, and credit line.
+
+
+
+        2.       NAME
+                  1.    A card’s name is located at the top of the card (an upgrade’s name is also reprinted on the bottom of the card). Each card has a name.
+
+                 2.     Regardless of its printed language, a card’s name is considered to be the English version of its name.
+
+                 3.     Some cards have a unique icon () before their names, indicating the card is unique. A unique card depicts an iconic Star Wars
+                        character, vehicle, or object. The unique icon is considered to be an attribute of the card. See 8.30. Unique, Unique Icon
+
+
+
+           3.    SUBTITLE
+                  1.    If a card has a subtitle, it will be located directly under its name. Subtitles have no mechanical function, but serve as a reminder to
+                        distinguish mechanically-distinct unique cards that share the same name.
+
+
+
+        4.       CARD TYPE
+                  1.    A card’s type is located in the top left of the card. A card can be one or more of these types: base, event, leader, unit, upgrade, or
+                        token. Each type of card has its own associated rules. See 3. Card Types
+
+
+
+           5.    ARENA TYPE
+                  1.    A card’s arena type is located in the top right of the card and indicates which arena the card is played into (ground or space). Only
+                        units have an arena type. See 4. Zones
+
+
+
+           6.    COST
+                  1.    A card’s cost is located in the top left corner of the card and indicates how many resources must be spent to play the card. If it is a
+                        leader card, this number instead is related to deploying that leader (typically, how many resources a player must control to deploy it).
+                        Units, events, upgrades, and tokens have a cost. See 1.8. Cost
+
+
+
+           7.    ASPECTS
+                  1.    If a card belongs to one or more aspects, those aspects are indicated by aspect icons located on one side of the card. Bases and
+                        both sides of leaders have aspect icons on the right, indicating that they provide those aspects to their deck. Units, events, and
+                        upgrades have aspect icons on the left, indicating that they incur those aspect penalties to play if not provided by a player’s leader or
+                        base. Each card has between 0 and 2 aspect icons. See 1.5.6. Aspects
+
+                 2.     Aspects categorize cards into different themes and play styles. There are six aspects: Vigilance  , Command  , Aggression  ,
+                                                                                                                                                   
+                        Cunning  , Villainy  , and Heroism  .
+                                                           
+                 3.     A card without any aspect icons does not belong to any aspect, and is considered a “neutral” card.
+
+
+
+           8.    POWER
+                  1.    A card’s power is located on the left side of the card and indicates how much damage the card deals in combat. Only units have
+                        power. See 1.10. Power
+
+
+
+           9.    POWER MODIFIER
+                  1.    A card’s power modifier is located on the left side of the card, and modifies the power of the unit it is attached to by the specified
+                        number. Only upgrades and PILOT units have a power modifier.
+
+
+
+        10.      HP
+                  1.    A card’s HP indicates how much damage the card can be dealt before it is defeated. Units and bases have HP; a unit’s HP is located on
+                        the right side of the card, and a base’s HP is located in the top left corner of the card. See 1.11. HP
+
+
+
+
+2. CARD ANATOMY                                                       CONTENTS          GLOSSARY                                                 StarWarsUnlimited.com   13
+

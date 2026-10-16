@@ -1,0 +1,230 @@
+{
+ "data": [
+  {
+   "attributes": {
+    "serialCode": "0101010",
+    "title": "Darth Vader",
+    "subtitle": "Dark Lord of the Sith",
+    "variantOf": {
+     "data": null
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0101033",
+    "title": "Death Trooper",
+    "subtitle": null,
+    "variantOf": {
+     "data": null
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "If Death Trooper is the only friendly unit in play, it must be chosen by its “When Played” ability.\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>If Death Trooper is the only friendly unit in play, it must be chosen by its “When Played” ability.</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0101115",
+    "title": "Agent Kallus",
+    "subtitle": "Seeking the Rebels",
+    "variantOf": {
+     "data": null
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "If Agent Kallus is defeated simultaneously with other unique units, you still may draw a card.\nAmbush is an ability that triggers at the same time as “When Played” abilities. If there is no enemy unit that can be attacked, the unit does not ready.\n(ERRATA) Templating update: “Unique” becomes “<uq>”.\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>If Agent Kallus is defeated simultaneously with other unique units, you still may draw a card.</td></tr><tr><td>3/1/2024</td><td>Ambush is an ability that triggers at the same time as “When Played” abilities. If there is no enemy unit that can be attacked, the unit does not ready.</td></tr><tr><td>07/20/2026</td><td>(ERRATA) Templating update: “Unique” becomes “<img src=\"https://ffg-prod-uploads.s3.amazonaws.com//icon_unique_white_a08b37532f.png\" alt=\"icon_cunning.png\">”.</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0101198",
+    "title": "Han Solo",
+    "subtitle": "Reluctant Hero",
+    "variantOf": {
+     "data": null
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "“Combat damage” is only the damage dealt during the “deal combat damage” step of an attack.\nAmbush is an ability that triggers at the same time as “When Played” abilities. If there is no enemy unit that can be attacked, the unit does not ready.\nIf the defender is defeated by Han Solo’s combat damage, it does not deal combat damage back. If it survives and has Grit, it deals bonus damage from Grit when dealing combat damage back.\n(ERRATA) Templating update: “Defender” becomes “defending unit”.\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>“Combat damage” is only the damage dealt during the “deal combat damage” step of an attack.</td></tr><tr><td>3/1/2024</td><td>Ambush is an ability that triggers at the same time as “When Played” abilities. If there is no enemy unit that can be attacked, the unit does not ready.</td></tr><tr><td>3/1/2024</td><td>If the defender is defeated by Han Solo’s combat damage, it does not deal combat damage back. If it survives and has Grit, it deals bonus damage from Grit when dealing combat damage back.</td></tr><tr><td>07/20/2026</td><td>(ERRATA) Templating update: “Defender” becomes “defending unit”.</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0101217",
+    "title": "Shoot First",
+    "subtitle": null,
+    "variantOf": {
+     "data": null
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "You must attack with a unit, if able. Units must be ready in order to attack.\n“Combat damage” is only the damage dealt during the “deal combat damage” step of an attack.\nIf the defender is defeated by the attacked, it does not deal combat damage back. If it survives and has Grit, it deals bonus damage from Grit when dealing combat damage back.\n(ERRATA) Templating update: “Defender” becomes “defending unit”.\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>You must attack with a unit, if able. Units must be ready in order to attack.</td></tr><tr><td>3/1/2024</td><td>“Combat damage” is only the damage dealt during the “deal combat damage” step of an attack.</td></tr><tr><td>3/1/2024</td><td>If the defender is defeated by the attacked, it does not deal combat damage back. If it survives and has Grit, it deals bonus damage from Grit when dealing combat damage back.</td></tr><tr><td>07/20/2026</td><td>(ERRATA) Templating update: “Defender” becomes “defending unit”.</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0102002",
+    "title": "Darth Vader",
+    "subtitle": "Dark Lord of the Sith",
+    "variantOf": {
+     "data": {
+      "id": 6,
+      "attributes": {
+       "title": "Darth Vader",
+       "subtitle": "Dark Lord of the Sith",
+       "cardNumber": 10,
+       "cardCount": 252,
+       "artist": "Borja Pindado",
+       "artFrontHorizontal": true,
+       "artBackHorizontal": null,
+       "hasFoil": false,
+       "cost": 7,
+       "hp": 8,
+       "power": 5,
+       "text": "Action [1 resource, exhaust]: If you played a [Villainy] card this phase, deal 1 damage to a unit and 1 damage to a base.",
+       "textStyled": "<p><strong>Action [</strong><img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_cost_1_6878a6fe98.png\" alt=\"icon_cost_1.png\"><strong>, </strong><img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_exhaust_0c450d09d4.png\" alt=\"icon_exhaust.png\"><strong>]:</strong> If you played a <img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_villainy_ea34258f27.png\" alt=\"icon_villainy.png\"> card this phase, deal 1 damage to a unit and 1 damage to a base.</p>",
+       "deployBox": "On Attack: You may deal 2 damage to a unit.",
+       "deployBoxStyled": "<p><strong>On Attack:</strong> You may deal 2 damage to a unit.</p><p>&nbsp;</p>",
+       "epicAction": "Epic Action: If you control 7 or more resources, deploy this leader. (Flip him, ready him, and move him to the ground arena.)",
+       "epicActionStyled": "<p><strong>Epic Action:</strong> If you control 7 or more resources, deploy this leader. <i>(Flip him, ready him, and move him to the ground arena.)</i></p>",
+       "linkHtml": "<a href=\"/cards?cid=6088773439\" class=\"card-tooltip\" data-card=\"6088773439\">Darth Vader</a>",
+       "cardId": "6088773439",
+       "createdAt": "2023-04-28T19:02:00.259Z",
+       "updatedAt": "2024-07-19T16:37:09.748Z",
+       "publishedAt": "2023-04-28T19:03:07.268Z",
+       "locale": "en",
+       "hyperspace": false,
+       "unique": true,
+       "showcase": false,
+       "cardUid": "6088773439",
+       "rules": "Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).\n",
+       "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).</td></tr></tbody></table></figure>\n        ",
+       "serialCode": "0101010",
+       "upgradeHp": null,
+       "upgradePower": null
+      }
+     }
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).</td></tr></tbody></table></figure>\n        "
+   }
+  },
+  {
+   "attributes": {
+    "serialCode": "0104001",
+    "title": "Darth Vader",
+    "subtitle": "Dark Lord of the Sith",
+    "variantOf": {
+     "data": {
+      "id": 6,
+      "attributes": {
+       "title": "Darth Vader",
+       "subtitle": "Dark Lord of the Sith",
+       "cardNumber": 10,
+       "cardCount": 252,
+       "artist": "Borja Pindado",
+       "artFrontHorizontal": true,
+       "artBackHorizontal": null,
+       "hasFoil": false,
+       "cost": 7,
+       "hp": 8,
+       "power": 5,
+       "text": "Action [1 resource, exhaust]: If you played a [Villainy] card this phase, deal 1 damage to a unit and 1 damage to a base.",
+       "textStyled": "<p><strong>Action [</strong><img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_cost_1_6878a6fe98.png\" alt=\"icon_cost_1.png\"><strong>, </strong><img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_exhaust_0c450d09d4.png\" alt=\"icon_exhaust.png\"><strong>]:</strong> If you played a <img src=\"https://ffg-prod-uploads.s3.amazonaws.com/icon_villainy_ea34258f27.png\" alt=\"icon_villainy.png\"> card this phase, deal 1 damage to a unit and 1 damage to a base.</p>",
+       "deployBox": "On Attack: You may deal 2 damage to a unit.",
+       "deployBoxStyled": "<p><strong>On Attack:</strong> You may deal 2 damage to a unit.</p><p>&nbsp;</p>",
+       "epicAction": "Epic Action: If you control 7 or more resources, deploy this leader. (Flip him, ready him, and move him to the ground arena.)",
+       "epicActionStyled": "<p><strong>Epic Action:</strong> If you control 7 or more resources, deploy this leader. <i>(Flip him, ready him, and move him to the ground arena.)</i></p>",
+       "linkHtml": "<a href=\"/cards?cid=6088773439\" class=\"card-tooltip\" data-card=\"6088773439\">Darth Vader</a>",
+       "cardId": "6088773439",
+       "createdAt": "2023-04-28T19:02:00.259Z",
+       "updatedAt": "2024-07-19T16:37:09.748Z",
+       "publishedAt": "2023-04-28T19:03:07.268Z",
+       "locale": "en",
+       "hyperspace": false,
+       "unique": true,
+       "showcase": false,
+       "cardUid": "6088773439",
+       "rules": "Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).\n",
+       "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).</td></tr></tbody></table></figure>\n        ",
+       "serialCode": "0101010",
+       "upgradeHp": null,
+       "upgradePower": null
+      }
+     }
+    },
+    "reprintOf": {
+     "data": null
+    },
+    "expansion": {
+     "data": {
+      "attributes": {
+       "code": "SOR"
+      }
+     }
+    },
+    "rules": "Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).\n",
+    "rulesStyled": "\n        <figure class=\"table\"><table><tbody><tr><td>3/1/2024</td><td>Vader’s leader ability still can be used as an action even if you haven’t played a Villain card this phase (but it deals no damage).</td></tr></tbody></table></figure>\n        "
+   }
+  }
+ ]
+}

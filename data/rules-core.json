@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "id": "1.3",
+      "topic": "Golden rules",
+      "why": "Precedence of card text, do as much as you can, restrictions override permissions."
+    },
+    {
+      "id": "5.3",
+      "topic": "Round structure: round",
+      "why": "A round is an action phase then a regroup phase."
+    },
+    {
+      "id": "5.4.1",
+      "topic": "Round structure: action phase",
+      "why": "Turn order and what ends the action phase."
+    },
+    {
+      "id": "5.5.1",
+      "topic": "Round structure: regroup phase",
+      "why": "Draw 2, resource 1, ready everything, then the next round."
+    },
+    {
+      "id": "1.15.5",
+      "topic": "Round structure: taking the initiative",
+      "why": "Taking the initiative is an action that ends the action phase's normal alternation and sets who goes first next round."
+    },
+    {
+      "id": "1.15.6.a",
+      "topic": "Round structure: passing",
+      "why": "Defines passing and what happens when both players pass."
+    },
+    {
+      "id": "1.7.1",
+      "topic": "Resources",
+      "why": "What a resource is and what it pays for."
+    },
+    {
+      "id": "1.7.2",
+      "topic": "Resources: paying",
+      "why": "Paying costs means exhausting ready resources."
+    },
+    {
+      "id": "1.8.1",
+      "topic": "Cost",
+      "why": "What a card's cost is."
+    },
+    {
+      "id": "1.8.2",
+      "topic": "Cost: modifiers",
+      "why": "Cost modifiers and the aspect penalty enter here."
+    },
+    {
+      "id": "8.1",
+      "topic": "Aspect penalties",
+      "why": "The +2 resource cost per uncovered aspect icon."
+    },
+    {
+      "id": "6.3",
+      "topic": "Attack with a unit",
+      "why": "The full attack timeline: declare, restrictions, begin, combat damage, end attack."
+    },
+    {
+      "id": "1.9.10",
+      "topic": "Combat damage",
+      "why": "Defines combat damage and when it is dealt."
+    },
+    {
+      "id": "3.4.4",
+      "topic": "Card types: leader epic action",
+      "why": "Epic actions and leader deployment."
+    },
+    {
+      "id": "3.5.4",
+      "topic": "Card types: unit defeat",
+      "why": "When a unit is defeated."
+    },
+    {
+      "id": "4.9.1",
+      "topic": "Zones: in play and out of play",
+      "why": "Which zones are in play."
+    },
+    {
+      "id": "8.12.1",
+      "topic": "Leaving play",
+      "why": "What leaves play means."
+    },
+    {
+      "id": "7.6.1",
+      "topic": "Triggered abilities",
+      "why": "How a triggered ability is recognised."
+    },
+    {
+      "id": "7.6.9",
+      "topic": "Triggered abilities: ordering",
+      "why": "Order of resolving several triggers."
+    },
+    {
+      "id": "7.6.10",
+      "topic": "Triggered abilities: both players",
+      "why": "Active player's triggers resolve first."
+    },
+    {
+      "id": "7.6.13",
+      "topic": "Triggered abilities: When Played",
+      "why": "When Played timing."
+    },
+    {
+      "id": "7.6.14",
+      "topic": "Triggered abilities: When Defeated",
+      "why": "When Defeated timing."
+    },
+    {
+      "id": "7.6.15",
+      "topic": "Triggered abilities: On Attack and On Defense",
+      "why": "On Attack and On Defense timing."
+    },
+    {
+      "id": "8.11.1",
+      "topic": "Last known information",
+      "why": "What the game uses when a card has left play."
+    },
+    {
+      "id": "1.9.6",
+      "topic": "Damage: unit defeat",
+      "why": "A unit with damage at or above its HP is defeated."
+    },
+    {
+      "id": "1.9.7",
+      "topic": "Damage: base defeat",
+      "why": "A base with damage at or above its HP is defeated."
+    },
+    {
+      "id": "1.5.5.c",
+      "topic": "Defeating cards",
+      "why": "How cards are defeated."
+    },
+    {
+      "id": "8.35.1",
+      "topic": "Indirect damage",
+      "why": "Indirect damage."
+    },
+    {
+      "id": "8.33.1",
+      "topic": "Capture",
+      "why": "Capture."
+    },
+    {
+      "id": "8.27.1",
+      "topic": "Take control",
+      "why": "Taking control."
+    },
+    {
+      "id": "7.5.4",
+      "topic": "Keyword abilities: stacking",
+      "why": "Keywords do not stack unless stated."
+    },
+    {
+      "id": "7.7.3.a",
+      "topic": "Effects: lasting",
+      "why": "Durations of lasting effects."
+    },
+    {
+      "id": "8.15.2",
+      "topic": "Modifiers",
+      "why": "Stacking and order of modifiers."
+    },
+    {
+      "id": "8.15.3",
+      "topic": "Modifiers",
+      "why": "Stacking and order of modifiers."
+    },
+    {
+      "id": "8.18.1",
+      "topic": "Other, another, different",
+      "why": "What other and another exclude."
+    },
+    {
+      "id": "3.6.3",
+      "topic": "Upgrades: attachment",
+      "why": "Attachment restrictions."
+    },
+    {
+      "id": "3.7.5",
+      "topic": "Tokens: Experience",
+      "why": "Experience token."
+    },
+    {
+      "id": "3.7.6",
+      "topic": "Tokens: Shield",
+      "why": "Shield token."
+    },
+    {
+      "id": "3.7.13",
+      "topic": "Tokens: Credit",
+      "why": "Credit token."
+    },
+    {
+      "id": "7.5.17.a",
+      "topic": "Pilot upgrades",
+      "why": "Piloting."
+    }
+  ]
+}
