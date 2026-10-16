@@ -12,6 +12,8 @@ pnpm lint
 pnpm mcp                      # stdio MCP server (src/server.ts)
 pnpm export:package [--originals <dir>] [--out <dir>]   # build the LLM data package from mault's originals
 pnpm rules:fetch [--url <pdf>] [--pdf <file>] [--originals <dir>]   # Comprehensive Rules PDF -> data/runs/<date>/rules (sections, card rulings, keyword links, core primer)
+pnpm rules:check [--data <dir>] [--verify-hash]   # is the pinned CR still the newest? exit 0 current, 10 newer, 2 error
+pnpm market [--data <dir>] [--originals <dir>] [--captures <dir>]   # prices.json, play.json -> data/runs/<date>/market
 ```
 
 The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
