@@ -1,6 +1,6 @@
 import { encode } from "@toon-format/toon";
 import { z } from "zod";
-import type { CardStore } from "../data.js";
+import { packageDirOf, type CardStore } from "../data.js";
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
 import {
@@ -24,7 +24,7 @@ import type { ToolResult } from "../tools.js";
  * (LampaGJ/swu-mcp#3). Every answer comes from the same pure functions as `pnpm synergy`, so a tool
  * result and a run output cannot disagree, and no model sits in the path.
  * @tacticalObjective Handlers take a SynergyContext so tests can run them on in-code fixtures; the
- * registered tools build the context lazily from `<dataDir>/features/features.json`.
+ * registered tools build the context lazily from `<packageDir>/features/features.json`.
  */
 
 const ok = (value: unknown): ToolResult => ({ content: [{ type: "text", text: encode(value) }] });
@@ -363,7 +363,7 @@ function withContext(store: CardStore, run: (ctx: SynergyContext) => ToolResult)
   try {
     let ctx = contexts.get(store);
     if (ctx === undefined) {
-      ctx = loadSynergyContext(store.dataDir);
+      ctx = loadSynergyContext(packageDirOf(store));
       contexts.set(store, ctx);
     }
     return run(ctx);

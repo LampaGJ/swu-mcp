@@ -219,7 +219,8 @@ describe("registration", () => {
   });
 
   it("reports a missing feature file as a tool error that names the fix", () => {
-    const result = SYNERGY_TOOLS.aspect_cover.handler(store, { cardKeys: ["0101033"] });
+    const bare = { ...store, dataDir: path.join(path.dirname(fileURLToPath(import.meta.url)), "../fixtures-missing/llm") };
+    const result = SYNERGY_TOOLS.aspect_cover.handler(bare, { cardKeys: ["0101033"] });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("pnpm card-features");
   });

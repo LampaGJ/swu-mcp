@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { walkAbilities } from "../ability-grammar/walk.js";
-import { splitCell, type CardRow, type CardStore } from "../data.js";
+import { packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
 import {
   SWU_CURATED_EFFECT_CATS,
   SWU_EFFECT_CATS,
@@ -44,9 +44,6 @@ interface ValueData {
 
 const cache = new WeakMap<CardStore, ValueData>();
 
-function packageDirOf(store: CardStore): string {
-  return path.basename(store.dataDir) === "llm" ? path.dirname(store.dataDir) : store.dataDir;
-}
 
 function readJson(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));

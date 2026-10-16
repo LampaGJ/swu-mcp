@@ -51,6 +51,11 @@ export interface CardStore {
   facets: Map<IndexFacet, FacetEntry[]>;
 }
 
+/** The built package directory (parent of llm/), where features/, scores/, synergy/ and rules/ live. */
+export function packageDirOf(store: CardStore): string {
+  return path.basename(store.dataDir) === "llm" ? path.dirname(store.dataDir) : store.dataDir;
+}
+
 export function splitCell(value: string | null | undefined): string[] {
   return value === null || value === undefined || value === "" ? [] : value.split("|");
 }
