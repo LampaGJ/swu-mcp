@@ -20,7 +20,8 @@
     "synergy": "tsx scripts/synergy.ts",
     "fit:coefficients": "tsx scripts/fit-coefficients.ts",
     "score": "tsx scripts/score.ts",
-    "rules:fetch": "tsx scripts/rules-fetch.ts"
+    "rules:fetch": "tsx scripts/rules-fetch.ts",
+    "market": "tsx scripts/market.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
