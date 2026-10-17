@@ -241,6 +241,9 @@ const cardSubject = (c: SynergyCard): Subject => ({
 
 const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
 
+const PLAYS_NON_UNIT = /\b(?:play|for) (?:an? |up to \d+ |any number of )?(?:[\w-]+ )?(?:upgrades?|events?|non-unit)\b/i;
+const NAMES_UNIT = /(?<!non-)\bunits?\b/i;
+
 /**
  * Why an offer on card A cannot feed a want on card B, or null when nothing contradicts. Every
  * check needs both sides to state the qualifier; a missing one is not a conflict.
@@ -280,6 +283,12 @@ export function conflictBetween(
   }
   const barred = offer.subject.notTraits.find((t) => want.subject.traits.includes(t));
   if (barred !== undefined) return `the offer excludes ${barred}`;
+  if (wantTag === "wants:units-played" && (PLAYS_NON_UNIT.test(offer.text) || (a.type === "Upgrade" && !NAMES_UNIT.test(offer.text)))) {
+    return "the offer plays an upgrade or event, the want needs a unit played";
+  }
+  if (wantTag === "wants:pilot-attached" && offerTag !== "offers:return-upgrade" && !(offerTag === "offers:upgrade-to-attach" ? a.structured.traits.includes("Pilot") : /\bpilot/i.test(offer.text))) {
+    return "the offer is not a Pilot and does not play one";
+  }
   if (want.scope !== undefined && offer.triggers.length > 0 && !offer.triggers.some((t) => ATTACK_TRIGGERS.has(t)) && !/\battack/i.test(offer.text)) {
     return `the want triggers only ${want.scope}, the offer does not happen in combat`;
   }

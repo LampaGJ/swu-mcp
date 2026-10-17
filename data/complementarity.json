@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "tableVersion": 2,
+ "tableVersion": 3,
  "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row.",
  "rows": [
   {
@@ -272,6 +272,55 @@
    "strength": 0.5,
    "reason": "Removal triggers 'when an enemy unit is defeated' payoffs.",
    "example": null
+  },
+  {
+   "id": "play-trigger-payoff",
+   "offers": {
+    "offers:cheat-play": 1,
+    "offers:play-from-discard": 1,
+    "offers:play-from-resources": 1,
+    "offers:tutor-to-play": 0.8
+   },
+   "wants": {
+    "wants:units-played": 1
+   },
+   "strength": 0.8,
+   "reason": "Putting a unit into play from hand, discard, resources or the deck still counts as playing it, which triggers 'when you play a unit' payoffs.",
+   "example": [
+    "Jedi Consular",
+    "Luminara Unduli"
+   ]
+  },
+  {
+   "id": "pilot-attach-trigger",
+   "offers": {
+    "offers:upgrade-to-attach": 0.7,
+    "offers:cheat-play": 0.8
+   },
+   "wants": {
+    "wants:pilot-attached": 1
+   },
+   "strength": 0.7,
+   "reason": "A Pilot that attaches as an upgrade, or a card that plays an extra Pilot, triggers 'when a Pilot attaches to this unit' payoffs.",
+   "example": [
+    "R2-D2",
+    "Red Leader"
+   ]
+  },
+  {
+   "id": "upgrade-return-reattach",
+   "offers": {
+    "offers:return-upgrade": 1
+   },
+   "wants": {
+    "wants:pilot-attached": 1
+   },
+   "strength": 0.5,
+   "reason": "Returning a Pilot upgrade to hand lets you attach it again, so the 'when a Pilot attaches' trigger fires a second time.",
+   "example": [
+    "Anakin Skywalker",
+    "Red Leader"
+   ]
   },
   {
    "id": "trait-reference",

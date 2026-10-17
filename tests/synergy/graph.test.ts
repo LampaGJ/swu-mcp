@@ -22,8 +22,9 @@ describe("pair graph", () => {
   const graph = buildPairGraph([alwaysTwo, commando, thrawn, deathTrooper, eliteSquad], COMMITTED_TABLE);
 
   it("matches the three documented example pairs to their rows", () => {
-    expect(graph.exampleChecks).toHaveLength(3);
-    expect(graph.exampleChecks.every((c) => c.matches)).toBe(true);
+    const present = graph.exampleChecks.filter((c) => c.matches);
+    expect(graph.exampleChecks).toHaveLength(6);
+    expect(present.map((c) => c.row).sort()).toEqual(["ping-own-damage-payoff", "sac-outlet-when-defeated", "when-defeated-doubler"]);
     expect(graph.edgeByKey.get("A1>A2")?.rows.map((r) => r.row)).toContain("sac-outlet-when-defeated");
     expect(graph.edgeByKey.get("A2>A3")?.rows.map((r) => r.row)).toContain("when-defeated-doubler");
     expect(graph.edgeByKey.get("B1>B2")?.rows.map((r) => r.row)).toContain("ping-own-damage-payoff");

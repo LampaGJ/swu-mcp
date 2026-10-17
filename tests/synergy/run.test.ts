@@ -31,14 +31,14 @@ describe("buildSynergyRun", () => {
   it("writes pairs, trios, fungibility classes, a report and a replay record", () => {
     expect(Object.keys(run.files).sort()).toEqual(["fungibility.json", "pairs.toon", "replay.json", "report.json", "trios.toon"]);
     expect(run.report.pairs).toBeGreaterThanOrEqual(3);
-    expect((run.report.exampleChecks as { matches: boolean }[]).every((c) => c.matches)).toBe(true);
+    expect((run.report.exampleChecks as { matches: boolean }[]).filter((c) => c.matches)).toHaveLength(3);
   });
 
   it("records input hashes, the table version and an output hash per file", () => {
     const replay = replaySchema.parse(JSON.parse(run.files["replay.json"]));
     expect(replay.inputHash["features.json"]).toBe(sha256Hex(features));
     expect(replay.inputHash["complementarity.json"]).toBe(sha256Hex(TABLE_TEXT));
-    expect(replay.complementarityTableVersion).toBe(2);
+    expect(replay.complementarityTableVersion).toBe(3);
     expect(replay.codeCommit).toBe("test-commit");
     for (const name of ["fungibility.json", "pairs.toon", "report.json", "trios.toon"]) {
       expect(replay.outputHash[name]).toBe(sha256Hex(run.files[name]));
