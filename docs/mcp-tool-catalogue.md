@@ -204,11 +204,11 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - Purpose: rubric value against market price, rank over- and undervalued.
   - In: set, aspect, maxPrice, limit, direction enum (cheap, dear). Out: rows with score, price, ratio.
   - Source: scorer plus conformed prices. Tier B. V8. Serves: collector and trader.
-- P1 `play_value_vs_price` (merged F playability_vs_price, F price_per_inclusion, P hidden_gems, P overpriced_cards) [F P]
+- P1 `play_value_vs_price` (shipped; merged F playability_vs_price, F price_per_inclusion, P hidden_gems, P overpriced_cards) [F P]
   - Purpose: inclusion or win rate against price (hidden gems, overpriced cards).
   - In: minSampleSize number, maxPrice number, direction enum, limit number. Out: rows with inclusion, win rate, n, price.
   - Source: SWU Stats capture and conformed prices, no scorer needed. Tier A. V8. Serves: collector, budget player, content creator.
-- P1 `score_vs_play` (merged J underplayed_cards, J overplayed_cards, D underplayed_by_score, D score_residual) [J D]
+- P1 `score_vs_play` (shipped; merged J underplayed_cards, J overplayed_cards, D underplayed_by_score, D score_residual) [J D]
   - Purpose: cards whose rubric score and play data disagree.
   - In: direction enum (underplayed, overplayed), minSampleSize, limit. Out: rows with score, inclusion, residual, n.
   - Source: scorer and play stats. Tier B. V7. Serves: content creator, deckbuilder.
@@ -264,10 +264,10 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - Out: role class id, substitutes grouped by aspect with cost, penalty, price.
   - Source: fungibility classes (#3). Tier B. V9. Serves: competitive deckbuilder.
   - Rationale: highest-scoring tool in the set, found independently by all five branches (J F M D P). A deck can pick whichever aspect fits its leader and base and still complete a chain.
-- P1 `fungible_in_deck` (merged J, M fungible_in_deck, D slot_fillers_for_deck) [J M D]
+- P1 `fungible_in_deck` (shipped; merged J, M fungible_in_deck, D slot_fillers_for_deck) [J M D]
   - Purpose: per-slot substitutes for a supplied list under a given leader and base.
   - In: decklist array of cardKey and qty, leader, base. Out: per slot, substitutes with penalty. Source: fungibility classes, aspect cover. Tier B. V8. Serves: competitive deckbuilder.
-- P1 `budget_alternatives` (merged J, M budget_alternatives, F budget_swap_suggestions, F substitute_price_gap, P budget_version) [J M F P]
+- P1 `budget_alternatives` (shipped; merged J, M budget_alternatives, F budget_swap_suggestions, F substitute_price_gap, P budget_version) [J M F P]
   - Purpose: cheaper fungible cards with similar score, with price saved and score lost.
   - In: cardKey or decklist, maxPrice, leader, base. Out: rows with substitute, price saved, score delta.
   - Source: fungibility classes, scorer, prices. Tier B. V8. Serves: casual and budget player.
@@ -284,18 +284,18 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - Out: per card, uncovered icons and extra cost; total penalty.
   - Source: aspect icons on the card list. Tier A. V8. Serves: competitive deckbuilder.
   - Rationale: computable now with no transform; every deck question ends here.
-- P1 `suggest_leader_base` (merged J leader_suggestions, J base_suggestions, D best_base_for_leader, P best_leader_base_for_pile) [J D P]
+- P1 `suggest_leader_base` (shipped; merged J leader_suggestions, J base_suggestions, D best_base_for_leader, P best_leader_base_for_pile) [J D P]
   - Purpose: leader and base choices that minimise uncovered icons for a pile.
   - In: cards array, optional leader. Out: ranked leader and base pairs with penalty. Source: aspect icons. Tier A. V8. Serves: deckbuilder, new player.
-- P1 `playable_cards` (merged M best_cards_for_leader, P fill_curve) [M P]
+- P1 `playable_cards` (shipped; merged M best_cards_for_leader, P fill_curve) [M P]
   - Purpose: cards playable under a leader and base, optionally filling empty cost slots of a partial pile.
   - In: leader, base, partial decklist, cost slots, role. Out: ranked rows by cost with penalty. Source: aspect cover, scorer. Tier B. V7. Serves: deckbuilder, kitchen-table player.
-- P1 `deck_audit` (merged J deck_audit, J deck_gaps, J mana_curve, M decklist_score, M decklist_gaps, P curve_report, P curve_stats) [J M P]
+- P1 `deck_audit` (shipped; merged J deck_audit, J deck_gaps, J mana_curve, M decklist_score, M decklist_gaps, P curve_report, P curve_stats) [J M P]
   - Purpose: one-call list report: score, cost curve against 1.72 + 1.96 x cost, aspect penalties, orphan wants, role gaps against cluster norms.
   - In: decklist, leader, base. Out: score, curve, penalty, orphanWants, gaps.
   - Source: scorer, pairing graph, clusters, aspect cover. Tier B. V8. Serves: deckbuilder, casual player.
   - Rationale: collapses several calls into one, matching the tool-count constraint.
-- P1 `deck_legality_check` (merged J, M decklist_check, P) [J M P]
+- P1 `deck_legality_check` (shipped without the ban ledger, so banned and suspended cards are not detected; merged J, M decklist_check, P) [J M P]
   - Purpose: legality of a whole list: size, copy limits, leader and base rules, banned and suspended cards, with failing cards and reasons.
   - In: decklist, leader, base, format, asOf date. Out: legal boolean, failures with rule cite.
   - Source: CR deck-construction rules (#6) and the ban ledger. Tier C (ban ledger from articles API). V8. Serves: organiser, judge.
@@ -309,15 +309,15 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - In: cardKey or printing id, askPrice number optional. Out: printings with price, finish, date, quarantined flag; cheapest; ratio of askPrice to market.
   - Source: TCGCSV via the mault conformer (8,882 printings priced). Tier A. V8. Serves: collector and trader, mault.
   - Rationale: pinned US price with explicit quality flags; the Trap field is US-only coverage, say so in output.
-- P1 `price_list` (merged J deck_cost, J collection_value, F deck_cost, F deck_cost_breakdown, F collection_value, F collection_value_breakdown, F collection_concentration, M collection_value, P deck_price_total) [J F M P]
+- P1 `price_list` (shipped; merged J deck_cost, J collection_value, F deck_cost, F deck_cost_breakdown, F collection_value, F collection_value_breakdown, F collection_concentration, M collection_value, P deck_price_total) [J F M P]
   - Purpose: total price of a supplied list of printings or cards (cheapest printing option), grouped by set, rarity or aspect.
   - In: items array of id and qty, groupBy enum, finishPreference enum. Out: total, per line, grouped totals, share of top N.
   - Source: conformed prices. Tier A. V8. Serves: mault, deckbuilder, trader.
   - Trap: privacy; the list is supplied by the caller and is not stored. mault already values collections itself.
-- P1 `trade_balance` (merged J, F trade_balance, F trade_fairness_range) [J F]
+- P1 `trade_balance` (shipped; merged J, F trade_balance, F trade_fairness_range) [J F]
   - Purpose: compare two lists by market and by low price, and by rubric value.
   - In: sideA items, sideB items. Out: totals both ways, difference. Source: prices, scorer. Tier A. V7. Serves: trader.
-- P1 `owned_vs_needed` (merged M, P owned_vs_needed, D collection_gap_for_chain, D substitutes_owned, J collection_gaps, F deck_cost_to_complete) [J F M D P]
+- P1 `owned_vs_needed` (shipped; merged M, P owned_vs_needed, D collection_gap_for_chain, D substitutes_owned, J collection_gaps, F deck_cost_to_complete) [J F M D P]
   - Purpose: diff a decklist or chain against a supplied owned list, with cheapest buy for each gap and owned fungible substitutes.
   - In: decklist, owned items array. Out: missing lines with price, owned substitutes, cost to complete.
   - Source: prices, fungibility classes. Tier B. V7. Serves: mault, budget player.

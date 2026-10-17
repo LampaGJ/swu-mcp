@@ -2,11 +2,11 @@
 
 Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discovery and card similarity, served to AI assistants over the Model Context Protocol (MCP, stdio). Every number comes from deterministic code over pinned inputs. No model runs at query time and none decides a score.
 
-Status: MVP (swu-mcp#7). All 34 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
+Status: MVP (swu-mcp#7). All 45 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
 
 ## Install
 
-Needs Node.js 22 or newer. Site: https://lampagj.github.io/swu-mcp/ (placeholder until Pages is enabled).
+Needs Node.js 22 or newer. Site: https://lampagj.github.io/swu-mcp/.
 
 Claude Code:
 
@@ -54,7 +54,7 @@ Tool results are TOON, a compact table format (column names once, then one line 
 - [The Claude Code setup behind it](docs/public/claude-code-setup.md).
 - [Verification report](docs/verification/2026-10-16.md).
 
-## Tools (34)
+## Tools (45)
 
 Cards and search
 
@@ -115,6 +115,20 @@ Similarity
 - `similar_cards` cards whose rules text reads most like this card's (embedding cosine).
 - `kin_cards` cards that do the same kind of thing under different labels (names, traits, keywords, aspects and numbers masked).
 - `cluster` one of 32 role clusters, by id or by a member card.
+
+Decks, collections and trades (lists arrive as `{card, count}` arguments, a cardKey or exact title; nothing is stored, unresolved names are listed)
+
+- `deck_audit` one-call report on a decklist under a leader and base: curve against the rubric's stat curve, mean score, aspect penalty per card, orphan wants and role-cluster gaps.
+- `deck_legality_check` exactly 1 leader and 1 base, 50 other cards (or the base's changed minimum), 3 copies at most, no tokens, Premier cardpool, each failure with its Comprehensive Rules section (9.2.2.a to d, 8.5.5, 1.2.3, 3.2.1.a). No ban or suspension ledger, no asOf date and no sideboard check yet.
+- `suggest_leader_base` leader and base aspect pairs ranked by the penalty for a pile of cards.
+- `playable_cards` the best cards for a leader and base, by cost, optionally filling the costs of a partial pile.
+- `fungible_in_deck` same-role substitutes per deck slot, least aspect penalty first.
+- `budget_alternatives` cheaper same-role substitutes with the saving and the score change.
+- `price_list` total US price of a deck or collection, with the top share and totals by first set, rarity, aspect or type.
+- `trade_balance` two lists compared by market price, low price and rubric score.
+- `owned_vs_needed` a decklist against an owned list: missing copies, cost to complete, owned substitutes.
+- `play_value_vs_price` cards most or least played per dollar, from the SWU Stats capture.
+- `score_vs_play` cards whose rubric rank and play rank disagree (the designer total by default, because the play-calibrated score is fitted to the same play data).
 
 Provenance
 
