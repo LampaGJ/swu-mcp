@@ -10,7 +10,6 @@
  *   --table     default: <repo>/data/complementarity.json
  *   --out       default: data/runs/<date>/synergy next to the features directory
  */
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +17,7 @@ import { parseArgs } from "node:util";
 import { DATED_DIR } from "../src/data.js";
 import { buildSynergyRun } from "../src/synergy/run.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -33,12 +33,6 @@ function newestFeatures(): string {
   return path.join(runs, newest, "features/features.json");
 }
 
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/complementarity.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
-
 function main(): void {
   const { values } = parseArgs({ options: { features: { type: "string" }, table: { type: "string" }, out: { type: "string" } } });
   const featuresPath = path.resolve(values.features ?? newestFeatures());
@@ -46,7 +40,7 @@ function main(): void {
   const outDir = path.resolve(values.out ?? path.join(path.dirname(path.dirname(featuresPath)), "synergy"));
   const p = progress("synergy", { everyN: 1 });
   p.log({ phase: "build", featuresPath });
-  const run = buildSynergyRun(readFileSync(featuresPath, "utf8"), readFileSync(tablePath, "utf8"), codeCommit());
+  const run = buildSynergyRun(readFileSync(featuresPath, "utf8"), readFileSync(tablePath, "utf8"), codeCommit(["src", "scripts", "data/complementarity.json"]));
   mkdirSync(outDir, { recursive: true });
   for (const [name, content] of Object.entries(run.files)) writeFileSync(path.join(outDir, name), content);
   const r = run.report as Record<string, unknown>;

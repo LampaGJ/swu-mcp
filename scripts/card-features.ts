@@ -14,7 +14,6 @@
  *
  * Exit codes: 0 ok, 3 stale curated entries (outputs are still written).
  */
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -26,6 +25,7 @@ import { StaleCuratedEntriesError, assertNoStaleCurated, buildFeatureRun } from 
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { buildLogicalCards, flattenPrinting, newFlattenIssues, splitByCurrentSets, type FlatRow } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,12 +50,6 @@ function newestDatedDir(root: string): string {
     .at(-1);
   if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
   return path.join(root, newest);
-}
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/curated-rules.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
 }
 
 function cardsFromOriginals(originalsDir: string, tick: (done: number) => void): { rows: FlatRow[]; runDate: string } {
@@ -108,7 +102,7 @@ function main(): void {
   const curatedJson = readFileSync(path.resolve(expandHome(values.curated ?? path.join(REPO_ROOT, "data/curated-rules.json"))), "utf8");
 
   p.log({ phase: "extract", cards: rows.length });
-  const run = buildFeatureRun(rows, curatedJson, codeCommit());
+  const run = buildFeatureRun(rows, curatedJson, codeCommit(["src", "scripts", "data/curated-rules.json"]));
   mkdirSync(outDir, { recursive: true });
   for (const [name, content] of Object.entries(run.files)) writeFileSync(path.join(outDir, name), content);
   const c = run.result.coverage;

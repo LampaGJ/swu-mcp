@@ -13,7 +13,6 @@
  *   --runs       default: <repo>/data/runs
  *   --date       default: the day the raw card-list run finished
  */
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -36,6 +35,7 @@ import {
 } from "../src/swu/llm-flatten.js";
 import { buildReadme } from "../src/swu/llm-package-readme.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -91,10 +91,6 @@ const printingPriceSchema = z.object({
 
 function expandHome(value: string): string {
   return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-function git(args: string[]): string {
-  return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
 }
 
 function newestDatedDir(root: string): string {
@@ -268,7 +264,6 @@ function main(): void {
   for (const [relPath, content] of llmFiles) writeOut(staging, relPath, content);
   for (const doc of docs) writeOut(staging, `docs/${doc.name}`, readFileSync(doc.source));
 
-  const dirty = git(["status", "--porcelain"]) === "" ? "" : "-dirty";
   const replay = {
     inputs: {
       rawManifestSha256: sha256Hex(manifestBytes),
@@ -280,7 +275,7 @@ function main(): void {
       priceRowsSha256: sha256Hex(canonicalJson({ printings: priceRows, corrections, quarantine })),
       snapshots: snapshots.map((snapshot) => ({ name: snapshot.name, sha256: sha256Hex(snapshot.bytes) })),
     },
-    codeCommit: `${git(["rev-parse", "HEAD"])}${dirty}`,
+    codeCommit: codeCommit("whole-tree"),
     outputs: Object.fromEntries([...llmFiles].map(([relPath, content]) => [relPath, sha256Hex(content)])),
   };
   writeOut(staging, "replay.json", `${JSON.stringify(replay, null, 2)}\n`);

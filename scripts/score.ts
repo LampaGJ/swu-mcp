@@ -9,21 +9,15 @@
  *   --data  default: newest dated dir under data/runs (SWU_MCP_DATA wins)
  *   --out   default: <data>/scores
  */
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { resolveDataDir } from "../src/data.js";
 import { runScoring } from "../src/scorer/run.js";
+import { codeCommit } from "./lib/code-commit.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/rubric-coefficients.json", "package.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, coefficients: { type: "string" }, out: { type: "string" } } });
@@ -31,7 +25,7 @@ function main(): void {
   const coefficientsFile = path.resolve(values.coefficients ?? path.join(REPO_ROOT, "data/rubric-coefficients.json"));
   const outDir = path.resolve(values.out ?? path.join(dataDir, "scores"));
 
-  const run = runScoring(dataDir, readFileSync(coefficientsFile, "utf8"), codeCommit());
+  const run = runScoring(dataDir, readFileSync(coefficientsFile, "utf8"), codeCommit(["src", "scripts", "data/rubric-coefficients.json", "package.json"]));
   mkdirSync(outDir, { recursive: true });
   writeFileSync(path.join(outDir, "scores.json"), run.scoresText);
   writeFileSync(path.join(outDir, "replay.json"), run.replayText);

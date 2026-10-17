@@ -11,7 +11,6 @@
  *   --originals  default: mault originals dir with the package's date
  *   --captures   default: <repo>/data/pinned/gt
  */
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +20,7 @@ import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
 import { buildPlay, buildPrices, captureRowSchema, priceRowSchema } from "../src/market/build.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { printingCardKeys } from "../src/swu/llm-flatten.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { loadRawPrintings, packageRawManifestSha256 } from "./lib/raw-pages.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -28,12 +28,6 @@ const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-ori
 
 const importSchema = z.looseObject({ id: z.number().int(), finished_at: z.string().nullable().optional() });
 
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "package.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, originals: { type: "string" }, captures: { type: "string" } } });
@@ -83,7 +77,7 @@ function main(): void {
       captures: Object.fromEntries(captureBytes.map(({ file, bytes }) => [file, sha256Hex(bytes)])),
       originalsPath: originals,
     },
-    codeCommit: codeCommit(),
+    codeCommit: codeCommit(["src", "scripts", "package.json"]),
     outputs: { "market/prices.json": sha256Hex(pricesText), "market/play.json": sha256Hex(playText) },
   };
 

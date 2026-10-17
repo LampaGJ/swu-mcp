@@ -29,6 +29,7 @@ import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonica
 import type { RawCardRecord } from "../src/swu/llm-flatten.js";
 import { swuGlossarySchema } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,15 +51,6 @@ function newestDatedDir(root: string): string {
     .at(-1);
   if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
   return path.join(root, newest);
-}
-
-function git(args: string[]): string {
-  return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-}
-
-function codeCommit(): string {
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/rules-core.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
 }
 
 function pdftotextVersion(): string {
@@ -166,7 +158,7 @@ async function main(): Promise<void> {
   const replay = rulesReplaySchema.parse({
     schemaVersion: 1,
     source: { url: fetchRecord.url, fetchedAt: fetchRecord.fetchedAt, pdfSha256, pdfBytes: fetchRecord.bytes },
-    tool: { pdftotext: pdftotextVersion(), codeCommit: codeCommit() },
+    tool: { pdftotext: pdftotextVersion(), codeCommit: codeCommit(["src", "scripts", "data/rules-core.json"]) },
     rulesVersion: version,
     textSha256: sha256Hex(text),
     rulings: cardRulings === null ? null : cardRulings.source,

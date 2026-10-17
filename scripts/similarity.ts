@@ -7,7 +7,6 @@
  *
  * Usage: pnpm similarity [--data <package dir>] [--out <dir>]
  */
-import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,15 +15,10 @@ import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
 import { captureDirName, CAPTURE_ROOT, loadCapture } from "../src/embed/pinned.js";
 import { inputHashOf, parseRenderCards, renderAll } from "../src/embed/render.js";
 import { buildSimilarityRun, PARAMS } from "../src/embed/similarity-run.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, out: { type: "string" } } });
@@ -35,7 +29,7 @@ function main(): void {
   const capture = loadCapture(path.join(REPO_ROOT, CAPTURE_ROOT, name));
   const outDir = path.resolve(values.out ?? path.join(packageDirOf(store), "similarity"));
   const p = progress("similarity", { total: PARAMS.restarts + 2, everyMs: 2000 });
-  const run = buildSimilarityRun(cards, capture, name, codeCommit(), (phase, done) => p.tick(done, { phase }));
+  const run = buildSimilarityRun(cards, capture, name, codeCommit(["src", "scripts"]), (phase, done) => p.tick(done, { phase }));
   mkdirSync(outDir, { recursive: true });
   for (const [file, content] of Object.entries(run.files)) writeFileSync(path.join(outDir, file), content);
   writeFileSync(path.join(outDir, "replay.json"), `${JSON.stringify(run.replay, null, 1)}\n`);
