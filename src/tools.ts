@@ -8,6 +8,7 @@ import { MARKET_TOOLS } from "./tools/market.js";
 import { VALUE_TOOLS } from "./tools/value.js";
 import { RULES_TOOLS } from "./tools/rules.js";
 import { CATALOG_TOOLS } from "./tools/catalog.js";
+import { DECK_TOOLS } from "./tools/deck.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -204,4 +205,5 @@ export const TOOLS = {
   ...RULES_TOOLS,
   ...SIMILARITY_TOOLS,
   ...CATALOG_TOOLS,
+  ...DECK_TOOLS,
 } as const;
