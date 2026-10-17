@@ -12,7 +12,7 @@
  *
  * The rules step reads the pinned PDF under data/originals/rules/<version>/ when one exists and downloads it otherwise.
  */
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -23,6 +23,7 @@ import { z } from "zod";
 import { DATED_DIR } from "../src/data.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -186,7 +187,7 @@ function main(): void {
     schemaVersion: 1,
     date,
     originals,
-    codeCommit: execFileSync("git", ["-C", REPO_ROOT, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    codeCommit: codeCommit("whole-tree"),
     wallTimeMs: Math.round(performance.now() - started),
     buildHash,
     steps: recorded,

@@ -45,6 +45,7 @@ import { INDEX_FACETS, encodeToonTable, type FlatRow } from "../src/swu/llm-flat
 import { loadSynergyContext } from "../src/synergy/context.js";
 import { TRIO_FANOUT } from "../src/synergy/trios.js";
 import { TOOLS } from "../src/tools.js";
+import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -71,10 +72,6 @@ function expandHome(value: string): string {
 const sha256 = (data: string | Buffer): string => createHash("sha256").update(data).digest("hex");
 const read = (dir: string, rel: string): string => readFileSync(path.join(dir, rel), "utf8");
 const readJson = (dir: string, rel: string): unknown => JSON.parse(read(dir, rel));
-
-function git(args: string[]): string {
-  return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-}
 
 function withoutWallTimes(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(withoutWallTimes);
@@ -202,7 +199,7 @@ ${rubric}
     schemaVersion: 1,
     date,
     buildHash: build.buildHash,
-    codeCommit: git(["rev-parse", "HEAD"]),
+    codeCommit: codeCommit("whole-tree"),
     tokenizer: "gpt-tokenizer o200k_base, a proxy; null for files that are not read as text",
     files: Object.fromEntries(
       [...files].sort(([a], [b]) => compareCodePoints(a, b)).map(([rel, content]) => [rel, { bytes: Buffer.byteLength(content), sha256: sha256(content), tokens: measured.find((file) => file.path === rel)?.tokens ?? null }]),

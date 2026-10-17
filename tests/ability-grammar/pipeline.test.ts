@@ -233,6 +233,7 @@ describe("determinism", () => {
       ...readdirSync(dir).filter((f) => f.endsWith(".ts")).map((f) => path.join(dir, f)),
       path.join(REPO_ROOT, "scripts/card-features.ts"),
       path.join(REPO_ROOT, "scripts/lib/raw-pages.ts"),
+      path.join(REPO_ROOT, "scripts/lib/code-commit.ts"),
     ];
     const banned = /Date\.now|new Date|Math\.random|localeCompare|Intl\.|toLocale|performance\.now/;
     for (const file of files) {
