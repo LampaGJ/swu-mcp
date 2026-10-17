@@ -40,7 +40,7 @@ Prefer actual tournament decks and match outcomes over casual and simulated game
 
 ## Private data
 
-Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code, synthetic-fixture tests and aggregate results only. Never commit player names, player ids or game ids.
+Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code and synthetic-fixture tests only. Never commit player names, player ids or game ids. Karabast-derived numbers, aggregates included, never appear in the data release, in tool output or in committed docs; they belong in local benchmark reports only (decision D22 in `docs/decisions.md`). Public win rates come from swumetastats tournament data.
 
 The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
 
