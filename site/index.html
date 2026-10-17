@@ -113,7 +113,7 @@
       </p>
       <p>
         Every number comes from fixed code run over saved inputs. No AI model runs when you ask a question, and none picks a score. The same
-        data always gives the same answer. All 45 tools only read data; none changes anything.
+        data always gives the same answer. All 48 tools only read data; none changes anything.
       </p>
 
       <h2>Install for Claude Code</h2>
@@ -135,7 +135,7 @@
   }
 }</code></pre>
 
-      <h2>The 45 tools</h2>
+      <h2>The 48 tools</h2>
       <h3>Cards and search</h3>
       <ul class="tools">
         <li><code>get_card</code>, <code>search_cards</code>, <code>list_facet</code>, <code>cards_by_facet</code>, <code>get_cards_batch</code>, <code>resolve_card_name</code>, <code>get_printings</code></li>
@@ -184,6 +184,11 @@
         </li>
       </ul>
       <p>These take a list of cards you pass in. The server stores nothing and lists any name it cannot match.</p>
+      <h3>Meta defense</h3>
+      <ul class="tools">
+        <li><code>meta_archetypes</code>, <code>meta_threats</code>, <code>meta_answers</code></li>
+      </ul>
+      <p>The current tournament meta, grouped into archetypes from recent Premier tournament decklists, and the cards your aspects can play that answer the most of it. Win rates come from tournament results (swumetastats), with the number of matches behind each.</p>
       <h3>Provenance</h3>
       <ul class="tools">
         <li><code>data_version</code></li>

@@ -1,6 +1,6 @@
 # How swu-mcp was built
 
-Last updated 2026-10-17.
+Last updated 2026-10-17
 
 **TL;DR.** swu-mcp was built in about one day by one maintainer working with Claude Code, an AI coding tool. The work ran from small written tasks, through fixed-rule code, to a check of the finished data against its sources. That check found real errors, and the project reports them openly. Related pages: [what it does](what-it-does.md) and [the Claude Code setup](claude-code-setup.md).
 
@@ -68,7 +68,7 @@ The honest limit is the same. The combos are still candidates, but they now show
 
 - About 105 commits at the time of writing, from the git history.
 - 15 issues, 12 of them closed before this update.
-- 45 tools, and one test that calls each.
+- 48 tools, and one test that calls each.
 - About 700 automated tests. One test needs a rules PDF that is kept out of the repository, so it fails on a fresh checkout without it.
 
 ## Honest trade-offs
