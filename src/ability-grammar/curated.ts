@@ -1,5 +1,6 @@
 import { swuCuratedTableSchema, type SwuCuratedEntry, type SwuCuratedTable } from "./deps.js";
 import { sha256Hex } from "./deps.js";
+import { normalizeText } from "./segment.js";
 
 export class CuratedTableError extends Error {}
 
@@ -36,11 +37,13 @@ export function loadCuratedTable(json: string): { table: SwuCuratedTable; index:
   const table = raw as SwuCuratedTable;
   const index: CuratedIndex = new Map();
   for (const entry of table.entries) {
-    const key = curatedKey(entry.cardKey, entry.face, entry.clauseSha256);
-    if (index.has(key)) throw new CuratedTableError(`duplicate curated entry ${key}`);
+    const declared = curatedKey(entry.cardKey, entry.face, entry.clauseSha256);
     if (sha256Hex(entry.sourceClause) !== entry.clauseSha256) {
-      throw new CuratedTableError(`curated entry ${entry.id} (${key}): clauseSha256 does not hash sourceClause`);
+      throw new CuratedTableError(`curated entry ${entry.id} (${declared}): clauseSha256 does not hash sourceClause`);
     }
+    // Looked up by the normalised clause, the form the extractor sees, so a table written before a normaliser rule existed still applies.
+    const key = curatedKey(entry.cardKey, entry.face, sha256Hex(normalizeText(entry.sourceClause)));
+    if (index.has(key)) throw new CuratedTableError(`duplicate curated entry ${key}`);
     index.set(key, { entry, used: false, redundant: false });
   }
   return { table, index };
