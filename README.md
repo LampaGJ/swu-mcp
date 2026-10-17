@@ -53,6 +53,7 @@ Tool results are TOON, a compact table format (column names once, then one line 
 - [How it was built](docs/public/how-we-built-it.md).
 - [The Claude Code setup behind it](docs/public/claude-code-setup.md).
 - [Verification report](docs/verification/2026-10-16.md).
+- [Decisions and intentions](docs/decisions.md): the standing intent the code is reviewed against.
 
 ## Tools (45)
 

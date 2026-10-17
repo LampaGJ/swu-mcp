@@ -46,6 +46,7 @@ The system disk is full: work only under `/Volumes/Local Files/Projects`, and ru
 
 ## Layout
 
+- `docs/decisions.md` is the decision log: the owner's standing intent, one entry per decision, used as the yardstick for reviews. Add an entry when the owner decides something new.
 - `src/` library and MCP server. `src/swu/` holds the flatten pipeline (ported from mault) and package README builder.
 - `scripts/export-swu-data-package.ts` builds llm/; `scripts/build-data.ts` runs every step; `scripts/package-zip.ts` and `src/package/` build the reader zip. `scripts/curation/`, `scripts/rubric/`, `scripts/embed/` are research scripts (Node `.mjs`, Python).
 - `src/tools/` holds the tool groups (value, synergy, market, rules, similarity, catalog, deck), registered in `src/tools.ts`; `src/resources.ts` serves the `swu://` resources and the two prompts. The README tool list is the user-facing catalogue; `tests/e2e.test.ts` fails if a registered tool has no e2e arguments.
