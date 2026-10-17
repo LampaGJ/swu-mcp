@@ -1,10 +1,20 @@
 import type { SwuFeature, SwuFeatureFields, SwuTarget } from "./deps.js";
 import { compareCodePoints } from "./deps.js";
 import { KW_ITEM, parseKeywordList } from "./segment.js";
-import { ASPECTS, KW_ALT, TOKEN_ALT, TRAIT_WORDS, alternation } from "./vocab.js";
+import { ASPECTS, KW_ALT, TOKENS, TOKEN_ALT, TRAIT_WORDS, alternation } from "./vocab.js";
 
 const TRAIT_RE = new RegExp(`\\b(non-)?(${alternation(TRAIT_WORDS)})\\b`, "g");
 const ASPECT_RE = new RegExp(`\\b(non-)?(${alternation(ASPECTS)})\\b`, "g");
+/** Where the noun phrase ends and its qualifiers begin: "a unit WITHOUT an Experience token on it". */
+const HEAD_END = /\s(?:with|without|that|who|which)\s/i;
+const HAS_RE = /\b(with|without) (?:a|an) (?<x>[^,.;]+?)(?: on it)?$/i;
+const NAME_RE = /^[A-Z][\p{L}'.-]*(?: (?:the|of|and|[A-Z][\p{L}'.-]*))+$/u;
+const VOCAB_RE = new RegExp(`\\b(?:${alternation([...TRAIT_WORDS, ...ASPECTS, ...TOKENS])})\\b`, "g");
+
+/** A card name such as "Jabba the Hutt": capitalised words, at least one of them not a trait, aspect or token word. */
+function isCardName(s: string): boolean {
+  return NAME_RE.test(s) && s.replace(VOCAB_RE, "").match(/\b[A-Z]/) !== null;
+}
 
 /**
  * @displayName SWU target parser
@@ -24,14 +34,20 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   if (/^(?:this|attached) (?:unit|leader|upgrade)\b|^(?:it|him|her|itself|this leader)$|^(?:that|the chosen|each chosen|the attacking) unit\b|^them$/.test(l)) {
     t.side = /^(?:this|attached)/.test(l) || /^(?:him|her|itself|this leader)$/.test(l) ? "self" : "ref";
   }
-  if (/\bunits? or (?:a |an )?(?:[a-z']+ )?bases?\b|\bbases? or (?:a |an )?units?\b/.test(l)) t.kind = "unit_or_base";
-  else if (/\bbases?\b/.test(l)) t.kind = "base";
-  else if (/\bupgrades?\b/.test(l)) t.kind = "upgrade";
-  else if (/\btokens?\b/.test(l)) t.kind = "token";
-  else if (/\bcards?\b/.test(l)) t.kind = "card";
-  else if (/\bunits?\b/.test(l)) t.kind = "unit";
-  else if (/\bleader\b/.test(l)) t.kind = "leader";
-  else if (/\b(?:player|opponent)\b/.test(l)) t.kind = "player";
+  const headEnd = s.search(HEAD_END);
+  const head = headEnd < 0 ? s : s.slice(0, headEnd);
+  const hl = head.toLowerCase();
+  const named = isCardName(s);
+  if (named) t.kind = "card";
+  else if (/\bunits? or (?:a |an )?(?:[a-z']+ )?bases?\b|\bbases? or (?:a |an )?units?\b/.test(hl)) t.kind = "unit_or_base";
+  else if (/\bbases?\b/.test(hl)) t.kind = "base";
+  else if (/\bupgrades?\b/.test(hl)) t.kind = "upgrade";
+  else if (/\btokens?\b/.test(hl)) t.kind = "token";
+  else if (/\bcards?\b/.test(hl)) t.kind = "card";
+  else if (/\bunits?\b/.test(hl)) t.kind = "unit";
+  else if (/\bleader\b/.test(hl)) t.kind = "leader";
+  else if (/\bresources?\b/.test(hl)) t.kind = "resource";
+  else if (/\b(?:player|opponent)\b/.test(hl)) t.kind = "player";
   if (/\bground\b/.test(l)) t.arena = "ground";
   if (/\bspace\b/.test(l)) t.arena = t.arena === "ground" ? "both" : "space";
   if (/\bin the same arena\b/.test(l)) t.arena = "same";
@@ -54,8 +70,12 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   if ((m = l.match(/\bthat costs? (\d+) or less\b|\bcosting (\d+) or less\b/))) t.restrict.push(`cost_le_${m[1] ?? m[2]}`);
   if ((m = l.match(/\bthat costs? (\d+) or more\b/))) t.restrict.push(`cost_ge_${m[1]}`);
   if (/\bwith less remaining hp than\b/.test(l)) t.restrict.push("hp_lt_ref");
-  for (const tm of s.matchAll(TRAIT_RE)) t.restrict.push(`${tm[1] ? "non_" : ""}trait:${tm[2]}`);
-  for (const am of s.matchAll(ASPECT_RE)) t.restrict.push(`${am[1] ? "non_" : ""}aspect:${am[2]}`);
+  if (named) t.restrict.push(`named:${s}`);
+  else {
+    for (const tm of head.matchAll(TRAIT_RE)) t.restrict.push(`${tm[1] ? "non_" : ""}trait:${tm[2]}`);
+    for (const am of head.matchAll(ASPECT_RE)) t.restrict.push(`${am[1] ? "non_" : ""}aspect:${am[2]}`);
+  }
+  if ((m = s.match(HAS_RE))) t.restrict.push(`${m[1].toLowerCase()}:${m.groups?.x ?? ""}`);
   t.restrict = [...new Set(t.restrict)].sort(compareCodePoints);
   t.text = s;
   return t;
