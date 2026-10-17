@@ -80,7 +80,7 @@ Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.gi
   - **Exact:** card fields, prices, play statistics, rulings and rule sections. These are audited byte for byte against the originals.
   - **Deterministic:** rubric scores. They are reproducible, but they rank cards only within a card type.
   - **Parsed:** card features. About 1 card in 5 has an error.
-  - **Candidate:** pairings, trios and substitutes. About 74% are precise on the pairs-v1 benchmark, and some rows are weaker (draw, discard, ramp).
+  - **Candidate:** pairings, trios and substitutes. About 74% are precise on the pairs-v1 benchmark: about 70% for mechanical links and about 94% for obvious trait-only (tribal) links. Some rows are weaker (draw, discard, ramp).
 - For every candidate it shows, the agent reads both clause texts in the evidence and drops or flags any link the text does not support.
 - When a pairing row's measured precision is available (pairs-v1, and the real-play benchmark from #18), the agent mentions weak rows.
 - The agent does not repeat a candidate's `reason` string as fact without the evidence check.
