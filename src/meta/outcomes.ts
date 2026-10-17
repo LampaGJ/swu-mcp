@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { CardFact, MetaDeck } from "./build.js";
 import { SWUMETASTATS_SOURCE, type DeckEvidence, type Matchups } from "./schema.js";
@@ -34,7 +35,7 @@ export type MatchupResponse = z.infer<typeof matchupResponseSchema>;
 export const matchupCaptureSchema = z.looseObject({
   kind: z.literal("swumetastats-matchups"),
   window: z.strictObject({ from: z.iso.date(), to: z.iso.date() }),
-  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  sha256: hex64,
 });
 
 export interface NameResolver {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 
 /**
  * @displayName Meta defense schemas
@@ -9,7 +10,6 @@ import { z } from "zod";
  * fields the step reads; the emitted files are strict, so a renamed field fails at the emitter, not in a tool.
  */
 
-const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 const entry = z.looseObject({ id: z.string().min(1), count: z.number().int().nonnegative().optional() });
 
 /** One decklist file of a snapshot (data/originals/decks/<date>/*.json). The author field is never read. */
@@ -199,13 +199,13 @@ export type WinRatesFile = z.infer<typeof winRatesFileSchema>;
 
 export const metaReplaySchema = z.strictObject({
   inputHash: z.strictObject({
-    decks: z.record(z.string(), sha256),
-    "features.json": sha256,
-    rawManifest: sha256,
-    outcomes: z.record(z.string(), sha256),
+    decks: z.record(z.string(), hex64),
+    "features.json": hex64,
+    rawManifest: hex64,
+    outcomes: z.record(z.string(), hex64),
   }),
   codeCommit: z.string().min(1),
-  outputHash: z.record(z.string(), sha256),
+  outputHash: z.record(z.string(), hex64),
 });
 
 /**

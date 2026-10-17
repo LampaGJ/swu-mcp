@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { readJson } from "../data.js";
 import { REPO_ROOT } from "../paths.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { clip } from "../synergy/evidence.js";
@@ -28,7 +29,7 @@ export const DEFAULT_COUNTERS_PATH = path.join(REPO_ROOT, "data/counters.json");
 
 export function loadCounterTable(file = DEFAULT_COUNTERS_PATH): CounterTable {
   if (!existsSync(file)) throw new Error(`no counter table at ${file}`);
-  return counterTableSchema.parse(JSON.parse(readFileSync(file, "utf8")));
+  return counterTableSchema.parse(readJson(file));
 }
 
 const targetSchema = z.looseObject({

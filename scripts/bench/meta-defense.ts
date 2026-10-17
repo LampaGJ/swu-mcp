@@ -17,12 +17,12 @@
  *
  * Usage: pnpm bench:meta-defense [--run <dir>] [--games <file>] [--results <file>] [--archetypes <n>] [--iterations <n>] [--md-out <file>]
  */
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
 import { z } from "zod";
+import { readJson } from "../../src/data.js";
 import {
   answerOffers,
   counterCardSchema,
@@ -33,15 +33,17 @@ import {
   type CounterCard,
 } from "../../src/meta/counters.js";
 import { metaFileSchema, tournamentResultsSchema, type Archetype, type CounterTable } from "../../src/meta/schema.js";
-import { compareCodePoints } from "../../src/swu/canonical.js";
+import { compareCodePoints, sha256Hex } from "../../src/swu/canonical.js";
+import { round } from "../../src/tools/common.js";
+import { MAIN_TYPES } from "../../src/tools/deck.js";
 import { progress } from "../lib/progress.mjs";
 import { codeCommit, defaultRun, isMain, REPO_ROOT } from "./code-commit.js";
+import { newestFile } from "./extract-sims.js";
 import { seededRandom } from "./stats.js";
 
 const SEED = "meta-defense-v1";
 const MIN_SIDES = 20;
 const MIN_SEEN = 5;
-const MAIN_TYPES = new Set(["Unit", "Event", "Upgrade"]);
 
 export interface BenchSide {
   leader: string | null;
@@ -162,7 +164,7 @@ export interface Interval {
   cards: number;
 }
 
-const r4 = (x: number): number => Math.round(x * 1e4) / 1e4;
+const r4 = (x: number): number => round(x, 4);
 
 /** Card-clustered percentile bootstrap of mean(answers) - mean(controls) and of each mean: one draw resamples distinct cards. */
 export function clusteredContrast(
@@ -266,9 +268,9 @@ function main(): void {
     .parse(values.archetypes ?? "20");
   const p = progress("bench-meta-defense", { total: null, everyN: 1 });
 
-  const meta = metaFileSchema.parse(JSON.parse(readFileSync(path.join(runDir, "meta/archetypes.json"), "utf8")));
+  const meta = metaFileSchema.parse(readJson(path.join(runDir, "meta/archetypes.json")));
   const table = loadCounterTable();
-  const features = z.array(z.unknown()).parse(JSON.parse(readFileSync(path.join(runDir, "features/features.json"), "utf8")));
+  const features = z.array(z.unknown()).parse(readJson(path.join(runDir, "features/features.json")));
   const cards = new Map<string, { card: CounterCard; offers: AnswerOffer[] }>();
   for (const raw of features) {
     const card = counterCardSchema.parse(raw);
@@ -297,7 +299,7 @@ function main(): void {
       label: "tournament match results (primary)",
       file,
       games: () =>
-        tournamentResultsSchema.parse(JSON.parse(readFileSync(file, "utf8"))).matches.map((m) => {
+        tournamentResultsSchema.parse(readJson(file)).matches.map((m) => {
           const side = (i: 0 | 1): BenchSide => ({
             leader: m.sides[i].leader,
             base: m.sides[i].base,
@@ -308,15 +310,7 @@ function main(): void {
         }),
     });
   }
-  const karabast = path.join(REPO_ROOT, "data/originals/karabast");
-  const newest = existsSync(karabast)
-    ? readdirSync(karabast)
-        .filter((n) => /^games-[0-9a-f]{12}\.jsonl\.gz$/.test(n))
-        .sort(compareCodePoints)
-        .at(-1)
-    : undefined;
-  const gamesFile = values.games ?? (newest === undefined ? undefined : path.join(karabast, newest));
-  if (gamesFile === undefined) throw new Error(`no human-game extract under ${karabast}; run "pnpm bench:extract-games" or pass --games`);
+  const gamesFile = values.games ?? newestFile(path.join(REPO_ROOT, "data/originals/karabast"), /^games-[0-9a-f]{12}\.jsonl\.gz$/);
   sources.push({
     source: "karabast-human",
     label: "human Karabast online games (secondary, casual play; captured through 2026-02-10)",
@@ -351,7 +345,7 @@ function main(): void {
     return {
       source: s.source,
       label: s.label,
-      inputSha256: createHash("sha256").update(readFileSync(s.file)).digest("hex"),
+      inputSha256: sha256Hex(readFileSync(s.file)),
       measured: measured.length,
       contrast,
       byLeader,

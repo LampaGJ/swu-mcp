@@ -1,8 +1,7 @@
-import { encode } from "@toon-format/toon";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { packageDirOf, type CardStore } from "../data.js";
+import { MissingDataError, packageDirOf, readJson, type CardStore } from "../data.js";
 import {
   answerOffers,
   counterCardSchema,
@@ -44,6 +43,7 @@ import {
   suppliedBy,
   type DeckEnv,
 } from "./deck.js";
+import { fail, ok, round } from "./common.js";
 
 /**
  * @displayName Meta defense tools
@@ -89,17 +89,14 @@ function metaEnvOf(store: CardStore): MetaEnv {
   if (hit !== undefined) return hit;
   const dir = path.join(packageDirOf(store), "meta");
   const file = path.join(dir, "archetypes.json");
-  if (!existsSync(file)) throw new Error(`no ${file}; this data package predates the meta step (run "pnpm meta" or "pnpm build:data")`);
-  const read = (name: string): unknown => JSON.parse(readFileSync(name, "utf8"));
-  const features = z.array(z.unknown()).parse(read(path.join(packageDirOf(store), "features/features.json")));
-  const env = createMetaEnv(deckEnvOf(store), read(file), read(path.join(dir, "winrates.json")), loadCounterTable(), features);
+  if (!existsSync(file)) throw new MissingDataError(`no ${file}; this data package predates the meta step (run "pnpm meta" or "pnpm build:data")`);
+  const features = z.array(z.unknown()).parse(readJson(path.join(packageDirOf(store), "features/features.json")));
+  const env = createMetaEnv(deckEnvOf(store), readJson(file), readJson(path.join(dir, "winrates.json")), loadCounterTable(), features);
   envs.set(store, env);
   return env;
 }
 
-const ok = (value: unknown): ToolResult => ({ content: [{ type: "text", text: encode(value) }] });
-const fail = (message: string): ToolResult => ({ content: [{ type: "text", text: message }], isError: true });
-const r4 = (x: number): number => Math.round(x * 1e4) / 1e4 || 0;
+const r4 = (x: number): number => round(x, 4);
 const rate = (wins: number, n: number): number | null => (n === 0 ? null : r4(wins / n));
 
 const populationField = z

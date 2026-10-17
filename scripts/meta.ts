@@ -17,6 +17,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { DATED_DIR, readJson } from "../src/data.js";
 import { buildMeta, cardFacts, type MetaDeck } from "../src/meta/build.js";
 import {
   foldDeckEvidence,
@@ -30,22 +31,21 @@ import { metaFileSchema, metaReplaySchema, snapshotDeckSchema, winRatesFileSchem
 import { FormatRejects, premierVerdict, snapshotDeclaresPremier } from "../src/meta/format.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap, normalizeName, type CardMap } from "./bench/card-map.js";
-import { codeCommit, REPO_ROOT } from "./bench/code-commit.js";
+import { codeCommit, defaultRun, REPO_ROOT } from "./bench/code-commit.js";
 import { progress } from "./lib/progress.mjs";
 
 const MAIN_CHECKOUT = "/Volumes/Local Files/Projects/swu-mcp";
 const ROOTS = [REPO_ROOT, MAIN_CHECKOUT];
-const DATED = /^\d{4}-\d{2}-\d{2}$/;
 export const MIN_N = 10;
 
-const sha256File = (file: string): string => createHash("sha256").update(readFileSync(file)).digest("hex");
+const sha256File = (file: string): string => sha256Hex(readFileSync(file));
 
 function newestDated(sub: string, holds: (dir: string) => boolean): string | undefined {
   const found = ROOTS.map((root) => path.join(root, "data/originals", sub))
     .filter((dir) => existsSync(dir))
     .flatMap((dir) =>
       readdirSync(dir)
-        .filter((n) => DATED.test(n))
+        .filter((n) => DATED_DIR.test(n))
         .map((n) => path.join(dir, n)),
     )
     .filter(holds);
@@ -94,7 +94,7 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
   files.forEach((file, i) => {
     if (i % 2000 === 0) onFile(i);
     const bytes = readFileSync(path.join(dir, file));
-    listing.update(`${file}\u0000${createHash("sha256").update(bytes).digest("hex")}\n`);
+    listing.update(`${file}\u0000${sha256Hex(bytes)}\n`);
     const raw: unknown = JSON.parse(bytes.toString("utf8"));
     const verdict = premierVerdict(raw, premierSnapshot);
     if (!verdict.keep) {
@@ -108,7 +108,7 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
     }
     const d = parsed.data;
     const createdAt = d.metadata?.createdAt;
-    if (createdAt === undefined || !DATED.test(createdAt.slice(0, 10))) {
+    if (createdAt === undefined || !DATED_DIR.test(createdAt.slice(0, 10))) {
       stats.undated += 1;
       return;
     }
@@ -200,17 +200,7 @@ function main(): void {
       out: { type: "string" },
     },
   });
-  const runDir = path.resolve(
-    values.data ??
-      path.join(
-        REPO_ROOT,
-        "data/runs",
-        readdirSync(path.join(REPO_ROOT, "data/runs"))
-          .filter((n) => DATED.test(n))
-          .sort(compareCodePoints)
-          .at(-1) ?? "",
-      ),
-  );
+  const runDir = path.resolve(values.data ?? defaultRun());
   const originals = path.resolve(values.originals ?? path.join(DEFAULT_ORIGINALS_ROOT, "2026-10-16"));
   const snapshotDirs = (
     values.decks ?? [newestDated("decks", (dir) => deckFiles(dir).length > 0)].filter((d): d is string => d !== undefined)
@@ -221,7 +211,7 @@ function main(): void {
 
   const map = loadCardMap(runDir, originals);
   const featuresFile = path.join(runDir, "features/features.json");
-  const facts = cardFacts(JSON.parse(readFileSync(featuresFile, "utf8")));
+  const facts = cardFacts(readJson(featuresFile));
   const p = progress("meta", { total: null, everyN: 1 });
 
   const decks: MetaDeck[] = [];
@@ -240,11 +230,11 @@ function main(): void {
   let matchups: WinRatesFile["matchups"] = null;
   if (matchupsDir !== undefined) {
     const raw = path.join(matchupsDir, "matchups.json");
-    const capture = matchupCaptureSchema.parse(JSON.parse(readFileSync(path.join(matchupsDir, "capture.json"), "utf8")));
+    const capture = matchupCaptureSchema.parse(readJson(path.join(matchupsDir, "capture.json")));
     const hash = sha256File(raw);
     if (hash !== capture.sha256) throw new Error(`${raw} sha256 ${hash} differs from its capture.json pin ${capture.sha256}`);
     outcomeHashes["tournament-matchups"] = hash;
-    matchups = foldMatchups(matchupResponseSchema.parse(JSON.parse(readFileSync(raw, "utf8"))), nameResolver(map, facts), capture.window);
+    matchups = foldMatchups(matchupResponseSchema.parse(readJson(raw)), nameResolver(map, facts), capture.window);
   }
   p.log({ phase: "deck evidence" });
   const deckEvidence = foldDeckEvidence(decks, facts, meta.window, MIN_N);

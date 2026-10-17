@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { readJson } from "../data.js";
 import { compareCodePoints } from "../swu/canonical.js";
 
 /**
@@ -38,7 +39,7 @@ const manifestFormatSchema = z.looseObject({ format: z.string().optional() });
 export function snapshotDeclaresPremier(dir: string): boolean {
   const file = path.join(dir, "manifest.json");
   if (!existsSync(file)) return false;
-  const parsed = manifestFormatSchema.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  const parsed = manifestFormatSchema.safeParse(readJson(file));
   return parsed.success && isPremier(parsed.data.format);
 }
 
