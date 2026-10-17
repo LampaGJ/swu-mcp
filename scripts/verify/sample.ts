@@ -327,32 +327,39 @@ function buildCurated(inputs: Inputs, seed: string): Packet {
 
 const rowFamily = (rows: string): string => (rows.split("|")[0] ?? "").split(":")[0] ?? "";
 
-function buildPairings(inputs: Inputs, seed: string): Packet {
+/** Builds the evidence view of one synergy pair, shared by the #9 sample and the pair fixture. */
+export function pairingItemBuilder(inputs: Inputs): (pair: Rec) => Rec {
   const raw = rawByKey(inputs);
   const features = featuresByKey(inputs);
-  const idOf = (pair: Rec): string => `${str(pair, "cardA")}|${str(pair, "cardB")}|${str(pair, "rows")}`;
   const defs = new Map(inputs.complementarity.map((row) => [str(row, "id"), row]));
   const side = (key: string, kind: "offers" | "wants"): Rec => {
     const record = raw.get(key);
     const tags = ((features.get(key)?.tags ?? {}) as Record<string, Rec[]>)[kind] ?? [];
     return { card: record === undefined ? null : rawView(record), [kind]: tags };
   };
+  return (pair) => {
+    const rows = str(pair, "rows").split("|");
+    return {
+      claim: { direction: "A offers what B wants", reason: pair.reason, rows: pair.rows, linkStrength: pair.link, nonObviousScore: pair.nonObvious, score: pair.score },
+      rowDefinitions: rows.map((row) => {
+        const def = defs.get(row.split(":")[0]);
+        return { row, definition: def === undefined ? null : compact({ offers: def.offers, wants: def.wants, reason: def.reason }) };
+      }),
+      a: side(str(pair, "cardA"), "offers"),
+      b: side(str(pair, "cardB"), "wants"),
+    };
+  };
+}
+
+export const PAIRINGS_INSTRUCTIONS = `${WHAT_TO_CHECK.pairings} ${VERDICT_RULE}`;
+
+function buildPairings(inputs: Inputs, seed: string): Packet {
+  const itemOf = pairingItemBuilder(inputs);
+  const idOf = (pair: Rec): string => `${str(pair, "cardA")}|${str(pair, "cardB")}|${str(pair, "rows")}`;
   const items = orderStratified(inputs.pairs, seed, idOf, [(pair) => rowFamily(str(pair, "rows"))])
     .slice(0, 40)
-    .map((pair) => {
-      const rows = str(pair, "rows").split("|");
-      return {
-        id: idOf(pair),
-        claim: { direction: "A offers what B wants", reason: pair.reason, rows: pair.rows, linkStrength: pair.link, nonObviousScore: pair.nonObvious, score: pair.score },
-        rowDefinitions: rows.map((row) => {
-          const def = defs.get(row.split(":")[0]);
-          return { row, definition: def === undefined ? null : compact({ offers: def.offers, wants: def.wants, reason: def.reason }) };
-        }),
-        a: side(str(pair, "cardA"), "offers"),
-        b: side(str(pair, "cardB"), "wants"),
-      };
-    });
-  return { packet: "pairings", packetType: "pairings", seed, itemCount: items.length, whatToCheck: `${WHAT_TO_CHECK.pairings} ${VERDICT_RULE}`, items };
+    .map((pair) => ({ id: idOf(pair), ...itemOf(pair) }));
+  return { packet: "pairings", packetType: "pairings", seed, itemCount: items.length, whatToCheck: PAIRINGS_INSTRUCTIONS, items };
 }
 
 function buildFungible(inputs: Inputs, seed: string): Packet {
