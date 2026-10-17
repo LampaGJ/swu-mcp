@@ -11,6 +11,13 @@ const hasBuiltData = existsSync(RUNS) && readdirSync(RUNS).some((name) => /^\d{4
 
 const ELIA_KANE = "06010242";
 const IDEN_VERSIO = "0101002";
+const ASAJJ_VENTRESS = "04010001";
+const CHOPPER_BASE = "0101030";
+const DECKLIST = [
+  { card: ELIA_KANE, count: 3 },
+  { card: "0101033", count: 3 },
+  { card: "0101074", count: 2 },
+];
 
 /** One valid call per registered tool. A tool without an entry fails the suite, so new tools cannot be missed. */
 const ARGUMENTS: Record<string, Record<string, unknown>> = {
@@ -48,6 +55,17 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   list_sets: {},
   format_legality: { cardKey: ELIA_KANE },
   search_rulings: { query: "damage", since: "2024-01-01", limit: 3 },
+  deck_audit: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
+  deck_legality_check: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
+  suggest_leader_base: { decklist: DECKLIST, limit: 3 },
+  playable_cards: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, decklist: DECKLIST, limit: 5 },
+  fungible_in_deck: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
+  budget_alternatives: { decklist: DECKLIST, minSaving: 0.01 },
+  price_list: { items: DECKLIST, groupBy: "rarity" },
+  trade_balance: { sideA: DECKLIST, sideB: [{ card: ASAJJ_VENTRESS, count: 1 }] },
+  owned_vs_needed: { decklist: DECKLIST, owned: [{ card: "0101033", count: 1 }] },
+  play_value_vs_price: { minSampleSize: 1000, limit: 5 },
+  score_vs_play: { limit: 5 },
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {
