@@ -25,7 +25,7 @@ const effectsOf = (clause: string) => parseClause(clause).accepted.effect.map((e
 
 // One real clause per effect category, taken from the 2026-10-16 card set.
 const GOLDEN: readonly (readonly [string, string, number | string | undefined, string | undefined])[] = [
-  ["A friendly unit loses all abilities for this round.", "blank", 1, undefined],
+  ["A friendly unit loses all abilities for this round.", "blank", 1, "friendly/unit/any/one/"],
   ["You may return a non-leader unit that costs 3 or less to its owner's hand.", "bounce", 1, "any/unit/any/one/cost_le_3,non_leader"],
   ["The chosen unit captures it.", "capture", 1, "ref/ref/any/one/"],
   ["If you do, use that ability again.", "copy_ability", 1, undefined],
@@ -47,7 +47,7 @@ const GOLDEN: readonly (readonly [string, string, number | string | undefined, s
   ["Heal 3 damage from a unit or base.", "heal", 3, "any/unit_or_base/any/one/"],
   ["Ignore the aspect penalties on non-Villainy Official units you play.", "ignore_aspect_penalty", "all", undefined],
   ["If you do, deal 1 indirect damage to a player.", "indirect_damage", 1, "any/player/any/one/"],
-  ["Look at an opponent's hand.", "look", 1, undefined],
+  ["Look at an opponent's hand.", "look", 1, "enemy/hand/any/one/"],
   ["Discard a card from the defending player's deck.", "mill", 1, undefined],
   ["If you do, its controller creates an X-Wing token.", "opponent_token", 1, undefined],
   ["Play a unit from your hand.", "play_extra", 1, undefined],
@@ -56,7 +56,7 @@ const GOLDEN: readonly (readonly [string, string, number | string | undefined, s
   ["If you do, ready a Resistance unit.", "ready", 1, "any/unit/any/one/trait:Resistance"],
   ["For each friendly unit or upgrade that has an odd cost, ready a resource.", "ready_resource", 1, undefined],
   ["You may return an Underworld card from your discard pile to your hand.", "recursion", 1, "any/card/any/one/trait:Underworld"],
-  ["Each enemy unit loses Hidden for this phase.", "remove_keyword", 1, undefined],
+  ["Each enemy unit loses Hidden for this phase.", "remove_keyword", 1, "enemy/unit/any/all/"],
   ["This upgrade can't be defeated by enemy card abilities.", "restriction", undefined, "self/upgrade/any/one/"],
   ["Search the top 7 cards of your deck for a unit, reveal it, and play it.", "search", 7, undefined],
   ["Defeat this unit.", "self_defeat", 1, undefined],

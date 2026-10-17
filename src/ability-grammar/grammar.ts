@@ -10,6 +10,20 @@ const HEAD_END = /\s(?:with|without|that|who|which)\s/i;
 const HAS_RE = /\b(with|without) (?:a|an) (?<x>[^,.;]+?)(?: on it)?$/i;
 const NAME_RE = /^[A-Z][\p{L}'.-]*(?: (?:the|of|and|[A-Z][\p{L}'.-]*))+$/u;
 const VOCAB_RE = new RegExp(`\\b(?:${alternation([...TRAIT_WORDS, ...ASPECTS, ...TOKENS])})\\b`, "g");
+const WITH_KEYWORD_RE = new RegExp(`\\bwith (${KW_ALT})\\b`);
+
+/** Kind tests in priority order; the first that matches a noun phrase names its kind. */
+const KIND_TESTS: readonly [SwuTarget["kind"], RegExp][] = [
+  ["base", /\bbases?\b/],
+  ["upgrade", /\bupgrades?\b/],
+  ["token", /\btokens?\b/],
+  ["card", /\bcards?\b/],
+  ["unit", /\bunits?\b/],
+  ["leader", /\bleader\b/],
+  ["resource", /\bresources?\b/],
+  ["player", /\b(?:player|opponent)\b/],
+];
+const kindOf = (hl: string): SwuTarget["kind"] | undefined => KIND_TESTS.find(([, re]) => re.test(hl))?.[0];
 
 /** A card name such as "Jabba the Hutt": capitalised words, at least one of them not a trait, aspect or token word. */
 function isCardName(s: string): boolean {
@@ -27,12 +41,14 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   const s = (raw ?? "").trim();
   const l = s.toLowerCase();
   const t: SwuTarget = { side: "any", kind: "ref", arena: "any", quant: "one", restrict: [], text: "" };
-  if (/\bfriendly\b|\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b|\byou control\b/.test(l)) t.side = "friendly";
+  if (/\bfriendly\b|\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b|\byou (?:control|play)\b/.test(l)) t.side = "friendly";
   if (/\benemy\b|\bopponent'?s?'?\b|\bthe defender\b|\bthe attacker\b|\bdefending unit\b|\bthey control\b/.test(l)) {
     t.side = t.side === "friendly" ? "mixed" : "enemy";
   }
-  if (/^(?:this|attached) (?:unit|leader|upgrade)\b|^(?:it|him|her|itself|this leader)$|^(?:that|the chosen|each chosen|the attacking) unit\b|^them$/.test(l)) {
-    t.side = /^(?:this|attached)/.test(l) || /^(?:him|her|itself|this leader)$/.test(l) ? "self" : "ref";
+  // "its controller's base" belongs to whoever controls the referent; parseClause resolves it from the words before it.
+  if (t.side === "any" && /\bits controller's\b/.test(l)) t.side = "ref";
+  if (/^(?:this|attached) (?:unit|leader|upgrade)\b|^(?:it|he|she|him|her|itself|this leader)$|^(?:that|the chosen|each chosen|the attacking) unit\b|^them$/.test(l)) {
+    t.side = /^(?:this|attached)/.test(l) || /^(?:he|she|him|her|itself|this leader)$/.test(l) ? "self" : "ref";
   }
   const headEnd = s.search(HEAD_END);
   const head = headEnd < 0 ? s : s.slice(0, headEnd);
@@ -40,14 +56,16 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   const named = isCardName(s);
   if (named) t.kind = "card";
   else if (/\bunits? or (?:a |an )?(?:[a-z']+ )?bases?\b|\bbases? or (?:a |an )?units?\b/.test(hl)) t.kind = "unit_or_base";
-  else if (/\bbases?\b/.test(hl)) t.kind = "base";
-  else if (/\bupgrades?\b/.test(hl)) t.kind = "upgrade";
-  else if (/\btokens?\b/.test(hl)) t.kind = "token";
-  else if (/\bcards?\b/.test(hl)) t.kind = "card";
-  else if (/\bunits?\b/.test(hl)) t.kind = "unit";
-  else if (/\bleader\b/.test(hl)) t.kind = "leader";
-  else if (/\bresources?\b/.test(hl)) t.kind = "resource";
-  else if (/\b(?:player|opponent)\b/.test(hl)) t.kind = "player";
+  else {
+    // "a Force unit or a Force upgrade": the first alternative names the kind and the others are kept, rather than letting test order pick one.
+    const kinds = [...new Set(hl.split(/ or /).map(kindOf).filter((k) => k !== undefined))];
+    if (kinds.length === 2 && kinds.includes("unit") && kinds.includes("base")) t.kind = "unit_or_base";
+    else {
+      const kind = kinds.length > 1 ? kinds[0] : kindOf(hl);
+      if (kind) t.kind = kind;
+      if (kinds.length > 1) for (const k of kinds.slice(1)) t.restrict.push(`or_kind:${k}`);
+    }
+  }
   if (/\bground\b/.test(l)) t.arena = "ground";
   if (/\bspace\b/.test(l)) t.arena = t.arena === "ground" ? "both" : "space";
   if (/\bin the same arena\b/.test(l)) t.arena = "same";
@@ -76,6 +94,7 @@ export function parseTarget(raw: string | undefined): SwuTarget {
     for (const am of head.matchAll(ASPECT_RE)) t.restrict.push(`${am[1] ? "non_" : ""}aspect:${am[2]}`);
   }
   if ((m = s.match(HAS_RE))) t.restrict.push(`${m[1].toLowerCase()}:${m.groups?.x ?? ""}`);
+  if ((m = s.match(WITH_KEYWORD_RE))) t.restrict.push(`keyword:${m[1]}`);
   t.restrict = [...new Set(t.restrict)].sort(compareCodePoints);
   t.text = s;
   return t;
@@ -164,8 +183,11 @@ def("search", "search", "effect",
   "\\bsearch the top (?<n>\\d+|X) cards of your deck for (?<for>[^.;]+?)(?=$|[.;]|, reveal)",
   (g) => ({ n: numOf(g.n), for: g.for, upTo: (str(g.for).match(/up to (\d+)/) || [])[1] ?? null }));
 def("look", "look", "effect",
-  "\\blook at (?:the top (?<n>\\d+) cards? of (?:your|an opponent's|their) deck|an opponent's hand|the top card of (?:your|an opponent's|each player's) deck)",
-  (g) => ({ n: g.n ? Number(g.n) : 1 }));
+  "\\blook at (?<what>the top (?<n>\\d+) cards? of (?:your|an opponent's|their) deck|(?:an opponent's|their|its controller's) hand|the top card of (?:your|an opponent's|each player's) deck)",
+  (g) => {
+    const what = str(g.what);
+    return { n: g.n ? Number(g.n) : 1, target: { ...parseTarget(what), kind: /hand$/i.test(what) ? "hand" : "deck" } };
+  });
 def("reveal_ref", "reveal", "structure", "\\breveal (?:it|them|that card|the top card of your deck)\\b", () => ({}));
 def("discard_opponent", "discard_opponent", "effect",
   "\\b(?:an opponent|each opponent|that player|each player|the defending player|they) discards? (?<n>\\d+|a|an) cards?(?: from (?:their|his or her) hand)?",
@@ -210,14 +232,23 @@ def("stat_give", "stat_mod", "effect", "\\bgive (?<tgt>[^.;:+⟦]+?) (?<p>[+-]\\
 def("stat_gets", "stat_mod", "effect",
   "(?<tgt>\\b(?:the|each|a|an|this|attached|other|another|that|it|they|friendly|enemy)\\b[^.;:,+⟦]*?)?\\bgets? (?<p>[+-]\\d+|[+-]X)\\/(?<h>[+-]\\d+|[+-]X)",
   statBuild);
-const SUBJ = "(?<tgt>\\b(?:attached|this|each|other|another|friendly|enemy|that|the|it|they|a|an|your)\\b[^.;:,+⟦]*?)?";
+const SUBJ = "(?<tgt>\\b(?:attached|this|each|other|another|friendly|enemy|that|those|these|the|it|they|a|an|your)\\b[^.;:,+⟦]*?)?";
+/**
+ * The whole noun phrase from the clause start or the last comma, stopping at "and" so
+ * "Each unit gains Sentinel and loses Saboteur" leaves the first verb to its own production.
+ */
+const LOSE_SUBJ = "(?:(?:^|(?<=, ))(?<tgt>(?:(?! and )[^.;:,+⟦])+?) )?";
+const KW_LIST = `(?<kw>(?:${KW_ALT})(?:(?:,|,? and) (?:${KW_ALT}))*)`;
+/** Effects whose subject, when not written, is the previous effect's target ("gains Sentinel and loses Saboteur"). */
+const SUBJECT_INHERITED = new Set(["blank", "remove_keyword"]);
 def("grant_keyword", "grant_keyword", "effect",
   `${SUBJ}\\b(?:gains?|gain|have|has) (?<kw>(?:${KW_ITEM})(?:(?:,|,? and) (?:${KW_ITEM}))*)`,
   (g) => ({ keywords: parseKeywordList(str(g.kw)), target: parseTarget((g.tgt ?? "").trim() || "this unit") }));
 def("give_keyword", "grant_keyword", "effect",
   `\\bgive (?<tgt>[^.;:+⟦]+?) (?<kw>(?:${KW_ITEM})(?:(?:,|,? and) (?:${KW_ITEM}))*)(?= for| until|\\.|$|,)`,
   (g) => ({ keywords: parseKeywordList(str(g.kw)), target: parseTarget(g.tgt) }));
-def("lose_abilities", "blank", "effect", "\\bloses? all (?:abilities|keywords)\\b", () => ({ n: 1 }));
+def("lose_abilities", "blank", "effect", `${LOSE_SUBJ}\\bloses? all (?:abilities|keywords)\\b`,
+  (g) => ({ n: 1, ...(g.tgt?.trim() ? { target: parseTarget(g.tgt) } : {}) }));
 
 // --- tempo
 // Resource productions come first: on an equal-length match the earlier production wins, and the generic exhaust/ready would take a resource for a unit.
@@ -237,6 +268,7 @@ def("initiative", "take_initiative", "effect", "(?<!\\b(?:time|when|whenever|if|
 def("cant", "restriction", "effect",
   "\\b(?<who>[^.;:,]*?)\\bcan't (?<what>attack|ready|be attacked|be defeated|be captured|be damaged|be healed|be played|attack bases|play events|deal damage|be targeted)",
   (g) => ({ what: g.what, target: parseTarget(g.who) }));
+def("cant_gain", "restriction", "effect", "\\bcan't gain abilities\\b", () => ({ what: "gain abilities", target: parseTarget("them") }));
 def("prevent", "prevent_damage", "effect", "\\bprevent (?<n>all|that|\\d+)(?: of that)? damage\\b",
   (g) => ({ n: g.n === "all" || g.n === "that" ? "all" : Number(g.n) }));
 
@@ -264,7 +296,10 @@ def("cost_more", "cost_increase", "effect", "\\bcosts? (?:\\[)?(?<n>\\d+)(?: res
 def("free", "cost_reduction", "effect", "\\bfor free\\b", () => ({ n: "all" }));
 def("play_from", "play_extra", "effect",
   "\\bplay (?<what>[^.;]+?) from (?<zone>your hand|your discard pile|your resources|the top of your deck|among them|an opponent's discard pile)",
-  (g) => ({ n: 1, zone: g.zone, what: g.what }));
+  (g) => {
+    const count = str(g.what).match(/^(?:up to )?(\d+|two|three) /i);
+    return { n: count ? numOf(count[1]) : 1, zone: g.zone, what: g.what };
+  });
 def("play_generic", "play_extra", "effect", "\\bplay (?:a|an|that|it|the) (?:[a-z'-]+ ){0,3}(?:card|unit|event|upgrade)\\b", () => ({ n: 1, zone: "unspecified" }));
 def("play_it", "play_extra", "effect", "\\bplay it\\b", () => ({ n: 1, zone: "unspecified", what: "it" }));
 def("attach_self", "attach", "effect", `\\battach (?:this unit|him|her|it) as an upgrade to ${TGT}`, (g) => ({ n: 1, target: parseTarget(g.tgt) }));
@@ -288,7 +323,8 @@ def("opponent_creates", "opponent_token", "effect",
   (g) => ({ token: g.tok, n: numOf(g.n) }));
 def("discard_from_ref", "discard_opponent", "effect", "\\bdiscard a card from (?:it|that hand|their hand)\\b", () => ({ n: 1 }));
 def("opponent_chooses", "opponent_select", "structure", "\\b(?:an opponent|each player|a player|each opponent)(?: may)? chooses? (?:a|an|\\d+) [^.;]*?they control\\b", () => ({}));
-def("lose_keyword", "remove_keyword", "effect", `\\b(?:loses?|lose) (?:${KW_ALT})\\b`, () => ({ n: 1 }));
+def("lose_keyword", "remove_keyword", "effect", `${LOSE_SUBJ}\\b(?:loses?|lose) ${KW_LIST}\\b`,
+  (g) => ({ n: 1, keywords: str(g.kw).split(/,? and |, /), ...(g.tgt?.trim() ? { target: parseTarget(g.tgt) } : {}) }));
 def("repeat_ability", "copy_ability", "effect", "\\buse (?:that|this|the) ability again\\b", () => ({ n: 1 }));
 def("return_control", "return_control", "structure", "\\bits owner (?:takes control of it|rescues it)\\b", () => ({}));
 def("choose_one", "modal", "structure", "\\bchoose one\\b", () => ({}));
@@ -300,6 +336,7 @@ def("instead", "replacement", "modifier", "\\binstead\\b", () => ({}));
 
 // --- conditions (never classify a clause on their own)
 def("if_you_do", "if_you_do", "condition", "\\bif (?:you do|they do|it does)\\b", () => ({}));
+def("if_you_dont", "if_you_do", "condition", "\\bif (?:you don't|they don't|it doesn't)\\b", () => ({ check: "not" }));
 def("control_resources", "control_resources", "condition", "\\b(?:if|while) you control (?<n>\\d+) or more resources\\b", (g) => ({ n: Number(g.n) }));
 def("control_n", "control", "condition",
   "\\b(?:if|while) (?:you|an opponent) controls? (?:(?<n>\\d+) or more |(?<art>a|an|another) )?(?<what>[^,.;]+?)(?=,|\\.|$| and | this )",
@@ -307,13 +344,16 @@ def("control_n", "control", "condition",
 def("initiative_cond", "initiative", "condition", "\\b(?:if|while) (?:you have|an opponent has) the initiative\\b", () => ({}));
 def("force_cond", "force", "condition", "\\b(?:if|while) the force is with you\\b", () => ({}));
 def("self_state", "self_state", "condition",
-  "\\b(?:if|while) (?:this|attached) unit (?:is|has) (?<st>ready|exhausted|damaged|undamaged|attacking|defending|upgraded|in the (?:ground|space) arena|a leader unit|no damage on it)",
-  (g) => ({ state: g.st }));
+  "\\b(?:if|while) (?:this|attached) unit (?:is|has) (?<st>ready|exhausted|damaged|undamaged|attacking|defending|upgraded|in the (?:ground|space) arena|a leader unit|no damage on it|\\d+ or (?:more|less) (?:power|remaining hp|hp))",
+  (g) => {
+    const cmp = str(g.st).match(/^(\d+) or (more|less) (power|remaining hp|hp)$/i);
+    return { state: cmp ? `${cmp[3].toLowerCase() === "power" ? "power" : "hp"}_${cmp[2].toLowerCase() === "more" ? "ge" : "le"}_${cmp[1]}` : g.st };
+  });
 def("this_phase", "event_this_phase", "condition",
   "\\bif (?:an? |another )?(?:enemy |friendly )?(?:[a-z]+ )?(?:unit|card|leader|event)s? (?:was|were|has been|have been) (?:defeated|played|dealt damage|healed)[^,.;]* this (?:phase|round)",
   () => ({}));
 def("you_did_this_phase", "event_this_phase", "condition",
-  "\\bif you (?:have )?(?<verb>played|attacked with|dealt|defeated|drew|healed|used|attacked|discarded|resourced|disclosed)\\b(?<obj>[^,.;]*?) this (?:phase|round)",
+  "\\bif you(?: have|'ve)? (?<verb>played|attacked with|dealt|defeated|drew|healed|used|attacked|discarded|resourced|disclosed)\\b(?<obj>[^,.;]*?) this (?:phase|round)",
   (g) => {
     const obj = str(g.obj).trim();
     return { verb: g.verb, ...(obj ? { what: parseTarget(obj) } : {}) };
@@ -326,7 +366,7 @@ def("ignore_penalty", "ignore_aspect_penalty", "effect",
   "\\b(?:ignoring|ignore) (?:(?<n>\\d+) of )?(?:its|the|their)(?: [a-z]+,?| or)* aspect penalt(?:y|ies)(?: on (?<on>[^.;,]+))?",
   (g) => ({ n: g.n ? Number(g.n) : "all", ...(g.on ? { applies: parseTarget(g.on) } : {}) }));
 def("ref_check", "target_check", "condition",
-  "\\bif (?<subj>it|that unit|that card|the defender|the attacker|the chosen unit|the revealed card)(?<verb>'s| is| was| has| had| costs| shares)\\b(?<rest>[^,.;]*)",
+  "\\bif (?<subj>it|that unit|that card|the defender|the attacker|the defending unit|the attacking unit|the chosen unit|the revealed card)(?<verb>'s| is| was| has| had| costs| shares)\\b(?<rest>[^,.;]*)",
   (g) => {
     const rest = str(g.rest).trim();
     const verb = str(g.verb).trim();
@@ -338,6 +378,8 @@ def("ref_check", "target_check", "condition",
     if (/^(?:a|an) /.test(noun)) return { check: neg ? "is_not" : "is", what: parseTarget(noun) };
     return { check: "state", state: rest };
   });
+def("shares_check", "target_check", "condition", "\\bif (?<subj>(?:a|an|another) [^,.;]+?) shares a trait with (?<obj>[^,.;]+)",
+  (g) => ({ check: "shares_trait", applies: parseTarget(g.subj), what: parseTarget(g.obj) }));
 def("ref_cost", "target_check", "condition", "\\bif (?:its|that unit's|that card's) cost is (?<c>odd|even|\\d+(?: or (?:less|more))?)", (g) => ({ check: "cost", state: g.c }));
 def("attached_is", "target_check", "condition", "\\bif attached unit is (?<what>[^,.;]+)", (g) => ({ check: "attached_is", what: parseTarget(g.what) }));
 def("next_initiative", "initiative", "condition", "\\bthe next time you take the initiative\\b", () => ({ check: "next_take" }));
@@ -347,7 +389,8 @@ def("for_each", "scaling", "condition", "\\bfor (?<kind>each|every) (?<per>[^,.;
     return { per: g.per, ...(step ? { every: Number(step[1]) } : {}) };
   });
 def("you_may", "optional", "modifier", "\\byou may\\b", () => ({}));
-def("for_phase", "duration_phase", "modifier", "\\bfor this (?:phase|round)\\b", () => ({}));
+def("for_phase", "duration_phase", "modifier", "\\bfor this phase\\b", () => ({}));
+def("for_round", "duration_round", "modifier", "\\bfor this round\\b", () => ({}));
 def("for_attack", "duration_attack", "modifier", "\\bfor this attack\\b", () => ({}));
 def("while_generic", "while_other", "condition", "^while (?<w>[^,]+)(?=,)", (g) => ({ w: g.w }));
 def("otherwise", "otherwise", "modifier", "\\botherwise\\b", () => ({}));
@@ -418,6 +461,18 @@ export function parseClause(clause: string): ClauseParse {
     }
   }
   for (const e of accepted.effect) if (e.cat === "search") e.dest = searchDestination(clause.slice(e.span[1]));
+  accepted.effect.forEach((e, i) => {
+    if (SUBJECT_INHERITED.has(e.cat) && !e.target) {
+      const prev = accepted.effect[i - 1]?.target;
+      if (prev) e.target = structuredClone(prev);
+    }
+  });
+  for (const f of [...accepted.effect, ...accepted.condition]) {
+    if (f.target?.side !== "ref" || !/\bits controller's\b/i.test(f.target.text)) continue;
+    const before = clause.slice(0, f.span[0]).toLowerCase();
+    if (/\benemy\b/.test(before)) f.target.side = "enemy";
+    else if (/\bfriendly\b/.test(before)) f.target.side = "friendly";
+  }
   if (accepted.condition.some((c) => !NON_GATING.has(c.cat))) {
     for (const f of accepted.effect) f.conditional = true;
     for (const f of accepted.structure) if (f.cat === "granted_ability") f.conditional = true;
