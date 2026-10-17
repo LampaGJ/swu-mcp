@@ -73,8 +73,19 @@ describe("resources", () => {
 });
 
 describe("prompts", () => {
-  it("lists both prompts", async () => {
-    expect((await client.listPrompts()).prompts.map((prompt) => prompt.name).sort()).toEqual(["build_deck_for_leader", "rules_question"]);
+  it("lists every prompt", async () => {
+    expect((await client.listPrompts()).prompts.map((prompt) => prompt.name).sort()).toEqual(["build_deck_for_leader", "meta_defense", "rules_question"]);
+  });
+
+  it("meta_defense embeds the deck, runs archetypes, answers, checks and the audit in order, and names only registered tools", async () => {
+    const result = await client.getPrompt({ name: "meta_defense", arguments: { deck: "Asajj Ventress with Chopper Base" } });
+    const text = (result.messages[0].content as { text: string }).text;
+    expect(text).toContain("Asajj Ventress with Chopper Base");
+    const order = ["meta_archetypes", "meta_threats", "meta_answers", "card_rulings", "deck_audit"].map((tool) => text.indexOf(`\`${tool}\``));
+    expect(order.every((at) => at >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    const named = [...text.matchAll(/`([a-z_]+)`/g)].map((match) => match[1]);
+    expect(named.filter((name) => !(name in TOOLS))).toEqual([]);
   });
 
   it("rules_question embeds the question and the find-rule, find-ruling, cite workflow", async () => {

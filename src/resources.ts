@@ -9,8 +9,8 @@ import { normalizeSectionId } from "./tools/rules.js";
 
 /**
  * @displayName Resources and prompts
- * @strategicPurpose Gives a host cacheable reference text (rubric, glossary, usage guide, rules sections) and two
- * workflow prompts, so an assistant spends tool calls on questions and not on orientation.
+ * @strategicPurpose Gives a host cacheable reference text (rubric, glossary, usage guide, rules sections) and three
+ * workflow prompts (rules, deck building, meta defense), so an assistant spends tool calls on questions and not on orientation.
  * @tacticalObjective The rubric and glossary are read from <package>/docs, which ships inside the data package, so an
  * npx install serves them with no repo checkout. The usage guide and prompts are bundled text. Rules sections come from
  * the same rules store the rules tools use.
@@ -50,6 +50,11 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 - A keyword: \`keyword_rules\`. One card's rulings: \`card_rulings\`. Rulings by text, keyword or date: \`search_rulings\`.
 - Quote a ruling with its date. Say plainly when a ruling is undated.
 
+## Meta defense
+- The current archetypes (tournament decklists, placement-weighted; community lists apart): \`meta_archetypes\`. One archetype's key units, curve, keywords and threats: \`meta_threats\`.
+- Cards in your aspects that answer the most meta share, with clause evidence and win rates: \`meta_answers\` (leader and base, or a decklist). Then check the swaps with \`deck_audit\`.
+- Win rates name their source: tournament matchups first; human Karabast games are a secondary, casual signal.
+
 ## Formats
 - Is a card legal: \`format_legality\`. It reads set printings only; there is no ban list in the data, so confirm bans on the official site.
 
@@ -75,6 +80,16 @@ Work in this order:
 4. Fill each role with the best card for the money: \`rank_cards\` for strength, \`fungible_substitutes\` for cheaper or off-aspect alternates, \`value_vs_price\` for budget.
 5. Check every card with \`format_legality\`, and check the evidence with \`play_stats\`.
 6. Report the list with a one-line reason per card, the aspect penalty, and the data version from \`data_version\`. Say that bans are not in the data.`;
+
+const META_DEFENSE = (deck: string): string => `Find what this Star Wars: Unlimited Premier deck must include to beat the current top archetypes: ${deck}
+
+Work in this order:
+1. Resolve the leader, base and any listed cards with \`resolve_card_name\`. Call \`data_version\` once.
+2. Call \`meta_archetypes\` for the largest archetypes. Report each with its share, top-8 share, date window and the population and sources it rests on (tournament decklists first; say when a figure comes from community lists or from casual Karabast games).
+3. Call \`meta_threats\` on the three to five archetypes that matter most, and name their key units and threats.
+4. Call \`meta_answers\` with the leader and base (or the decklist). Answers are candidates: for each one you keep, read its clause evidence, check it with \`card_features\` or \`explain_synergy\` where useful, and confirm any rules question with \`keyword_rules\` or \`card_rulings\`. Drop an answer the text does not support.
+5. Propose swaps (cards out, answers in) and run \`deck_audit\` on the changed list to check curve, aspect penalty and orphan wants. Run \`deck_legality_check\` on the final list.
+6. Report each swap with the threats it answers, its coverage, its cost, the win rate with n and source when present, and the data version. Never state a candidate as fact.`;
 
 const docs = new Map<string, string>();
 
@@ -160,5 +175,14 @@ export function registerResources(server: McpServer, store: CardStore): void {
     "build_deck_for_leader",
     { title: "Build a deck for a leader", description: "Choose a base, find the engine, fill each role, then audit legality and play data.", argsSchema: { leader: z.string().min(1).describe("Leader name, for example Iden Versio") } },
     ({ leader }) => userMessage(BUILD_DECK(leader)),
+  );
+  server.registerPrompt(
+    "meta_defense",
+    {
+      title: "Defend against the meta",
+      description: "Archetypes, then their threats, then the answers in our aspects, checked against card text and rulings, then deck_audit with the swaps.",
+      argsSchema: { deck: z.string().min(1).describe("Our leader and base, or a decklist, for example Asajj Ventress with Chopper Base") },
+    },
+    ({ deck }) => userMessage(META_DEFENSE(deck)),
   );
 }

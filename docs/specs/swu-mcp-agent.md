@@ -24,6 +24,10 @@ items:
     title: Deck building, audit and legality workflows
     tier: feature
     needs: [capability-map, trust-model, synergy-discovery]
+  - id: meta-defense
+    title: Meta archetypes, threats and answers
+    tier: feature
+    needs: [capability-map, trust-model, synergy-discovery]
   - id: collector-market-workflows
     title: Prices, value, trades and collection gaps
     tier: feature
@@ -35,7 +39,7 @@ items:
   - id: validation-suite
     title: Scenario suite the template is validated against
     tier: feature
-    needs: [rules-protocol, synergy-discovery, deckbuilding-workflows, collector-market-workflows, limits-and-degradation]
+    needs: [rules-protocol, synergy-discovery, deckbuilding-workflows, meta-defense, collector-market-workflows, limits-and-degradation]
   - id: answer-style
     title: Answer format for players and for other agents
     tier: polish
@@ -49,13 +53,13 @@ constraints:
   - The agent reads its tool guidance at runtime (swu://usage-guide, tools/list) instead of baking tool names into its prompt, so it does not drift as the server grows.
   - Model is Fable, by the owner's request for this agent.
 tracker: github
-related: ["#5", "#16", "#18", "#19", "#20"]
+related: ["#5", "#16", "#18", "#19", "#20", "#25"]
 review_by: 2027-01-17
 ---
 
 # SWU strategist agent that fully uses swu-mcp
 
-Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.github.io/swu-mcp/) is a public, read-only MCP server for Star Wars: Unlimited (SWU). It serves 45 tools (cards and search, value, text features, synergy, substitutes, market and play data, rules, similarity, sets and legality, decks and trades, provenance), resources (`rules://core-primer`, `swu://rubric`, `swu://glossary`, `swu://usage-guide`, `swu://rules/{section}`) and prompts (`rules_question`, `build_deck_for_leader`). Results are TOON tables. The README tool list and `swu://usage-guide` are the authoritative catalogue. Measured accuracy is in `docs/verification/`.
+Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.github.io/swu-mcp/) is a public, read-only MCP server for Star Wars: Unlimited (SWU). It serves 48 tools (cards and search, value, text features, synergy, substitutes, market and play data, rules, similarity, sets and legality, decks and trades, meta defense, provenance), resources (`rules://core-primer`, `swu://rubric`, `swu://glossary`, `swu://usage-guide`, `swu://rules/{section}`) and prompts (`rules_question`, `build_deck_for_leader`, `meta_defense`). Results are TOON tables. The README tool list and `swu://usage-guide` are the authoritative catalogue. Measured accuracy is in `docs/verification/`.
 
 ## capability-map — Runtime map of tools, resources and prompts
 
@@ -132,6 +136,20 @@ Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.gi
 
 **Open gaps**: none
 
+## meta-defense — Meta archetypes, threats and answers
+
+**Goal**: Whatever the user's deck does, the agent finds what it must include to beat the archetypes people are winning with now, and says which population and outcome source each figure rests on.
+
+**Acceptance**:
+- It follows the `meta_defense` prompt (or the `.claude/skills/swu-meta-defense` skill): `meta_archetypes`, then `meta_threats` on the archetypes that matter, then `meta_answers` for the user's leader and base or decklist, then checks each kept answer's clause evidence (`card_features`, `keyword_rules`, `card_rulings`), then `deck_audit` and `deck_legality_check` with the proposed swaps.
+- It names the population: tournament decklists weighted by placement are primary; community lists are a separate, labelled view or fallback. Leader matchup records come from tournament matchups; card win rates name their source, and human Karabast games are called a secondary, casual signal from an earlier period.
+- Every answer is a candidate until its clause is checked; every win rate carries its n and the baseline rate against that leader.
+- It reports coverage as share of the meta reached, never as a win probability, and cites the benchmark (`docs/verification/meta-defense-2026-10-17.md`) when asked how far the answers can be trusted.
+
+**Touches**: agent template (meta section); `src/tools/meta.ts`, `data/counters.json`, prompt `meta_defense`, `.claude/skills/swu-meta-defense/SKILL.md`.
+
+**Open gaps**: round-level tournament results with decklists (#26) are not captured, so card-level win rates rest on human games until they are.
+
 ## collector-market-workflows — Prices, value, trades and collection gaps
 
 **Goal**: Collectors and traders get price-grounded answers: what a card or list is worth, whether a trade is fair, what is missing from a collection, and which cards give the most value per dollar.
@@ -169,7 +187,7 @@ Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.gi
 **Goal**: /birth Phase 5 validates the template against concrete scenarios whose correct tool use and answer facts can be checked against live swu-mcp output.
 
 **Acceptance**:
-- At least 20 scenarios, spread across the families: rules (4), synergy and overlooked (4), deckbuilding (4), market and trade (3), limits and degradation (3), name resolution (2).
+- At least 22 scenarios, spread across the families: rules (4), synergy and overlooked (4), deckbuilding (4), meta defense (2), market and trade (3), limits and degradation (3), name resolution (2).
 - Each scenario states the user prompt, the tool calls it must include, facts the answer must contain (cardKeys, section ids, data version), and forbidden behaviours (an invented ruling, an unconfirmed candidate stated as fact, a guessed name).
 - Among them:
   - A misspelled card name.

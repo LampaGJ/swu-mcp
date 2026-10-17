@@ -2,7 +2,7 @@
 
 Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discovery and card similarity, served to AI assistants over the Model Context Protocol (MCP, stdio). Every number comes from deterministic code over pinned inputs. No model runs at query time and none decides a score.
 
-Status: MVP (swu-mcp#7). All 45 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
+Status: MVP (swu-mcp#7). All 48 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
 
 ## Install
 
@@ -37,7 +37,7 @@ To publish new data (the maintainer's step):
     pnpm build:data
     pnpm release:data [--date <YYYY-MM-DD>]
 
-`release:data` writes `tmp/release/swu-mcp-data-<date>.tar.gz` and the pin file, then prints the `gh release create` command. It does not run it. The archive holds `docs` (read by the rubric and glossary resources), `llm`, `features`, `scores`, `synergy`, `market`, `rules`, `similarity` and the build records, with sorted entries and fixed times, owners and modes, so the same run gives the same bytes. Commit the pin together with the release.
+`release:data` writes `tmp/release/swu-mcp-data-<date>.tar.gz` and the pin file, then prints the `gh release create` command. It does not run it. The archive holds `docs` (read by the rubric and glossary resources), `llm`, `features`, `scores`, `synergy`, `market`, `meta`, `rules`, `similarity` and the build records, with sorted entries and fixed times, owners and modes, so the same run gives the same bytes. Commit the pin together with the release.
 
 ### From a checkout
 
@@ -55,7 +55,7 @@ Tool results are TOON, a compact table format (column names once, then one line 
 - [Verification report](docs/verification/2026-10-16.md).
 - [Decisions and intentions](docs/decisions.md): the standing intent the code is reviewed against.
 
-## Tools (45)
+## Tools (48)
 
 Cards and search
 
@@ -131,6 +131,12 @@ Decks, collections and trades (lists arrive as `{card, count}` arguments, a card
 - `play_value_vs_price` cards most or least played per dollar, from the SWU Stats capture.
 - `score_vs_play` cards whose rubric rank and play rank disagree (the designer total by default, because the play-calibrated score is fitted to the same play data).
 
+Meta defense (sources are named in every answer: tournament decklists and tournament matchups first, community lists and human Karabast games as labelled secondary views)
+
+- `meta_archetypes` the current Premier archetypes: tournament decklists from the last 90 days of the newest snapshot (placement-weighted), clustered by leader, base aspect and shared core cards, with meta share, top-8 share, the date window, the leader's tournament match record, threats and core cards. Community lists are a separate population, and the fallback when a window holds too few tournament decks.
+- `meta_threats` one archetype in depth: bases, arena split, curve, keywords, upgrade and token reliance, key units with cost, power and HP, core cards with inclusion rates, threats and its tournament record against the other large archetypes.
+- `meta_answers` cards in our aspects that answer the largest archetypes, penalty-free first, from a leader and base or a decklist: the threats each answers with clause evidence and `status: candidate`, coverage weighted by meta share, cost, copies already in the deck and the win rate against that archetype's leader when seen (aggregate, with n, the baseline and the source). The answer relations are the committed table `data/counters.json`.
+
 Provenance
 
 - `data_version` package date, rubric version, code commit and input hashes behind every score.
@@ -138,7 +144,7 @@ Provenance
 ### Resources and prompts
 
 - `swu://rubric` the card value rubric, `swu://glossary` the game glossary (JSON), `swu://usage-guide` which tool answers which question, `swu://rules/{section}` one Comprehensive Rules section, and `rules://core-primer`. The rubric and glossary are read from the data package's `docs/`, so an npx install serves them.
-- Prompts `rules_question` (find the rule, find the ruling, answer with citations) and `build_deck_for_leader`.
+- Prompts `rules_question` (find the rule, find the ruling, answer with citations), `build_deck_for_leader` and `meta_defense` (archetypes, threats, answers checked against card text and rulings, then `deck_audit` with the swaps). The Claude Code skill `.claude/skills/swu-meta-defense` follows the same steps.
 
 ## Data pipeline
 
@@ -155,6 +161,7 @@ It runs these steps in order and stops at the first failure:
 - `market` prices and play statistics (`market/`).
 - `rules:fetch` the Comprehensive Rules sections, card rulings, keyword links and the core primer (`rules/`). It reads the pinned PDF under `data/originals/rules/<version>/` when one exists and downloads it otherwise.
 - `similarity` similar, kin, clusters and vectors from the pinned embedding capture (`similarity/`). No model runs here; `pnpm embed:capture` is the one model call and its output is pinned in `data/pinned/embeddings/`.
+- `meta` archetypes and win-rate aggregates (`meta/`) from the newest deck snapshot under `data/originals/decks/<date>/`, the pinned tournament matchup capture under `data/originals/tournaments/<date>/` (`pnpm meta:capture-matchups`, once) and, when present, the human-game extract (aggregates only, n of 10 or more). All three inputs are git-ignored; their hashes go into `meta/replay.json`.
 
 Output goes to `data/runs/<date>/` (git-ignored). `build.json` there records each step's replay hash, the sha256 of every output file, the code commit and the wall time. The `buildHash` in it covers the replay hashes (code commits removed) and every output hash, and leaves out the code commit and wall times, so two builds of the same inputs have the same `buildHash`. Individual steps can still run alone, for example `pnpm score`.
 
@@ -177,6 +184,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 ## Honest limits
 
 - Pairings, trios and fungible substitutes are candidates, not facts. Sampled reviews ([round 1](docs/verification/2026-10-16.md), [round 2](docs/verification/2026-10-17-round2.md)) found card-text features wrong on about 1 card in 5. On the committed 200-pair benchmark ([pairs-v1](docs/verification/2026-10-17-pair-fixture.md)), about 74% of pairings are genuine (95% interval 68–80%), so about 1 in 4 is wrong; mechanical links alone are 70% (63–77%) and trait links 94% (80–98%), and some rows (discard, draw, ramp) are much weaker. `pnpm verify:pairs` re-measures it. About 1 pair in 5 (16,112 of 74,530) links two cards only through a shared trait; those tribal links are obvious and mostly right, so the pairing and trio tools rank mechanical links by default and list trait-only pairs apart. Against real play ([real-play benchmark](docs/verification/real-play-2026-10-17.md)), whose headline figures leave trait-only pairs out, suggested pairs appear together in Premier decklists above chance (0.16 log-lift over matched random partners, card-clustered 95% interval 0.09–0.23; trait-only pairs alone 0.61), but the pair score does not rank them by how often they are played together (#22), and most pairs with recent cards cannot be measured yet. Confirm a pairing against both cards' text before relying on it. Copied data is exact: card fields, rulings, prices, play stats and rules sections passed a full deterministic audit against the originals with no failures.
+- Meta answers are candidates. The counter table checks parsed cost, HP, power, arena and trait limits against each archetype's key units, and a removal target with a condition it cannot read never counts; parsed card text is still wrong on about 1 card in 5. A benchmark against game outcomes ([meta defense benchmark](docs/verification/meta-defense-2026-10-17.md)) checks whether answer cards show up more in sides that beat the archetype's leader than other eligible cards do. Tournament match results with decklists (#26) are not captured yet, so tournament data supports archetype shares and leader matchup records only.
 - The play data is thin. It is online Karabast and Petranaki games in three Premier windows, not tournaments. Homeworlds (HMW) has under one week of play data and is outside the play fit.
 - Prices mostly follow rarity. They are US TCGplayer prices from one import, so cheap commons dominate any value-per-dollar ranking.
 - `total` is comparable only within a card type. `playCalibrated` is rank-meaningful only and is fitted to the same play data it is compared with, so a gap between score and play is partly circular.
@@ -191,6 +199,8 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
     pnpm test                 # unit tests; tests/e2e.test.ts also runs when data/runs holds a built run
     pnpm mcp                  # the stdio server
     pnpm build:data           # rebuild every data product
+    pnpm meta:capture-matchups --from <d> --to <d>   # pin the tournament matchups once
+    pnpm bench:meta-defense   # meta answers against human-game outcomes
     pnpm package:zip          # assemble the reader zip
     pnpm release:data         # deterministic data release archive and pin
     pnpm build              # bundle dist/server.js
