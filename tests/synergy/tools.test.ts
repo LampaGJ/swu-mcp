@@ -225,3 +225,79 @@ describe("registration", () => {
     expect(result.content[0].text).toContain("pnpm card-features");
   });
 });
+
+describe("candidate evidence", () => {
+  const long = "x".repeat(300);
+  const evCtx = createSynergyContext(
+    [
+      mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+      mk("Z", "Base", { type: "Base", icons: ["Command"] }),
+      mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2, why: { "offers:x": `text: Alpha pings ${long}` } }),
+      mk("1b", "Alpha Twin", { offers: ["offers:x"], aspects: ["Cunning"], cost: 2, why: { "offers:x": "text: Twin pings" } }),
+      mk("2", "Bravo", {
+        wants: ["wants:x"],
+        offers: ["offers:y"],
+        aspects: ["Command"],
+        cost: 3,
+        why: { "wants:x": "text: Bravo wants pings", "offers:y": "text: Bravo gives y" },
+      }),
+      mk("4", "Delta", { wants: ["wants:y"], aspects: ["Command"], cost: 1, why: { "wants:y": "text: Delta wants y" } }),
+    ],
+    table([
+      { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+      { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+    ]),
+  );
+
+  it("find_pairings returns status candidate and the clause text of both cards, clipped to 160 characters", () => {
+    const row = body(findPairings(evCtx, { cardKey: "2", direction: "enablers" })).pairings.find((p: any) => p.cardKey === "1");
+    expect(row.status).toBe("candidate");
+    expect(row.evidence).toHaveLength(1);
+    expect(row.evidence[0].want).toBe("text: Bravo wants pings");
+    expect(row.evidence[0].offer.length).toBe(160);
+    expect(row.evidence[0].offer.endsWith("…")).toBe(true);
+    expect(row.evidence[0].offer.startsWith("text: Alpha pings")).toBe(true);
+  });
+
+  it("find_pairings leaves evidence out on request but keeps the status", () => {
+    const row = body(findPairings(evCtx, { cardKey: "2", direction: "enablers", evidence: false })).pairings[0];
+    expect(row.evidence).toBeUndefined();
+    expect(row.status).toBe("candidate");
+  });
+
+  it("find_trios carries each link's clause texts", () => {
+    const trio = body(findTrios(evCtx, {})).trios[0];
+    expect(trio.status).toBe("candidate");
+    expect(trio.evidence.map((e: any) => [e.link, e.want])).toEqual([
+      ["Alpha > Bravo", "text: Bravo wants pings"],
+      ["Bravo > Delta", "text: Delta wants y"],
+    ]);
+    expect(trio.evidence[1].offer).toBe("text: Bravo gives y");
+    expect(body(findTrios(evCtx, { evidence: false })).trios[0].evidence).toBeUndefined();
+  });
+
+  it("explain_synergy clips the tag text, adds the status and honours evidence:false", () => {
+    const out = body(explainSynergy(evCtx, { cardKeys: ["1", "2"] }));
+    expect(out.status).toBe("candidate");
+    expect(out.evidence.find((e: any) => e.tag === "offers:x").why.length).toBe(160);
+    const bare = body(explainSynergy(evCtx, { cardKeys: ["1", "2"], evidence: false }));
+    expect(bare.evidence).toBeUndefined();
+    expect(bare.status).toBe("candidate");
+  });
+
+  it("fungible_substitutes shows the role clause of the slot card and of each substitute", () => {
+    const out = body(fungibleSubstitutes(evCtx, { cardKey: "1", tag: "offers:x" }));
+    expect(out.status).toBe("candidate");
+    const role = out.roles[0];
+    expect(role.slotText.length).toBe(160);
+    expect(role.substitutes[0].cards[0]).toMatchObject({ cardKey: "1b", text: "text: Twin pings" });
+    const bare = body(fungibleSubstitutes(evCtx, { cardKey: "1", tag: "offers:x", evidence: false }));
+    expect(bare.roles[0].slotText).toBeUndefined();
+    expect(bare.roles[0].substitutes[0].cards[0].text).toBeUndefined();
+  });
+
+  it("describes the candidate status in the four tool descriptions", () => {
+    for (const name of ["find_pairings", "find_trios", "explain_synergy", "fungible_substitutes"] as const)
+      expect(SYNERGY_TOOLS[name].description).toContain("candidate");
+  });
+});

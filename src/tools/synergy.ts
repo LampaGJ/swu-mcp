@@ -1,6 +1,7 @@
 import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { packageDirOf, type CardStore } from "../data.js";
+import { CANDIDATE_STATUS, clip, evidenceOf, tagEvidence } from "../synergy/evidence.js";
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
 import {
@@ -30,6 +31,11 @@ import type { ToolResult } from "../tools.js";
 const ok = (value: unknown): ToolResult => ({ content: [{ type: "text", text: encode(value) }] });
 const fail = (message: string): ToolResult => ({ content: [{ type: "text", text: message }], isError: true });
 
+const evidenceFlag = z
+  .boolean()
+  .default(true)
+  .describe("Include the clause text (clipped to 160 characters) of each card that produced the offer and the want; false drops it");
+
 const aspectList = z.array(z.string().min(1)).max(3);
 const cardKey = z.string().min(1);
 
@@ -44,6 +50,7 @@ export const fungibleSubstitutesShape = {
   crossAspectOnly: z.boolean().default(false).describe("Only list substitutes whose aspects differ from the card's"),
   maxCost: z.number().int().min(0).optional().describe("Highest substitute cost, inclusive"),
   limit: z.number().int().min(1).max(50).default(5).describe("Substitutes listed per aspect group"),
+  evidence: evidenceFlag,
 };
 
 export const findPairingsShape = {
@@ -59,6 +66,7 @@ export const findPairingsShape = {
   source: z.enum(["rule"]).default("rule").describe("Where the pair comes from; only the reviewed complementarity table exists today"),
   includeTraitOnly: z.boolean().default(false).describe("Include pairs linked only by a shared trait (the obvious kind)"),
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for the partner slot, by aspect"),
+  evidence: evidenceFlag,
   limit: z.number().int().min(1).max(100).default(15),
 };
 
@@ -73,11 +81,13 @@ export const findTriosShape = {
     .describe("Fix the leader's aspect icons instead of choosing the cheapest cover"),
   baseAspects: z.array(z.string().min(1)).max(1).optional().describe("Fix the base's aspect icon; give [] for a neutral base"),
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for each slot, by aspect"),
+  evidence: evidenceFlag,
   limit: z.number().int().min(1).max(50).default(10),
 };
 
 export const explainSynergyShape = {
   cardKeys: z.array(cardKey).min(2).max(3),
+  evidence: evidenceFlag,
 };
 
 export const aspectCoverShape = {
@@ -132,7 +142,7 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
           ),
         ];
   if (tags.length === 0)
-    return ok({ card: brief(slot), roles: [], note: "the card carries no offers/wants role (trait tags are not roles)" });
+    return ok({ status: CANDIDATE_STATUS, card: brief(slot), roles: [], note: "the card carries no offers/wants role (trait tags are not roles)" });
   const options: SubstituteOptions = {
     preferAspects: args.preferAspects,
     crossAspectOnly: args.crossAspectOnly,
@@ -143,18 +153,26 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
     if (cls === undefined) return [];
     const groups = substitutesFor(ctx.fungibility, cls.members, slot.cardKey, options);
+    const withText = (c: SubstituteGroup["cards"][number]) =>
+      args.evidence ? { ...c, text: tagEvidence(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : c;
     return [
       {
         classId: cls.id,
         tag,
         classSize: cls.members.length,
         aspectSets: new Set(cls.members.map((k) => aspectGroup(ctx.graph.byKey.get(k) as SynergyCard))).size,
-        substitutes: groups.map((g) => ({ aspects: g.aspects, differsFromSlot: g.differsFromSlot, covered: g.covered, cards: g.cards })),
+        ...(args.evidence ? { slotText: tagEvidence(slot, tag) } : {}),
+        substitutes: groups.map((g) => ({
+          aspects: g.aspects,
+          differsFromSlot: g.differsFromSlot,
+          covered: g.covered,
+          cards: g.cards.map(withText),
+        })),
       },
     ];
   });
   if (roles.length === 0) return fail(`${slot.cardKey} has no role for tag ${args.tag}`);
-  return ok({ card: brief(slot), roles });
+  return ok({ status: CANDIDATE_STATUS, card: brief(slot), roles });
 }
 
 function penaltyFor(
@@ -194,6 +212,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
   const shown = rows.slice(0, args.limit).map(({ e, partner, cover, rank }) => {
     const out: Record<string, unknown> = {
       ...brief(partner),
+      status: CANDIDATE_STATUS,
       partnerIs: e.a === card.cardKey ? "payoff" : "enabler",
       link: e.rows.map((r) => `${r.offer} -> ${r.want}`).join("; "),
       reason: e.rows[0].reason,
@@ -202,6 +221,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
       penalty: cover.penalty,
       rank,
     };
+    if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey);
     if (args.withAlternatives) {
       const tags = slotRoles([partner.cardKey], [e])[0];
       const common = commonMembers(ctx.fungibility, partner.cardKey, [...tags.offers, ...tags.wants]);
@@ -241,6 +261,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
     const out: Record<string, unknown> = {
       cards: keys.map((k) => cardLabel(ctx.graph.byKey.get(k) as SynergyCard)).join(" + "),
       cardKeys: keys.join("|"),
+      status: CANDIDATE_STATUS,
       shape: t.shape,
       totalCost: t.totalCost,
       aspectPair: t.aspectPair,
@@ -248,6 +269,14 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
       reasons: t.reasons,
       score: t.score,
     };
+    if (args.evidence) {
+      out.evidence = trioLinks(ctx.graph, t).flatMap((e) =>
+        evidenceOf(e, ctx.graph.byKey, e.rows.slice(0, 1)).map((ev) => ({
+          link: `${cardLabel(ctx.graph.byKey.get(e.a) as SynergyCard)} > ${cardLabel(ctx.graph.byKey.get(e.b) as SynergyCard)}`,
+          ...ev,
+        })),
+      );
+    }
     if (args.withAlternatives) {
       const roles = slotRoles(keys, trioLinks(ctx.graph, t));
       out.alternatives = roles.map((r, i) => {
@@ -290,11 +319,12 @@ export function explainSynergy(ctx: SynergyContext, input: unknown): ToolResult 
     );
     return [...c.tags.offers, ...c.tags.wants]
       .filter((t) => wanted.has(t.tag))
-      .map((t) => ({ card: cardLabel(c), tag: t.tag, why: t.why }));
+      .map((t) => ({ card: cardLabel(c), tag: t.tag, why: clip(t.why) }));
   });
   const cover = rankCovers(resolved, ctx.combos)[0];
   const label = (k: string): string => cardLabel(ctx.graph.byKey.get(k) as SynergyCard);
   return ok({
+    status: CANDIDATE_STATUS,
     cards: resolved.map(brief),
     links: links.map((e) => ({
       from: label(e.a),
@@ -309,7 +339,7 @@ export function explainSynergy(ctx: SynergyContext, input: unknown): ToolResult 
       rows: e.rows.map((r) => ({ row: r.row, offer: r.offer, want: r.want, weight: r.weight, reason: r.reason })),
     })),
     noLink,
-    evidence,
+    ...(args.evidence ? { evidence } : {}),
     totalCost: resolved.reduce((s, c) => s + (c.structured.cost ?? 0), 0),
     aspectPair: cover.label,
     penalty: cover.penalty,
@@ -377,28 +407,28 @@ export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles.",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
     shape: fungibleSubstitutesShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input)),
   },
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, a score (link strength times non-obviousness), the aspect penalty and fungible alternatives by aspect.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input)),
   },
   find_trios: {
     title: "Find trios",
     description:
-      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot.",
+      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findTriosShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input)),
   },
   explain_synergy: {
     title: "Explain synergy",
     description:
-      "Link-by-link reasons why two or three cards pair: each directed link with its table rows, offers and wants tags, the card text that produced each tag, non-obviousness terms, total cost and aspect cover. Pairs with no link are listed.",
+      "Link-by-link reasons why two or three cards pair: each directed link with its table rows, offers and wants tags, the card text that produced each tag, non-obviousness terms, total cost and aspect cover. Pairs with no link are listed. Status: candidate. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: explainSynergyShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => explainSynergy(ctx, input)),
   },

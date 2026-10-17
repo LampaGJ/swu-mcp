@@ -74,6 +74,21 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
     expect(failures).toEqual([]);
   }, 120_000);
 
+  it("returns candidate status and clause evidence from the pairing tools, and drops it on request", async () => {
+    const call = async (name: string, args: Record<string, unknown>) => {
+      const result = await client.callTool({ name, arguments: args });
+      return (result.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+    };
+    const withText = await call("find_pairings", { cardKey: ELIA_KANE, limit: 5 });
+    expect(withText).toContain("status");
+    expect(withText).toContain("candidate");
+    expect(withText).toContain("evidence");
+    const without = await call("find_pairings", { cardKey: ELIA_KANE, limit: 5, evidence: false });
+    expect(without).toContain("candidate");
+    expect(without).not.toContain("evidence");
+    expect(without.length).toBeLessThan(withText.length);
+  }, 60_000);
+
   it("serves the core primer resource", async () => {
     const resources = (await client.listResources()).resources.map((resource) => resource.uri);
     expect(resources).toContain("rules://core-primer");
