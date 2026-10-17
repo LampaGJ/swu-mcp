@@ -20,7 +20,23 @@ pnpm embed:capture            # the one model call: Ollama nomic-embed-text -> d
 pnpm similarity               # deterministic: pinned vectors -> data/runs/<date>/similarity/ (similar, kin, clusters, vectors, replay)
 pnpm verify:audit             # nine deterministic checks of every derived product against the originals -> data/runs/<date>/verify/audit.json (exit 1 on any failure)
 pnpm verify:sample            # seeded evidence packets for semantic verification -> tmp/verify/packets/ (8 packets + index.json with the verdict schema)
+pnpm verify:pair-fixture      # stratified 200-pair sample -> tmp/pair-fixture/packets (judged by haiku, adjudicated by sonnet)
+pnpm verify:pair-fixture:pin --dir data/pinned/pair-fixture-v1   # pinned verdicts -> data/fixtures/pairs-v1.json (byte-identical)
+pnpm verify:pairs [--run <dir>]   # pairing precision / recall against pairs-v1, per complementarity row
+pnpm release:data --date <d>  # deterministic release tarball + src/data-release.json pin (see Release below)
 ```
+
+## Release
+
+The server downloads its data from a GitHub Release pinned by `src/data-release.json`. Order: `pnpm build:data --date <d>`, `pnpm verify:audit --run data/runs/<d>`, `pnpm release:data --date <d>`, commit the pin, gitleaks-scan the outgoing commits, push main, `git tag data-<d>` + `git push origin data-<d>`, then `gh release create data-<d> <tarball> --verify-tag` (gh's token lacks the workflow scope, so the tag is pushed with git). Verify with a clean `npx -y github:LampaGJ/swu-mcp` in a scratch dir with `SWU_MCP_CACHE` set. The repo is public: only the owner asks for pushes.
+
+## Accuracy, honestly
+
+Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings are about 74% precise on pairs-v1 (docs/verification/2026-10-17-pair-fixture.md), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
+
+## Private data
+
+Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code, synthetic-fixture tests and aggregate results only. Never commit player names, player ids or game ids.
 
 The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
 
@@ -28,6 +44,8 @@ The system disk is full: work only under `/Volumes/Local Files/Projects`, and ru
 
 - `src/` library and MCP server. `src/swu/` holds the flatten pipeline (ported from mault) and package README builder.
 - `scripts/export-swu-data-package.ts` builds llm/; `scripts/build-data.ts` runs every step; `scripts/package-zip.ts` and `src/package/` build the reader zip. `scripts/curation/`, `scripts/rubric/`, `scripts/embed/` are research scripts (Node `.mjs`, Python).
+- `src/tools/` holds the tool groups (value, synergy, market, rules, similarity, catalog, deck), registered in `src/tools.ts`; `src/resources.ts` serves the `swu://` resources and the two prompts. The README tool list is the user-facing catalogue; `tests/e2e.test.ts` fails if a registered tool has no e2e arguments.
+- `data/fixtures/pairs-v1.json` is the labelled pairing benchmark; its model verdicts are pinned in `data/pinned/pair-fixture-v1/`.
 - `src/rules/` parses the Comprehensive Rules; `src/tools/rules.ts` serves them. `data/rules-core.json` is the ordered core-rule list (boosts search, feeds the primer). The CR PDF lives in git-ignored `data/originals/rules/<version>/`.
 - `data/curated-rules.json` is the curated ability table (pinned input). `data/runs/<date>/` is generated output (git-ignored). `data/pinned/` holds small pinned captures.
 - `docs/` field guide, JSON Schemas, glossary, value rubric. Copied from mault; edit here from now on.
