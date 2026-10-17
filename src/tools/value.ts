@@ -17,7 +17,7 @@ import {
 import { parseCoefficients, type Coefficients } from "../scorer/coefficients.js";
 import { scoresFileSchema, scoresReplaySchema, type ScoreRow, type ScoresReplay } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import { ok, fail, guardedBy, lower, hasValue } from "./common.js";
+import { ok, fail, guardedBy, lower, hasValue, cardRef, resolveCard } from "./common.js";
 
 /**
  * @displayName Value tools
@@ -70,23 +70,6 @@ const r2 = (x: number | null): number | null => (x === null ? null : Math.round(
 const limit = z.number().int().min(1).max(200).default(20);
 
 export const dataVersion = (replay: ScoresReplay): string => `${replay.rubricVersion}/${replay.outputHash.slice(0, 12)}`;
-
-const cardRef = {
-  cardKey: z.string().min(1).optional().describe("Exact cardKey, for example 0101033"),
-  title: z.string().min(1).optional().describe("Exact card title, case-insensitive"),
-  subtitle: z.string().optional().describe("Exact subtitle, case-insensitive; narrows a title shared by several leaders"),
-};
-
-function resolveCard(store: CardStore, args: { cardKey?: string; title?: string; subtitle?: string }): CardRow | string {
-  if (args.cardKey !== undefined) return store.byKey.get(args.cardKey) ?? `no card with cardKey ${args.cardKey}`;
-  if (args.title === undefined) return "give cardKey, or title with an optional subtitle";
-  const title = args.title.toLowerCase();
-  const subtitle = args.subtitle?.toLowerCase();
-  const matches = store.cards.filter((card) => lower(card.title) === title && (subtitle === undefined || lower(card.subtitle) === subtitle));
-  if (matches.length === 0) return `no card titled "${args.title}"${args.subtitle === undefined ? "" : ` with subtitle "${args.subtitle}"`}`;
-  if (matches.length > 1) return `"${args.title}" matches ${matches.length} cards (${matches.map((m) => `${m.cardKey} ${m.subtitle ?? ""}`.trim()).join("; ")}); pass the cardKey or a subtitle`;
-  return matches[0];
-}
 
 // ---------------------------------------------------------------------------------------------
 // score_card

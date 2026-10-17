@@ -5,7 +5,7 @@ import { packageDirOf, readJson, splitCell, type CardRow, type CardStore } from 
 import { playFileSchema, pricesFileSchema, type PlayFile, type PricesFile } from "../market/build.js";
 import { scoresFileSchema, type ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import { ok, fail, guardedBy, lower } from "./common.js";
+import { ok, fail, guardedBy, lower, cardRef, resolveCard } from "./common.js";
 
 /**
  * @displayName Market tools
@@ -47,23 +47,6 @@ export function marketData(store: CardStore): MarketData {
 const guarded = guardedBy(marketData);
 
 const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
-
-const cardRef = {
-  cardKey: z.string().min(1).optional().describe("Exact cardKey, for example 0101033"),
-  title: z.string().min(1).optional().describe("Exact card title, case-insensitive"),
-  subtitle: z.string().optional().describe("Exact subtitle, case-insensitive; narrows a title shared by several leaders"),
-};
-
-function resolveCard(store: CardStore, args: { cardKey?: string; title?: string; subtitle?: string }): CardRow | string {
-  if (args.cardKey !== undefined) return store.byKey.get(args.cardKey) ?? `no card with cardKey ${args.cardKey}`;
-  if (args.title === undefined) return "give cardKey, or title with an optional subtitle";
-  const title = args.title.toLowerCase();
-  const subtitle = args.subtitle?.toLowerCase();
-  const matches = store.cards.filter((card) => lower(card.title) === title && (subtitle === undefined || lower(card.subtitle) === subtitle));
-  if (matches.length === 0) return `no card titled "${args.title}"${args.subtitle === undefined ? "" : ` with subtitle "${args.subtitle}"`}`;
-  if (matches.length > 1) return `"${args.title}" matches ${matches.length} cards (${matches.map((m) => `${m.cardKey} ${m.subtitle ?? ""}`.trim()).join("; ")}); pass the cardKey or a subtitle`;
-  return matches[0];
-}
 
 const cardHead = (card: CardRow) => ({ cardKey: card.cardKey, title: card.title, subtitle: card.subtitle });
 
