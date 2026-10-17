@@ -156,6 +156,14 @@ describe("field guide and PDF helpers", () => {
     ]);
   });
 
+  it("keeps indented child bullets in the parent body and still emits each child", () => {
+    const entries = parseFieldGuide("## Price import\n\n- **`import.counts`**: object. Its children:\n  - **`import.counts.a`**: 1. First.\n  - **`import.counts.b`**: 2. Second.\n- **`import.next`**: after.\n");
+    expect(entries.map((e) => e.paths[0])).toEqual(["import.counts", "import.counts.a", "import.counts.b", "import.next"]);
+    expect(entries[0].body).toBe("object. Its children:\n- **`import.counts.a`**: 1. First.\n- **`import.counts.b`**: 2. Second.");
+    expect(entries[1].body).toBe("1. First.");
+    expect(entries[3].body).toBe("after.");
+  });
+
   it("locates a section in the raw page text", () => {
     const page = "   1.   Intro line\n   2.   The unit enters play exhausted and remains in play\n        until it is defeated.\n   3.   Next rule\n\n1. X   CONTENTS GLOSSARY StarWarsUnlimited.com 1";
     const found = pdfExcerpt({ page: 1, title: null, text: "The unit enters play exhausted and remains in play until it is defeated." }, [page]);

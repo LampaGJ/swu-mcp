@@ -529,7 +529,9 @@ export function parseFieldGuide(markdown: string): FieldEntry[] {
     const body = [start[3].replace(/^[:\s]+/, "").trim()].filter((l) => l !== "");
     for (let j = i + 1; j < lines.length; j += 1) {
       const line = lines[j];
-      if (/^#{1,6} /.test(line) || /^(\s*)- \*\*`[^`]+`\*\*/.test(line) || (line.trim() !== "" && line.length - line.trimStart().length <= indent)) break;
+      // A bold-path bullet ends the body only at the parent indent or shallower; a deeper one is a child and stays in the parent body.
+      const lineIndent = line.length - line.trimStart().length;
+      if (/^#{1,6} /.test(line) || (line.trim() !== "" && lineIndent <= indent)) break;
       if (line.trim() !== "") body.push(line.trim());
     }
     entries.push({ paths, section, body: body.join("\n") });
