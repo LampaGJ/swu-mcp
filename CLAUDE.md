@@ -34,6 +34,10 @@ The server downloads its data from a GitHub Release pinned by `src/data-release.
 
 Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings are about 74% precise on pairs-v1 (docs/verification/2026-10-17-pair-fixture.md): about 70% for mechanical links and about 94% for trait-only links, which rank separately (#24), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
 
+## Play-data precedence (owner rule, 2026-10-17)
+
+Prefer actual tournament decks and match outcomes over casual and simulated games. Order: tournament results joined to decklists and placements, then tournament decklists, then community decklists (SWUDB), then casual online games (Karabast human games, SWU Stats), and bot simulations last. Never pool tiers. Every benchmark, meta or win-rate output names the source and population it rests on.
+
 ## Private data
 
 Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code, synthetic-fixture tests and aggregate results only. Never commit player names, player ids or game ids.
