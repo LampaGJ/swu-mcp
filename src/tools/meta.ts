@@ -13,15 +13,19 @@ import {
   type CounterCard,
   type RelationHit,
 } from "../meta/counters.js";
+import { archetypeEvidenceKey, aspectsEvidenceKey } from "../meta/outcomes.js";
 import {
   metaFileSchema,
   POPULATIONS,
+  SWUMETASTATS_SOURCE,
   winRatesFileSchema,
   type Archetype,
   type CounterTable,
+  type DeckEvidence,
   type MetaFile,
   type WinRatesFile,
 } from "../meta/schema.js";
+import { wilson } from "../meta/stats.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { CANDIDATE_STATUS } from "../synergy/evidence.js";
 import { cardLabel } from "../synergy/order.js";
@@ -45,12 +49,15 @@ import {
  * @displayName Meta defense tools
  * @strategicPurpose Answers "whatever my deck does, what must it include to beat the decks people are winning with
  * now" (LampaGJ/swu-mcp#25): meta_archetypes lists the current archetypes, meta_threats describes one, meta_answers
- * ranks the cards in our aspects that answer the most meta share. Tournament decks and tournament outcomes are the
- * primary sources; every answer names the population and outcome source it rests on.
+ * ranks the cards in our aspects that answer the most meta share. Every win rate comes from swumetastats.com's
+ * melee.gg tournament data and carries its source, window, n and a Wilson 95% interval; no Karabast-derived number
+ * is ever read or shown here (decision D22).
  * @tacticalObjective Reads <package>/meta/archetypes.json and winrates.json (written by `pnpm meta`) and the committed
  * data/counters.json; answers are computed per call by src/meta/counters.ts, with clause evidence and
  * status: candidate. No model and no clock in the path.
  */
+
+type EvidenceGroup = DeckEvidence["groups"][number];
 
 export interface MetaEnv {
   deck: DeckEnv;
@@ -58,6 +65,7 @@ export interface MetaEnv {
   winrates: WinRatesFile;
   table: CounterTable;
   cards: Map<string, { card: CounterCard; offers: AnswerOffer[] }>;
+  evidence: Map<string, { group: EvidenceGroup; cards: Map<string, EvidenceGroup["cards"][number]> }>;
 }
 
 /** Builds the env from parsed parts, so tests can pass an in-code DeckEnv and synthetic meta files. */
@@ -67,7 +75,11 @@ export function createMetaEnv(deck: DeckEnv, meta: unknown, winrates: unknown, t
     const card = counterCardSchema.parse(raw);
     cards.set(card.cardKey, { card, offers: answerOffers(card) });
   }
-  return { deck, meta: metaFileSchema.parse(meta), winrates: winRatesFileSchema.parse(winrates), table, cards };
+  const parsed = winRatesFileSchema.parse(winrates);
+  const evidence = new Map(
+    (parsed.deckEvidence?.groups ?? []).map((group) => [group.key, { group, cards: new Map(group.cards.map((c) => [c.cardKey, c])) }]),
+  );
+  return { deck, meta: metaFileSchema.parse(meta), winrates: parsed, table, cards, evidence };
 }
 
 const envs = new WeakMap<CardStore, MetaEnv>();
@@ -117,8 +129,11 @@ function sourcesNote(env: MetaEnv, population: string): Record<string, unknown> 
     tournamentMatchups:
       env.winrates.matchups === null
         ? "none captured"
-        : `${env.winrates.matchups.label}, ${env.winrates.matchups.period.from}..${env.winrates.matchups.period.to}, ${env.winrates.matchups.matches} matches`,
-    cardWinRates: env.winrates.cards.map((c) => `${c.label}: ${c.basis}`).join("; ") || "none",
+        : `${SWUMETASTATS_SOURCE}: leader and base-aspect matchups, ${env.winrates.matchups.period.from}..${env.winrates.matchups.period.to}, ${env.winrates.matchups.matches} matches`,
+    answerEvidence:
+      env.winrates.deckEvidence === null
+        ? "none captured"
+        : `${SWUMETASTATS_SOURCE}: ${env.winrates.deckEvidence.decks} tournament decklists with a match record from ${env.winrates.deckEvidence.events} events, ${env.winrates.deckEvidence.window.from}..${env.winrates.deckEvidence.window.to}; opponents ${env.winrates.deckEvidence.opponents}`,
   };
 }
 
@@ -147,10 +162,25 @@ function matchupRecord(
   return wins + losses + draws === 0 ? null : { wins, losses, draws };
 }
 
-const recordText = (r: { wins: number; losses: number; draws: number } | null): string | null =>
-  r === null
-    ? null
-    : `${r.wins}-${r.losses}-${r.draws} (${Math.round((r.wins / (r.wins + r.losses + r.draws)) * 1000) / 10}% of ${r.wins + r.losses + r.draws})`;
+interface Record3 {
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+/** A W-L-D record as shipped: n decisive matches, win rate wins / n (draws left out, as swumetastats does), Wilson 95% interval. */
+function rated(r: Record3): { record: string; n: number; winRate: number | null; ci95: string | null } {
+  const n = r.wins + r.losses;
+  const ci = wilson(r.wins, n);
+  return { record: `${r.wins}-${r.losses}-${r.draws}`, n, winRate: rate(r.wins, n), ci95: ci === null ? null : `${ci.low}..${ci.high}` };
+}
+
+/** A tournament matchup record with its source and window, or null when no match was recorded. */
+function sourcedMatchup(env: MetaEnv, r: Record3 | null) {
+  const m = env.winrates.matchups;
+  if (r === null || m === null) return null;
+  return { ...rated(r), source: SWUMETASTATS_SOURCE, window: `${m.period.from}..${m.period.to}` };
+}
 
 // ---------------------------------------------------------------------------------------------
 // meta_archetypes
@@ -185,7 +215,7 @@ export function metaArchetypes(env: MetaEnv, input: unknown): ToolResult {
       share: a.share,
       top8Share: a.top8Share,
       decks: a.decks,
-      tournamentRecord: recordText(matchupRecord(env, a.leader.cardKey, a.baseAspects)),
+      tournamentRecord: sourcedMatchup(env, matchupRecord(env, a.leader.cardKey, a.baseAspects)),
       threats: detectThreats(a.profile, env.table)
         .map((t) => t.threat.id)
         .join(", "),
@@ -194,7 +224,7 @@ export function metaArchetypes(env: MetaEnv, input: unknown): ToolResult {
         .map((c) => c.title)
         .join("; "),
     })),
-    note: "share = placement-weighted share of the population's decks in the window; top8Share = share of all top-8 finishes; tournamentRecord = match wins-losses-draws of the leader and base aspect against the whole field (leader-level, all of its archetypes). Call meta_threats for one archetype and meta_answers for the cards that answer them.",
+    note: "share = placement-weighted share of the population's decks in the window; top8Share = share of all top-8 finishes; tournamentRecord = match wins-losses-draws of the leader and base aspect against the whole field (leader-level, all of its archetypes), n = decisive matches (wins + losses), winRate = wins / n (draws left out, as swumetastats does), ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Call meta_threats for one archetype and meta_answers for the cards that answer them.",
   });
 }
 
@@ -232,7 +262,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
   const vs = others
     .map((o) => ({ archetype: o.name, share: o.share, record: matchupRecord(env, a.leader.cardKey, a.baseAspects, o) }))
     .filter((v) => v.record !== null)
-    .map((v) => ({ archetype: v.archetype, share: v.share, record: recordText(v.record) }));
+    .map((v) => ({ archetype: v.archetype, share: v.share, ...sourcedMatchup(env, v.record) }));
   return ok({
     dataVersion: env.deck.dataVersion,
     sources: sourcesNote(env, a.population),
@@ -245,6 +275,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
       decks: a.decks,
       window: `${a.window.from}..${a.window.to}`,
       cohesion: a.cohesion,
+      tournamentRecord: sourcedMatchup(env, matchupRecord(env, a.leader.cardKey, a.baseAspects)),
     },
     leader: { ...a.leader, aspects: a.leader.aspects.join("+"), power: a.profile.leader.power, hp: a.profile.leader.hp },
     bases: a.bases,
@@ -282,7 +313,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     })),
     core: a.core.slice(0, args.coreLimit),
     tournamentRecordVs: vs,
-    note: "Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecordVs is this leader and base aspect against each other large archetype's leader and base aspect (leader-level tournament matchups, all builds).",
+    note: "Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).",
   });
 }
 
@@ -313,28 +344,34 @@ interface Answer {
   hits: { archetype: Archetype; hit: RelationHit }[];
 }
 
-function cardWinRates(env: MetaEnv, cardKey: string, leaders: readonly Archetype[]) {
-  const out: { vs: string; source: string; rate: number | null; n: number; baseline: number | null; baselineN: number }[] = [];
-  const seen = new Set<string>();
-  for (const a of leaders) {
-    if (seen.has(a.leader.cardKey)) continue;
-    seen.add(a.leader.cardKey);
-    for (const source of [...env.winrates.cards].sort((x, y) => x.rank - y.rank)) {
-      const byLeader = source.byLeader.find((b) => b.leader === a.leader.cardKey);
-      const row = byLeader?.cards.find((c) => c.cardKey === cardKey);
-      if (byLeader === undefined || row === undefined) continue;
-      out.push({
-        vs: a.leader.title,
-        source: source.source,
-        rate: rate(row.wins, row.n),
-        n: row.n,
-        baseline: rate(byLeader.against.wins, byLeader.against.n),
-        baselineN: byLeader.against.n,
-      });
-      break;
-    }
+/**
+ * Deck-level evidence for one card: comparable tournament decks (our leader and base aspects, else our aspect set)
+ * that include it against those that do not, by their whole-event match records. Opponents are not known.
+ */
+function cardDeckEvidence(env: MetaEnv, cardKey: string, ours: { archetype: string; aspects: string; label: string; aspectText: string }) {
+  const ev = env.winrates.deckEvidence;
+  if (ev === null) return "no tournament decklists captured";
+  for (const [key, comparable] of [
+    [ours.archetype, `${ours.label} decks`],
+    [ours.aspects, `${ours.aspectText} decks (any leader)`],
+  ] as const) {
+    const hit = env.evidence.get(key);
+    const row = hit?.cards.get(cardKey);
+    if (hit === undefined || row === undefined) continue;
+    const g = hit.group;
+    const withCard = rated(row);
+    const without = rated({ wins: g.wins - row.wins, losses: g.losses - row.losses, draws: g.draws - row.draws });
+    return {
+      comparable,
+      withCard: { decks: row.decks, ...withCard },
+      withoutCard: { decks: g.decks - row.decks, ...without },
+      difference: withCard.winRate === null || without.winRate === null ? null : r4(withCard.winRate - without.winRate),
+      opponents: "unknown",
+      source: SWUMETASTATS_SOURCE,
+      window: `${ev.window.from}..${ev.window.to}`,
+    };
   }
-  return out.slice(0, 3);
+  return `fewer than ${env.winrates.minN} decisive matches with or without it among comparable tournament decks in ${ev.window.from}..${ev.window.to}`;
 }
 
 export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
@@ -360,6 +397,14 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
   const targets = archetypesIn(env, population).slice(0, args.archetypes);
   const threatsOf = new Map(targets.map((a) => [a.id, new Set(detectThreats(a.profile, env.table).map((t) => t.threat.id))]));
   const consideredShare = targets.reduce((s, a) => s + a.share, 0);
+  const baseIcons = pair.base.syn.structured.aspectIcons;
+  const ourAspects = [...pair.leader.syn.structured.aspectIcons, ...baseIcons];
+  const ours = {
+    archetype: archetypeEvidenceKey(pair.leader.row.cardKey, baseIcons),
+    aspects: aspectsEvidenceKey(ourAspects),
+    label: `${cardLabel(pair.leader.row)} / ${baseIcons.join("+") || "neutral"} base`,
+    aspectText: [...ourAspects].sort(compareCodePoints).join("+") || "no-aspect",
+  };
 
   const answers: Answer[] = [];
   for (const syn of env.deck.ctx.cards) {
@@ -449,7 +494,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       name: a.name,
       share: a.share,
       threats: [...(threatsOf.get(a.id) as Set<string>)].join(", "),
-      ourTournamentRecord: recordText(matchupRecord(env, pair.leader.row.cardKey, pair.base.syn.structured.aspectIcons, a)),
+      ourTournamentRecord: sourcedMatchup(env, matchupRecord(env, pair.leader.row.cardKey, baseIcons, a)),
     })),
     consideredShare: r4(consideredShare),
     matched: answers.length,
@@ -466,13 +511,9 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       threatsAnswered: threatCount(a),
       status: CANDIDATE_STATUS,
       answers: byThreat(a),
-      winRates: cardWinRates(
-        env,
-        a.cardKey,
-        a.hits.map((h) => h.archetype),
-      ),
+      deckEvidence: cardDeckEvidence(env, a.cardKey, ours),
     })),
-    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. winRates: the card's win rate when seen against that archetype's leader, best source first (tournament match results when captured, else human Karabast games, a secondary casual signal), with n and the baseline rate of all sides against that leader; n >= 10 only, aggregates only. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups.",
+    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
   });
 }
 
@@ -510,7 +551,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and its win rate against that archetype's leader when seen (aggregate, with n and source). Takes a leader and base, or a decklist.",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown). Takes a leader and base, or a decklist.",
     metaAnswersShape,
     metaAnswers,
   ),

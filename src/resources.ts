@@ -52,8 +52,8 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 
 ## Meta defense
 - The current archetypes (tournament decklists, placement-weighted; community lists apart): \`meta_archetypes\`. One archetype's key units, curve, keywords and threats: \`meta_threats\`.
-- Cards in your aspects that answer the most meta share, with clause evidence and win rates: \`meta_answers\` (leader and base, or a decklist). Then check the swaps with \`deck_audit\`.
-- Win rates name their source: tournament matchups first; human Karabast games are a secondary, casual signal.
+- Cards in your aspects that answer the most meta share, with clause evidence and tournament deck evidence: \`meta_answers\` (leader and base, or a decklist). Then check the swaps with \`deck_audit\`.
+- Every win rate comes from swumetastats (melee.gg tournaments) with its window, n and a 95% interval. Card evidence compares comparable decks with and without the card; opponents are unknown, so it is not a rate against an archetype.
 
 ## Formats
 - Is a card legal: \`format_legality\`. It reads set printings only; there is no ban list in the data, so confirm bans on the official site.
@@ -85,11 +85,11 @@ const META_DEFENSE = (deck: string): string => `Find what this Star Wars: Unlimi
 
 Work in this order:
 1. Resolve the leader, base and any listed cards with \`resolve_card_name\`. Call \`data_version\` once.
-2. Call \`meta_archetypes\` for the largest archetypes. Report each with its share, top-8 share, date window and the population and sources it rests on (tournament decklists first; say when a figure comes from community lists or from casual Karabast games).
+2. Call \`meta_archetypes\` for the largest archetypes. Report each with its share, top-8 share, date window and the population and sources it rests on (tournament decklists first; say when a figure comes from community lists).
 3. Call \`meta_threats\` on the three to five archetypes that matter most, and name their key units and threats.
 4. Call \`meta_answers\` with the leader and base (or the decklist). Answers are candidates: for each one you keep, read its clause evidence, check it with \`card_features\` or \`explain_synergy\` where useful, and confirm any rules question with \`keyword_rules\` or \`card_rulings\`. Drop an answer the text does not support.
 5. Propose swaps (cards out, answers in) and run \`deck_audit\` on the changed list to check curve, aspect penalty and orphan wants. Run \`deck_legality_check\` on the final list.
-6. Report each swap with the threats it answers, its coverage, its cost, the win rate with n and source when present, and the data version. Never state a candidate as fact.`;
+6. Report each swap with the threats it answers, its coverage, its cost, its tournament deck evidence (with and without the card, n, 95% interval, source and window; opponents unknown) when present, and the data version. Never state a candidate as fact.`;
 
 const docs = new Map<string, string>();
 

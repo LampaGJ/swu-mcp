@@ -26,6 +26,8 @@ export interface MetaDeck {
   placement: number | null;
   /** Players in the event when the source states it. */
   field: number | null;
+  /** The deck's whole-event match record when the source states it (tournament decks from swumetastats). */
+  record?: { wins: number; losses: number; draws: number } | null;
 }
 
 const featureCardSchema = z.looseObject({

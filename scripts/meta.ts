@@ -1,44 +1,32 @@
 /**
  * @displayName Meta archetype step
  * @strategicPurpose Manipulation node (reduces), pipeline step of build:data (LampaGJ/swu-mcp#25): recent decklist
- * snapshots, the pinned tournament matchup capture and the optional human-game and tournament-result extracts in;
- * data/runs/<date>/meta/{archetypes,winrates}.json and a replay record out. The meta tools read only these files.
- * @tacticalObjective Maps each snapshot deck's SET_NNN ids to the run's cardKeys, labels it tournament (event and
- * placement known) or community, and hands the decks to src/meta/build.ts. Win rates are folded by
- * src/meta/outcomes.ts into aggregates only: tournament matchups first, card-level rates from tournament results
- * (when an extract exists) then human games. Bot simulations are never read. Deck authors and player ids are never read.
+ * snapshots and the pinned swumetastats matchup capture in; data/runs/<date>/meta/{archetypes,winrates}.json and a
+ * replay record out. The meta tools read only these files, and meta/ ships in the public data release, so every
+ * win rate here comes from swumetastats tournament data (decision D22): this step reads no Karabast data at all.
+ * @tacticalObjective Maps each snapshot deck's SET_NNN ids to the run's cardKeys, keeps Premier decks only
+ * (src/meta/format.ts), labels each tournament (event and placement known) or community, and hands the decks to
+ * src/meta/build.ts. src/meta/outcomes.ts folds the matchups (archetype strength) and the tournament decks' match
+ * records (answer-card evidence) into aggregates. Deck authors and player ids are never read.
  *
- * Usage: pnpm meta [--data <run dir>] [--originals <dir>] [--decks <snapshot dir> ...] [--matchups <capture dir>]
- *                  [--games <games-*.jsonl.gz>] [--results <tournament-results.json>] [--out <dir>]
+ * Usage: pnpm meta [--data <run dir>] [--originals <dir>] [--decks <snapshot dir> ...] [--matchups <capture dir>] [--out <dir>]
  *   --decks     default: the newest data/originals/decks/<YYYY-MM-DD>/ of this checkout or the main checkout
  *   --matchups  default: the newest data/originals/tournaments/<YYYY-MM-DD>/ holding matchups.json
- *   --games     default: the newest data/originals/karabast/games-*.jsonl.gz
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { gunzipSync } from "node:zlib";
 import { buildMeta, cardFacts, type MetaDeck } from "../src/meta/build.js";
 import {
-  foldCardOutcomes,
+  foldDeckEvidence,
   foldMatchups,
   matchupCaptureSchema,
   matchupResponseSchema,
-  tournamentGames,
+  parseMatchRecord,
   type NameResolver,
-  type OutcomeGame,
 } from "../src/meta/outcomes.js";
-import {
-  humanGameSchema,
-  metaFileSchema,
-  metaReplaySchema,
-  snapshotDeckSchema,
-  tournamentResultsSchema,
-  winRatesFileSchema,
-  type CardOutcomes,
-  type WinRatesFile,
-} from "../src/meta/schema.js";
+import { metaFileSchema, metaReplaySchema, snapshotDeckSchema, winRatesFileSchema, type WinRatesFile } from "../src/meta/schema.js";
 import { FormatRejects, premierVerdict, snapshotDeclaresPremier } from "../src/meta/format.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap, normalizeName, type CardMap } from "./bench/card-map.js";
@@ -49,7 +37,6 @@ const MAIN_CHECKOUT = "/Volumes/Local Files/Projects/swu-mcp";
 const ROOTS = [REPO_ROOT, MAIN_CHECKOUT];
 const DATED = /^\d{4}-\d{2}-\d{2}$/;
 export const MIN_N = 10;
-const HUMAN_CAPTURED_THROUGH = "2026-02-10";
 
 const sha256File = (file: string): string => createHash("sha256").update(readFileSync(file)).digest("hex");
 
@@ -63,17 +50,6 @@ function newestDated(sub: string, holds: (dir: string) => boolean): string | und
     )
     .filter(holds);
   return found.sort((a, b) => compareCodePoints(path.basename(a), path.basename(b)) || compareCodePoints(a, b)).at(-1);
-}
-
-function newestGames(): string | undefined {
-  const files = ROOTS.map((root) => path.join(root, "data/originals/karabast"))
-    .filter((dir) => existsSync(dir))
-    .flatMap((dir) =>
-      readdirSync(dir)
-        .filter((n) => /^games-[0-9a-f]{12}\.jsonl\.gz$/.test(n))
-        .map((n) => path.join(dir, n)),
-    );
-  return files.sort((a, b) => statSync(a).mtimeMs - statSync(b).mtimeMs || compareCodePoints(a, b)).at(-1);
 }
 
 const deckFiles = (dir: string): string[] =>
@@ -95,6 +71,7 @@ interface ReadDecks {
     undated: number;
     unmappedLeaderOrBase: number;
     unmappedCards: number;
+    withMatchRecord: number;
   };
 }
 
@@ -109,6 +86,7 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
     undated: 0,
     unmappedLeaderOrBase: 0,
     unmappedCards: 0,
+    withMatchRecord: 0,
   };
   const premierSnapshot = snapshotDeclaresPremier(dir);
   const formatRejects = new FormatRejects();
@@ -160,6 +138,8 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
             ? `${event.name}|${event.date ?? ""}`
             : null;
     const tournament = eventKey !== null && placement !== null;
+    const record = tournament ? parseMatchRecord(d.metadata?.matchRecord) : null;
+    if (record !== null) stats.withMatchRecord += 1;
     decks.push({
       key: sha256Hex(`${path.basename(dir)}/${file}`).slice(0, 16),
       population: tournament ? "tournament" : "community",
@@ -171,6 +151,7 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
       event: tournament ? `${d.metadata?.via ?? d.metadata?.source ?? "?"}:${eventKey}` : null,
       field: tournament ? (event?.players ?? null) : null,
       placement: tournament ? placement : null,
+      record,
     });
   });
   stats.excludedNonPremier = formatRejects.total;
@@ -209,17 +190,6 @@ function nameResolver(map: CardMap, facts: ReturnType<typeof cardFacts>): NameRe
   };
 }
 
-function* humanGames(file: string): Generator<OutcomeGame> {
-  const body = gunzipSync(readFileSync(file)).toString("utf8");
-  for (const line of body.split("\n")) {
-    if (line.trim() === "") continue;
-    const game = humanGameSchema.parse(JSON.parse(line));
-    if (game.sides.length !== 2) continue;
-    const side = (i: number) => ({ leader: game.sides[i].leader, won: game.sides[i].won, cards: game.sides[i].cards.map(([c]) => c) });
-    yield [side(0), side(1)];
-  }
-}
-
 function main(): void {
   const { values } = parseArgs({
     options: {
@@ -227,8 +197,6 @@ function main(): void {
       originals: { type: "string" },
       decks: { type: "string", multiple: true },
       matchups: { type: "string" },
-      games: { type: "string" },
-      results: { type: "string" },
       out: { type: "string" },
     },
   });
@@ -249,7 +217,6 @@ function main(): void {
   ).map((d) => path.resolve(d));
   if (snapshotDirs.length === 0) throw new Error("no deck snapshot under data/originals/decks/<date>/; pass --decks");
   const matchupsDir = values.matchups ?? newestDated("tournaments", (dir) => existsSync(path.join(dir, "matchups.json")));
-  const gamesFile = values.games ?? newestGames();
   const outDir = path.resolve(values.out ?? path.join(runDir, "meta"));
 
   const map = loadCardMap(runDir, originals);
@@ -268,7 +235,6 @@ function main(): void {
   }
   p.log({ phase: "cluster", decks: decks.length });
   const meta = buildMeta(decks, facts);
-  const leaders = new Set(meta.archetypes.map((a) => a.leader.cardKey));
 
   const outcomeHashes: Record<string, string> = {};
   let matchups: WinRatesFile["matchups"] = null;
@@ -280,48 +246,9 @@ function main(): void {
     outcomeHashes["tournament-matchups"] = hash;
     matchups = foldMatchups(matchupResponseSchema.parse(JSON.parse(readFileSync(raw, "utf8"))), nameResolver(map, facts), capture.window);
   }
-  const cards: CardOutcomes[] = [];
-  if (values.results !== undefined) {
-    outcomeHashes["tournament-results"] = sha256File(values.results);
-    const results = tournamentResultsSchema.parse(JSON.parse(readFileSync(values.results, "utf8")));
-    const dates = results.matches
-      .map((m) => m.date ?? "")
-      .filter((d) => d !== "")
-      .sort(compareCodePoints);
-    cards.push(
-      foldCardOutcomes(
-        tournamentGames(results),
-        {
-          source: "tournament-results",
-          rank: 1,
-          label: `tournament match results (${results.source})`,
-          basis: "card in the side's decklist",
-          period: { from: dates[0] ?? null, to: dates.at(-1) ?? null },
-        },
-        leaders,
-        MIN_N,
-      ),
-    );
-  }
-  if (gamesFile !== undefined) {
-    p.log({ phase: "human games" });
-    outcomeHashes["karabast-human"] = sha256File(gamesFile);
-    cards.push(
-      foldCardOutcomes(
-        humanGames(gamesFile),
-        {
-          source: "karabast-human",
-          rank: 2,
-          label: "human Karabast online games (secondary, casual play; not tournament)",
-          basis: "card seen in play for the side (played, on the board or in the discard)",
-          period: { from: null, to: HUMAN_CAPTURED_THROUGH },
-        },
-        leaders,
-        MIN_N,
-      ),
-    );
-  }
-  const winrates = winRatesFileSchema.parse({ schemaVersion: 1, minN: MIN_N, matchups, cards });
+  p.log({ phase: "deck evidence" });
+  const deckEvidence = foldDeckEvidence(decks, facts, meta.window, MIN_N);
+  const winrates = winRatesFileSchema.parse({ schemaVersion: 2, minN: MIN_N, matchups, deckEvidence });
 
   mkdirSync(outDir, { recursive: true });
   const outputs: Record<string, string> = {
@@ -349,7 +276,13 @@ function main(): void {
           matchups === null
             ? null
             : { rows: matchups.rows, unresolvedRows: matchups.unresolvedRows, matches: matchups.matches, pairs: matchups.pairs.length },
-        cardSources: cards.map((c) => ({ source: c.source, sides: c.sides, leaders: c.byLeader.length })),
+        deckEvidence: {
+          decks: deckEvidence.decks,
+          events: deckEvidence.events,
+          matches: deckEvidence.matches,
+          groups: deckEvidence.groups.length,
+          cardRows: deckEvidence.groups.reduce((n, g) => n + g.cards.length, 0),
+        },
       },
       null,
       1,

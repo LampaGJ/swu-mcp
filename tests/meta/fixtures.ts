@@ -38,5 +38,6 @@ export function deck(key: string, spec: Partial<MetaDeck> & { leader: string; ba
     event: spec.event === undefined ? "melee:1" : spec.event,
     placement: spec.placement === undefined ? 10 : spec.placement,
     field: spec.field ?? null,
+    record: spec.record ?? null,
   };
 }

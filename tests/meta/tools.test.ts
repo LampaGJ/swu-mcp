@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CardRow, CardStore } from "../../src/data.js";
 import { buildMeta, cardFacts, DEFAULT_META_OPTIONS } from "../../src/meta/build.js";
 import { loadCounterTable } from "../../src/meta/counters.js";
+import { SWUMETASTATS_SOURCE } from "../../src/meta/schema.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
@@ -71,10 +72,10 @@ const enemyDecks = Array.from({ length: 6 }, (_, i) =>
 const facts = cardFacts(features);
 const meta = buildMeta(enemyDecks, facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 });
 const winrates = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   minN: 10,
   matchups: {
-    source: "swumetastats-matchups",
+    source: SWUMETASTATS_SOURCE,
     label: "tournament matchups",
     period: { from: "2026-07-19", to: "2026-10-17" },
     rows: 2,
@@ -85,17 +86,30 @@ const winrates = {
       { leader: "EL", baseAspects: ["Cunning"], oppLeader: "OL", oppBaseAspects: ["Command"], wins: 5, losses: 7, draws: 0 },
     ],
   },
-  cards: [
-    {
-      source: "karabast-human",
-      rank: 2,
-      label: "human Karabast online games (secondary)",
-      basis: "seen",
-      period: { from: null, to: "2026-02-10" },
-      sides: 40,
-      byLeader: [{ leader: "EL", against: { wins: 20, n: 40 }, cards: [{ cardKey: "05010264", wins: 9, n: 12 }] }],
-    },
-  ],
+  deckEvidence: {
+    source: SWUMETASTATS_SOURCE,
+    label: "tournament decklists with their match record",
+    basis: "card in the main deck",
+    opponents: "unknown",
+    window: { from: "2026-07-20", to: "2026-10-17" },
+    decks: 30,
+    events: 3,
+    matches: 150,
+    groups: [
+      {
+        level: "archetype",
+        key: "OL|Command",
+        leader: "OL",
+        baseAspects: ["Command"],
+        aspects: ["Command", "Heroism", "Vigilance"],
+        decks: 30,
+        wins: 80,
+        losses: 66,
+        draws: 4,
+        cards: [{ cardKey: "05010264", decks: 12, wins: 36, losses: 23, draws: 1 }],
+      },
+    ],
+  },
 };
 const env = createMetaEnv(deckEnv, meta, winrates, loadCounterTable(), features);
 
@@ -108,12 +122,19 @@ describe("meta_archetypes", () => {
   it("lists archetypes with share, window, threats, tournament record and the sources it rests on", () => {
     const out = body(metaArchetypes(env, {}));
     expect(out.sources.population).toBe("tournament");
-    expect(out.sources.tournamentMatchups).toContain("tournament matchups");
-    expect(out.sources.cardWinRates).toContain("secondary");
+    expect(out.sources.tournamentMatchups).toContain(SWUMETASTATS_SOURCE);
+    expect(out.sources.answerEvidence).toContain("opponents unknown");
     expect(out.rows).toHaveLength(1);
     expect(out.rows[0].share).toBe(1);
     expect(out.rows[0].threats).toContain("key-units");
-    expect(out.rows[0].tournamentRecord).toBe("5-7-0 (41.7% of 12)");
+    expect(out.rows[0].tournamentRecord).toEqual({
+      record: "5-7-0",
+      n: 12,
+      winRate: 0.4167,
+      ci95: "0.1933..0.6805",
+      source: SWUMETASTATS_SOURCE,
+      window: "2026-07-19..2026-10-17",
+    });
   });
 });
 
@@ -131,7 +152,7 @@ describe("meta_threats", () => {
 describe("meta_answers", () => {
   it("returns penalty-free answers first with clause evidence, candidate status, coverage and win rate with n", () => {
     const out = body(metaAnswers(env, { leader: "OL", base: "OB", maxPenalty: 4, limit: 20 }));
-    expect(out.defendingAgainst[0].ourTournamentRecord).toBe("7-5-0 (58.3% of 12)");
+    expect(out.defendingAgainst[0].ourTournamentRecord).toMatchObject({ record: "7-5-0", n: 12, winRate: 0.5833, source: SWUMETASTATS_SOURCE });
     const penalties = out.answers.map((a: { penalty: number }) => a.penalty);
     expect(penalties).toEqual([...penalties].sort((a, b) => a - b));
     const itsWorse = out.answers.find((a: { cardKey: string }) => a.cardKey === "05010264");
@@ -142,7 +163,17 @@ describe("meta_answers", () => {
       relation: "defeat-key-unit",
       evidence: "text: Defeat a non-leader unit.",
     });
-    expect(itsWorse.winRates).toEqual([{ vs: "Enemy Leader", source: "karabast-human", rate: 0.75, n: 12, baseline: 0.5, baselineN: 40 }]);
+    expect(itsWorse.deckEvidence).toEqual({
+      comparable: "Our Leader, Defender / Command base decks",
+      withCard: { decks: 12, record: "36-23-1", n: 59, winRate: 0.6102, ci95: "0.4827..0.7242" },
+      withoutCard: { decks: 18, record: "44-43-3", n: 87, winRate: 0.5057, ci95: "0.4027..0.6083" },
+      difference: 0.1045,
+      opponents: "unknown",
+      source: SWUMETASTATS_SOURCE,
+      window: "2026-07-20..2026-10-17",
+    });
+    const noEvidence = out.answers.find((a: { cardKey: string; deckEvidence: unknown }) => typeof a.deckEvidence === "string");
+    expect(noEvidence.deckEvidence).toContain("fewer than 10 decisive matches");
     const allClear = out.answers.find((a: { cardKey: string }) => a.cardKey === "04010055");
     expect(allClear).toBeUndefined();
   });
@@ -166,5 +197,19 @@ describe("meta_answers", () => {
 
   it("asks for a leader and base when neither is given", () => {
     expect(metaAnswers(env, {}).isError).toBe(true);
+  });
+});
+
+describe("tool output carries no Karabast number (D22)", () => {
+  it("names only swumetastats as a win-rate source in all three meta tools", () => {
+    const outputs = [
+      metaArchetypes(env, {}),
+      metaThreats(env, { archetype: meta.archetypes[0].id }),
+      metaAnswers(env, { leader: "OL", base: "OB", maxPenalty: 4, limit: 60 }),
+    ].map((r) => r.content[0].text);
+    for (const text of outputs) {
+      expect(text.toLowerCase()).not.toContain("karabast");
+      expect(text).toContain(SWUMETASTATS_SOURCE);
+    }
   });
 });

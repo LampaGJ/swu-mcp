@@ -3,9 +3,9 @@ import { z } from "zod";
 /**
  * @displayName Meta defense schemas
  * @strategicPurpose Trust boundary for the meta step and the meta tools (LampaGJ/swu-mcp#25): the deck snapshot
- * files, the optional outcome extracts (tournament match results, human games), the committed counter table and the
- * emitted archetype and win-rate files are all parsed here, on both sides of the seam.
- * @tacticalObjective Deck files and outcome extracts are foreign data, so they are loose objects that keep only the
+ * files, the pinned swumetastats tournament data, the committed counter table and the emitted archetype and win-rate
+ * files are all parsed here, on both sides of the seam.
+ * @tacticalObjective Deck files and captures are foreign data, so they are loose objects that keep only the
  * fields the step reads; the emitted files are strict, so a renamed field fails at the emitter, not in a tool.
  */
 
@@ -28,6 +28,8 @@ export const snapshotDeckSchema = z.looseObject({
         })
         .nullish(),
       placement: z.number().int().positive().nullish(),
+      /** The deck's whole-event match record, "W-L-D". */
+      matchRecord: z.string().nullish(),
     })
     .optional(),
   leader: entry,
@@ -127,54 +129,71 @@ export const metaFileSchema = z.strictObject({
 });
 export type MetaFile = z.infer<typeof metaFileSchema>;
 
-export const CARD_OUTCOME_SOURCES = ["tournament-results", "karabast-human"] as const;
-export type CardOutcomeSource = (typeof CARD_OUTCOME_SOURCES)[number];
+/**
+ * Every shipped win-rate number comes from swumetastats.com's melee.gg tournament data (decision D22): Karabast
+ * games, aggregates included, never reach meta/ outputs or tool output. The literal is the only source a
+ * winrates.json can name, so a file carrying any other source fails to parse.
+ */
+export const SWUMETASTATS_SOURCE = "swumetastats (melee.gg tournaments)";
 
-const record3 = { wins: z.number().int(), losses: z.number().int(), draws: z.number().int() };
+const record3 = { wins: z.number().int().nonnegative(), losses: z.number().int().nonnegative(), draws: z.number().int().nonnegative() };
 
-/** Card-level win rates against one opponent leader, from one outcome source. */
-export const cardOutcomesSchema = z.strictObject({
-  source: z.enum(CARD_OUTCOME_SOURCES),
-  rank: z.number().int(),
+/** Aggregate tournament matchups, leader and base aspect against leader and base aspect (archetype strength). */
+export const matchupsSchema = z.strictObject({
+  source: z.literal(SWUMETASTATS_SOURCE),
   label: z.string(),
-  basis: z.string(),
-  period: z.strictObject({ from: z.string().nullable(), to: z.string().nullable() }),
-  sides: z.number().int(),
-  byLeader: z.array(
+  period: z.strictObject({ from: z.iso.date(), to: z.iso.date() }),
+  rows: z.number().int(),
+  unresolvedRows: z.number().int(),
+  matches: z.number().int(),
+  pairs: z.array(
     z.strictObject({
       leader: z.string(),
-      against: z.strictObject({ wins: z.number().int(), n: z.number().int() }),
-      cards: z.array(z.strictObject({ cardKey: z.string(), wins: z.number().int(), n: z.number().int() })),
+      baseAspects: z.array(z.string()),
+      oppLeader: z.string(),
+      oppBaseAspects: z.array(z.string()),
+      ...record3,
     }),
   ),
 });
-export type CardOutcomes = z.infer<typeof cardOutcomesSchema>;
+export type Matchups = z.infer<typeof matchupsSchema>;
+
+export const EVIDENCE_LEVELS = ["archetype", "aspects"] as const;
+
+/**
+ * Deck-level answer-card evidence: match records (the deck's whole-event W-L-D) of tournament decks that include a
+ * card against comparable decks that do not. Opponents are not known per match, so nothing here is a rate against
+ * an archetype. A card row is kept only when both sides reach minN decisive matches; without = group totals minus the row.
+ */
+export const deckEvidenceSchema = z.strictObject({
+  source: z.literal(SWUMETASTATS_SOURCE),
+  label: z.string(),
+  basis: z.string(),
+  opponents: z.string(),
+  window: z.strictObject({ from: z.iso.date(), to: z.iso.date() }),
+  decks: z.number().int(),
+  events: z.number().int(),
+  matches: z.number().int(),
+  groups: z.array(
+    z.strictObject({
+      level: z.enum(EVIDENCE_LEVELS),
+      key: z.string(),
+      leader: z.string().nullable(),
+      baseAspects: z.array(z.string()).nullable(),
+      aspects: z.array(z.string()),
+      decks: z.number().int(),
+      ...record3,
+      cards: z.array(z.strictObject({ cardKey: z.string(), decks: z.number().int(), ...record3 })),
+    }),
+  ),
+});
+export type DeckEvidence = z.infer<typeof deckEvidenceSchema>;
 
 export const winRatesFileSchema = z.strictObject({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   minN: z.number().int(),
-  /** Aggregate tournament matchups, leader and base aspect against leader and base aspect: the primary source. */
-  matchups: z
-    .strictObject({
-      source: z.literal("swumetastats-matchups"),
-      label: z.string(),
-      period: z.strictObject({ from: z.iso.date(), to: z.iso.date() }),
-      rows: z.number().int(),
-      unresolvedRows: z.number().int(),
-      matches: z.number().int(),
-      pairs: z.array(
-        z.strictObject({
-          leader: z.string(),
-          baseAspects: z.array(z.string()),
-          oppLeader: z.string(),
-          oppBaseAspects: z.array(z.string()),
-          ...record3,
-        }),
-      ),
-    })
-    .nullable(),
-  /** Card-level sources, best first: match results with decklists (#26) when present, then human games. */
-  cards: z.array(cardOutcomesSchema),
+  matchups: matchupsSchema.nullable(),
+  deckEvidence: deckEvidenceSchema.nullable(),
 });
 export type WinRatesFile = z.infer<typeof winRatesFileSchema>;
 
@@ -191,7 +210,7 @@ export const metaReplaySchema = z.strictObject({
 
 /**
  * Pluggable tournament match results (LampaGJ/swu-mcp#26): one row per match with both decklists as cardKeys and the
- * winning side. A results extract in this shape is the primary outcome source; human games are secondary.
+ * winning side. Read only by the local benchmark until a public per-match source exists.
  */
 export const tournamentResultsSchema = z.looseObject({
   kind: z.literal("tournament-matches"),
@@ -209,17 +228,6 @@ export const tournamentResultsSchema = z.looseObject({
   ),
 });
 export type TournamentResults = z.infer<typeof tournamentResultsSchema>;
-
-/** One line of the human-game extract (scripts/bench/extract-games.ts); only the fields the win rates read. */
-export const humanGameSchema = z.looseObject({
-  sides: z.array(
-    z.looseObject({
-      leader: z.string().nullable(),
-      won: z.union([z.literal(0), z.literal(1), z.null()]),
-      cards: z.array(z.tuple([z.string(), z.number()])),
-    }),
-  ),
-});
 
 // ---------------------------------------------------------------------------------------------
 // Counter table (data/counters.json)

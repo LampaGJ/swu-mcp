@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { compareCodePoints } from "../swu/canonical.js";
-import type { CardOutcomes, TournamentResults, WinRatesFile } from "./schema.js";
+import type { CardFact, MetaDeck } from "./build.js";
+import { SWUMETASTATS_SOURCE, type DeckEvidence, type Matchups } from "./schema.js";
 
 /**
  * @displayName Meta outcome aggregation
- * @strategicPurpose Win rates behind meta_answers and archetype strength, ranked by how close they are to real
- * competitive play (owner direction 2026-10-17): tournament matchups first, tournament match results with decklists
- * (LampaGJ/swu-mcp#26) next for card-level rates, human Karabast games last and labelled. Bot simulations are never
- * read. Only aggregates leave this module: counts per leader pair and per (card, opponent leader), never a game.
- * @tacticalObjective Parses the pinned swumetastats capture, resolves leader and base names to cardKeys and base
- * aspects, and folds game sides into wins and n per opponent leader; card rows under minN are dropped.
+ * @strategicPurpose Win rates behind archetype strength and meta_answers, from swumetastats.com's melee.gg tournament
+ * data only (decision D22, owner ruling 2026-10-17): leader+base matchups for archetype strength, and decklists with
+ * their whole-event match record for answer-card evidence. Karabast games and bot simulations are never read here.
+ * @tacticalObjective Parses the pinned matchup capture, resolves leader and base names to cardKeys and base aspects,
+ * and folds tournament decks into W-L-D per comparable-deck group (same leader and base aspects; same aspect set)
+ * and per card in that group; a card row needs minN matches both with and without the card.
  */
 
 const matchupRowSchema = z.looseObject({
@@ -56,7 +57,7 @@ export function foldMatchups(
   response: MatchupResponse,
   resolve: NameResolver,
   period: { from: string; to: string },
-): NonNullable<WinRatesFile["matchups"]> {
+): Matchups {
   const sets = response.leaderSets ?? {};
   const pairs = new Map<
     string,
@@ -82,77 +83,103 @@ export function foldMatchups(
     matches += row.wins + row.losses + row.draws;
   }
   return {
-    source: "swumetastats-matchups",
+    source: SWUMETASTATS_SOURCE,
     label: "tournament matchups (melee.gg Premier events via swumetastats.com), aggregate per leader and base",
     period: { from: period.from, to: period.to },
     rows: response.matchups.length,
     unresolvedRows: unresolved,
     // Each match is listed once from each side.
     matches: Math.round(matches / 2),
-    pairs: [...pairs.keys()].sort(compareCodePoints).map((k) => pairs.get(k) as NonNullable<WinRatesFile["matchups"]>["pairs"][number]),
+    pairs: [...pairs.keys()].sort(compareCodePoints).map((k) => pairs.get(k) as Matchups["pairs"][number]),
   };
 }
 
-export interface OutcomeSide {
-  leader: string | null;
-  won: 0 | 1 | null;
-  cards: readonly string[];
+export interface MatchRecord {
+  wins: number;
+  losses: number;
+  draws: number;
 }
 
-/** Two sides of one game or match; each side's cards are counted against the other side's leader. */
-export type OutcomeGame = readonly [OutcomeSide, OutcomeSide];
+/** "W-L-D" as melee.gg and swumetastats print it; anything else is no record. */
+export function parseMatchRecord(text: string | null | undefined): MatchRecord | null {
+  const m = /^\s*(\d+)-(\d+)-(\d+)\s*$/.exec(text ?? "");
+  return m === null ? null : { wins: Number(m[1]), losses: Number(m[2]), draws: Number(m[3]) };
+}
 
-export function foldCardOutcomes(
-  games: Iterable<OutcomeGame>,
-  meta: { source: CardOutcomes["source"]; rank: number; label: string; basis: string; period: CardOutcomes["period"] },
-  leaders: ReadonlySet<string>,
+export const archetypeEvidenceKey = (leader: string, baseAspects: readonly string[]): string => `${leader}|${baseAspects.join("+")}`;
+export const aspectsEvidenceKey = (aspects: readonly string[]): string => `aspects:${[...aspects].sort(compareCodePoints).join("+")}`;
+
+type Group = DeckEvidence["groups"][number];
+interface Tally extends MatchRecord {
+  decks: number;
+}
+
+const add = (t: Tally, r: MatchRecord): void => {
+  t.decks += 1;
+  t.wins += r.wins;
+  t.losses += r.losses;
+  t.draws += r.draws;
+};
+const matchesOf = (t: MatchRecord): number => t.wins + t.losses + t.draws;
+/** Decisive matches, the n behind a win rate (swumetastats' own convention: draws are left out). */
+const decisive = (t: MatchRecord): number => t.wins + t.losses;
+
+export function foldDeckEvidence(
+  decks: readonly MetaDeck[],
+  facts: ReadonlyMap<string, CardFact>,
+  window: { from: string; to: string },
   minN: number,
-): CardOutcomes {
-  const against = new Map<string, { wins: number; n: number; cards: Map<string, { wins: number; n: number }> }>();
-  let sides = 0;
-  for (const game of games) {
-    for (const [self, other] of [
-      [game[0], game[1]],
-      [game[1], game[0]],
-    ] as const) {
-      if (self.won === null || other.leader === null || !leaders.has(other.leader)) continue;
-      sides += 1;
-      const entry = against.get(other.leader) ?? { wins: 0, n: 0, cards: new Map() };
-      entry.wins += self.won;
-      entry.n += 1;
-      for (const card of new Set(self.cards)) {
-        const c = entry.cards.get(card) ?? { wins: 0, n: 0 };
-        c.wins += self.won;
-        c.n += 1;
-        entry.cards.set(card, c);
+): DeckEvidence {
+  const groups = new Map<string, Omit<Group, "cards"> & { cards: Map<string, Tally> }>();
+  const events = new Set<string>();
+  let used = 0;
+  let matches = 0;
+  for (const d of decks) {
+    const day = d.createdAt.slice(0, 10);
+    if (d.population !== "tournament" || d.record === undefined || d.record === null) continue;
+    if (compareCodePoints(day, window.from) < 0 || compareCodePoints(day, window.to) > 0) continue;
+    const record = d.record;
+    used += 1;
+    matches += matchesOf(record);
+    if (d.event !== null) events.add(d.event);
+    const baseAspects = facts.get(d.base)?.aspectIcons ?? [];
+    const aspects = [...(facts.get(d.leader)?.aspectIcons ?? []), ...baseAspects].sort(compareCodePoints);
+    const targets: (Omit<Group, "cards" | "decks" | "wins" | "losses" | "draws"> & { key: string })[] = [
+      { level: "archetype", key: archetypeEvidenceKey(d.leader, baseAspects), leader: d.leader, baseAspects, aspects },
+      { level: "aspects", key: aspectsEvidenceKey(aspects), leader: null, baseAspects: null, aspects },
+    ];
+    for (const t of targets) {
+      const g = groups.get(t.key) ?? { ...t, decks: 0, wins: 0, losses: 0, draws: 0, cards: new Map<string, Tally>() };
+      add(g, record);
+      for (const [card] of d.cards) {
+        const c = g.cards.get(card) ?? { decks: 0, wins: 0, losses: 0, draws: 0 };
+        add(c, record);
+        g.cards.set(card, c);
       }
-      against.set(other.leader, entry);
+      groups.set(t.key, g);
     }
   }
+  const out: Group[] = [];
+  for (const key of [...groups.keys()].sort(compareCodePoints)) {
+    const g = groups.get(key) as Omit<Group, "cards"> & { cards: Map<string, Tally> };
+    const total = decisive(g);
+    const cards = [...g.cards]
+      .filter(([, c]) => decisive(c) >= minN && total - decisive(c) >= minN)
+      .sort((a, b) => compareCodePoints(a[0], b[0]))
+      .map(([cardKey, c]) => ({ cardKey, decks: c.decks, wins: c.wins, losses: c.losses, draws: c.draws }));
+    if (cards.length === 0) continue;
+    out.push({ ...g, cards });
+  }
   return {
-    ...meta,
-    sides,
-    byLeader: [...against.keys()].sort(compareCodePoints).map((leader) => {
-      const e = against.get(leader) as { wins: number; n: number; cards: Map<string, { wins: number; n: number }> };
-      return {
-        leader,
-        against: { wins: e.wins, n: e.n },
-        cards: [...e.cards]
-          .filter(([, c]) => c.n >= minN)
-          .sort((a, b) => compareCodePoints(a[0], b[0]))
-          .map(([cardKey, c]) => ({ cardKey, wins: c.wins, n: c.n })),
-      };
-    }),
+    source: SWUMETASTATS_SOURCE,
+    label: "tournament decklists with their match record (melee.gg Premier events via swumetastats.com)",
+    basis: "card in the deck's main deck; record = the deck's whole-event match wins-losses-draws",
+    opponents:
+      "unknown: swumetastats publishes no per-match pairings, so each record is against the deck's whole field, never against one archetype",
+    window: { from: window.from, to: window.to },
+    decks: used,
+    events: events.size,
+    matches,
+    groups: out,
   };
-}
-
-export function tournamentGames(results: TournamentResults): OutcomeGame[] {
-  return results.matches.map((m) => {
-    const side = (i: 0 | 1): OutcomeSide => ({
-      leader: m.sides[i].leader,
-      won: m.winner === null ? null : m.winner === i ? 1 : 0,
-      cards: m.sides[i].cards.map(([c]) => c),
-    });
-    return [side(0), side(1)] as const;
-  });
 }
