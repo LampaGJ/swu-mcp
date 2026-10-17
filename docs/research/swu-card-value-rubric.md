@@ -30,7 +30,7 @@ related: ["#322"]
   - "all": canonical units from the nine main sets, 1,473 units.
   - "JTL+": 1,042 units.
   - "play": JTL+ units, events and upgrades excluding HMW, 1,172 cards.
-- Data: the raw snapshot at `/Users/graham/.local/state/mault/raw/swu-cards/2026-10-16T21-28-37-247Z-snapshot/` (103 pages, 10,246 printings). Field meanings: `docs/concepts/swu-card-data-fields.md` in this repository.
+- Data: the raw snapshot at `~/.local/state/mault/raw/swu-cards/2026-10-16T21-28-37-247Z-snapshot/` (103 pages, 10,246 printings). Field meanings: `docs/concepts/swu-card-data-fields.md` in this repository.
 
 ## Scripts and pinned inputs
 

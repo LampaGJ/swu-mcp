@@ -1,6 +1,6 @@
 # Pinned captures
 
-Inputs to `scripts/rubric/`, copied byte for byte from `/Users/graham/Projects/mault-handoff/issue-322-rubric/` on 2026-10-16. Each is small (under 5 MB), so it is committed.
+Inputs to `scripts/rubric/`, copied byte for byte from `~/Projects/mault-handoff/issue-322-rubric/` on 2026-10-16. Each is small (under 5 MB), so it is committed.
 
 sha256, then file:
 
