@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CardStore } from "./data.js";
+import { registerResources } from "./resources.js";
 import { rulesFor } from "./rules/store.js";
 import { TOOLS } from "./tools.js";
 
@@ -22,5 +23,6 @@ export function createServer(store: CardStore): McpServer {
     },
     (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: rulesFor(store.dataDir).primer }] }),
   );
+  registerResources(server, store);
   return server;
 }
