@@ -1,5 +1,5 @@
 import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import json, base64, subprocess, numpy as np
+import json, base64, numpy as np
 from render import S
 from evalset import EVALS, metrics, N
 def unit(X): return X / np.linalg.norm(X, axis=1, keepdims=True)
@@ -42,11 +42,6 @@ for model in ("minilm", "nomic", "qwen3"):
                 if enc != "f32": r["scale"] = variants[enc + "_scale"]
                 for k, ev in EVALS.items(): r[k] = metrics(M, ev)
                 res.append(r)
-json.dump(samples, open(f"{S}/cell_samples.json", "w"))
-tok = subprocess.run(["node", f"{S}/scripts/tok.mjs", f"{S}/cell_samples.json"], capture_output=True, text=True).stdout
-tk = json.loads(tok)
-for r in res:
-    if r["enc"] != "f32": r["tokens_per_cell"] = tk[f"{r['model']}-{r['rendering']}-{r['dims']}-{r['enc']}"]["tok"]; r["chars_per_cell"] = tk[f"{r['model']}-{r['rendering']}-{r['dims']}-{r['enc']}"]["chars"]
 json.dump(res, open(f"{S}/results.json", "w"), indent=1)
 for r in res:
-    print(r["model"], r["rendering"], r["dims"], r["enc"], "ov", r["top10_overlap_vs_full"], "tok", r.get("tokens_per_cell"), *[f"{k[:2]}:{v['recall@10']}/{v['P@10']}/{v['MRR']}" for k, v in r.items() if k in EVALS])
+    print(r["model"], r["rendering"], r["dims"], r["enc"], "ov", r["top10_overlap_vs_full"], *[f"{k[:2]}:{v['recall@10']}/{v['P@10']}/{v['MRR']}" for k, v in r.items() if k in EVALS])
