@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>swu-mcp: Star Wars: Unlimited card data for AI assistants</title>
+<meta name="description" content="An MCP server that gives AI assistants Star Wars: Unlimited card data, deterministic scores, synergy and rules lookups.">
+<style>
+  :root { color-scheme: light dark; --bg: #fdfdfb; --fg: #1d1f23; --muted: #596069; --line: #d8dbe0; --code: #eef0f3; --link: #0b57b7; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --fg: #e8eaed; --muted: #a0a7b1; --line: #2e333a; --code: #20242a; --link: #7db4ff; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 2rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.3rem; margin: 2.5rem 0 .5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  h3 { font-size: 1rem; margin: 1.25rem 0 .25rem; }
+  a { color: var(--link); }
+  p, li { max-width: 40rem; }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-top: 0; }
+  pre, code { background: var(--code); border-radius: 4px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code { padding: .1rem .3rem; }
+  pre { padding: .8rem 1rem; overflow-x: auto; }
+  pre code { padding: 0; background: none; }
+  ul.tools { padding-left: 1.2rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>swu-mcp</h1>
+<p class="lede">Star Wars: Unlimited card data, scores, synergy and rules, ready for your AI assistant to look up.</p>
+
+<h2>What it is</h2>
+<p>swu-mcp is a small program that an AI assistant such as Claude can talk to. It answers questions about Star Wars: Unlimited (SWU) cards: what a card says, how strong a rubric rates it, which cards work well together, what it costs, and what the official rules say. It speaks the Model Context Protocol (MCP), an open standard that lets assistants call outside tools.</p>
+<p>Every number comes from fixed code run over saved inputs. No AI model runs when you ask a question, and none picks a score. The same data always gives the same answer. All 28 tools only read data; none changes anything.</p>
+
+<h2>Install for Claude Code</h2>
+<p>You need Node.js 22 or newer. Run this once:</p>
+<pre><code>claude mcp add swu -- npx -y github:LampaGJ/swu-mcp</code></pre>
+<p>The first start builds the server from GitHub and downloads the card data (about 2 MB). Both are kept for later runs.</p>
+
+<h2>Install for Claude Desktop</h2>
+<p>Open the Claude Desktop settings, choose Developer, then Edit Config. Add this entry to the <code>mcpServers</code> section and restart the app:</p>
+<pre><code>{
+  "mcpServers": {
+    "swu": {
+      "command": "npx",
+      "args": ["-y", "github:LampaGJ/swu-mcp"]
+    }
+  }
+}</code></pre>
+
+<h2>The 28 tools</h2>
+<h3>Cards and search</h3>
+<ul class="tools"><li><code>get_card</code>, <code>search_cards</code>, <code>list_facet</code>, <code>cards_by_facet</code></li></ul>
+<h3>Value</h3>
+<ul class="tools"><li><code>score_card</code>, <code>rank_cards</code>, <code>compare_cards</code>, <code>explain_rubric</code></li></ul>
+<h3>Text features</h3>
+<ul class="tools"><li><code>card_features</code>, <code>find_by_effect</code></li></ul>
+<h3>Synergy and combos</h3>
+<ul class="tools"><li><code>find_pairings</code>, <code>find_trios</code>, <code>explain_synergy</code>, <code>aspect_cover</code></li></ul>
+<h3>Fungibility and substitutes</h3>
+<ul class="tools"><li><code>fungible_substitutes</code></li></ul>
+<h3>Market and play data</h3>
+<ul class="tools"><li><code>card_price</code>, <code>play_stats</code>, <code>value_vs_price</code></li></ul>
+<h3>Rules</h3>
+<ul class="tools"><li><code>rules_core</code>, <code>rules_search</code>, <code>get_rule</code>, <code>card_rulings</code>, <code>keyword_rules</code>, <code>rules_version</code></li></ul>
+<h3>Similarity</h3>
+<ul class="tools"><li><code>similar_cards</code>, <code>kin_cards</code>, <code>cluster</code></li></ul>
+<h3>Provenance</h3>
+<ul class="tools"><li><code>data_version</code></li></ul>
+<p>The <a href="https://github.com/LampaGJ/swu-mcp#tools-28">README</a> gives a one-line description of each tool.</p>
+
+<h2>Data version</h2>
+<p>This release uses card data built on <strong>2026-10-16</strong>. The server checks the download against a fixed checksum before it uses it. See the <a href="https://github.com/LampaGJ/swu-mcp/releases/tag/data-2026-10-16">data-2026-10-16 release</a>. To use your own data folder instead, set <code>SWU_MCP_DATA</code>.</p>
+
+<h2>Honest limits</h2>
+<ul>
+<li>Tag precision is unmeasured. The offers and wants tags behind pairings, trios and fungible classes come from a grammar plus a hand-reviewed table. No labelled test set measures how often they are right.</li>
+<li>The play data is thin. It is online Karabast and Petranaki games in three Premier windows, not tournaments. Homeworlds has under one week of play data.</li>
+<li>Prices mostly follow rarity. They are US TCGplayer prices from one import, so cheap commons dominate any value-per-dollar ranking.</li>
+<li>The <code>total</code> score is comparable only within a card type. The <code>playCalibrated</code> score is rank-meaningful only, and it is fitted to the same play data it is compared with.</li>
+<li>The check for a newer Comprehensive Rules version is manual. Nothing schedules it.</li>
+</ul>
+
+<h2>Read more</h2>
+<ul>
+<li><a href="https://github.com/LampaGJ/swu-mcp/blob/main/docs/public/what-it-does.md">What it does</a>, in plain words</li>
+<li><a href="https://github.com/LampaGJ/swu-mcp/blob/main/docs/public/how-we-built-it.md">How it was built</a></li>
+<li><a href="https://github.com/LampaGJ/swu-mcp/blob/main/docs/public/claude-code-setup.md">The Claude Code setup behind it</a></li>
+<li><a href="https://github.com/LampaGJ/swu-mcp">Source code</a></li>
+</ul>
+
+<footer>
+<p>Unofficial fan project. Card data belongs to Lucasfilm and Fantasy Flight Games and comes from the official card list. Prices come from TCGplayer through TCGCSV. Play data comes from SWU Stats.</p>
+</footer>
+</main>
+</body>
+</html>
