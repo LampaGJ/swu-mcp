@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "tableVersion": 5,
+ "tableVersion": 6,
  "note": "Rung 4: curated per-card rules. Each entry is keyed by (cardKey, face, clauseSha256) where clauseSha256 = sha256 of sourceClause, the exact normalized clause the extractor produces. An entry applies only when the grammar leaves that clause unclassified, unless override is true. An entry whose clause no longer exists is stale and fails the run; an entry for a clause the grammar now classifies is redundant and is reported for pruning. PROTOTYPE entries: not yet owner-reviewed.",
  "entries": [
   {
@@ -74,13 +74,23 @@
      {
       "rule": "curated",
       "cat": "reveal_hand",
-      "n": 1
+      "n": 1,
+      "target": {
+       "side": "friendly",
+       "kind": "card",
+       "arena": "hand",
+       "quant": "one",
+       "restrict": [
+        "type:event"
+       ],
+       "text": "an event from your hand"
+      }
      }
     ],
     "offers": [],
     "wants": []
    },
-   "rationale": "Optional reveal of an event card from hand; it only gates the following \"If you do, deal 1 damage\" clause and has no effect of its own.",
+   "rationale": "Optional reveal of an event card from hand; it only gates the following \"If you do, deal 1 damage\" clause and has no effect of its own. Revision (table v6, #15): the reveal keeps its target, an event in your hand, which the gate needs (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -1890,11 +1900,9 @@
      }
     ],
     "offers": [],
-    "wants": [
-     "wants:wide-board"
-    ]
+    "wants": []
    },
-   "rationale": "Extends the mirror rule to Restore: gains Restore while another friendly unit has it. Restore N is not stated here, so n is null. Shape fix: keywords=Restore. while_other.w from clause.",
+   "rationale": "Extends the mirror rule to Restore: gains Restore while another friendly unit has it. Restore N is not stated here, so n is null. Shape fix: keywords=Restore. while_other.w from clause. Revision (table v6, #15): dropped wants:wide-board, the same defect as cur-0060; the unit counts nothing, it only mirrors a keyword another friendly unit already has (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -1965,11 +1973,9 @@
      }
     ],
     "offers": [],
-    "wants": [
-     "wants:wide-board"
-    ]
+    "wants": []
    },
-   "rationale": "Extends the preceding Ambush mirror rule to six more keywords: this unit gains each while another friendly unit has it. varN: no magnitudes stated. Shape fix: keywords = the six listed. while_other.w from clause.",
+   "rationale": "Extends the preceding Ambush mirror rule to six more keywords: this unit gains each while another friendly unit has it. varN: no magnitudes stated. Shape fix: keywords = the six listed. while_other.w from clause. Revision (table v6, #15): dropped wants:wide-board; the unit counts nothing, it only mirrors a keyword another friendly unit already has (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2063,21 +2069,21 @@
     "effects": [
      {
       "rule": "curated",
-      "cat": "grant_keyword",
+      "cat": "stat_mod",
       "n": null,
+      "power": "var",
+      "hp": 0,
+      "sign": "buff",
       "target": {
        "side": "friendly",
        "kind": "unit",
        "arena": "any",
        "quant": "all",
-       "restrict": [],
-       "text": "each friendly unit"
-      },
-      "keywords": [
-       {
-        "keyword": "Raid"
-       }
-      ]
+       "restrict": [
+        "keyword:Raid"
+       ],
+       "text": "each friendly unit's Raid"
+      }
      }
     ],
     "conditions": [],
@@ -2087,7 +2093,7 @@
      "wants:wide-board"
     ]
    },
-   "rationale": "Doubles Raid on every friendly unit; scales with Raid units present. n is null because the result depends on each unit Raid value. Shape fix: keywords=Raid (doubled). Revision (table v3): kept medium: no effect category doubles a keyword value; grant_keyword Raid on all friendly units is the nearest, but the card grants no new Raid.",
+   "rationale": "Doubles Raid on every friendly unit; scales with Raid units present. n is null because the result depends on each unit Raid value. Shape fix: keywords=Raid (doubled). Revision (table v3): kept medium: no effect category doubles a keyword value; grant_keyword Raid on all friendly units is the nearest, but the card grants no new Raid. Revision (table v6, #15): recategorised from grant_keyword to stat_mod: doubling Raid adds attack power to units that already have Raid and grants Raid to none, so it must not land in the grant-raid class (verification RC19).",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2462,11 +2468,9 @@
     "offers": [
      "offers:ready-unit"
     ],
-    "wants": [
-     "wants:units-entering"
-    ]
+    "wants": []
    },
-   "rationale": "Replacement-style static: rescued friendly units enter play ready rather than exhausted; pairs with capture/rescue effects. Revision (table v3): kept medium: wants:units-entering approximates 'pairs with capture or rescue effects'; no capture-rescue want tag exists.",
+   "rationale": "Replacement-style static: rescued friendly units enter play ready rather than exhausted; pairs with capture/rescue effects. Revision (table v3): kept medium: wants:units-entering approximates 'pairs with capture or rescue effects'; no capture-rescue want tag exists. Revision (table v6, #15): dropped wants:units-entering; a rescue is not playing a unit, and no rescue want tag exists (verification RC19).",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2491,7 +2495,8 @@
        "quant": "one",
        "restrict": [],
        "text": "this unit"
-      }
+      },
+      "conditional": true
      }
     ],
     "conditions": [
@@ -2502,14 +2507,12 @@
      }
     ],
     "structure": [],
-    "offers": [
-     "offers:return-own-to-hand"
-    ],
+    "offers": [],
     "wants": [
      "wants:when-defeated-cards"
     ]
    },
-   "rationale": "When defeated, if this unit had 7+ power it returns to hand rather than staying in discard; recursion on defeat.",
+   "rationale": "When defeated, if this unit had 7+ power it returns to hand rather than staying in discard; recursion on defeat. Revision (table v6, #15): the return is conditional on 7 or more power when defeated and Sion has 5 printed power, so the effect is marked conditional and the explicit offers:return-own-to-hand is dropped (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2770,11 +2773,10 @@
      "offers:resource-ramp"
     ],
     "wants": [
-     "wants:exhausted-own",
      "wants:trait-Droid"
     ]
    },
-   "rationale": "Friendly Droid units can be exhausted as payment as if resources; ramp that scales with Droid count. varN.",
+   "rationale": "Friendly Droid units can be exhausted as payment as if resources; ramp that scales with Droid count. varN. Revision (table v6, #15): dropped wants:exhausted-own; the cost needs ready Droids to exhaust, not exhausted ones (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -3811,7 +3813,7 @@
     ],
     "wants": []
    },
-   "rationale": "Returns itself to its owner's hand, usually as a cost or escape; re-triggers its own When Played if replayed.",
+   "rationale": "Returns itself to its owner's hand, usually as a cost or escape. Revision (table v6, #15): removed the claim that it re-triggers a When Played; Krrsantan has none (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -5525,7 +5527,7 @@
       "target": {
        "side": "any",
        "kind": "unit",
-       "arena": "any",
+       "arena": "same",
        "quant": "any",
        "restrict": [],
        "text": "any number of units in its arena"
@@ -5546,7 +5548,7 @@
     ],
     "wants": []
    },
-   "rationale": "The chosen unit deals damage equal to its power, divided as you choose among units in its arena; amount is variable (power), so n is null. Shape fix: scaling.per from clause.",
+   "rationale": "The chosen unit deals damage equal to its power, divided as you choose among units in its arena; amount is variable (power), so n is null. Shape fix: scaling.per from clause. Revision (table v6, #15): arena same, as in cur-0150: units in its arena share the chosen unit's arena (verification RC19).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -5601,21 +5603,7 @@
    "sourceClause": "If attached unit would take damage, it takes twice as much damage instead.",
    "clauseSha256": "e10190faa204197197c5eb8b988348b719ecc30a559bf78ff012ba0d817f2629",
    "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "damage",
-      "n": null,
-      "target": {
-       "side": "self",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [],
-       "text": "attached unit"
-      }
-     }
-    ],
+    "effects": [],
     "conditions": [
      {
       "rule": "curated",
@@ -5635,17 +5623,21 @@
      {
       "rule": "curated",
       "cat": "damage_multiplier",
-      "n": 2
+      "n": 2,
+      "target": {
+       "side": "any",
+       "kind": "unit",
+       "arena": "any",
+       "quant": "one",
+       "restrict": [],
+       "text": "attached unit"
+      }
      }
     ],
-    "offers": [
-     "offers:damage-friendly-unit"
-    ],
-    "wants": [
-     "wants:damage-friendly"
-    ]
+    "offers": [],
+    "wants": []
    },
-   "rationale": "Replacement effect that doubles damage the attached unit takes; a liability on a friendly unit, a damage amplifier on an enemy unit. The effect list stays damage with n null since the extra damage is conditional. Shape fix: replacement target = attached unit. Revision (table v3): kept medium: the upgrade can attach to either side; the entry assumes the carrier is friendly (offers:damage-friendly-unit), while the card is mostly used on enemy units to double damage.",
+   "rationale": "Replacement effect that doubles damage the attached unit takes; a liability on a friendly unit, a damage amplifier on an enemy unit. The effect list stays damage with n null since the extra damage is conditional. Shape fix: replacement target = attached unit. Revision (table v3): kept medium: the upgrade can attach to either side; the entry assumes the carrier is friendly (offers:damage-friendly-unit), while the card is mostly used on enemy units to double damage. Revision (table v6, #15): the upgrade attaches to either side and deals no damage itself, so the damage effect, offers:damage-friendly-unit and wants:damage-friendly are dropped; the doubling stays as the damage_multiplier structure on attached unit, side any (verification RC19).",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
