@@ -36,7 +36,7 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   }
   const headEnd = s.search(HEAD_END);
   const head = headEnd < 0 ? s : s.slice(0, headEnd);
-  const hl = head.toLowerCase();
+  const hl = head.toLowerCase().replace(/\bnon-[a-z']+/g, " ");
   const named = isCardName(s);
   if (named) t.kind = "card";
   else if (/\bunits? or (?:a |an )?(?:[a-z']+ )?bases?\b|\bbases? or (?:a |an )?units?\b/.test(hl)) t.kind = "unit_or_base";
@@ -103,7 +103,7 @@ function numOf(x: string | undefined): number | "var" {
 
 /** Target phrase: lazy up to a clause boundary or a coordinated next effect. */
 const TGT =
-  "(?<tgt>[^.;:⟦]+?)(?=$|[.;:⟦]|, (?:then |and |or |if |you |deal |give |draw |heal |exhaust |ready |defeat |create |return |play |attack |reveal |search |discard |put |shuffle )| and (?:\\d+ |deal |give |draw |heal |exhaust |ready |defeat |create |return |play |attack |reveal |search |discard |put |shuffle |it |they |that |gains? |gets? |can't )| for this (?:phase|attack|round)| instead| if | unless | to their | to its | to your hand| from (?:your|their|its|a) | for each |, even)";
+  "(?<tgt>[^.;:⟦]+?)(?=$|[.;:⟦]|, (?:then |and |or |if |you |deal |give |draw |heal |exhaust |ready |defeat |create |return |play |attack |reveal |search |discard |put |shuffle )| and (?:\\d+ |deal |give |draw |heal |exhaust |ready |defeat |create |return |play |attack |reveal |search |discard |put |shuffle |it |they |that |gains? |gets? |can't )| for this (?:phase|attack|round)| instead| if | unless | to their | to its | to your hand| from (?:your|their|its|a) | for (?:each|every) |, even)";
 
 const PRODUCTIONS: Production[] = [];
 const def = (id: string, cat: string, layer: Layer, src: string, build: Build): void => {
@@ -220,16 +220,20 @@ def("give_keyword", "grant_keyword", "effect",
 def("lose_abilities", "blank", "effect", "\\bloses? all (?:abilities|keywords)\\b", () => ({ n: 1 }));
 
 // --- tempo
+// Resource productions come first: on an equal-length match the earlier production wins, and the generic exhaust/ready would take a resource for a unit.
+const RESOURCE_WORDS = "(?: (?:friendly|enemy|ready|exhausted|of their|of your))*";
+def("ready_resources", "ready_resource", "effect", `\\bready (?<n>\\d+|a|an|each|all)${RESOURCE_WORDS} resources?\\b`, (g) => ({ n: numOf(g.n) }));
+def("ready_resourced", "ready_resource", "effect", "\\bready each card resourced(?: this way)?\\b", () => ({ n: "var" }));
+def("exhaust_resources", "exhaust_resource", "effect", `\\bexhaust (?<n>\\d+|a|an|each|all)(?<who>${RESOURCE_WORDS}) resources?\\b`,
+  (g) => ({ n: numOf(g.n), target: parseTarget(`${str(g.n)}${str(g.who)} resources`) }));
 def("exhaust_self", "self_exhaust", "effect", "\\bexhaust (?:this unit|this leader|it|attached unit|him|her|this upgrade)\\b", () => ({ n: 1 }));
 def("exhaust", "exhaust", "effect", `\\bexhaust ${TGT}`, (g) => ({ n: 1, target: parseTarget(g.tgt) }));
-def("ready_resources", "ready_resource", "effect", "\\bready (?<n>\\d+|a|an) resources?\\b", (g) => ({ n: numOf(g.n) }));
-def("exhaust_resources", "exhaust_resource", "effect", "\\bexhaust (?<n>\\d+|a|an) (?:of their |of your |enemy )?resources?\\b", (g) => ({ n: numOf(g.n) }));
 def("no_ready", "restriction", "effect", "\\b(?<who>[^.;:,]*?)\\b(?:doesn't|don't|does not|do not) ready\\b", (g) => ({ what: "ready", target: parseTarget(g.who) }));
 def("ready", "ready", "effect", `\\bready ${TGT}`, (g) => ({ n: 1, target: parseTarget(g.tgt) }));
 def("enters_ready", "ready", "effect", "(?<subj>\\b(?:the next|this|each|a|an|that|the first)\\b[^.;:,]*?)?\\benters play ready\\b",
   (g) => ({ n: 1, target: parseTarget((g.subj ?? "").trim() || "this unit") }));
 def("extra_attack", "extra_attack", "effect", `\\battack with ${TGT}`, (g) => ({ n: 1, target: parseTarget(g.tgt) }));
-def("initiative", "take_initiative", "effect", "\\btake the initiative\\b", () => ({ n: 1 }));
+def("initiative", "take_initiative", "effect", "(?<!\\b(?:time|when|whenever|if|after|before) you )\\btake the initiative\\b", () => ({ n: 1 }));
 def("cant", "restriction", "effect",
   "\\b(?<who>[^.;:,]*?)\\bcan't (?<what>attack|ready|be attacked|be defeated|be captured|be damaged|be healed|be played|attack bases|play events|deal damage|be targeted)",
   (g) => ({ what: g.what, target: parseTarget(g.who) }));
@@ -242,7 +246,18 @@ def("ramp", "ramp", "effect",
   () => ({ n: 1 }));
 def("cost_less_subject", "cost_reduction", "effect",
   "\\b(?<subj>(?:the (?:first|next)|each|this|that|it)\\b[^.;,]*?)\\bcosts? (?:\\[)?(?<n>\\d+|X)(?: resources?)?(?:\\])? (?:resources? )?less(?: to play)?\\b",
-  (g) => ({ n: numOf(g.n), applies: parseTarget(g.subj), oneShot: /\b(?:first|next)\b/i.test(str(g.subj)) }));
+  (g) => {
+    const subj = str(g.subj);
+    const host = subj.match(/\b(?:on|to) (this unit|attached unit)\b/i);
+    const every = subj.match(/\beach (round|phase)\b/i);
+    return {
+      n: numOf(g.n),
+      applies: parseTarget(subj),
+      oneShot: /\b(?:first|next)\b/i.test(subj),
+      ...(host ? { host: parseTarget(host[1]) } : {}),
+      ...(every ? { frequency: `each_${every[1].toLowerCase()}` } : {}),
+    };
+  });
 def("cost_less", "cost_reduction", "effect",
   "\\bcosts? (?:\\[)?(?<n>\\d+|X)(?: resources?)?(?:\\])? (?:resources? )?less\\b", (g) => ({ n: numOf(g.n) }));
 def("cost_more", "cost_increase", "effect", "\\bcosts? (?:\\[)?(?<n>\\d+)(?: resources?)?(?:\\])? (?:resources? )?more\\b", (g) => ({ n: numOf(g.n) }));
@@ -251,7 +266,11 @@ def("play_from", "play_extra", "effect",
   "\\bplay (?<what>[^.;]+?) from (?<zone>your hand|your discard pile|your resources|the top of your deck|among them|an opponent's discard pile)",
   (g) => ({ n: 1, zone: g.zone, what: g.what }));
 def("play_generic", "play_extra", "effect", "\\bplay (?:a|an|that|it|the) (?:[a-z'-]+ ){0,3}(?:card|unit|event|upgrade)\\b", () => ({ n: 1, zone: "unspecified" }));
-def("deploy", "deploy", "structure", "\\bdeploy (?:this leader|him|her|it)(?: as an upgrade on (?<host>[^.;]+))?", (g) => ({ asUpgrade: !!g.host }));
+def("play_it", "play_extra", "effect", "\\bplay it\\b", () => ({ n: 1, zone: "unspecified", what: "it" }));
+def("attach_self", "attach", "effect", `\\battach (?:this unit|him|her|it) as an upgrade to ${TGT}`, (g) => ({ n: 1, target: parseTarget(g.tgt) }));
+def("flip_leader", "flip_leader", "structure", "\\bflip (?:this leader|him|her)\\b", () => ({ n: 1 }));
+def("deploy", "deploy", "structure", "\\bdeploy (?:this leader|him|her|it)(?: as an upgrade on (?<host>[^.;]+))?",
+  (g) => ({ asUpgrade: !!g.host, ...(g.host ? { host: parseTarget(g.host) } : {}) }));
 def("credit_pay", "cost_reduction", "effect", "\\bdefeat (?:a|any number of) friendly credit tokens?\\b", () => ({ n: "var" }));
 
 // --- structure
@@ -283,8 +302,8 @@ def("instead", "replacement", "modifier", "\\binstead\\b", () => ({}));
 def("if_you_do", "if_you_do", "condition", "\\bif (?:you do|they do|it does)\\b", () => ({}));
 def("control_resources", "control_resources", "condition", "\\b(?:if|while) you control (?<n>\\d+) or more resources\\b", (g) => ({ n: Number(g.n) }));
 def("control_n", "control", "condition",
-  "\\b(?:if|while) (?:you|an opponent) controls? (?:(?<n>\\d+) or more |(?:a|an|another) )?(?<what>[^,.;]+?)(?=,|\\.|$| and | this )",
-  (g) => ({ n: g.n ? Number(g.n) : 1, what: parseTarget(g.what) }));
+  "\\b(?:if|while) (?:you|an opponent) controls? (?:(?<n>\\d+) or more |(?<art>a|an|another) )?(?<what>[^,.;]+?)(?=,|\\.|$| and | this )",
+  (g) => ({ n: g.n ? Number(g.n) : 1, what: parseTarget(g.art === "another" ? `another ${str(g.what)}` : g.what) }));
 def("initiative_cond", "initiative", "condition", "\\b(?:if|while) (?:you have|an opponent has) the initiative\\b", () => ({}));
 def("force_cond", "force", "condition", "\\b(?:if|while) the force is with you\\b", () => ({}));
 def("self_state", "self_state", "condition",
@@ -294,18 +313,43 @@ def("this_phase", "event_this_phase", "condition",
   "\\bif (?:an? |another )?(?:enemy |friendly )?(?:[a-z]+ )?(?:unit|card|leader|event)s? (?:was|were|has been|have been) (?:defeated|played|dealt damage|healed)[^,.;]* this (?:phase|round)",
   () => ({}));
 def("you_did_this_phase", "event_this_phase", "condition",
-  "\\bif you (?:have )?(?:played|attacked with|dealt|defeated|drew|healed|used|attacked|discarded|resourced|disclosed)\\b[^,.;]*? this (?:phase|round)", () => ({}));
+  "\\bif you (?:have )?(?<verb>played|attacked with|dealt|defeated|drew|healed|used|attacked|discarded|resourced|disclosed)\\b(?<obj>[^,.;]*?) this (?:phase|round)",
+  (g) => {
+    const obj = str(g.obj).trim();
+    return { verb: g.verb, ...(obj ? { what: parseTarget(obj) } : {}) };
+  });
 def("damage_would", "replacement_window", "condition",
   "\\b(?:the next time |if |all )?(?:combat |non-combat )?damage (?:that )?would be dealt to (?<tgt>[^,.;]+?)(?= this phase| during this attack|,|\\.|$)(?: this phase| during this attack)?",
   (g) => ({ target: parseTarget(g.tgt) }));
 def("would_be_defeated", "replacement_window", "condition", "\\bif (?<tgt>[^,.;]+?) would be (?:defeated|captured|returned)", (g) => ({ target: parseTarget(g.tgt) }));
-def("ignore_penalty", "ignore_aspect_penalty", "effect", "\\b(?:ignoring|ignore) (?:its|the|their) aspect penalt(?:y|ies)(?: on [^.;,]+)?", () => ({}));
-def("ref_check", "target_check", "condition", "\\bif (?:it|it's|that unit|the defender|the attacker|that card|the chosen unit|the revealed card) (?:is|was|has|had|costs|'s)\\b[^,.;]*", () => ({}));
-def("for_each", "scaling", "condition", "\\bfor each (?<per>[^,.;]+?)(?=$|[,.;])", (g) => ({ per: g.per }));
+def("ignore_penalty", "ignore_aspect_penalty", "effect",
+  "\\b(?:ignoring|ignore) (?:(?<n>\\d+) of )?(?:its|the|their)(?: [a-z]+,?| or)* aspect penalt(?:y|ies)(?: on (?<on>[^.;,]+))?",
+  (g) => ({ n: g.n ? Number(g.n) : "all", ...(g.on ? { applies: parseTarget(g.on) } : {}) }));
+def("ref_check", "target_check", "condition",
+  "\\bif (?<subj>it|that unit|that card|the defender|the attacker|the chosen unit|the revealed card)(?<verb>'s| is| was| has| had| costs| shares)\\b(?<rest>[^,.;]*)",
+  (g) => {
+    const rest = str(g.rest).trim();
+    const verb = str(g.verb).trim();
+    const neg = /^not\b/.test(rest);
+    const noun = rest.replace(/^not /, "");
+    if (verb === "shares") return { check: "shares_trait", what: parseTarget(rest.replace(/^(?:a|an) (?:trait|aspect) with /, "")) };
+    if (/\breturned\b/.test(rest)) return { check: "returned", state: rest };
+    if (verb === "costs") return { check: "cost", state: rest };
+    if (/^(?:a|an) /.test(noun)) return { check: neg ? "is_not" : "is", what: parseTarget(noun) };
+    return { check: "state", state: rest };
+  });
+def("ref_cost", "target_check", "condition", "\\bif (?:its|that unit's|that card's) cost is (?<c>odd|even|\\d+(?: or (?:less|more))?)", (g) => ({ check: "cost", state: g.c }));
+def("attached_is", "target_check", "condition", "\\bif attached unit is (?<what>[^,.;]+)", (g) => ({ check: "attached_is", what: parseTarget(g.what) }));
+def("next_initiative", "initiative", "condition", "\\bthe next time you take the initiative\\b", () => ({ check: "next_take" }));
+def("for_each", "scaling", "condition", "\\bfor (?<kind>each|every) (?<per>[^,.;]+?)(?=$|[,.;])",
+  (g) => {
+    const step = g.kind === "every" ? str(g.per).match(/^(\d+) /) : null;
+    return { per: g.per, ...(step ? { every: Number(step[1]) } : {}) };
+  });
 def("you_may", "optional", "modifier", "\\byou may\\b", () => ({}));
 def("for_phase", "duration_phase", "modifier", "\\bfor this (?:phase|round)\\b", () => ({}));
 def("for_attack", "duration_attack", "modifier", "\\bfor this attack\\b", () => ({}));
-def("while_generic", "while_other", "condition", "^while (?<w>[^,]+),", (g) => ({ w: g.w }));
+def("while_generic", "while_other", "condition", "^while (?<w>[^,]+)(?=,)", (g) => ({ w: g.w }));
 def("otherwise", "otherwise", "modifier", "\\botherwise\\b", () => ({}));
 
 export const SWU_PRODUCTIONS: readonly Production[] = PRODUCTIONS;
@@ -320,6 +364,18 @@ const GLUE = new Set(
 function wordsOf(s: string): string[] {
   return s.toLowerCase().replace(/⟦g\d+⟧/g, " ").match(/[a-z0-9'+\-/]+/g) ?? [];
 }
+
+/** Where a search sends what it finds, read from the words after the search itself. */
+function searchDestination(tail: string): string {
+  if (/\bon top of your deck\b/.test(tail)) return "deck_top";
+  if (/\bdiscard (?:it|them)\b/.test(tail)) return "discard";
+  if (/\bplay\b/.test(tail)) return "play";
+  if (/\bdraw\b/.test(tail)) return "hand";
+  return "unknown";
+}
+
+/** A condition that scales an effect or restates it as a window does not gate it. */
+const NON_GATING = new Set(["scaling", "replacement_window"]);
 
 export type AcceptedFeature = SwuFeature & { span: [number, number] };
 
@@ -360,6 +416,11 @@ export function parseClause(clause: string): ClauseParse {
       const pr = PRODUCTIONS[c.pi];
       accepted[layer].push({ rule: pr.id, cat: pr.cat, span: [c.start, c.end], ...pr.build(c.m.groups ?? {}, c.m[0]) });
     }
+  }
+  for (const e of accepted.effect) if (e.cat === "search") e.dest = searchDestination(clause.slice(e.span[1]));
+  if (accepted.condition.some((c) => !NON_GATING.has(c.cat))) {
+    for (const f of accepted.effect) f.conditional = true;
+    for (const f of accepted.structure) if (f.cat === "granted_ability") f.conditional = true;
   }
   const covered = new Array<boolean>(clause.length).fill(false);
   for (const layer of Object.keys(accepted) as Layer[]) {

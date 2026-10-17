@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SWU_CONDITION_CATS,
+  SWU_CURATED_EFFECT_CATS,
   SWU_EFFECT_CATS,
   type SwuTarget,
 } from "../../src/schemas/card-features.js";
@@ -37,12 +38,14 @@ const GOLDEN: readonly (readonly [string, string, number | string | undefined, s
   ["Discard a card that costs 3 or more from your hand.", "discard_self", 1, undefined],
   ["If you do, draw a card.", "draw", 1, undefined],
   ["Exhaust a non-leader unit.", "exhaust", 1, "any/unit/any/one/non_leader"],
+  ["Exhaust 2 enemy resources.", "exhaust_resource", 2, "enemy/resource/any/exactly_2/"],
+  ["You may attach this unit as an upgrade to a friendly Vehicle unit without a Pilot on it.", "attach", 1, "friendly/unit/any/one/trait:Vehicle,without:Pilot"],
   ["Attack with a space unit.", "extra_attack", 1, "any/unit/space/one/"],
   ["The Force is with you.", "gain_force", 1, undefined],
   ["If it's not a unit, give an Experience token to another unit.", "give_token", undefined, "any/unit/any/one/other"],
   ["Attached unit gains Restore 2.", "grant_keyword", undefined, "self/unit/any/one/"],
   ["Heal 3 damage from a unit or base.", "heal", 3, "any/unit_or_base/any/one/"],
-  ["Ignore the aspect penalties on non-Villainy Official units you play.", "ignore_aspect_penalty", undefined, undefined],
+  ["Ignore the aspect penalties on non-Villainy Official units you play.", "ignore_aspect_penalty", "all", undefined],
   ["If you do, deal 1 indirect damage to a player.", "indirect_damage", 1, "any/player/any/one/"],
   ["Look at an opponent's hand.", "look", 1, undefined],
   ["Discard a card from the defending player's deck.", "mill", 1, undefined],
@@ -60,7 +63,6 @@ const GOLDEN: readonly (readonly [string, string, number | string | undefined, s
   ["You may exhaust this leader.", "self_exhaust", 1, undefined],
   ["While you control a Force unit or a Force upgrade, this unit gets +1/+1.", "stat_mod", undefined, "self/unit/any/one/"],
   ["Take control of that unit.", "take_control", 1, "ref/unit/any/one/"],
-  ["The next time you take the initiative this phase, exhaust all units.", "take_initiative", 1, undefined],
 ];
 
 describe("rung 3 golden clauses", () => {
@@ -70,11 +72,11 @@ describe("rung 3 golden clauses", () => {
 
   it("leaves only the two categories no card in the set uses without a golden clause", () => {
     const covered = new Set(GOLDEN.map((g) => g[1]));
-    expect(SWU_EFFECT_CATS.filter((c) => !covered.has(c)).sort()).toEqual(["exhaust_resource", "move_token"]);
+    expect(SWU_EFFECT_CATS.filter((c) => !covered.has(c)).sort()).toEqual(["move_token", "take_initiative"]);
   });
 
   it("keeps the shared category lists in step with the productions", () => {
-    const effectCats = new Set<string>(SWU_EFFECT_CATS);
+    const effectCats = new Set<string>([...SWU_EFFECT_CATS, ...SWU_CURATED_EFFECT_CATS]);
     const conditionCats = new Set<string>(SWU_CONDITION_CATS);
     for (const p of SWU_PRODUCTIONS) {
       if (p.layer === "effect") expect(effectCats.has(p.cat), `${p.id} -> ${p.cat}`).toBe(true);
