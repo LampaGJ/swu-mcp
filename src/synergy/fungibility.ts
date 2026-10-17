@@ -1,4 +1,5 @@
 import { cmp } from "./order.js";
+import { qualifierOf, targetLabel } from "./qualifiers.js";
 import type { AbilityLite, SynergyCard } from "./schema.js";
 
 /**
@@ -8,7 +9,7 @@ import type { AbilityLite, SynergyCard } from "./schema.js";
  * already cover and still completes the chain (LampaGJ/swu-mcp#3).
  * @tacticalObjective A role signature per card per offers/wants tag: tag (which carries the
  * friendly/enemy polarity), card type group, timing (repeat class of the ability that produced the
- * tag), magnitude band and cost band. Cards sharing a signature are one class. Deterministic: the
+ * tag), magnitude band, cost band and target (arena or non-unit kind). Cards sharing a signature are one class. Deterministic: the
  * signature is a pure function of the feature record, with no model and no fitted parameter.
  * Trait tags are skipped: sharing a trait is membership, not a role.
  */
@@ -22,6 +23,8 @@ export interface RoleSignature {
   timing: string;
   magnitude: string;
   costBand: string;
+  /** Arena and non-unit kind the tag acts on ("space", "base", "ground-upgrade"); empty for a plain unit. */
+  target: string;
 }
 
 export interface RoleClass extends RoleSignature {
@@ -113,13 +116,15 @@ export function roleSignatures(card: SynergyCard): RoleSignature[] {
     for (const { tag, why } of card.tags[side]) {
       if (isTraitTag(tag)) continue;
       const { timing, magnitude } = originOf(card, why);
-      out.push({ tag, side, typeGroup, timing, magnitude, costBand: costBand(card.structured.cost) });
+      const q = qualifierOf(card, side, tag, why);
+      out.push({ tag, side, typeGroup, timing, magnitude, costBand: costBand(card.structured.cost), target: targetLabel(q) });
     }
   }
   return out;
 }
 
-export const roleId = (s: RoleSignature): string => `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}`;
+export const roleId = (s: RoleSignature): string =>
+  `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}${s.target === "" ? "" : `|t${s.target}`}`;
 
 export function buildFungibility(cards: readonly SynergyCard[]): FungibilityIndex {
   const classes = new Map<string, RoleClass>();

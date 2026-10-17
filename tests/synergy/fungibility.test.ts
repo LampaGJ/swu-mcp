@@ -55,7 +55,7 @@ const cards = [
 describe("role signatures", () => {
   it("derives timing and magnitude from the ability that produced the tag", () => {
     expect(roleSignatures(cards[0])).toEqual([
-      { tag: "offers:draw", side: "offers", typeGroup: "Unit", timing: "once_on_play", magnitude: "1", costBand: "2-3" },
+      { tag: "offers:draw", side: "offers", typeGroup: "Unit", timing: "once_on_play", magnitude: "1", costBand: "2-3", target: "" },
     ]);
     expect(roleSignatures(cards[5])[0].timing).toBe("per_attack");
     expect(roleSignatures(cards[6])[0].magnitude).toBe("3+");

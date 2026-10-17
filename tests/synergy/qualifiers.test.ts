@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { buildFungibility, roleOf } from "../../src/synergy/fungibility.js";
 import { buildPairGraph } from "../../src/synergy/graph.js";
 import { conflictBetween, qualifierOf } from "../../src/synergy/qualifiers.js";
 import { synergyCardsSchema, type SynergyCard } from "../../src/synergy/schema.js";
@@ -86,5 +87,27 @@ describe("qualifier extraction", () => {
     const oq = qualifierOf(a, "offers", "offers:defeat-friendly-unit", "x");
     const wq = qualifierOf(b, "wants", "wants:self-defeated", "x");
     expect(conflictBetween(a, "offers:defeat-friendly-unit", oq, b, "wants:self-defeated", wq)).toBeNull();
+  });
+});
+
+describe("fungible classes separate by target (#12)", () => {
+  const fung = buildFungibility(REAL);
+  const idOf = (k: string, tag: string): string => roleOf(fung, k, tag)?.id ?? "";
+
+  it("puts damage to your own base in a different class from damage to a friendly unit", () => {
+    expect(idOf("08010179", "offers:damage-friendly-unit")).toContain("|tbase");
+    expect(idOf("05010137", "offers:damage-friendly-unit")).toContain("|tbase");
+  });
+
+  it("separates readying resourced cards from readying a unit", () => {
+    expect(idOf("09010123", "offers:ready-unit")).toContain("|tcard");
+  });
+
+  it("does not file a deck tuck under return to hand", () => {
+    expect(idOf("09010218", "offers:return-any-to-hand")).toContain("|ttuck");
+  });
+
+  it("separates exhausting enemy resources from exhausting an enemy unit", () => {
+    expect(idOf("06010235", "offers:exhaust-enemy")).toContain("|tresource");
   });
 });
