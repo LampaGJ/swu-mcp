@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
+import { packageDirOf, readJson, splitCell, type CardRow, type CardStore } from "../data.js";
 import { playFileSchema, pricesFileSchema, type PlayFile, type PricesFile } from "../market/build.js";
 import { scoresFileSchema, type ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
@@ -25,10 +25,6 @@ export interface MarketData {
 }
 
 const cache = new WeakMap<CardStore, MarketData>();
-
-function readJson(file: string): unknown {
-  return JSON.parse(readFileSync(file, "utf8"));
-}
 
 export function marketData(store: CardStore): MarketData {
   const hit = cache.get(store);

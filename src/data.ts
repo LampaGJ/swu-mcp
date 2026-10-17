@@ -60,6 +60,10 @@ export function packageDirOf(store: CardStore): string {
   return path.basename(store.dataDir) === "llm" ? path.dirname(store.dataDir) : store.dataDir;
 }
 
+export function readJson(file: string): unknown {
+  return JSON.parse(readFileSync(file, "utf8"));
+}
+
 export function splitCell(value: string | null | undefined): string[] {
   return value === null || value === undefined || value === "" ? [] : value.split("|");
 }

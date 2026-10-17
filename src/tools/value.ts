@@ -3,7 +3,7 @@ import path from "node:path";
 import { z } from "zod";
 import { walkAbilities } from "../ability-grammar/walk.js";
 import { REPO_ROOT } from "../paths.js";
-import { DATED_DIR, packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
+import { DATED_DIR, packageDirOf, readJson, splitCell, type CardRow, type CardStore } from "../data.js";
 import {
   SWU_CURATED_EFFECT_CATS,
   SWU_EFFECT_CATS,
@@ -41,10 +41,6 @@ export interface ValueData {
 
 const cache = new WeakMap<CardStore, ValueData>();
 
-
-function readJson(file: string): unknown {
-  return JSON.parse(readFileSync(file, "utf8"));
-}
 
 export function valueData(store: CardStore): ValueData {
   const hit = cache.get(store);

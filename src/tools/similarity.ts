@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { MissingDataError, packageDirOf, type CardRow, type CardStore } from "../data.js";
+import { MissingDataError, packageDirOf, readJson, type CardRow, type CardStore } from "../data.js";
 import {
   clustersFileSchema,
   neighboursFileSchema,
@@ -31,10 +31,6 @@ export interface SimilarityData {
 }
 
 const cache = new WeakMap<CardStore, SimilarityData>();
-
-function readJson(file: string): unknown {
-  return JSON.parse(readFileSync(file, "utf8"));
-}
 
 export function similarityData(store: CardStore): SimilarityData {
   const hit = cache.get(store);
