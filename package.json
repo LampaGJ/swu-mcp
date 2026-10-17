@@ -26,7 +26,8 @@
     "rules:check": "tsx scripts/rules-check.ts",
     "market": "tsx scripts/market.ts",
     "embed:capture": "tsx scripts/embed-capture.ts",
-    "similarity": "tsx scripts/similarity.ts"
+    "similarity": "tsx scripts/similarity.ts",
+    "verify:audit": "tsx scripts/verify/audit.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
