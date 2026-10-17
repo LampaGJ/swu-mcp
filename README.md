@@ -37,7 +37,7 @@ To publish new data (the maintainer's step):
     pnpm build:data
     pnpm release:data [--date <YYYY-MM-DD>]
 
-`release:data` writes `tmp/release/swu-mcp-data-<date>.tar.gz` and the pin file, then prints the `gh release create` command. It does not run it. The archive holds `llm`, `features`, `scores`, `synergy`, `market`, `rules`, `similarity` and the build records, with sorted entries and fixed times, owners and modes, so the same run gives the same bytes. Commit the pin together with the release.
+`release:data` writes `tmp/release/swu-mcp-data-<date>.tar.gz` and the pin file, then prints the `gh release create` command. It does not run it. The archive holds `docs` (read by the rubric and glossary resources), `llm`, `features`, `scores`, `synergy`, `market`, `rules`, `similarity` and the build records, with sorted entries and fixed times, owners and modes, so the same run gives the same bytes. Commit the pin together with the release.
 
 ### From a checkout
 
