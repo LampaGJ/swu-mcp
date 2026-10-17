@@ -12,21 +12,20 @@
  *
  * The rules step reads the pinned PDF under data/originals/rules/<version>/ when one exists and downloads it otherwise.
  */
-import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { DATED_DIR } from "../src/data.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
+import { hex64 } from "../src/schemas/hash.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 const TSX = path.join(REPO_ROOT, "node_modules/.bin/tsx");
 
 interface Step {
@@ -44,27 +43,17 @@ const buildRecordSchema = z.strictObject({
   originals: z.string(),
   codeCommit: z.string(),
   wallTimeMs: z.number().int().nonnegative(),
-  buildHash: z.string().regex(/^[0-9a-f]{64}$/),
+  buildHash: hex64,
   steps: z.array(
     z.strictObject({
       name: z.string(),
       command: z.string(),
       wallTimeMs: z.number().int().nonnegative(),
-      replayHash: z.string().regex(/^[0-9a-f]{64}$/),
-      outputs: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/)),
+      replayHash: hex64,
+      outputs: z.record(z.string(), hex64),
     }),
   ),
 });
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
 
 function pinnedRulesPdf(): string | undefined {
   const root = path.join(REPO_ROOT, "data/originals/rules");
@@ -106,7 +95,7 @@ function ownedBy(step: Step, rel: string): boolean {
 
 function main(): void {
   const { values } = parseArgs({ options: { originals: { type: "string" }, date: { type: "string" } } });
-  const originals = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT));
+  const originals = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals"));
   const manifest = swuRawCacheManifestSchema.parse(JSON.parse(readFileSync(path.join(originals, "swu-cards/raw-pages/manifest.json"), "utf8")));
   const date = z.iso.date().parse(values.date ?? manifest.finishedAt.slice(0, 10));
   const runDir = path.join(REPO_ROOT, "data/runs", date);
@@ -168,7 +157,7 @@ function main(): void {
       files
         .filter((rel) => ownedBy(step, rel))
         .sort(compareCodePoints)
-        .map((rel) => [rel, createHash("sha256").update(readFileSync(path.join(runDir, rel))).digest("hex")] as const),
+        .map((rel) => [rel, sha256Hex(readFileSync(path.join(runDir, rel)))] as const),
     );
     return {
       name: step.name,
@@ -186,7 +175,7 @@ function main(): void {
     schemaVersion: 1,
     date,
     originals,
-    codeCommit: execFileSync("git", ["-C", REPO_ROOT, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    codeCommit: codeCommit("whole-tree"),
     wallTimeMs: Math.round(performance.now() - started),
     buildHash,
     steps: recorded,

@@ -39,8 +39,8 @@ import { z } from "zod";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import type { FlatRow } from "../../src/swu/llm-flatten.js";
 import { cellList, expandHome, inScopeSet, loadOriginals, nameKey, newestOriginalsDir, type Originals } from "./originals.js";
+import { REPO_ROOT } from "../../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 export const FACETS = ["aspect", "trait", "keyword", "type", "arena", "rarity", "expansion", "variant", "token"] as const;
 export type Facet = (typeof FACETS)[number];

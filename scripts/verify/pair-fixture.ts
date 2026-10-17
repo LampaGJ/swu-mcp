@@ -7,16 +7,16 @@
  *   --seed  default: pair-fixture-v1
  *   --out   default: <repo>/tmp/pair-fixture   (packets go to <out>/packets)
  */
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { buildRecordSchema } from "../lib/build-record.js";
+import { DEFAULT_ORIGINALS_ROOT, newestDatedDir } from "../lib/originals.js";
 import { PAIRINGS_INSTRUCTIONS, buildIndex, loadInputs, orderBySeed, pairingItemBuilder, serialize, type Packet } from "./sample.js";
+import { REPO_ROOT } from "../../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
 export const FIXTURE_SEED = "pair-fixture-v1";
 export const FIXTURE_TOTAL = 200;
@@ -121,20 +121,10 @@ export function buildFixturePackets(inputs: Parameters<typeof pairingItemBuilder
   return { packets, selected };
 }
 
-function newestDatedDir(root: string): string {
-  const names = readdirSync(root, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(e.name))
-    .map((e) => e.name)
-    .sort(compareCodePoints);
-  const newest = names.at(-1);
-  if (newest === undefined) throw new Error(`no dated directory under ${root}`);
-  return path.join(root, newest);
-}
-
 function main(): void {
   const { values } = parseArgs({ options: { originals: { type: "string" }, run: { type: "string" }, out: { type: "string" }, seed: { type: "string" }, total: { type: "string" }, floor: { type: "string" } } });
-  const originalsDir = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT));
-  const runDir = path.resolve(values.run ?? newestDatedDir(path.join(REPO_ROOT, "data/runs")));
+  const originalsDir = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals"));
+  const runDir = path.resolve(values.run ?? newestDatedDir(path.join(REPO_ROOT, "data/runs"), "run"));
   const outDir = path.resolve(values.out ?? path.join(REPO_ROOT, "tmp/pair-fixture"));
   const seed = values.seed ?? FIXTURE_SEED;
   const build = buildRecordSchema.parse(JSON.parse(readFileSync(path.join(runDir, "build.json"), "utf8")));

@@ -15,53 +15,28 @@
  *   --out            default: <repo>/data/runs/<date>/rules, <date> = --date or the fetch date
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
 import { z } from "zod";
 import { buildRulesRun } from "../src/rules/build.js";
 import { buildCardRulings } from "../src/rules/rulings.js";
 import { rulesCoreFileSchema, rulesReplaySchema, type CardRulingsFile } from "../src/rules/schemas.js";
-import { canonicalJson, compareCodePoints } from "../src/swu/canonical.js";
+import { canonicalJson, sha256Hex } from "../src/swu/canonical.js";
 import type { RawCardRecord } from "../src/swu/llm-flatten.js";
 import { swuGlossarySchema } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_URL = "https://cdn.starwarsunlimited.com//SWH_Comp_Rules_v8_0_e26603c6e1.pdf";
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_PRIMER_TOKENS = 4000;
 
 const pageSchema = z.object({ data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })) });
 const fetchRecordSchema = z.strictObject({ url: z.string().nullable(), fetchedAt: z.iso.date(), sha256: z.string(), bytes: z.number().int(), fileName: z.string() });
-
-const sha256 = (data: Buffer | string): string => createHash("sha256").update(data).digest("hex");
-const expandHome = (value: string): string => (value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value);
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
-function git(args: string[]): string {
-  return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-}
-
-function codeCommit(): string {
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/rules-core.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function pdftotextVersion(): string {
   const result = spawnSync("pdftotext", ["-v"], { encoding: "utf8" });
@@ -86,11 +61,11 @@ function loadRawRecords(originalsDir: string, tick: (done: number) => void): { r
     .forEach((entry, index) => {
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
-      if (sha256(body) !== entry.sha256) throw new Error(`${name}: sha256 does not match the manifest`);
+      if (sha256Hex(body) !== entry.sha256) throw new Error(`${name}: sha256 does not match the manifest`);
       for (const record of pageSchema.parse(JSON.parse(body.toString("utf8"))).data) records.push(record);
       tick(index + 1);
     });
-  return { records, source: { originalsRun: path.basename(originalsDir), rawPagesManifestSha256: sha256(manifestBody) } };
+  return { records, source: { originalsRun: path.basename(originalsDir), rawPagesManifestSha256: sha256Hex(manifestBody) } };
 }
 
 async function main(): Promise<void> {
@@ -115,7 +90,7 @@ async function main(): Promise<void> {
 
   p.log({ phase: "pdf" });
   const pdf = await acquirePdf(values.url as string, values.pdf);
-  const pdfSha256 = sha256(pdf.bytes);
+  const pdfSha256 = sha256Hex(pdf.bytes);
   const staging = path.join(rulesOriginals, `.staging-${pdfSha256}.pdf`);
   writeFileSync(staging, pdf.bytes);
   const text = execFileSync("pdftotext", ["-layout", staging, "-"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -125,7 +100,7 @@ async function main(): Promise<void> {
 
   let cardRulings: CardRulingsFile | null = null;
   if (!values["skip-rulings"]) {
-    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
     p.log({ phase: "read-pages", originalsDir });
     const { records, source } = loadRawRecords(originalsDir, (done) => p.tick(done, { phase: "read-pages" }));
     cardRulings = buildCardRulings(records, source);
@@ -149,10 +124,11 @@ async function main(): Promise<void> {
   const recordPath = path.join(pdfDir, "fetch.json");
   mkdirSync(pdfDir, { recursive: true });
   const stored = path.join(pdfDir, fileName);
-  if (existsSync(stored) && sha256(readFileSync(stored)) !== pdfSha256) {
+  if (existsSync(stored) && sha256Hex(readFileSync(stored)) !== pdfSha256) {
     throw new Error(`${stored} exists with a different sha256; a new CR needs a new version directory, not an overwrite`);
   }
   renameSync(staging, stored);
+  // D2 exception: acquisition timestamp, captured once into fetch.json and reused while the PDF sha matches; build:data always passes --date (scripts/build-data.ts:131).
   const today = new Date().toISOString().slice(0, 10);
   const previous = existsSync(recordPath) ? fetchRecordSchema.parse(JSON.parse(readFileSync(recordPath, "utf8"))) : null;
   const fetchRecord =
@@ -168,9 +144,9 @@ async function main(): Promise<void> {
   const replay = rulesReplaySchema.parse({
     schemaVersion: 1,
     source: { url: fetchRecord.url, fetchedAt: fetchRecord.fetchedAt, pdfSha256, pdfBytes: fetchRecord.bytes },
-    tool: { pdftotext: pdftotextVersion(), codeCommit: codeCommit() },
+    tool: { pdftotext: pdftotextVersion(), codeCommit: codeCommit(["src", "scripts", "data/rules-core.json"]) },
     rulesVersion: version,
-    textSha256: sha256(text),
+    textSha256: sha256Hex(text),
     rulings: cardRulings === null ? null : cardRulings.source,
     outputs: run.hashes,
   });

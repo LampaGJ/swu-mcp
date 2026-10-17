@@ -13,12 +13,8 @@
  *   --runs       default: <repo>/data/runs
  *   --date       default: the day the raw card-list run finished
  */
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
@@ -37,11 +33,11 @@ import {
 } from "../src/swu/llm-flatten.js";
 import { buildReadme } from "../src/swu/llm-package-readme.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const DOCS = [
   {
@@ -90,28 +86,6 @@ const printingPriceSchema = z.object({
   price_foil: z.number().nullable(),
 });
 
-function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-function git(args: string[]): string {
-  return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-}
-
-function sha256Buffer(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
-}
-
-function newestDatedDir(root: string): string {
-  const names = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints);
-  const newest = names.at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
 function readJson<T>(file: string, schema: z.ZodType<T>): T {
   return schema.parse(JSON.parse(readFileSync(file, "utf8")));
 }
@@ -145,7 +119,7 @@ function main(): void {
       date: { type: "string" },
     },
   });
-  const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+  const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
   const runsRoot = path.resolve(expandHome(values.runs ?? path.join(REPO_ROOT, "data/runs")));
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
   const snapshotsDir = path.join(originalsDir, "swu-cards/catalogue-snapshots");
@@ -162,7 +136,7 @@ function main(): void {
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
       if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-      const digest = sha256Buffer(body);
+      const digest = sha256Hex(body);
       if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
       p.tick(index + 1, { phase: "verify-pages" });
       return { name, body };
@@ -273,19 +247,18 @@ function main(): void {
   for (const [relPath, content] of llmFiles) writeOut(staging, relPath, content);
   for (const doc of docs) writeOut(staging, `docs/${doc.name}`, readFileSync(doc.source));
 
-  const dirty = git(["status", "--porcelain"]) === "" ? "" : "-dirty";
   const replay = {
     inputs: {
-      rawManifestSha256: sha256Buffer(manifestBytes),
+      rawManifestSha256: sha256Hex(manifestBytes),
       pages: manifest.pages
         .slice()
         .sort((a, b) => a.page - b.page)
         .map((page) => page.sha256),
       priceImportId: importId,
       priceRowsSha256: sha256Hex(canonicalJson({ printings: priceRows, corrections, quarantine })),
-      snapshots: snapshots.map((snapshot) => ({ name: snapshot.name, sha256: sha256Buffer(snapshot.bytes) })),
+      snapshots: snapshots.map((snapshot) => ({ name: snapshot.name, sha256: sha256Hex(snapshot.bytes) })),
     },
-    codeCommit: `${git(["rev-parse", "HEAD"])}${dirty}`,
+    codeCommit: codeCommit("whole-tree"),
     outputs: Object.fromEntries([...llmFiles].map(([relPath, content]) => [relPath, sha256Hex(content)])),
   };
   writeOut(staging, "replay.json", `${JSON.stringify(replay, null, 2)}\n`);

@@ -2,7 +2,8 @@
  * Deterministic audit of every derived data product against the originals (LampaGJ/swu-mcp#9, Part A).
  *
  * The audit re-derives each claim from raw JSON, the pinned captures and the CR PDF with its own small logic.
- * From the project it imports only the raw-manifest Zod contract (a schema, not a derivation). It does not
+ * From the project it imports only the raw-manifest Zod contract (a schema, not a derivation) and the
+ * verify-local scripts/verify/io.ts (node:fs and zod only). It does not
  * import the production flattener, folder, price builder or CR parser, so a bug there cannot hide by being
  * compared with itself. The TOON decoder and Zod are shared libraries.
  *
@@ -23,6 +24,7 @@ import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { swuRawCacheManifestSchema } from "../../src/swu/raw-manifest.js";
 import { progress } from "../lib/progress.mjs";
+import { parseAt, readJson } from "./io.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
@@ -92,15 +94,7 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 const split = (value: unknown): string[] => (typeof value === "string" && value !== "" ? value.split("|") : []);
 const uniqueSorted = (values: string[]): string[] => [...new Set(values)].sort(codePointCompare);
 
-/** Every foreign file passes through here: a schema failure names the file and the offending path. */
-function parseAt<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new Error(`${label}: ${z.prettifyError(result.error)}`);
-  return result.data;
-}
-
 const readText = (file: string): string => readFileSync(file, "utf8");
-const readJson = <T>(file: string, schema: z.ZodType<T>): T => parseAt(schema, JSON.parse(readText(file)), file);
 
 const manifestSchema = swuRawCacheManifestSchema;
 const pageSchema = z.looseObject({

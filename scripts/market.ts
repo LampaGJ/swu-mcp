@@ -11,33 +11,22 @@
  *   --originals  default: mault originals dir with the package's date
  *   --captures   default: <repo>/data/pinned/gt
  */
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
 import { buildPlay, buildPrices, captureRowSchema, priceRowSchema } from "../src/market/build.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
-import { flattenPrinting, newFlattenIssues, printingCardKeys, type FlatRow } from "../src/swu/llm-flatten.js";
-import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { printingCardKeys } from "../src/swu/llm-flatten.js";
+import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT } from "./lib/originals.js";
+import { loadRawPrintings, packageRawManifestSha256 } from "./lib/raw-pages.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
-const pageSchema = z.object({ data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })) });
 const importSchema = z.looseObject({ id: z.number().int(), finished_at: z.string().nullable().optional() });
-const replayInputsSchema = z.looseObject({ inputs: z.looseObject({ rawManifestSha256: z.string() }) });
 
-const sha256Buffer = (buffer: Buffer): string => createHash("sha256").update(buffer).digest("hex");
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "package.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, originals: { type: "string" }, captures: { type: "string" } } });
@@ -46,18 +35,8 @@ function main(): void {
   const originals = path.resolve(values.originals ?? path.join(DEFAULT_ORIGINALS_ROOT, path.basename(packageDir)));
   const capturesDir = path.resolve(values.captures ?? path.join(REPO_ROOT, "data/pinned/gt"));
 
-  const pagesDir = path.join(originals, "swu-cards/raw-pages");
-  const manifestBytes = readFileSync(path.join(pagesDir, "manifest.json"));
-  const packageManifestSha = replayInputsSchema.parse(JSON.parse(readFileSync(path.join(packageDir, "replay.json"), "utf8"))).inputs.rawManifestSha256;
-  if (sha256Buffer(manifestBytes) !== packageManifestSha) throw new Error(`${pagesDir}/manifest.json differs from the raw manifest the package in ${packageDir} was built from`);
-  const manifest = swuRawCacheManifestSchema.parse(JSON.parse(manifestBytes.toString("utf8")));
-
-  const issues = newFlattenIssues();
-  const printings: FlatRow[] = [];
-  for (const entry of [...manifest.pages].sort((a, b) => a.page - b.page)) {
-    const page = pageSchema.parse(JSON.parse(readFileSync(path.join(pagesDir, `page-${String(entry.page).padStart(4, "0")}.json`), "utf8")));
-    for (const record of page.data) printings.push(flattenPrinting(record, issues));
-  }
+  const packageManifestSha = packageRawManifestSha256(path.join(packageDir, "replay.json"));
+  const { printings } = loadRawPrintings(path.join(originals, "swu-cards/raw-pages"), packageManifestSha);
   const cardKeyOfPrinting = printingCardKeys(printings);
   const cardKeyOfUid = new Map<string, string>();
   for (const row of printings) {
@@ -81,7 +60,7 @@ function main(): void {
   if (captureFiles.length === 0) throw new Error(`no swustats-premier-w*.json under ${capturesDir}`);
   const captureBytes = captureFiles.map((file) => ({ file, bytes: readFileSync(path.join(capturesDir, file)) }));
   const play = buildPlay({
-    captures: captureBytes.map(({ file, bytes }) => ({ file, sha256: sha256Buffer(bytes), rows: z.array(captureRowSchema).parse(JSON.parse(bytes.toString("utf8"))) })),
+    captures: captureBytes.map(({ file, bytes }) => ({ file, sha256: sha256Hex(bytes), rows: z.array(captureRowSchema).parse(JSON.parse(bytes.toString("utf8"))) })),
     cardKeyOfUid,
     leaderKeys,
   });
@@ -92,12 +71,12 @@ function main(): void {
     inputs: {
       rawManifestSha256: packageManifestSha,
       priceImportId: importRow.id,
-      priceImportFileSha256: sha256Buffer(importBytes),
-      priceRowsFileSha256: sha256Buffer(printingsBytes),
-      captures: Object.fromEntries(captureBytes.map(({ file, bytes }) => [file, sha256Buffer(bytes)])),
+      priceImportFileSha256: sha256Hex(importBytes),
+      priceRowsFileSha256: sha256Hex(printingsBytes),
+      captures: Object.fromEntries(captureBytes.map(({ file, bytes }) => [file, sha256Hex(bytes)])),
       originalsPath: originals,
     },
-    codeCommit: codeCommit(),
+    codeCommit: codeCommit(["src", "scripts", "package.json"]),
     outputs: { "market/prices.json": sha256Hex(pricesText), "market/play.json": sha256Hex(playText) },
   };
 

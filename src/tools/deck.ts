@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { splitCell, type CardRow, type CardStore } from "../data.js";
+import { MissingDataError, splitCell, type CardRow, type CardStore } from "../data.js";
 import type { ClustersFile } from "../embed/files.js";
 import { rulesFor } from "../rules/store.js";
+import { countAtOrBelow } from "../scorer/rank.js";
 import type { ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
@@ -14,7 +15,7 @@ import { marketData, type MarketData } from "./market.js";
 import { similarityData } from "./similarity.js";
 import { synergyContextOf } from "./synergy.js";
 import { dataVersion, valueData } from "./value.js";
-import { ok, fail, lower } from "./common.js";
+import { ok, fail, lower, round } from "./common.js";
 
 /**
  * @displayName Deck tools
@@ -46,7 +47,8 @@ export function deckEnvOf(store: CardStore): DeckEnv {
   let clusters: ClustersFile | null = null;
   try {
     clusters = similarityData(store).clusters;
-  } catch {
+  } catch (error) {
+    if (!(error instanceof MissingDataError)) throw error;
     clusters = null;
   }
   const env: DeckEnv = {
@@ -61,7 +63,6 @@ export function deckEnvOf(store: CardStore): DeckEnv {
   return env;
 }
 
-const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 const r2 = (x: number): number => round(x, 2);
 const r4 = (x: number): number => round(x, 4);
 const r6 = (x: number): number => round(x, 6);
@@ -90,7 +91,8 @@ function citedRules(store: CardStore, ids: readonly string[]): { rulesVersion: s
   try {
     const rules = rulesFor(store.dataDir);
     return { rulesVersion: rules.document.version, missing: ids.filter((id) => !rules.byId.has(id)) };
-  } catch {
+  } catch (error) {
+    if (!(error instanceof MissingDataError)) throw error;
     return { rulesVersion: null, missing: [...ids] };
   }
 }
@@ -657,7 +659,9 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     "Copy limits count one cardKey as one card; different cards that share a name are counted separately.",
     ...(verified.missing.length === 0
       ? []
-      : [`Cited Comprehensive Rules sections not found in the loaded rules: ${verified.missing.join(", ")}`]),
+      : verified.rulesVersion === null
+        ? [`No Comprehensive Rules are loaded in this package, so the cited sections (${verified.missing.join(", ")}) are not verified.`]
+        : [`Cited Comprehensive Rules sections not found in the loaded rules: ${verified.missing.join(", ")}`]),
   ];
 
   return ok({
@@ -1086,16 +1090,17 @@ export const tradeBalanceShape = {
 
 function side(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], finish: "normal" | "foil") {
   const { lines, unresolved } = resolveList(env, entries, "any");
-  const unpriced = lines.filter((l) => priceOf(env, l.syn.cardKey, finish) === null || cheapestPrice(env, l.syn.cardKey, finish) === null);
+  const priced = lines.map((l) => ({ line: l, market: priceOf(env, l.syn.cardKey, finish), low: cheapestPrice(env, l.syn.cardKey, finish) }));
+  const unpriced = priced.filter((p) => p.market === null || p.low === null);
   const scored = lines.filter((l) => env.scores.get(l.syn.cardKey)?.playCalibrated != null);
   return {
     unresolved,
     summary: {
       cards: sumBy(lines, (l) => l.count),
-      market: r2(sumBy(lines, (l) => (priceOf(env, l.syn.cardKey, finish) ?? 0) * l.count)),
-      low: r2(sumBy(lines, (l) => (cheapestPrice(env, l.syn.cardKey, finish) ?? 0) * l.count)),
+      market: r2(sumBy(priced, (p) => (p.market ?? 0) * p.line.count)),
+      low: r2(sumBy(priced, (p) => (p.low ?? 0) * p.line.count)),
       rubric: r2(sumBy(scored, (l) => (env.scores.get(l.syn.cardKey)?.playCalibrated as number) * l.count)),
-      unpriced: unpriced.map((l) => cardLabel(l.syn)),
+      unpriced: unpriced.map((p) => cardLabel(p.line.syn)),
       unscored: lines.length - scored.length,
     },
   };
@@ -1297,16 +1302,7 @@ export const scoreVsPlayShape = {
 /** Share of values at or below each value, 0 to 100. */
 function percentRanks(values: readonly number[]): (value: number) => number {
   const sorted = [...values].sort((a, b) => a - b);
-  return (value) => {
-    let low = 0;
-    let high = sorted.length;
-    while (low < high) {
-      const mid = (low + high) >> 1;
-      if (sorted[mid] <= value) low = mid + 1;
-      else high = mid;
-    }
-    return (100 * low) / sorted.length;
-  };
+  return (value) => (100 * countAtOrBelow(sorted, value)) / sorted.length;
 }
 
 export function scoreVsPlay(env: DeckEnv, input: unknown): ToolResult {

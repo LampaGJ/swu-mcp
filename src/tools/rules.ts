@@ -31,9 +31,6 @@ export const keywordRulesShape = {
   keyword: z.string().min(1).describe("A keyword such as Sentinel, Grit or Smuggle"),
 };
 
-export const rulesVersionShape = {};
-export const rulesCoreShape = {};
-
 /** "7.6.3A" and "7.6.3.A" and "7.6.3." all mean 7.6.3.a. */
 export function normalizeSectionId(raw: string): string {
   const text = raw.trim().replace(/^section\s+/i, "").replace(/\.$/, "");
@@ -183,7 +180,7 @@ export const RULES_TOOLS = {
     title: "Core rules primer",
     description:
       "Read this first for any rules question: the verbatim text of the core Comprehensive Rules (golden rules, round structure, resources and cost, attacks, card types and zones, triggers, damage, keywords, effects, tokens), each line prefixed by its section id.",
-    shape: rulesCoreShape,
+    shape: {},
     handler: (store: CardStore) => rulesCore(store),
   },
   rules_search: {
@@ -215,7 +212,7 @@ export const RULES_TOOLS = {
   rules_version: {
     title: "Rules version",
     description: "Which Comprehensive Rules the rules tools use: version, cover date, PDF sha256, fetch date and the rulings source hash. Report this with every rules answer.",
-    shape: rulesVersionShape,
+    shape: {},
     handler: (store: CardStore) => rulesVersion(store),
   },
 } as const;

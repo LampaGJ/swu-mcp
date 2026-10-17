@@ -10,7 +10,6 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { loadStore, resolveDataDir } from "../src/data.js";
@@ -26,8 +25,8 @@ import {
 } from "../src/embed/pinned.js";
 import { inputHashOf, parseRenderCards, renderAll } from "../src/embed/render.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MODEL = "nomic-embed-text";
 const PREFIX = "search_document: ";
 const BATCH = 32;

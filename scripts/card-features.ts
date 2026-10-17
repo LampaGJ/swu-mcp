@@ -14,50 +14,26 @@
  *
  * Exit codes: 0 ok, 3 stale curated entries (outputs are still written).
  */
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { StaleCuratedEntriesError, assertNoStaleCurated, buildFeatureRun } from "../src/ability-grammar/index.js";
-import { compareCodePoints } from "../src/swu/canonical.js";
+import { sha256Hex } from "../src/swu/canonical.js";
 import { buildLogicalCards, flattenPrinting, newFlattenIssues, splitByCurrentSets, type FlatRow } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const pageSchema = z.object({
   data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })),
   meta: z.looseObject({ pagination: z.looseObject({ total: z.number().int() }) }),
 });
 const toonSchema = z.object({ cards: z.array(z.record(z.string(), z.unknown())) });
-
-function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
-function codeCommit(): string {
-  const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
-  const dirty = git(["status", "--porcelain", "--", "src", "scripts", "data/curated-rules.json"]) === "" ? "" : "-dirty";
-  return `${git(["rev-parse", "HEAD"])}${dirty}`;
-}
 
 function cardsFromOriginals(originalsDir: string, tick: (done: number) => void): { rows: FlatRow[]; runDate: string } {
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
@@ -72,7 +48,7 @@ function cardsFromOriginals(originalsDir: string, tick: (done: number) => void):
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
       if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-      const digest = createHash("sha256").update(body).digest("hex");
+      const digest = sha256Hex(body);
       if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
       const parsed = pageSchema.parse(JSON.parse(body.toString("utf8")));
       declaredTotal = parsed.meta.pagination.total;
@@ -100,7 +76,7 @@ function main(): void {
     rows = toonSchema.parse(decode(readFileSync(path.resolve(expandHome(values.cards)), "utf8"))).cards;
     label = "from-cards";
   } else {
-    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
     const loaded = cardsFromOriginals(originalsDir, (done) => p.tick(done, { phase: "read-pages" }));
     rows = loaded.rows;
     label = loaded.runDate;
@@ -109,7 +85,7 @@ function main(): void {
   const curatedJson = readFileSync(path.resolve(expandHome(values.curated ?? path.join(REPO_ROOT, "data/curated-rules.json"))), "utf8");
 
   p.log({ phase: "extract", cards: rows.length });
-  const run = buildFeatureRun(rows, curatedJson, codeCommit());
+  const run = buildFeatureRun(rows, curatedJson, codeCommit(["src", "scripts", "data/curated-rules.json"]));
   mkdirSync(outDir, { recursive: true });
   for (const [name, content] of Object.entries(run.files)) writeFileSync(path.join(outDir, name), content);
   const c = run.result.coverage;

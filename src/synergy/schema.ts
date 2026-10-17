@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 
 /**
  * @displayName SWU synergy schemas
@@ -130,11 +131,11 @@ export interface TrioRecord {
 
 export const replaySchema = z.strictObject({
   inputHash: z.strictObject({
-    "features.json": z.string().regex(/^[0-9a-f]{64}$/),
-    "complementarity.json": z.string().regex(/^[0-9a-f]{64}$/),
+    "features.json": hex64,
+    "complementarity.json": hex64,
   }),
   codeCommit: z.string().min(1),
   complementarityTableVersion: z.number().int(),
-  outputHash: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/)),
+  outputHash: z.record(z.string(), hex64),
 });
 export type SynergyReplay = z.infer<typeof replaySchema>;

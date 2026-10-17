@@ -6,14 +6,13 @@
 import { decode } from "@toon-format/toon";
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { resolveDataDir } from "../src/data.js";
 import { playFileSchema, pricesFileSchema } from "../src/market/build.js";
 import { runScoring } from "../src/scorer/run.js";
 import { swuCardFeaturesFileSchema } from "../src/schemas/card-features.js";
 import { buildFacetIndexes, buildNameIndex, encodeToonTable, swuGlossarySchema, type FlatRow } from "../src/swu/llm-flatten.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const KEYS = ["0101030", "0101033", "0101070", "0101074", "0101165", "04010001", "04010087", "09010004", "09010218"];
 
 const source = path.resolve(process.argv[2] ?? resolveDataDir());

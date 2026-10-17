@@ -9,7 +9,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import MiniSearch from "minisearch";
 import { stemmer } from "stemmer";
-import { DATED_DIR } from "../data.js";
+import { DATED_DIR, MissingDataError, readJson } from "../data.js";
 import { REPO_ROOT } from "../paths.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { RuleSection } from "./parse-cr.js";
@@ -58,10 +58,6 @@ export interface RulesStore {
   isCore(id: string): boolean;
 }
 
-function readJson(file: string): unknown {
-  return JSON.parse(readFileSync(file, "utf8"));
-}
-
 /** SWU_MCP_RULES wins; then <dataDir>/rules; then the newest data/runs/<date>/rules that holds sections.json. */
 export function resolveRulesDir(dataDir: string, env: NodeJS.ProcessEnv = process.env): string {
   const configured = env.SWU_MCP_RULES;
@@ -76,7 +72,7 @@ export function resolveRulesDir(dataDir: string, env: NodeJS.ProcessEnv = proces
         .sort(compareCodePoints)
         .at(-1)
     : undefined;
-  if (newest === undefined) throw new Error(`no rules data under ${runs}; run "pnpm rules:fetch" or set SWU_MCP_RULES`);
+  if (newest === undefined) throw new MissingDataError(`no rules data under ${runs}; run "pnpm rules:fetch" or set SWU_MCP_RULES`);
   return path.join(runs, newest, "rules");
 }
 

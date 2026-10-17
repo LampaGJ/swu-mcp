@@ -8,12 +8,10 @@
  * flattener, folds printings into logical cards, and marks the cards in the delivered package scope
  * (a printing in Jump to Lightspeed or later).
  */
-import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
-import os from "node:os";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { compareCodePoints } from "../../src/swu/canonical.js";
+import { sha256Hex } from "../../src/swu/canonical.js";
 import {
   buildLogicalCards,
   flattenPrinting,
@@ -25,9 +23,10 @@ import {
   type FlatRow,
 } from "../../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../../src/swu/raw-manifest.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestOriginalsDir } from "../lib/originals.js";
 
-export const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
+export { DEFAULT_ORIGINALS_ROOT, expandHome, newestOriginalsDir };
+
 
 /** Release order that setReleaseOrder returns for a code missing from the table (src/swu/llm-flatten.ts). */
 const UNKNOWN_ORDER = Number.MAX_SAFE_INTEGER;
@@ -58,20 +57,6 @@ export interface Originals {
   keptKeys: Set<string>;
 }
 
-export function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-export function newestOriginalsDir(root: string = DEFAULT_ORIGINALS_ROOT): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
 export function loadOriginals(originalsDir: string): Originals {
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
   const manifest = swuRawCacheManifestSchema.parse(JSON.parse(readFileSync(path.join(pagesDir, "manifest.json"), "utf8")));
@@ -84,7 +69,7 @@ export function loadOriginals(originalsDir: string): Originals {
     const name = `page-${String(entry.page).padStart(4, "0")}.json`;
     const body = readFileSync(path.join(pagesDir, name));
     if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-    const digest = createHash("sha256").update(body).digest("hex");
+    const digest = sha256Hex(body);
     if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
     const parsed = pageSchema.parse(JSON.parse(body.toString("utf8")));
     declaredTotal = parsed.meta.pagination.total;

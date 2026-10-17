@@ -9,16 +9,15 @@
  *   --verify-hash  also download the pinned URL and compare its sha256 with the pinned one
  * Exit code: 0 current, 10 newer available, 2 network or input error.
  */
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { resolveDataDir } from "../src/data.js";
+import { sha256Hex } from "../src/swu/canonical.js";
 import { CR_FILE_NAME, EXIT_CURRENT, EXIT_ERROR, EXIT_NEWER, evaluate, pinnedRulesSchema, type Article, type Observed, type Pinned } from "../src/rules/check.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_URL = "https://cdn.starwarsunlimited.com//SWH_Comp_Rules_v8_0_e26603c6e1.pdf";
 const PAGES = ["https://starwarsunlimited.com/how-to-play", "https://starwarsunlimited.com/organized-play"];
 const ARTICLES = "https://admin.starwarsunlimited.com/api/articles";
@@ -63,7 +62,7 @@ async function observe(pinned: Pinned, verifyHash: boolean): Promise<Observed> {
   if (verifyHash && head.status === 200) {
     const body = await http(pinned.url);
     if (!body.ok) throw new Error(`GET ${pinned.url} -> ${body.status}`);
-    downloadedSha256 = createHash("sha256").update(Buffer.from(await body.arrayBuffer())).digest("hex");
+    downloadedSha256 = sha256Hex(Buffer.from(await body.arrayBuffer()));
   }
   return {
     pdfHead: { status: head.status, contentLength: length === null ? null : Number(length), lastModified: head.headers.get("last-modified") },

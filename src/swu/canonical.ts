@@ -34,6 +34,6 @@ export function canonicalJson(value: unknown): string {
   throw new Error(`canonicalJson: unsupported value of type ${typeof value}`);
 }
 
-export function sha256Hex(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex");
+export function sha256Hex(data: string | Uint8Array): string {
+  return (typeof data === "string" ? createHash("sha256").update(data, "utf8") : createHash("sha256").update(data)).digest("hex");
 }
