@@ -8,6 +8,7 @@ import { VALUE_TOOLS } from "./tools/value.js";
 import { RULES_TOOLS } from "./tools/rules.js";
 import { CATALOG_TOOLS } from "./tools/catalog.js";
 import { DECK_TOOLS } from "./tools/deck.js";
+import { META_TOOLS } from "./tools/meta.js";
 import { ok, fail, lower, hasValue } from "./tools/common.js";
 
 export interface ToolResult {
@@ -191,4 +192,5 @@ export const TOOLS = {
   ...SIMILARITY_TOOLS,
   ...CATALOG_TOOLS,
   ...DECK_TOOLS,
+  ...META_TOOLS,
 } as const;

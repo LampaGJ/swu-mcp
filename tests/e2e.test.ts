@@ -66,6 +66,9 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   owned_vs_needed: { decklist: DECKLIST, owned: [{ card: "0101033", count: 1 }] },
   play_value_vs_price: { minSampleSize: 1000, limit: 5 },
   score_vs_play: { limit: 5 },
+  meta_archetypes: { limit: 5 },
+  meta_threats: { archetype: "t001" },
+  meta_answers: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, archetypes: 5, limit: 5 },
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {
@@ -126,6 +129,6 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
       expect("text" in content ? content.text.length : 0, uri).toBeGreaterThan(100);
     }
     const prompts = (await client.listPrompts()).prompts.map((prompt) => prompt.name);
-    expect(prompts).toEqual(expect.arrayContaining(["rules_question", "build_deck_for_leader"]));
+    expect(prompts).toEqual(expect.arrayContaining(["rules_question", "build_deck_for_leader", "meta_defense"]));
   });
 });

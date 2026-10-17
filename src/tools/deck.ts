@@ -109,9 +109,9 @@ const deckLineSchema = z.strictObject({
 });
 
 const cardList = (what: string) => z.array(deckLineSchema).min(1).max(250).describe(what);
-const decklistField = cardList("Cards as {card, count}; the same card listed twice is added up");
-const leaderField = z.string().min(1).describe("The leader: a cardKey or an exact title (with subtitle if the title is shared)");
-const baseField = z.string().min(1).describe("The base: a cardKey or an exact title");
+export const decklistField = cardList("Cards as {card, count}; the same card listed twice is added up");
+export const leaderField = z.string().min(1).describe("The leader: a cardKey or an exact title (with subtitle if the title is shared)");
+export const baseField = z.string().min(1).describe("The base: a cardKey or an exact title");
 
 const normalise = (text: string): string =>
   text.normalize("NFKC").toLowerCase().replace(/[‘’`]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
@@ -147,7 +147,7 @@ const describeRow = (row: CardRow): string => `${row.cardKey} ${cardLabel(row)} 
 
 type Resolution = { ok: true; row: CardRow } | { ok: false; reason: "unknown" | "ambiguous" | "wrong type"; detail: string };
 
-function resolveRef(store: CardStore, ref: string, kind: Kind): Resolution {
+export function resolveRef(store: CardStore, ref: string, kind: Kind): Resolution {
   const direct = store.byKey.get(ref.trim());
   const found = direct !== undefined ? [direct] : (nameIndex(store).get(normalise(ref)) ?? []);
   if (found.length === 0) return { ok: false, reason: "unknown", detail: "no card with this cardKey or title" };
@@ -178,7 +178,7 @@ interface ResolvedList {
   copies: number;
 }
 
-function resolveList(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], kind: Kind): ResolvedList {
+export function resolveList(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], kind: Kind): ResolvedList {
   const merged = new Map<string, DeckLine>();
   const unresolved: Unresolved[] = [];
   for (const entry of entries) {
@@ -217,7 +217,7 @@ function resolvePiece(env: DeckEnv, ref: string, kind: "leader" | "base"): Piece
   return syn === undefined ? `${kind} "${ref}": ${resolved.row.cardKey} has no feature record` : { row: resolved.row, syn };
 }
 
-function resolvePair(env: DeckEnv, leaderRef: string, baseRef: string): { leader: Piece; base: Piece } | string {
+export function resolvePair(env: DeckEnv, leaderRef: string, baseRef: string): { leader: Piece; base: Piece } | string {
   const leader = resolvePiece(env, leaderRef, "leader");
   if (typeof leader === "string") return leader;
   const base = resolvePiece(env, baseRef, "base");
@@ -226,7 +226,7 @@ function resolvePair(env: DeckEnv, leaderRef: string, baseRef: string): { leader
 }
 
 const icons = (piece: Piece): string[] => piece.syn.structured.aspectIcons;
-const suppliedBy = (pair: { leader: Piece; base: Piece }): string[] => [...icons(pair.leader), ...icons(pair.base)];
+export const suppliedBy = (pair: { leader: Piece; base: Piece }): string[] => [...icons(pair.leader), ...icons(pair.base)];
 const iconText = (list: readonly string[]): string => list.join("+") || "none";
 const head = (row: { cardKey: string; title: string; subtitle: string | null }) => ({ cardKey: row.cardKey, title: cardLabel(row) });
 
@@ -247,7 +247,7 @@ function cheapestPrice(env: DeckEnv, cardKey: string, finish: "normal" | "foil" 
   return prices.length === 0 ? null : Math.min(...prices);
 }
 
-const MAIN_TYPES = new Set(["Unit", "Event", "Upgrade"]);
+export const MAIN_TYPES = new Set(["Unit", "Event", "Upgrade"]);
 
 interface PremierScope {
   legal: ReadonlySet<string>;
@@ -273,7 +273,7 @@ function premierScope(store: CardStore): PremierScope | null {
 
 type CardScope = "legal" | "rotated" | "unverified";
 
-function cardScope(store: CardStore, row: CardRow): CardScope {
+export function cardScope(store: CardStore, row: CardRow): CardScope {
   const scope = premierScope(store);
   const sets = splitCell(row.sets);
   if (scope === null) return "unverified";
@@ -309,7 +309,7 @@ function deckCover(lines: readonly DeckLine[], leader: readonly string[], base: 
   return { penalty: sumBy(uncovered, (u) => u.penaltyTotal), uncovered };
 }
 
-const singlePenalty = (syn: SynergyCard, supplied: readonly string[]): number => coverPenalty([syn], supplied, []).penalty;
+export const singlePenalty = (syn: SynergyCard, supplied: readonly string[]): number => coverPenalty([syn], supplied, []).penalty;
 
 interface Slot {
   roles: string[];
