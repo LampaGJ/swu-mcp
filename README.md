@@ -77,14 +77,14 @@ Text features
 
 Synergy and combos
 
-- `find_pairings` enablers that feed a card and payoffs it feeds, with reason, score, aspect penalty and fungible alternatives.
-- `find_trios` three-card combos (chain, two enablers into one payoff, loop) ranked with a bonus for low total cost.
-- `explain_synergy` link-by-link reasons why two or three cards pair.
+- `find_pairings` enablers that feed a card and payoffs it feeds, with reason, score, aspect penalty, fungible alternatives and the clause text (clipped to 160 characters) behind each offer and want. Every row carries `status: candidate`; `evidence: false` drops the text.
+- `find_trios` three-card combos (chain, two enablers into one payoff, loop) ranked with a bonus for low total cost, each with the clause text behind its links and `status: candidate`.
+- `explain_synergy` link-by-link reasons why two or three cards pair, with the clipped clause text behind each tag and `status: candidate`.
 - `aspect_cover` leader and base aspect combinations ranked by the penalty for a set of cards.
 
 Fungibility and substitutes
 
-- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect.
+- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect, with the role's clause text for the slot card and each substitute and `status: candidate`.
 
 Market and play data
 
