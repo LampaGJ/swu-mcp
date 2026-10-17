@@ -1,0 +1,191 @@
+{
+ "schemaVersion": 1,
+ "tableVersion": 1,
+ "note": "Committed, reviewed design input (LampaGJ/swu-mcp#25), versioned like complementarity.json. threats: a threat fires on an archetype when the sum of its profile metrics (mean copies per deck, or the named ratio) is at least min and at most max; thresholds sit near the 75th percentile of the 40 largest tournament archetypes of the 2026-07-20..2026-10-17 window (meanCost near the 25th). relations: an offer of ours (an offers: tag from card features, or a pseudo-tag: keyword:<printed keyword>, unit:space, disrupt-resources) answers one threat when its qualifier holds against the archetype: removesKeyUnit checks the parsed cost, HP, power, arena and trait limits (damage must reach printed HP) against each key unit; sweep needs an each/all/any-number effect on enemy units and reachesCheapHp a damage or HP limit at least the median HP of the archetype's cheap units; arena needs the removal to be limited to that arena (or, for a unit offer, the unit to be in it); healsBase needs the heal to reach a base; minPower bounds a unit offer. The weight scales the answer's coverage. Each example is a real card whose clause produces the offer; tests/meta/counters.test.ts checks every one.",
+ "threats": [
+  {
+   "id": "key-units",
+   "title": "Key units",
+   "metrics": ["keyUnits"],
+   "min": 1,
+   "reason": "Units that at least half of the archetype's decks play; removal that can take them answers the deck's main threats."
+  },
+  {
+   "id": "upgrade-heavy",
+   "title": "Upgrade-heavy",
+   "metrics": ["upgrades"],
+   "min": 5,
+   "reason": "Five or more upgrades or Pilots per deck: the deck invests resources in single units, which upgrade removal turns into card advantage."
+  },
+  {
+   "id": "shields",
+   "title": "Shield-heavy",
+   "metrics": ["keywords.Shielded", "offers.offers:give-shield", "offers.offers:give-shield-self"],
+   "min": 12,
+   "reason": "Shield tokens blank the first damage each time; upgrade removal and Saboteur strip them."
+  },
+  {
+   "id": "go-wide",
+   "title": "Go-wide",
+   "metrics": ["offers.offers:create-token-units", "cheapUnits"],
+   "min": 20,
+   "reason": "Many token units and units costing 2 or less: one sweeper trades for several cards."
+  },
+  {
+   "id": "sentinel-wall",
+   "title": "Sentinel wall",
+   "metrics": ["keywords.Sentinel", "offers.offers:grant-sentinel"],
+   "min": 8,
+   "reason": "Eight or more Sentinel units or Sentinel grants per deck stop attacks on the base and on other units; Saboteur attacks past them."
+  },
+  {
+   "id": "space-heavy",
+   "title": "Space-heavy",
+   "metrics": ["arena.spaceShare"],
+   "min": 0.45,
+   "reason": "Most of the deck's units fight in space; ground-only removal and ground units do not touch them."
+  },
+  {
+   "id": "aggro-curve",
+   "title": "Low curve aggro",
+   "metrics": ["meanCost"],
+   "max": 3.2,
+   "reason": "A mean cost of 3.2 or less races the base early; healing the base buys the turns a slower deck needs."
+  },
+  {
+   "id": "base-pressure",
+   "title": "Base pressure",
+   "metrics": ["keywords.Raid", "offers.offers:grant-raid", "offers.offers:damage-enemy-base"],
+   "min": 5.5,
+   "reason": "Raid and direct base damage push damage past the board; base healing undoes it."
+  },
+  {
+   "id": "hand-plan",
+   "title": "Card-draw engine",
+   "metrics": ["offers.offers:draw", "offers.offers:tutor", "offers.offers:tutor-to-play", "offers.offers:tutor-to-deck"],
+   "min": 5,
+   "reason": "The deck plans around drawing and searching for its pieces; discard takes them from hand first."
+  },
+  {
+   "id": "resource-plan",
+   "title": "Resource plan",
+   "metrics": ["keywords.Smuggle", "offers.offers:resource-ramp", "offers.offers:play-from-resources"],
+   "min": 2.5,
+   "reason": "Smuggle, ramp and play-from-resources make the resource row part of the plan; exhausting or defeating resources slows it."
+  }
+ ],
+ "relations": [
+  {
+   "id": "defeat-key-unit",
+   "threat": "key-units",
+   "offers": { "offers:defeat-enemy-unit": 1, "offers:defeat-any-unit": 1 },
+   "qualifier": { "removesKeyUnit": true },
+   "reason": "A defeat effect whose cost, HP, arena and trait limits fit the archetype's key units removes them outright.",
+   "example": { "card": "It's Worse", "cardKey": "05010264", "clause": "Defeat a non-leader unit." }
+  },
+  {
+   "id": "damage-key-unit",
+   "threat": "key-units",
+   "offers": { "offers:damage-enemy-unit": 1, "offers:damage-any-unit": 1 },
+   "qualifier": { "removesKeyUnit": true },
+   "reason": "Direct damage at least the key unit's printed HP defeats it.",
+   "example": { "card": "Charged with Treason", "cardKey": "06010182", "clause": "If you do, deal 5 damage to a unit." }
+  },
+  {
+   "id": "capture-key-unit",
+   "threat": "key-units",
+   "offers": { "offers:capture": 1 },
+   "qualifier": { "removesKeyUnit": true },
+   "reason": "Capturing a key unit removes it until its captor leaves play.",
+   "example": { "card": "Arrest", "cardKey": "06010195", "clause": "Your base captures an enemy non-leader unit." }
+  },
+  {
+   "id": "bounce-key-unit",
+   "threat": "key-units",
+   "offers": { "offers:bounce-enemy": 0.6, "offers:return-any-to-hand": 0.6 },
+   "qualifier": { "removesKeyUnit": true },
+   "reason": "Returning a key unit to hand costs its owner the tempo and every upgrade on it; it can be replayed, so it counts for less.",
+   "example": { "card": "Baylan Skoll", "cardKey": "05010185", "clause": "If you do, return a non-leader unit that costs 4 or less to its owner's hand." }
+  },
+  {
+   "id": "upgrade-removal",
+   "threat": "upgrade-heavy",
+   "offers": { "offers:defeat-upgrade": 1, "offers:return-upgrade": 0.8 },
+   "qualifier": {},
+   "reason": "Removing an upgrade undoes the resources and the card spent on it.",
+   "example": { "card": "System Shock", "cardKey": "04010175", "clause": "Defeat a non-leader upgrade attached to a unit." }
+  },
+  {
+   "id": "shield-removal",
+   "threat": "shields",
+   "offers": { "offers:defeat-upgrade": 1, "keyword:Saboteur": 0.8, "offers:grant-saboteur": 0.6 },
+   "qualifier": {},
+   "reason": "Shield tokens are upgrades: upgrade removal defeats them, and a Saboteur attacker defeats the defender's Shields before damage.",
+   "example": { "card": "Insurgent Saboteurs", "cardKey": "04010168", "clause": "You may defeat an upgrade." }
+  },
+  {
+   "id": "sweeper",
+   "threat": "go-wide",
+   "offers": { "offers:damage-enemy-unit": 1, "offers:damage-any-unit": 1, "offers:defeat-enemy-unit": 1, "offers:defeat-any-unit": 1 },
+   "qualifier": { "sweep": true, "reachesCheapHp": true },
+   "reason": "Damage or defeat on each enemy unit, enough to kill the archetype's typical cheap unit, trades one card for several.",
+   "example": { "card": "Death Field", "cardKey": "05010141", "clause": "Deal 2 damage to each non-Vehicle enemy unit." }
+  },
+  {
+   "id": "sentinel-bypass",
+   "threat": "sentinel-wall",
+   "offers": { "keyword:Saboteur": 1, "offers:grant-saboteur": 1 },
+   "qualifier": {},
+   "reason": "Saboteur ignores Sentinel when attacking, so it reaches the base or the unit behind the wall.",
+   "example": { "card": "Rebel Pathfinder", "cardKey": "0101239", "clause": "printed keyword Saboteur" }
+  },
+  {
+   "id": "space-removal",
+   "threat": "space-heavy",
+   "offers": { "offers:defeat-enemy-unit": 1, "offers:defeat-any-unit": 1, "offers:damage-enemy-unit": 0.8, "offers:damage-any-unit": 0.8 },
+   "qualifier": { "arena": "space", "removesKeyUnit": true },
+   "reason": "Removal aimed at space units, able to take one of the archetype's key space units, is efficient exactly where the archetype fights.",
+   "example": { "card": "You're All Clear, Kid", "cardKey": "04010055", "clause": "Defeat an enemy space unit with 3 or less remaining HP." }
+  },
+  {
+   "id": "space-units",
+   "threat": "space-heavy",
+   "offers": { "unit:space": 0.5 },
+   "qualifier": { "minPower": 4 },
+   "reason": "A space unit with 4 or more power contests the arena the archetype attacks from.",
+   "example": { "card": "Corellian Freighter", "cardKey": "0101250", "clause": "Space unit 4/4" }
+  },
+  {
+   "id": "heal-vs-aggro",
+   "threat": "aggro-curve",
+   "offers": { "offers:heal": 1, "keyword:Restore": 0.7, "offers:grant-restore": 0.5 },
+   "qualifier": { "healsBase": true },
+   "reason": "Healing the base undoes a low curve's early damage and buys the turns to stabilise.",
+   "example": { "card": "Yoda", "cardKey": "05010101", "clause": "If you do, heal 5 damage from a base." }
+  },
+  {
+   "id": "heal-vs-base-pressure",
+   "threat": "base-pressure",
+   "offers": { "offers:heal": 1, "keyword:Restore": 0.7, "offers:grant-restore": 0.5 },
+   "qualifier": { "healsBase": true },
+   "reason": "Base healing undoes Raid and direct base damage.",
+   "example": { "card": "Onyx Squadron Brute", "cardKey": "04010033", "clause": "Heal 2 damage from a base." }
+  },
+  {
+   "id": "hand-disruption",
+   "threat": "hand-plan",
+   "offers": { "offers:discard-opponent": 1 },
+   "qualifier": {},
+   "reason": "Making the opponent discard takes the drawn or searched piece before it is played.",
+   "example": { "card": "Profundity", "cardKey": "04010154", "clause": "They discard a card from their hand." }
+  },
+  {
+   "id": "resource-disruption",
+   "threat": "resource-plan",
+   "offers": { "disrupt-resources": 1 },
+   "qualifier": {},
+   "reason": "Exhausting or defeating enemy resources slows a deck that plays from or counts its resources.",
+   "example": { "card": "The Wrong Ride", "cardKey": "06010235", "clause": "Exhaust 2 enemy resources." }
+  }
+ ]
+}
