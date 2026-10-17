@@ -10,7 +10,7 @@
   "packageManager": "pnpm@10.27.0",
   "scripts": {
     "prepare": "node scripts/bundle.mjs",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node scripts/bundle.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",
