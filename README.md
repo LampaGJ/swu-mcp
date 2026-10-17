@@ -184,7 +184,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 
 ## Commands
 
-    pnpm install --store-dir "/Volumes/Local Files/Projects/.pnpm-store"
+    pnpm install --store-dir "/Volumes/Local Files/.pnpm-store"
     pnpm typecheck
     pnpm lint
     pnpm test                 # unit tests; tests/e2e.test.ts also runs when data/runs holds a built run

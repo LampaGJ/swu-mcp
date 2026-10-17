@@ -5,7 +5,7 @@ swu-mcp serves Star Wars: Unlimited card data, deterministic card scoring and sy
 ## Commands
 
 ```bash
-pnpm install --store-dir "/Volumes/Local Files/Projects/.pnpm-store"
+pnpm install --store-dir "/Volumes/Local Files/.pnpm-store"
 pnpm typecheck
 pnpm test
 pnpm lint
