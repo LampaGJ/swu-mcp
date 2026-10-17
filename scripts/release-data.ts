@@ -25,7 +25,7 @@ import { buildRecordSchema } from "./lib/build-record.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 
 const REPO = "LampaGJ/swu-mcp";
-const SERVER_DIRS = ["docs", "features", "llm", "market", "rules", "scores", "similarity", "synergy"];
+const SERVER_DIRS = ["docs", "features", "llm", "market", "meta", "rules", "scores", "similarity", "synergy"];
 const RECORD_FILES = ["README.md", "build.json", "replay.json"];
 const FIXED_MTIME = new Date(0);
 

@@ -28,6 +28,9 @@
     "market": "tsx scripts/market.ts",
     "embed:capture": "tsx scripts/embed-capture.ts",
     "similarity": "tsx scripts/similarity.ts",
+    "meta": "tsx scripts/meta.ts",
+    "meta:capture-matchups": "tsx scripts/meta/capture-matchups.ts",
+    "meta:counter-fixture": "tsx scripts/meta/make-counter-fixture.ts",
     "verify:audit": "tsx scripts/verify/audit.ts",
     "verify:sample": "tsx scripts/verify/sample.ts",
     "verify:pair-fixture": "tsx scripts/verify/pair-fixture.ts",
@@ -37,6 +40,7 @@
     "bench:extract-decks": "tsx scripts/bench/extract-decks.ts",
     "bench:extract-sims": "tsx scripts/bench/extract-sims.ts",
     "bench:real-play": "tsx scripts/bench/real-play.ts",
+    "bench:meta-defense": "tsx scripts/bench/meta-defense.ts",
     "release:data": "tsx scripts/release-data.ts"
   },
   "devDependencies": {
@@ -68,6 +72,7 @@
     "data/rubric-coefficients.json",
     "data/rules-core.json",
     "data/complementarity.json",
+    "data/counters.json",
     "src/data-release.json"
   ]
 }

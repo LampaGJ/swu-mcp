@@ -2,7 +2,7 @@
  * @displayName Data rebuild orchestrator
  * @strategicPurpose Manipulation node (LampaGJ/swu-mcp#7): mault's originals and the committed pinned inputs in;
  * every data product under data/runs/<date>/ and a combined build.json out, byte-identical on a rerun.
- * @tacticalObjective Runs the nine steps in dependency order, fails on the first non-zero exit, then hashes every
+ * @tacticalObjective Runs the steps in dependency order, fails on the first non-zero exit, then hashes every
  * output file and every step's replay record. The code commit and wall times are recorded in build.json but are
  * left out of buildHash, so two builds of the same inputs have the same buildHash.
  *
@@ -133,6 +133,7 @@ function main(): void {
       replay: "rules/replay.json",
     },
     { name: "similarity", script: "scripts/similarity.ts", args: ["--data", runDir], owns: ["similarity"], replay: "similarity/replay.json" },
+    { name: "meta", script: "scripts/meta.ts", args: ["--data", runDir, "--originals", originals], owns: ["meta"], replay: "meta/replay.json" },
   ];
 
   const p = progress("build-data", { total: steps.length, everyN: 1 });
