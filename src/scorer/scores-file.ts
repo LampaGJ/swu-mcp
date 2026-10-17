@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { compareCodePoints } from "../swu/canonical.js";
+import { countAtOrBelow } from "./rank.js";
 import type { CardScore } from "./score.js";
 
 /**
@@ -77,9 +78,7 @@ function percentiles(values: Map<string, number>): Map<string, number> {
   const sorted = [...values.values()].sort((a, b) => a - b);
   const out = new Map<string, number>();
   for (const [key, v] of values) {
-    let atOrBelow = 0;
-    while (atOrBelow < sorted.length && sorted[atOrBelow] <= v) atOrBelow++;
-    out.set(key, Math.round((1000 * atOrBelow) / sorted.length) / 10);
+    out.set(key, Math.round((1000 * countAtOrBelow(sorted, v)) / sorted.length) / 10);
   }
   return out;
 }

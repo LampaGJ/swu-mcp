@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MissingDataError, splitCell, type CardRow, type CardStore } from "../data.js";
 import type { ClustersFile } from "../embed/files.js";
 import { rulesFor } from "../rules/store.js";
+import { countAtOrBelow } from "../scorer/rank.js";
 import type { ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
@@ -1301,16 +1302,7 @@ export const scoreVsPlayShape = {
 /** Share of values at or below each value, 0 to 100. */
 function percentRanks(values: readonly number[]): (value: number) => number {
   const sorted = [...values].sort((a, b) => a - b);
-  return (value) => {
-    let low = 0;
-    let high = sorted.length;
-    while (low < high) {
-      const mid = (low + high) >> 1;
-      if (sorted[mid] <= value) low = mid + 1;
-      else high = mid;
-    }
-    return (100 * low) / sorted.length;
-  };
+  return (value) => (100 * countAtOrBelow(sorted, value)) / sorted.length;
 }
 
 export function scoreVsPlay(env: DeckEnv, input: unknown): ToolResult {
