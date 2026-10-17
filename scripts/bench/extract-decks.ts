@@ -3,7 +3,7 @@
  * @strategicPurpose Manipulation node (reduces): one or more community decklist snapshots in, one deduplicated
  * list of logical-card decks out, so co-inclusion runs on the run's card identities.
  * @tacticalObjective Reads every *.json in each snapshot directory (names starting "_" are indexes), normalises
- * with scripts/bench/decks.ts, dedupes across snapshots, and writes data/originals/decks/decks-<sha12>.json with
+ * with scripts/bench/decks.ts, keeps Premier decks only (src/meta/format.ts; others are counted by reason), dedupes across snapshots, and writes data/originals/decks/decks-<sha12>.json with
  * per-snapshot input hashes, date ranges, set usage and mapping counts.
  *
  * Usage: pnpm bench:extract-decks [--run <dir>] [--originals <dir>] [--snapshot <dir> ...] [--out <dir>]
@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { FormatRejects, premierVerdict, snapshotDeclaresPremier } from "../../src/meta/format.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap } from "./card-map.js";
 import { codeCommit, defaultRun, isMain, REPO_ROOT } from "./code-commit.js";
@@ -25,7 +26,10 @@ const MAIN_CHECKOUT_DECKS = "/Volumes/Local Files/Projects/swu-mcp/data/original
 const deckFiles = (dir: string): string[] =>
   existsSync(dir)
     ? readdirSync(dir)
-        .filter((f) => f.endsWith(".json") && !f.startsWith("_") && statSync(path.join(dir, f)).isFile())
+        .filter(
+          (f) =>
+            f.endsWith(".json") && !f.startsWith("_") && f !== "manifest.json" && f !== "rejects.json" && statSync(path.join(dir, f)).isFile(),
+        )
         .sort(compareCodePoints)
     : [];
 
@@ -61,6 +65,7 @@ function main(): void {
   const entries: { snapshot: string; deck: Deck }[] = [];
   const snapshotStats: Record<string, unknown>[] = [];
   const unmappedIds = new Map<string, number>();
+  const allFormatRejects = new FormatRejects();
 
   for (const dir of snapshots) {
     const label = path.basename(dir);
@@ -68,6 +73,8 @@ function main(): void {
     const listing = createHash("sha256");
     let invalid = 0;
     let decks = 0;
+    const premierSnapshot = snapshotDeclaresPremier(dir);
+    const formatRejects = new FormatRejects();
     let minCreated: string | null = null;
     let maxCreated: string | null = null;
     const setUses = new Map<string, number>();
@@ -76,7 +83,14 @@ function main(): void {
       listing.update(`${file}\u0000${createHash("sha256").update(bytes).digest("hex")}\n`);
       let deck: Deck;
       try {
-        deck = normalizeDeck(JSON.parse(bytes.toString("utf8")), map.setNumber.byId, iconsByKey);
+        const raw: unknown = JSON.parse(bytes.toString("utf8"));
+        const verdict = premierVerdict(raw, premierSnapshot);
+        if (!verdict.keep) {
+          formatRejects.add(verdict.reason);
+          allFormatRejects.add(verdict.reason);
+          continue;
+        }
+        deck = normalizeDeck(raw, map.setNumber.byId, iconsByKey);
       } catch {
         invalid += 1;
         continue;
@@ -101,6 +115,9 @@ function main(): void {
       listingSha256: listing.digest("hex"),
       decks,
       invalid,
+      premierSnapshot,
+      excludedNonPremier: formatRejects.total,
+      formatRejects: formatRejects.toJSON(),
       createdAt: { min: minCreated, max: maxCreated },
       setUses: Object.fromEntries([...setUses].sort((a, b) => compareCodePoints(a[0], b[0]))),
     });
@@ -114,6 +131,7 @@ function main(): void {
     kind: "decklists",
     sha256Decks: sha,
     snapshots: snapshotStats,
+    format: { kept: "Premier", excludedNonPremier: allFormatRejects.total, byReason: allFormatRejects.toJSON() },
     dedupe: { inputDecks: entries.length, uniqueDecks: decks.length, duplicatesWithinSnapshot, duplicatesAcrossSnapshots },
     mapping: {
       distinctCardSlots: totalCards,
@@ -139,8 +157,10 @@ function main(): void {
           files: s.files,
           decks: s.decks,
           invalid: s.invalid,
+          excludedNonPremier: s.excludedNonPremier,
           createdAt: s.createdAt,
         })),
+        format: out.format,
         dedupe: out.dedupe,
         mapping: out.mapping,
       },

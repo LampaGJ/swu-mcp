@@ -39,6 +39,7 @@ import {
   type CardOutcomes,
   type WinRatesFile,
 } from "../src/meta/schema.js";
+import { FormatRejects, premierVerdict, snapshotDeclaresPremier } from "../src/meta/format.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap, normalizeName, type CardMap } from "./bench/card-map.js";
 import { codeCommit, REPO_ROOT } from "./bench/code-commit.js";
@@ -86,19 +87,43 @@ const deckFiles = (dir: string): string[] =>
 interface ReadDecks {
   decks: MetaDeck[];
   listing: string;
-  stats: { files: number; invalid: number; undated: number; unmappedLeaderOrBase: number; unmappedCards: number };
+  stats: {
+    files: number;
+    invalid: number;
+    excludedNonPremier: number;
+    formatRejects: Record<string, number>;
+    undated: number;
+    unmappedLeaderOrBase: number;
+    unmappedCards: number;
+  };
 }
 
 function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): ReadDecks {
   const files = deckFiles(dir);
   const listing = createHash("sha256");
-  const stats = { files: files.length, invalid: 0, undated: 0, unmappedLeaderOrBase: 0, unmappedCards: 0 };
+  const stats: ReadDecks["stats"] = {
+    files: files.length,
+    invalid: 0,
+    excludedNonPremier: 0,
+    formatRejects: {},
+    undated: 0,
+    unmappedLeaderOrBase: 0,
+    unmappedCards: 0,
+  };
+  const premierSnapshot = snapshotDeclaresPremier(dir);
+  const formatRejects = new FormatRejects();
   const decks: MetaDeck[] = [];
   files.forEach((file, i) => {
     if (i % 2000 === 0) onFile(i);
     const bytes = readFileSync(path.join(dir, file));
     listing.update(`${file}\u0000${createHash("sha256").update(bytes).digest("hex")}\n`);
-    const parsed = snapshotDeckSchema.safeParse(JSON.parse(bytes.toString("utf8")));
+    const raw: unknown = JSON.parse(bytes.toString("utf8"));
+    const verdict = premierVerdict(raw, premierSnapshot);
+    if (!verdict.keep) {
+      formatRejects.add(verdict.reason);
+      return;
+    }
+    const parsed = snapshotDeckSchema.safeParse(raw);
     if (!parsed.success) {
       stats.invalid += 1;
       return;
@@ -148,6 +173,8 @@ function readSnapshot(dir: string, map: CardMap, onFile: (i: number) => void): R
       placement: tournament ? placement : null,
     });
   });
+  stats.excludedNonPremier = formatRejects.total;
+  stats.formatRejects = formatRejects.toJSON();
   return { decks, listing: listing.digest("hex"), stats };
 }
 
