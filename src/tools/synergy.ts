@@ -12,9 +12,9 @@ import {
   type SubstituteGroup,
   type SubstituteOptions,
 } from "../synergy/fungibility.js";
-import { edgeOrder } from "../synergy/graph.js";
+import { edgeOrder, edgeScore, mechanicalRows, TRAIT_BONUS } from "../synergy/graph.js";
 import { cardLabel, cmp } from "../synergy/order.js";
-import { TRIO_SHAPES, type PairEdge, type SynergyCard, type TrioRecord } from "../synergy/schema.js";
+import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
@@ -37,6 +37,14 @@ const evidenceFlag = z
   .describe("Include the clause text (clipped to 160 characters) of each card that produced the offer and the want; false drops it");
 
 const aspectList = z.array(z.string().min(1)).max(3);
+
+const traitsMode = z
+  .enum(TRAITS_MODES)
+  .default("bonus")
+  .describe(
+    `How a shared trait counts. bonus (default): mechanical links rank, a trait shared on a mechanical pair multiplies its link by ${1 + TRAIT_BONUS}, trait-only pairs are listed apart as tribal. exclude: traits ignored. include: a trait counts as a link of its own and trait-only pairs rank with the rest`,
+  );
+
 const cardKey = z.string().min(1);
 
 export const fungibleSubstitutesShape = {
@@ -64,7 +72,8 @@ export const findPairingsShape = {
     .optional()
     .describe("Aspect icons the leader and base supply; the penalty is measured against them and ranking favours covered partners"),
   source: z.enum(["rule"]).default("rule").describe("Where the pair comes from; only the reviewed complementarity table exists today"),
-  includeTraitOnly: z.boolean().default(false).describe("Include pairs linked only by a shared trait (the obvious kind)"),
+  traits: traitsMode,
+  tribalLimit: z.number().int().min(0).max(50).default(5).describe("Most trait-only (tribal) pairs listed in the separate tribal section when traits is bonus"),
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for the partner slot, by aspect"),
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(100).default(15),
@@ -80,6 +89,7 @@ export const findTriosShape = {
     .optional()
     .describe("Fix the leader's aspect icons instead of choosing the cheapest cover"),
   baseAspects: z.array(z.string().min(1)).max(1).optional().describe("Fix the base's aspect icon; give [] for a neutral base"),
+  traits: traitsMode,
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for each slot, by aspect"),
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(50).default(10),
@@ -193,8 +203,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
   const resolved = resolve(ctx, [args.cardKey]);
   if (typeof resolved === "string") return fail(resolved);
   const card = resolved[0];
-  const edges = ctx.graph.edges.filter((e) => {
-    if (e.traitOnly && !args.includeTraitOnly) return false;
+  const touching = ctx.graph.edges.filter((e) => {
     const partner = e.a === card.cardKey ? e.b : e.b === card.cardKey ? e.a : undefined;
     if (partner === undefined) return false;
     if (e.a === card.cardKey && args.direction === "enablers") return false;
@@ -202,26 +211,41 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     const cost = (ctx.graph.byKey.get(partner) as SynergyCard).structured.cost;
     return args.maxCost === undefined || (cost !== null && cost <= args.maxCost);
   });
-  const rows = edges.map((e: PairEdge) => {
-    const partner = ctx.graph.byKey.get(e.a === card.cardKey ? e.b : e.a) as SynergyCard;
-    const cover = penaltyFor(ctx, [card, partner], args.aspects);
-    const rank = args.aspects === undefined ? e.score : Math.round((e.score / (1 + cover.penalty / 2)) * 1000) / 1000;
-    return { e, partner, cover, rank };
-  });
-  rows.sort((x, y) => y.rank - x.rank || edgeOrder(x.e, y.e));
-  const shown = rows.slice(0, args.limit).map(({ e, partner, cover, rank }) => {
+  const ranked = (edges: readonly PairEdge[], mode: TraitsMode) => {
+    const rows = edges.map((e: PairEdge) => {
+      const partner = ctx.graph.byKey.get(e.a === card.cardKey ? e.b : e.a) as SynergyCard;
+      const cover = penaltyFor(ctx, [card, partner], args.aspects);
+      const score = edgeScore(e, mode);
+      const rank = args.aspects === undefined ? score : Math.round((score / (1 + cover.penalty / 2)) * 1000) / 1000;
+      return { e, partner, cover, score, rank };
+    });
+    return rows.sort((x, y) => y.rank - x.rank || edgeOrder(x.e, y.e));
+  };
+  const row = ({ e, partner, cover, score, rank }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
+    const linkRows = mode === "exclude" ? mechanicalRows(e) : e.rows;
     const out: Record<string, unknown> = {
       ...brief(partner),
       status: CANDIDATE_STATUS,
       partnerIs: e.a === card.cardKey ? "payoff" : "enabler",
-      link: e.rows.map((r) => `${r.offer} -> ${r.want}`).join("; "),
-      reason: e.rows[0].reason,
-      score: e.score,
+      linkKind: e.linkKind,
+      link: linkRows.map((r) => `${r.offer} -> ${r.want}`).join("; "),
+      reason: (e.traitOnly ? e.rows : mechanicalRows(e))[0].reason,
+      score,
       aspectPair: cover.aspectPair,
       penalty: cover.penalty,
       rank,
     };
-    if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey);
+    if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey, linkRows);
+    return out;
+  };
+  const rows = ranked(
+    touching.filter((e) => args.traits === "include" || !e.traitOnly),
+    args.traits,
+  );
+  const tribal = args.traits === "bonus" ? ranked(touching.filter((e) => e.traitOnly), "bonus") : [];
+  const shown = rows.slice(0, args.limit).map((r) => {
+    const { e, partner } = r;
+    const out = row(r, args.traits);
     if (args.withAlternatives) {
       const tags = slotRoles([partner.cardKey], [e])[0];
       const common = commonMembers(ctx.fungibility, partner.cardKey, [...tags.offers, ...tags.wants]);
@@ -236,7 +260,23 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     }
     return out;
   });
-  return ok({ card: brief(card), source: args.source, total: rows.length, shown: shown.length, pairings: shown });
+  return ok({
+    card: brief(card),
+    source: args.source,
+    traits: args.traits,
+    total: rows.length,
+    shown: shown.length,
+    pairings: shown,
+    ...(tribal.length > 0
+      ? {
+          tribal: {
+            note: "pairs linked only by a shared trait (obvious tribal links), ranked apart and capped by tribalLimit",
+            total: tribal.length,
+            pairings: tribal.slice(0, args.tribalLimit).map((r) => row(r, "bonus")),
+          },
+        }
+      : {}),
+  });
 }
 
 export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
@@ -248,6 +288,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
   const fixed = args.leaderAspects !== undefined || args.baseAspects !== undefined;
   const search = ctx.trios({
     combos: fixed ? fixedCombo(args.leaderAspects, args.baseAspects) : undefined,
+    traits: args.traits,
     accept: (keys, cost) => cost <= args.maxTotalCost && (args.cardKey === undefined || keys.includes(args.cardKey)),
   });
   const shapes = args.shape === undefined ? TRIO_SHAPES : [args.shape];
@@ -271,7 +312,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
     };
     if (args.evidence) {
       out.evidence = trioLinks(ctx.graph, t).flatMap((e) =>
-        evidenceOf(e, ctx.graph.byKey, e.rows.slice(0, 1)).map((ev) => ({
+        evidenceOf(e, ctx.graph.byKey, (e.traitOnly ? e.rows : mechanicalRows(e)).slice(0, 1)).map((ev) => ({
           link: `${cardLabel(ctx.graph.byKey.get(e.a) as SynergyCard)} > ${cardLabel(ctx.graph.byKey.get(e.b) as SynergyCard)}`,
           ...ev,
         })),
@@ -293,6 +334,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
   return ok({
     counts: { chain: search.counts.chain, convergent: search.counts.convergent, loop: search.counts.loop },
     maxTotalCost: args.maxTotalCost,
+    traits: args.traits,
     shown: trios.length,
     trios,
   });
@@ -335,6 +377,7 @@ export function explainSynergy(ctx: SynergyContext, input: unknown): ToolResult 
       differentAspects: e.nonObvious.aspects === 1,
       differentTraits: e.nonObvious.traits === 1,
       wording: e.nonObvious.wording,
+      linkKind: e.linkKind,
       traitOnly: e.traitOnly,
       rows: e.rows.map((r) => ({ row: r.row, offer: r.offer, want: r.want, weight: r.weight, reason: r.reason })),
     })),
@@ -418,14 +461,14 @@ export const SYNERGY_TOOLS = {
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input)),
   },
   find_trios: {
     title: "Find trios",
     description:
-      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findTriosShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input)),
   },

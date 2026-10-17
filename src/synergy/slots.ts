@@ -1,4 +1,4 @@
-import type { PairGraph } from "./graph.js";
+import { mechanicalRows, type PairGraph } from "./graph.js";
 import { cmp } from "./order.js";
 import type { PairEdge, TrioRecord } from "./schema.js";
 
@@ -6,8 +6,8 @@ import type { PairEdge, TrioRecord } from "./schema.js";
  * @displayName SWU slot roles
  * @strategicPurpose Names which offers/wants tag each member of a pair or trio contributes to its
  * links, so fungibility can list substitutes for exactly that role.
- * @tacticalObjective The tag of an edge is its strongest row (ties broken by row id), so the same
- * edge always names the same role.
+ * @tacticalObjective The tag of an edge is its strongest mechanical row (ties broken by row id), so the same
+ * edge always names the same role and a trait bonus never does.
  */
 
 export interface SlotRole {
@@ -16,7 +16,8 @@ export interface SlotRole {
   wants: string[];
 }
 
-const topRow = (e: PairEdge): PairEdge["rows"][number] => [...e.rows].sort((x, y) => y.weight - x.weight || cmp(x.row, y.row))[0];
+const topRow = (e: PairEdge): PairEdge["rows"][number] =>
+  [...(e.traitOnly ? e.rows : mechanicalRows(e))].sort((x, y) => y.weight - x.weight || cmp(x.row, y.row))[0];
 
 /** The pair edges that make up a trio, by shape (convergent: A and B both feed C). */
 export function trioLinks(graph: PairGraph, t: Pick<TrioRecord, "cardA" | "cardB" | "cardC" | "shape">): PairEdge[] {

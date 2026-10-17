@@ -3,10 +3,11 @@ import { z } from "zod";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../swu/canonical.js";
 import { coverCombos } from "./cover.js";
 import { buildFungibility, fungibilityStats } from "./fungibility.js";
-import { buildPairGraph, edgeOrder } from "./graph.js";
+import { buildPairGraph, edgeOrder, mechanicalRows } from "./graph.js";
 import { cardLabel } from "./order.js";
 import {
   complementarityTableSchema,
+  LINK_KINDS,
   replaySchema,
   synergyCardsSchema,
   TRIO_SHAPES,
@@ -36,6 +37,7 @@ const pairRowSchema = z.strictObject({
   cardB: z.string(),
   reason: z.string(),
   rows: z.string(),
+  linkKind: z.enum(LINK_KINDS),
   source: z.literal("rule"),
   link: z.number(),
   nonObvious: z.number(),
@@ -87,6 +89,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
       cardB: e.b,
       reason: pairReason(e),
       rows: e.rows.map((r) => r.row).join("|"),
+      linkKind: e.linkKind,
       source: "rule",
       link: e.link,
       nonObvious: e.nonObvious.factor,
@@ -112,7 +115,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
   const usedRows = new Map<string, number>();
   const usedCards = new Set<string>();
   for (const e of graph.edges.filter((x) => !x.traitOnly && x.nonObvious.aspects === 1).sort(edgeOrder)) {
-    const r = e.rows[0].baseId;
+    const r = mechanicalRows(e)[0].baseId;
     if ((usedRows.get(r) ?? 0) >= 2 || usedCards.has(e.a) || usedCards.has(e.b)) continue;
     picked.push(e);
     usedRows.set(r, (usedRows.get(r) ?? 0) + 1);
@@ -143,6 +146,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
   const report = {
     pairs: graph.edges.length,
     pairsExcludingTraitOnly: graph.edges.filter((e) => !e.traitOnly).length,
+    pairsByLinkKind: Object.fromEntries(LINK_KINDS.map((k) => [k, graph.edges.filter((e) => e.linkKind === k).length])),
     pairCountsPerRow: graph.rowCounts,
     offersWithoutRowOrNote: uncoveredOffers(cards, table),
     exampleChecks: graph.exampleChecks,
@@ -151,7 +155,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
       b: describe(byKey.get(e.b) as SynergyCard),
       score: e.score,
       rows: e.rows.map((r) => `${r.row}: ${r.offer} -> ${r.want}`),
-      reason: e.rows[0].reason,
+      reason: mechanicalRows(e)[0].reason,
     })),
     trioGraph: { edges: trioRun.graph.edges, fanout: trioRun.graph.fanout, nodes: trioRun.graph.nodes },
     trioCounts: trioRun.counts,

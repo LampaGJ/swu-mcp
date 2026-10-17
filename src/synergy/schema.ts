@@ -90,11 +90,23 @@ export interface NonObviousness {
   factor: number;
 }
 
+/** What links a pair: table rows other than the trait family, only the trait family, or both (LampaGJ/swu-mcp#24). */
+export const LINK_KINDS = ["mechanical", "trait+mechanical", "trait-only"] as const;
+export type LinkKind = (typeof LINK_KINDS)[number];
+
+/** How a shared trait counts: not at all, as a small bonus on a mechanical pair (default), or as a link of its own. */
+export const TRAITS_MODES = ["exclude", "bonus", "include"] as const;
+export type TraitsMode = (typeof TRAITS_MODES)[number];
+
 export interface PairEdge {
   a: string;
   b: string;
   rows: PairRowHit[];
+  /** The ranking link: the mechanical rows plus the trait bonus, or the trait rows alone on a trait-only pair. */
   link: number;
+  mechanicalLink: number;
+  traitLink: number;
+  linkKind: LinkKind;
   nonObvious: NonObviousness;
   traitOnly: boolean;
   score: number;

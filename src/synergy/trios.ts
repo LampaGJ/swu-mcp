@@ -1,7 +1,7 @@
 import { makeBestCover, type CoverCombo } from "./cover.js";
-import { edgeOrder, type PairGraph } from "./graph.js";
+import { edgeScore, mechanicalRows, type PairGraph } from "./graph.js";
 import { cardLabel, cmp, r3 } from "./order.js";
-import type { PairEdge, SynergyCard, TrioRecord, TrioShape } from "./schema.js";
+import type { PairEdge, SynergyCard, TraitsMode, TrioRecord, TrioShape } from "./schema.js";
 import { TRIO_SHAPES } from "./schema.js";
 
 /**
@@ -24,6 +24,8 @@ export interface TrioSearchOptions {
   combos?: readonly CoverCombo[];
   /** Return false to skip scoring a candidate; counts still include it. */
   accept?: (keys: readonly [string, string, string], totalCost: number) => boolean;
+  /** How shared traits count (default "bonus"). Only "include" admits trait-only links, and then a trio still needs one mechanical link. */
+  traits?: TraitsMode;
 }
 
 export interface TrioSearchResult {
@@ -38,12 +40,19 @@ export const trioOrder = (x: TrioRecord, y: TrioRecord): number =>
 export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], options: TrioSearchOptions = {}): TrioSearchResult {
   const keep = options.keep ?? DEFAULT_TRIO_KEEP;
   const accept = options.accept ?? (() => true);
+  const traits = options.traits ?? "bonus";
+  const linkOf = (e: PairEdge): number =>
+    traits === "bonus" ? e.link : traits === "exclude" ? e.mechanicalLink : e.mechanicalLink + e.traitLink;
+  const linkRows = (e: PairEdge): PairEdge["rows"] => (traits === "include" ? e.rows : mechanicalRows(e));
+  const shownRows = (e: PairEdge): PairEdge["rows"] => (traits === "exclude" ? mechanicalRows(e) : e.rows);
+  const order = (x: PairEdge, y: PairEdge): number => edgeScore(y, traits) - edgeScore(x, traits) || cmp(x.a, y.a) || cmp(x.b, y.b);
+  const mechanical = (links: readonly PairEdge[]): boolean => links.some((e) => !e.traitOnly);
   const { byKey } = graph;
   const bestCover = makeBestCover(options.combos ?? combos);
   const member = (k: string): SynergyCard => byKey.get(k) as SynergyCard;
 
   const trioEdges = graph.edges.filter(
-    (e) => !e.traitOnly && TRIO_MEMBER_TYPES.has(member(e.a).type) && TRIO_MEMBER_TYPES.has(member(e.b).type),
+    (e) => (traits === "include" || !e.traitOnly) && TRIO_MEMBER_TYPES.has(member(e.a).type) && TRIO_MEMBER_TYPES.has(member(e.b).type),
   );
   const outAdj = new Map<string, PairEdge[]>();
   const inAdj = new Map<string, PairEdge[]>();
@@ -56,7 +65,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     push(outAdj, e.a, e);
     push(inAdj, e.b, e);
   }
-  for (const m of [outAdj, inAdj]) for (const [k, v] of m) m.set(k, v.sort(edgeOrder).slice(0, TRIO_FANOUT));
+  for (const m of [outAdj, inAdj]) for (const [k, v] of m) m.set(k, v.sort(order).slice(0, TRIO_FANOUT));
   const edgeByKey = new Map(trioEdges.map((e) => [`${e.a}>${e.b}`, e]));
 
   function record(shape: TrioShape, keys: [string, string, string], links: PairEdge[]): TrioRecord {
@@ -65,7 +74,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const allCheap = ms.every((c) => (c.structured.cost ?? 0) <= 3);
     const cover = bestCover(ms);
     const aspectsUsed = new Set(ms.flatMap((c) => c.structured.aspects.filter((x) => x !== "Heroism" && x !== "Villainy")));
-    const link = links.reduce((s, e) => s + e.link, 0);
+    const link = links.reduce((s, e) => s + linkOf(e), 0);
     const nonObv = links.reduce((s, e) => s + e.nonObvious.factor, 0) / links.length;
     const costF = 1 / (1 + totalCost / 6) + (allCheap ? 0.25 : 0);
     const play = 1 / (1 + cover.penalty / 2);
@@ -81,7 +90,9 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       reasons: links
         .map(
           (e) =>
-            `${cardLabel(member(e.a))} -> ${cardLabel(member(e.b))}: ${e.rows.map((r) => `${r.row} (${r.offer} -> ${r.want})`).join("; ")}`,
+            `${cardLabel(member(e.a))} -> ${cardLabel(member(e.b))}: ${shownRows(e)
+              .map((r) => `${r.row} (${r.offer} -> ${r.want})`)
+              .join("; ")}`,
         )
         .join(" | "),
       score: r3(link * costF * play * nonObv * (1 + 0.1 * aspectsUsed.size)),
@@ -111,7 +122,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const outs = outAdj.get(b) ?? [];
     for (const e1 of ins) {
       for (const e2 of outs) {
-        if (e1.a === e2.b || sameName(e1.a, b, e2.b)) continue;
+        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2])) continue;
         counts.chain++;
         const keys: [string, string, string] = [e1.a, b, e2.b];
         if (accept(keys, costOf(...keys))) keepTop(trios.chain, record("chain", keys, [e1, e2]));
@@ -121,9 +132,9 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       for (let j = i + 1; j < ins.length; j++) {
         const e1 = ins[i];
         const e2 = ins[j];
-        if (e1.a === e2.a || sameName(e1.a, e2.a, b)) continue;
+        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2])) continue;
         const [x, y] = cmp(e1.a, e2.a) < 0 ? [e1, e2] : [e2, e1];
-        const wantsHit = new Set([...x.rows, ...y.rows].map((r) => r.want));
+        const wantsHit = new Set([...linkRows(x), ...linkRows(y)].map((r) => r.want));
         const shape: TrioShape = wantsHit.size > 1 ? "convergent-different-wants" : "convergent-same-want";
         counts.convergent++;
         counts[shape] = (counts[shape] ?? 0) + 1;
@@ -137,7 +148,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         const a = e3.b;
         if (a === b || a === c) continue;
         const e1 = edgeByKey.get(`${a}>${b}`);
-        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c)) continue;
+        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3])) continue;
         counts.loop++;
         const keys: [string, string, string] = [a, b, c];
         if (accept(keys, costOf(...keys))) keepTop(trios.loop, record("loop", keys, [e1, e2, e3]));

@@ -1,7 +1,7 @@
 import { compareCodePoints } from "../swu/canonical.js";
 import { cmp, r3 } from "./order.js";
 import { conflictBetween, qualifierOf, type TagQualifier } from "./qualifiers.js";
-import type { ComplementarityRow, ComplementarityTable, NonObviousness, PairEdge, SynergyCard } from "./schema.js";
+import type { ComplementarityRow, ComplementarityTable, NonObviousness, PairEdge, PairRowHit, SynergyCard, TraitsMode } from "./schema.js";
 
 /**
  * @displayName SWU offers-to-wants pair graph
@@ -31,6 +31,26 @@ export interface PairGraph {
   edgeByKey: ReadonlyMap<string, PairEdge>;
   rowCounts: Readonly<Record<string, number>>;
   exampleChecks: readonly ExampleCheck[];
+}
+
+export const TRAIT_ROW = "trait-reference";
+
+/**
+ * A shared trait on a pair that already has a mechanical link multiplies that link by 1 + TRAIT_BONUS; it is never
+ * added as a link of its own, because tribal links are obvious and would otherwise outrank real combos (#24).
+ */
+export const TRAIT_BONUS = 0.1;
+
+export const isTraitRow = (r: Pick<PairRowHit, "baseId">): boolean => r.baseId === TRAIT_ROW;
+
+/** The rows that make a pair mechanical; empty on a trait-only pair. */
+export const mechanicalRows = (e: PairEdge): PairRowHit[] => e.rows.filter((r) => !isTraitRow(r));
+
+/** The pair score under a traits mode; "bonus" is the stored score, "exclude" gives a trait-only pair 0. */
+export function edgeScore(e: PairEdge, mode: TraitsMode): number {
+  if (mode === "bonus") return e.score;
+  const link = mode === "exclude" ? e.mechanicalLink : e.mechanicalLink + e.traitLink;
+  return r3(link * e.nonObvious.factor);
 }
 
 const COLOUR_FREE = (aspects: readonly string[]): string[] => aspects.filter((x) => x !== "Heroism" && x !== "Villainy");
@@ -139,6 +159,9 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
           b: b.cardKey,
           rows: [],
           link: 0,
+          mechanicalLink: 0,
+          traitLink: 0,
+          linkKind: "mechanical",
           nonObvious: { aspects: 0, traits: 0, wording: 0, factor: 0 },
           traitOnly: false,
           score: 0,
@@ -151,7 +174,8 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
           weight: r3(row.strength * w * ww),
           reason: row.reason,
         });
-        e.link = r3(e.link + row.strength * w * ww);
+        if (row.family === "trait") e.traitLink = r3(e.traitLink + row.strength * w * ww);
+        else e.mechanicalLink = r3(e.mechanicalLink + row.strength * w * ww);
         edges.set(k, e);
       }
     }
@@ -161,7 +185,10 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   const edgeList = [...edges.values()].sort((x, y) => cmp(x.a, y.a) || cmp(x.b, y.b));
   for (const e of edgeList) {
     e.nonObvious = nonObvious(byKey.get(e.a) as SynergyCard, byKey.get(e.b) as SynergyCard);
-    e.traitOnly = e.rows.every((r) => r.baseId === "trait-reference");
+    const hasTrait = e.rows.some(isTraitRow);
+    e.linkKind = e.rows.every(isTraitRow) ? "trait-only" : hasTrait ? "trait+mechanical" : "mechanical";
+    e.traitOnly = e.linkKind === "trait-only";
+    e.link = e.traitOnly ? e.traitLink : hasTrait ? r3(e.mechanicalLink * (1 + TRAIT_BONUS)) : e.mechanicalLink;
     e.score = r3(e.link * e.nonObvious.factor);
   }
 

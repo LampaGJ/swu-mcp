@@ -4,7 +4,7 @@ import type { FlatRow } from "../swu/llm-flatten.js";
 import type { FungibilityIndex } from "../synergy/fungibility.js";
 import { aspectGroup } from "../synergy/fungibility.js";
 import type { PairGraph } from "../synergy/graph.js";
-import { edgeOrder } from "../synergy/graph.js";
+import { edgeOrder, mechanicalRows } from "../synergy/graph.js";
 import type { SynergyCard, TrioRecord } from "../synergy/schema.js";
 import { TRIO_SHAPES } from "../synergy/schema.js";
 
@@ -98,8 +98,8 @@ export interface PairingReasons {
 }
 
 /**
- * Declared effect: reduces. Top `perCard` pairs per card, trait-only pairs excluded, ranked as find_pairings ranks
- * with no aspects given (score, then edge order). A partner cell is `<direction><partnerKey> <rowId> <score>`:
+ * Declared effect: reduces. Top `perCard` pairs per card, trait-only pairs excluded and a shared trait only a bonus, ranked as find_pairings ranks
+ * with no aspects given (score, then edge order); the reason id is the pair's first mechanical row in table order. A partner cell is `<direction><partnerKey> <rowId> <score>`:
  * ">" means the partner is a payoff this card feeds, "<" means the partner enables this card.
  */
 export function pairingRows(graph: PairGraph, perCard: number): PairingReasons {
@@ -118,8 +118,9 @@ export function pairingRows(graph: PairGraph, perCard: number): PairingReasons {
   const rows = [...byCard.keys()].sort(compareCodePoints).map((cardKey) => {
     const list = (byCard.get(cardKey) ?? []).sort((x, y) => edgeOrder(x.edge, y.edge)).slice(0, perCard);
     const cells = list.map(({ edge, partner, direction }) => {
-      reasons.set(edge.rows[0].row, edge.rows[0].reason);
-      return `${direction}${partner} ${edge.rows[0].row} ${r2(edge.score)}`;
+      const row = mechanicalRows(edge)[0];
+      reasons.set(row.row, row.reason);
+      return `${direction}${partner} ${row.row} ${r2(edge.score)}`;
     });
     return { cardKey, pairs: cells.join("|") };
   });
