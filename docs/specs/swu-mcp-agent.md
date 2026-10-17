@@ -142,13 +142,13 @@ Context for /birth: swu-mcp (github.com/LampaGJ/swu-mcp, site https://lampagj.gi
 
 **Acceptance**:
 - It follows the `meta_defense` prompt (or the `.claude/skills/swu-meta-defense` skill): `meta_archetypes`, then `meta_threats` on the archetypes that matter, then `meta_answers` for the user's leader and base or decklist, then checks each kept answer's clause evidence (`card_features`, `keyword_rules`, `card_rulings`), then `deck_audit` and `deck_legality_check` with the proposed swaps.
-- It names the population: tournament decklists weighted by placement are primary; community lists are a separate, labelled view or fallback. Leader matchup records come from tournament matchups; card win rates name their source, and human Karabast games are called a secondary, casual signal from an earlier period.
-- Every answer is a candidate until its clause is checked; every win rate carries its n and the baseline rate against that leader.
-- It reports coverage as share of the meta reached, never as a win probability, and cites the benchmark (`docs/verification/meta-defense-2026-10-17.md`) when asked how far the answers can be trusted.
+- It names the population: tournament decklists weighted by placement are primary; community lists are a separate, labelled view or fallback. Every win rate comes from swumetastats (melee.gg tournaments): leader and base-aspect matchups for archetype strength, and deck evidence (comparable decks with and without the card) for answers. It never presents deck evidence as a rate against an archetype, because opponents are not known per match.
+- Every answer is a candidate until its clause is checked; every win rate carries its source, window, n and 95% interval.
+- It reports coverage as share of the meta reached, never as a win probability, and, when asked how far the answers can be trusted, says the outcome benchmark is local-only (`docs/verification/meta-defense-2026-10-17.md` describes its method; its numbers are not published, decision D22).
 
 **Touches**: agent template (meta section); `src/tools/meta.ts`, `data/counters.json`, prompt `meta_defense`, `.claude/skills/swu-meta-defense/SKILL.md`.
 
-**Open gaps**: round-level tournament results with decklists (#26) are not captured, so card-level win rates rest on human games until they are.
+**Open gaps**: swumetastats publishes no per-match pairings, so card-against-archetype rates are not available; answer evidence stays deck-level until a public round-level source with decklists exists (#26).
 
 ## collector-market-workflows — Prices, value, trades and collection gaps
 

@@ -18,8 +18,9 @@ Answer only from what the swu-mcp meta tools return. Never name a "top deck" or 
 
 ## Rules for the answer
 
-- Name the source of every number. Archetype shares come from tournament decklists. Leader matchup records come from tournament matchups. Card win rates come from the best source present; human Karabast games are a secondary, casual signal, captured months before the current window, so say so.
-- Give each win rate with its n and the baseline rate against that leader. Never quote a rate without n.
+- Name the source of every number. Archetype shares come from tournament decklists. Every win rate comes from swumetastats (melee.gg tournaments): leader and base-aspect matchup records for archetype strength, and deck evidence for answer cards.
+- Give each win rate with its n, its 95% interval and its window. Never quote a rate without n. A rate is wins over decisive matches; draws are left out.
+- Deck evidence compares comparable decks with the card against those without it. Opponents are unknown, so never present it as a win rate against an archetype, and call it association, not effect.
 - Coverage is the share of the meta an answer reaches, not a win probability.
 - If a meta tool errors (for example a data package without meta/), say which tool failed and stop; do not reconstruct the meta from memory.
 - Keep it short: the archetypes, the threats, the swaps with evidence, the audit result, the data version.
