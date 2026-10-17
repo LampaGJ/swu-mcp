@@ -33,6 +33,10 @@
     "verify:pair-fixture": "tsx scripts/verify/pair-fixture.ts",
     "verify:pair-fixture:pin": "tsx scripts/verify/pair-fixture-pin.ts",
     "verify:pairs": "tsx scripts/verify/pair-precision.ts",
+    "bench:extract-games": "tsx scripts/bench/extract-games.ts",
+    "bench:extract-decks": "tsx scripts/bench/extract-decks.ts",
+    "bench:extract-sims": "tsx scripts/bench/extract-sims.ts",
+    "bench:real-play": "tsx scripts/bench/real-play.ts",
     "release:data": "tsx scripts/release-data.ts"
   },
   "devDependencies": {

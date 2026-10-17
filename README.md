@@ -204,8 +204,14 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
     pnpm verify:pair-fixture         # 200-pair stratified sample -> tmp/pair-fixture/packets/p1..p8.json (+ index.json)
     pnpm verify:pair-fixture:pin     # pin the captured verdicts -> data/fixtures/pairs-v1.json (committed, byte-identical on rerun)
     pnpm verify:pairs [--run <dir>]  # pairing precision and recall-of-correct vs the fixture -> <run>/verify/pair-precision.json
+    pnpm bench:extract-games         # human Karabast games -> data/originals/karabast/games-<sha12>.jsonl.gz (private, git-ignored)
+    pnpm bench:extract-decks [--snapshot <dir> ...]   # decklist snapshots -> data/originals/decks/decks-<sha12>.json
+    pnpm bench:extract-sims          # forceteki bot-vs-bot game records -> data/originals/sims/sims-<sha12>.jsonl.gz
+    pnpm bench:real-play [--run <dir>]   # real-play benchmark -> <run>/verify/real-play.json + docs/verification/real-play-<date>.md
 
 The pair fixture is a labelled benchmark: model verdicts are captured once under `tmp/pair-fixture/verdicts/` (and `adjudication/`), then pinned. `verify:pairs` only reads the pinned file.
+
+The real-play benchmark ([2026-10-17 summary](docs/verification/real-play-2026-10-17.md)) checks the run's pairs, trios and fungible classes against 6,962 Premier decklists, 13,975 human Karabast games and, as a separate source, forceteki bot-vs-bot simulations. It reports deck co-inclusion lift, same-side co-occurrence, played-while-in-play rates and leader-stratified win-rate differences per complementarity row, each against matched random partners. Human-game extracts are private player data: they stay in git-ignored `data/originals/`, and only aggregates are committed.
 
 ## Layout
 
