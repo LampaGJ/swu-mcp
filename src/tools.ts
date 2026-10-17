@@ -7,6 +7,7 @@ import { SYNERGY_TOOLS } from "./tools/synergy.js";
 import { MARKET_TOOLS } from "./tools/market.js";
 import { VALUE_TOOLS } from "./tools/value.js";
 import { RULES_TOOLS } from "./tools/rules.js";
+import { CATALOG_TOOLS } from "./tools/catalog.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -202,4 +203,5 @@ export const TOOLS = {
   ...MARKET_TOOLS,
   ...RULES_TOOLS,
   ...SIMILARITY_TOOLS,
+  ...CATALOG_TOOLS,
 } as const;
