@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { DATED_DIR } from "../src/data.js";
-import { buildSynergyRun } from "../src/synergy/index.js";
+import { buildSynergyRun } from "../src/synergy/run.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 import { progress } from "./lib/progress.mjs";
 
