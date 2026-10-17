@@ -5,7 +5,7 @@ import { packageDirOf, readJson, splitCell, type CardRow, type CardStore } from 
 import { playFileSchema, pricesFileSchema, type PlayFile, type PricesFile } from "../market/build.js";
 import { scoresFileSchema, type ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import { ok, fail, guardedBy, lower, cardRef, resolveCard } from "./common.js";
+import { ok, fail, guardedBy, lower, cardRef, resolveCard, round } from "./common.js";
 
 /**
  * @displayName Market tools
@@ -45,8 +45,6 @@ export function marketData(store: CardStore): MarketData {
 }
 
 const guarded = guardedBy(marketData);
-
-const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 
 const cardHead = (card: CardRow) => ({ cardKey: card.cardKey, title: card.title, subtitle: card.subtitle });
 

@@ -14,7 +14,7 @@ import { marketData, type MarketData } from "./market.js";
 import { similarityData } from "./similarity.js";
 import { synergyContextOf } from "./synergy.js";
 import { dataVersion, valueData } from "./value.js";
-import { ok, fail, lower } from "./common.js";
+import { ok, fail, lower, round } from "./common.js";
 
 /**
  * @displayName Deck tools
@@ -62,7 +62,6 @@ export function deckEnvOf(store: CardStore): DeckEnv {
   return env;
 }
 
-const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 const r2 = (x: number): number => round(x, 2);
 const r4 = (x: number): number => round(x, 4);
 const r6 = (x: number): number => round(x, 6);

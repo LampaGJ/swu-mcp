@@ -11,6 +11,8 @@ export function fail(message: string): ToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
+export const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
+
 export const lower = (value: string | null | undefined): string => (value ?? "").toLowerCase();
 
 export const cardRef = {

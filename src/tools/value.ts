@@ -17,7 +17,7 @@ import {
 import { parseCoefficients, type Coefficients } from "../scorer/coefficients.js";
 import { scoresFileSchema, scoresReplaySchema, type ScoreRow, type ScoresReplay } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import { ok, fail, guardedBy, lower, hasValue, cardRef, resolveCard } from "./common.js";
+import { ok, fail, guardedBy, lower, hasValue, cardRef, resolveCard, round } from "./common.js";
 
 /**
  * @displayName Value tools
@@ -66,7 +66,7 @@ export function valueData(store: CardStore): ValueData {
 /** Wraps a handler so a missing or invalid scores package becomes a tool error, not a thrown exception. */
 const guarded = guardedBy(valueData);
 
-const r2 = (x: number | null): number | null => (x === null ? null : Math.round(x * 100) / 100 || 0);
+const r2 = (x: number | null): number | null => (x === null ? null : round(x, 2));
 const limit = z.number().int().min(1).max(200).default(20);
 
 export const dataVersion = (replay: ScoresReplay): string => `${replay.rubricVersion}/${replay.outputHash.slice(0, 12)}`;
