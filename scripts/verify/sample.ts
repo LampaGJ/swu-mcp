@@ -24,6 +24,7 @@ import { z } from "zod";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { REPO_ROOT } from "../../src/paths.js";
 import { DEFAULT_ORIGINALS_ROOT, newestDatedDir } from "../lib/originals.js";
+import { parseAt, readJson } from "./io.js";
 
 
 type Rec = Record<string, unknown>;
@@ -637,14 +638,7 @@ export function buildIndex(packets: readonly Packet[], seed: string, files: Read
 
 // ---------------------------------------------------------------- loading
 
-function parseAt<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
-  const result = schema.safeParse(value);
-  if (!result.success) throw new Error(`${label}: ${z.prettifyError(result.error)}`);
-  return result.data;
-}
-
 const recs = z.array(z.record(z.string(), z.unknown()));
-const readJson = <T>(file: string, schema: z.ZodType<T>): T => parseAt(schema, JSON.parse(readFileSync(file, "utf8")), file);
 
 function decodeTable(file: string, name: string): Rec[] {
   const table = decode(readFileSync(file, "utf8")) as Record<string, unknown>;
