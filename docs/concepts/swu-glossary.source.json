@@ -1,0 +1,1225 @@
+{
+  "version": 1,
+  "phrases": {
+    "traitCounts": "Across all sets and printings, {printings:printing} of {cards:distinct card} (counted by title and subtitle) carry it, and {named:distinct card} name it in their ability text (case-sensitive whole-word match, so it can include cards that carry the trait and non-trait uses of the word). Among the {inScopeTotal} in-scope cards, {inScopeCards} carry it and {inScopeNamed} name it.",
+    "arenaCounts": "Across all sets and printings, {printings:printing} of {cards:distinct card} (counted by title and subtitle) are {value}. Among the {inScopeTotal} in-scope cards, {inScopeCards} are {value}.",
+    "expansionCounts": "The raw card list holds {printings:printing} from this set (all printings, not only in-scope cards).",
+    "variantCounts": "Across all sets and printings, the raw card list holds {printings:printing} of this variant.",
+    "tokenCounts": "The raw card list holds {printings:printing} of this token across all sets.",
+    "keywordCounts": "Across all sets and printings, {printings:printing} of {cards:distinct card} (counted by title and subtitle) carry it. Among the {inScopeTotal} in-scope cards, {inScopeCards} carry it."
+  },
+  "facets": {
+    "aspect": [
+      {
+        "value": "Aggression",
+        "definition": "Attack with maximum efficiency and dish out lots of damage. This aspect is a great fit for players who prefer fast-paced, fiery playstyles that break through opponents’ defenses and hurl themselves toward victory at any cost. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for fast decks that win by dealing damage quickly; it pairs with cheap, aggressive units.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      },
+      {
+        "value": "Command",
+        "definition": "Accelerate your resources and call upon lots of units or strengthen the units you already have in play. This is the aspect of choice for players who want to overwhelm their opponents with a massive board presence. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for decks that ramp resources and flood the board; it rewards a wide board of units.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      },
+      {
+        "value": "Cunning",
+        "definition": "Adapt to any situation on the fly with powerful, immediate effects and lots of tools for disrupting your opponent’s plans. This aspect is a perfect fit for players who prefer to respond quickly to threats and have an answer for anything their opponent could throw their way. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for decks that answer threats and disrupt the opponent with flexible, immediate effects.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      },
+      {
+        "value": "Heroism",
+        "definition": "Fight for peace and justice with cards that feature the protagonists of the Star Wars series. This aspect is great for players who want their cards to support and protect each other while pressing the attack. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for decks built around heroic characters that protect each other; usually paired with a second aspect.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      },
+      {
+        "value": "Vigilance",
+        "definition": "Play defensively with the ability to heal damage, remove dangerous units from play, and protect your base from enemy attacks. This aspect is perfect for players who like patient playstyles that can endure even the deadliest assaults. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for defensive decks that heal, remove threats and protect the base.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      },
+      {
+        "value": "Villainy",
+        "definition": "Battle for ultimate power with cards that feature the antagonists of the Star Wars series. This aspect is perfect for players who want to command huge armies or wield powerful destructive effects. A leader or base provides aspects; a card in another aspect costs 2 extra resources per icon the leader and base do not provide (aspect penalty).",
+        "strategicValue": "Chosen for decks built around villainous characters and big destructive effects; usually paired with a second aspect.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (aspect description); rules digest section 1.5.6 and 8.1"
+      }
+    ],
+    "trait": [
+      {
+        "value": "Armor",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Bounty",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Bounty Hunter",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Capital Ship",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Clone",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Condition",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Creature",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Disaster",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Droid",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Ewok",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Fighter",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "First Order",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Force",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Fortification",
+        "definition": "A thematic category printed under the card art. {@traitCounts} Rules meaning: marks a Fortify upgrade that attaches to a base (https://starwarsunlimited.com/articles/homeworlds).",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "https://starwarsunlimited.com/articles/homeworlds; card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Fringe",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Gambit",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Gungan",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Hutt",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Imperial",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Innate",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Inquisitor",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Item",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Jawa",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Jedi",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Kaminoan",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Law",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Learned",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Lightsaber",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Mandalorian",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Modification",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Musician",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Naboo",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "New Republic",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Night",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Nihil",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Official",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Pilot",
+        "definition": "A thematic category printed under the card art. {@traitCounts} Rules meaning: Pilot units carry the Piloting keyword and can attach to a Vehicle (rules digest section 7.5).",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "rules digest section 7.5; card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Plan",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Rebel",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Republic",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Resistance",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Separatist",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Sith",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Spectre",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Speeder",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Supply",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Tactic",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Tank",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Transport",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Trick",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Trooper",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Tusken",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Twi'lek",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Undead",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Underworld",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Vehicle",
+        "definition": "A thematic category printed under the card art. {@traitCounts} Rules meaning: a unit with Piloting can be played as an upgrade on a Vehicle (rules digest section 7.5).",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "rules digest section 7.5; card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Walker",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Weapon",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Wookiee",
+        "definition": "A thematic category printed under the card art. {@traitCounts} No rules meaning of its own: it matters only where another card refers to it.",
+        "strategicValue": "Matters for synergy: cards that name this trait can target or reward it when you build around it.",
+        "source": "card text and https://admin.starwarsunlimited.com/api/card-list"
+      }
+    ],
+    "keyword": [
+      {
+        "value": "Ambush",
+        "definition": "Reminder text on the cards: Ambush (After you play this unit, he may ready and attack an enemy unit.)",
+        "strategicValue": "Lets a unit attack the turn it is played, so it removes a blocker or finishes a damaged unit immediately.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Bounty",
+        "definition": "Bounty is a keyword followed by a dash and ability text, and the text is different on each card. It resolves like a \"When Defeated/When Captured\" ability that an opponent controls and may choose to collect; collecting it is optional. Example reminder text on one card: Bounty — Draw a card. (When this unit is defeated or captured, your opponent collects its bounty.) {@keywordCounts}",
+        "strategicValue": "A drawback on the unit that carries it: the opponent who defeats or captures the unit may collect the reward.",
+        "source": "Comprehensive Rules 7.5.13.a, 7.5.13.e and 7.5.13.f; card text"
+      },
+      {
+        "value": "Coordinate",
+        "definition": "Coordinate is a keyword followed by a dash and ability text, and the text is different on each card. It works like the constant ability \"While you control 3 or more units, this card gains the following ability\"; each Coordinate ability is independent, and a unit keeps the keyword while the ability after the dash is inactive. Example reminder text on one card: Coordinate — Action [Exhaust]: Attack with a unit. It gets +1/+0 for this attack. (Gain this ability while you control 3 or more units.) {@keywordCounts}",
+        "strategicValue": "Rewards a wide board: the bonus switches on once you control three or more units.",
+        "source": "Comprehensive Rules 7.5.15.a, 7.5.15.b and 7.5.15.c; card text"
+      },
+      {
+        "value": "Exploit",
+        "definition": "Reminder text on the cards: Exploit 2 (While playing this card, defeat up to 2 units you control. This card costs 2 resources less for each unit defeated this way.)",
+        "strategicValue": "Trades board presence for a cheaper big unit; strong when you hold cheap units you are happy to lose.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Fortify",
+        "definition": "Reminder text on the cards: Fortify (Attach this to your base, not a unit.)",
+        "strategicValue": "Puts an upgrade on your base instead of a unit, so it protects or heals the base rather than boosting an attacker.",
+        "source": "https://starwarsunlimited.com/articles/homeworlds; card text"
+      },
+      {
+        "value": "Grit",
+        "definition": "Reminder text on the cards: Grit (This unit gets +1/+0 for each damage on it.)",
+        "strategicValue": "Makes a damaged unit hit harder, so it is better after it has taken a hit.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Hidden",
+        "definition": "Reminder text on the cards: Hidden (This unit can't be attacked if it was played this phase.)",
+        "strategicValue": "Protects a freshly played unit from attacks for one phase, giving it safe tempo.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Overwhelm",
+        "definition": "Reminder text on the cards: Overwhelm (When attacking an enemy unit, deal excess damage to the opponent's base.)",
+        "strategicValue": "Turns spare damage into base damage when attacking units, which speeds the race.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Piloting",
+        "definition": "Reminder text on the cards: Piloting [3 resources Vigilance Villainy] (You may play this as an upgrade on a friendly Vehicle without a Pilot.)",
+        "strategicValue": "Lets a unit be played as an upgrade on a Vehicle, giving flexibility between a body and a boost.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Plot",
+        "definition": "Reminder text on the cards: Plot (When you deploy a leader, you may play this card from your resources, paying its cost. Replace it with the top card of your deck.)",
+        "strategicValue": "Lets a card be played from your resources when you deploy a leader, so deploying also gains card advantage.",
+        "source": "card text (reminder text on the cards); the rules digest predates it"
+      },
+      {
+        "value": "Raid",
+        "definition": "Reminder text on the cards: Raid 2 (This unit gets +2/+0 while attacking.)",
+        "strategicValue": "Adds power only on offence, so it favours decks that attack first.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Restore",
+        "definition": "Reminder text on the cards: Restore 1 (When this unit attacks, heal 1 damage from your base.)",
+        "strategicValue": "Heals your base each time the unit attacks, which buys time against aggressive decks.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Saboteur",
+        "definition": "Reminder text on the cards: Saboteur (When this unit attacks, ignore Sentinel and defeat the defender's Shields.)",
+        "strategicValue": "Gets past Sentinel and removes Shields, so it answers defensive boards.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Sentinel",
+        "definition": "Reminder text on the cards: Sentinel (Units in this arena can't attack your non-Sentinel units or your base.)",
+        "strategicValue": "Forces opponents to attack this unit first, protecting your base and weaker units.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Shielded",
+        "definition": "Reminder text on the cards: Shielded (When you play this unit, give him a Shield token.)",
+        "strategicValue": "Gives the unit a Shield token on entry, absorbing the first damage it would take.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Smuggle",
+        "definition": "Reminder text on the cards: Smuggle [7 resources, vigilance] (If this card is a resource, you may play it for its smuggle cost. Replace it with the top card of your deck.)",
+        "strategicValue": "Lets a card in your resource zone be played from there for a set cost, converting resources back into cards.",
+        "source": "rules digest section 7.5; card text"
+      },
+      {
+        "value": "Support",
+        "definition": "Reminder text on the cards: Support (When you play this unit, you may attack with another unit. It gains this unit's other abilities for this attack.)",
+        "strategicValue": "Lets a unit lend its abilities to another unit that attacks, so any unit can become a threat.",
+        "source": "https://starwarsunlimited.com/articles/insights-to-ashes; card text"
+      }
+    ],
+    "type": [
+      {
+        "value": "Base",
+        "definition": "Your base: one per deck, it starts in the base zone and has HP and an aspect icon. You lose when its damage reaches its HP.",
+        "strategicValue": "Sets your aspect pool and your clock: more HP gives you more turns.",
+        "source": "rules digest section 3.2"
+      },
+      {
+        "value": "Credit Token",
+        "definition": "A token introduced in A Lawless Time: while paying resources you may defeat it to pay 1 resource less.",
+        "strategicValue": "Stored resource discount; it smooths expensive turns.",
+        "source": "https://starwarsunlimited.com/articles/aspects-and-credits; card text"
+      },
+      {
+        "value": "Event",
+        "definition": "A one-time effect. To play it you pay its cost, put it in your discard pile and resolve its ability, so it never enters play. It is normally played from your hand, but a card can allow another zone: Smuggle plays it from your resource zone and Plot plays it from your resource zone when you deploy a leader.",
+        "strategicValue": "Flexible removal and tricks; cheap events can be played in any turn without leaving a target behind.",
+        "source": "Comprehensive Rules 3.3.2, 3.3.3, 1.15.2, 7.5.14.a and 7.5.19.a"
+      },
+      {
+        "value": "Force Token",
+        "definition": "A token for the Force: when you use the Force, remove it from play. Force tokens are created in the base zone.",
+        "strategicValue": "Powers cards that ask you to use the Force.",
+        "source": "rules digest section 4.2 and 8.38; card text"
+      },
+      {
+        "value": "Leader",
+        "definition": "Your leader: a double-sided card, one per deck (two in Twin Suns), that provides aspect icons and can deploy as a unit.",
+        "strategicValue": "Defines the deck: its aspects and abilities decide which cards are cheap to play.",
+        "source": "rules digest section 3.4"
+      },
+      {
+        "value": "Leader Unit",
+        "definition": "The deployed side of a Leader card; the API records it as a second type (type2) on {printings:printing} across all sets.",
+        "strategicValue": "What the leader becomes after you meet its deploy condition; its stats and abilities decide whether deploying is worth it.",
+        "source": "rules digest section 3.4; https://admin.starwarsunlimited.com/api/card-list (type2)"
+      },
+      {
+        "value": "Token Unit",
+        "definition": "A unit created by an ability instead of coming from a deck. It is set aside when defeated.",
+        "strategicValue": "Free board presence; the stronger tokens (such as Beast) cost more to create.",
+        "source": "rules digest section 3.7"
+      },
+      {
+        "value": "Token Upgrade",
+        "definition": "An upgrade created by an ability, such as Shield, Experience, Advantage or Weakness. It is set aside when defeated.",
+        "strategicValue": "Cheap stat or protection effects that cards hand out as rewards.",
+        "source": "rules digest section 3.7"
+      },
+      {
+        "value": "Unit",
+        "definition": "A character or vehicle with power and HP. It enters play exhausted, stays in play until it is defeated, and fights in the ground or space arena by attacking enemy units or the enemy base.",
+        "strategicValue": "The core of most decks; its cost, power and HP decide trades.",
+        "source": "Comprehensive Rules 3.5.1, 3.5.3, 3.5.4 and 4.2.3"
+      },
+      {
+        "value": "Upgrade",
+        "definition": "A card that attaches to a unit, changes its stats and can grant abilities; it is defeated when the unit leaves play and can be played on enemy units.",
+        "strategicValue": "Concentrates value on one unit, at the risk of losing both to one removal.",
+        "source": "rules digest section 3.6"
+      }
+    ],
+    "arena": [
+      {
+        "value": "Ground",
+        "definition": "The ground arena is a zone shared by both players, next to each player's base zone. Ground units are played into it and can attack enemy ground units there or the enemy base without leaving it. The first unit played in the game decides which side of the base zone (left or right) the ground arena sits on, and the space arena takes the other side. {@arenaCounts}",
+        "strategicValue": "Most units and leaders are Ground, so Ground combat decides most games; Sentinel there blocks ground attackers only.",
+        "source": "Comprehensive Rules 4.3.1, 4.3.2 and 4.3.3; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Space",
+        "definition": "The shared zone where space units fight, on the opposite side from the ground arena. {@arenaCounts}",
+        "strategicValue": "Space units can attack past ground defenders and are the usual hosts for Pilot cards; Homeworlds adds the first space leader unit.",
+        "source": "rules digest section 4.4; https://starwarsunlimited.com/articles/defend-and-destroy; https://admin.starwarsunlimited.com/api/card-list"
+      }
+    ],
+    "rarity": [
+      {
+        "value": "Common",
+        "definition": "The most plentiful tier (letter C). Common cards fill most of every pack. Printed on the credit line (rules digest section 2).",
+        "strategicValue": "Cheap to collect and usually low in price; the backbone of limited decks.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list (rarity); card data"
+      },
+      {
+        "value": "Legendary",
+        "definition": "The top pack tier (letter L), the scarcest pack rarity. Printed on the credit line (rules digest section 2).",
+        "strategicValue": "Highest-impact cards and the highest prices among pack rarities.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list (rarity); card data"
+      },
+      {
+        "value": "Rare",
+        "definition": "The third tier (letter R), scarcer than Uncommon. Printed on the credit line (rules digest section 2).",
+        "strategicValue": "Strong effects and higher price than Uncommon.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list (rarity); card data"
+      },
+      {
+        "value": "Special",
+        "definition": "A tier (letter S) used for the extra cards in Spotlight Decks, for Intro Battle cards, for {leaderPrintings:Leader printing} across all sets and for some promo printings; most Special cards are units. Printed on the credit line (rules digest section 2).",
+        "strategicValue": "Often tied to a product, so supply follows the product rather than pack pull rates.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list (rarity); https://starwarsunlimited.com/articles/homeworlds"
+      },
+      {
+        "value": "Uncommon",
+        "definition": "The second tier (letter U), scarcer than Common. Printed on the credit line (rules digest section 2).",
+        "strategicValue": "Often role-players with moderate price.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list (rarity); card data"
+      }
+    ],
+    "expansion": [
+      {
+        "value": "ASH",
+        "definition": "Ashes of the Empire. Main set 8. Introduced the Support keyword and the Advantage and Mandalorian tokens. Premier legal as of 2026-10-07. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://starwarsunlimited.com/products/set-9-homeworlds; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "ASHP",
+        "definition": "Ashes of the Empire Weekly Play: the Weekly Play promo cards that go with main set 8 (ASH). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "C24",
+        "definition": "2024 Convention Exclusive: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "C25",
+        "definition": "2025 Convention Exclusive: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "C26",
+        "definition": "2026 Convention Exclusive: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "CST",
+        "definition": "Costco Exclusive: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "G25",
+        "definition": "2025 Gift Box: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "GG",
+        "definition": "Gamegenic: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "HMW",
+        "definition": "Homeworlds. Main set 9, released 2026-10-09. Introduced the Fortify keyword and the Beast and Weakness tokens. Premier legal from its release. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://starwarsunlimited.com/products/set-9-homeworlds; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "HMWP",
+        "definition": "Homeworlds Weekly Play: the Weekly Play promo cards that go with main set 9 (HMW). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "IBH",
+        "definition": "Intro Battle: Hoth: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "IC27",
+        "definition": "Icons 2027 Edition: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "J24",
+        "definition": "2024 Judge Program: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "J25",
+        "definition": "2025 Judge Program: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "JTL",
+        "definition": "Jump to Lightspeed. Main set 4. Premier legal as of 2026-10-07. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "JTLP",
+        "definition": "Jump to Lightspeed Weekly Play: the Weekly Play promo cards that go with main set 4 (JTL). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "LAW",
+        "definition": "A Lawless Time. Main set 7. Introduced the Credit token. Premier legal as of 2026-10-07. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://starwarsunlimited.com/products/set-9-homeworlds; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "LAWP",
+        "definition": "A Lawless Time Weekly Play: the Weekly Play promo cards that go with main set 7 (LAW). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "LOF",
+        "definition": "Legends of the Force. Main set 5. Premier legal as of 2026-10-07. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "LOFP",
+        "definition": "Legends of the Force Weekly Play: the Weekly Play promo cards that go with main set 5 (LOF). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "MV26",
+        "definition": "The Mandalorian and Grogu Movie Promo: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "P25",
+        "definition": "2025 Promo: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "P26",
+        "definition": "2026 Promo: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "SEC",
+        "definition": "Secrets of Power. Main set 6. Premier legal as of 2026-10-07. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "SECP",
+        "definition": "Secrets of Power Weekly Play: the Weekly Play promo cards that go with main set 6 (SEC). {@expansionCounts}",
+        "strategicValue": "Promo supply is small and tied to organized play; the same card in the main set is usually cheaper.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name; the link to the main set is from the code and name only) (unconfirmed)"
+      },
+      {
+        "value": "SHD",
+        "definition": "Shadows of the Galaxy. Main set 2. Premier rotated it out when LAW released. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "SOR",
+        "definition": "Spark of Rebellion. Main set 1. Premier rotated it out. Eternal and Twin Suns allow every card. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "TS26",
+        "definition": "2026 Twin Suns: a promo or product expansion, not one of the nine main sets. {@expansionCounts} Meaning beyond the name is not confirmed.",
+        "strategicValue": "Promo and event printings are scarcer than pack cards, so price follows the event or product.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (expansion name) (unconfirmed)"
+      },
+      {
+        "value": "TWI",
+        "definition": "Twilight of the Republic. Main set 3. Premier rotated it out when LAW released. {@expansionCounts}",
+        "strategicValue": "Set membership decides Premier legality and, with rarity and variant, a printing's price.",
+        "source": "docs/concepts/swu-formats.md; https://admin.starwarsunlimited.com/api/card-list"
+      }
+    ],
+    "variant": [
+      {
+        "value": "Convention Exclusive",
+        "definition": "A variant sold only at conventions in a Convention Exclusive product (six alternate-art cards per year). Variant code {code}. {@variantCounts}",
+        "strategicValue": "Small, one-time supply, so it is priced as a collectible.",
+        "source": "https://starwarsunlimited.com/articles/hunting-exclusives"
+      },
+      {
+        "value": "Costco Exclusive",
+        "definition": "A variant sold only through Costco (expansion CST). Variant code {code}. {@variantCounts}",
+        "strategicValue": "Limited retail exclusive.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant and expansion name) (unconfirmed beyond the name)"
+      },
+      {
+        "value": "Event Exclusive",
+        "definition": "A promo variant given out at specific events, such as a demo promo card. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Limited event supply.",
+        "source": "https://starwarsunlimited.com/articles/hunting-exclusives (unconfirmed which variant it is)"
+      },
+      {
+        "value": "Foil Prestige",
+        "definition": "The foil version of the Prestige tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Scarcer and pricier than Standard Prestige.",
+        "source": "https://starwarsunlimited.com/products/set-9-homeworlds (unconfirmed: the foil detail comes from the variant name)"
+      },
+      {
+        "value": "GC Champion",
+        "definition": "An organized-play champion prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Day Three",
+        "definition": "An organized-play Day Three prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Event Pack",
+        "definition": "An organized-play event-pack card printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Finalist",
+        "definition": "An organized-play finalist prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Judge",
+        "definition": "An organized-play judge prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Participation",
+        "definition": "An organized-play participation prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Prize Wall",
+        "definition": "An organized-play prize-wall card printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Top 4",
+        "definition": "An organized-play Top 4 finish prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Top 64",
+        "definition": "An organized-play Top 64 finish prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC Top 8",
+        "definition": "An organized-play Top 8 finish prize printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "GC VIP Promo",
+        "definition": "An organized-play VIP package promo printing from the Galactic Championship prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "Hyperspace",
+        "definition": "An alternate full-art version of the card in non-foil. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Priced above Standard; collectors chase it.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name); docs/concepts/swu-card-data-fields.md"
+      },
+      {
+        "value": "Hyperspace Foil",
+        "definition": "The foil version of the Hyperspace art. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Usually the highest-priced of the common variants.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant foil flag)"
+      },
+      {
+        "value": "Judge Program",
+        "definition": "A promo variant given to judges in the Judge Program. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Very small supply and priced as a rarity.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant and expansion name) (unconfirmed beyond the name)"
+      },
+      {
+        "value": "Movie Promo",
+        "definition": "A promo variant tied to a movie release (the MV26 Mandalorian and Grogu promo). Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply.",
+        "source": "https://starwarsunlimited.com/articles/star-wars-the-mandalorian-and-grogu (unconfirmed which variant it is)"
+      },
+      {
+        "value": "PQ Champion",
+        "definition": "An organized-play champion prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Finalist",
+        "definition": "An organized-play finalist prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Judge",
+        "definition": "An organized-play judge prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Participation",
+        "definition": "An organized-play participation prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Top 16",
+        "definition": "An organized-play Top 16 finish prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Top 4",
+        "definition": "An organized-play Top 4 finish prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "PQ Top 8",
+        "definition": "An organized-play Top 8 finish prize printing from the Planetary Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "Prerelease Judge",
+        "definition": "A promo variant given to judges at prerelease events. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Very small supply.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name) (unconfirmed beyond the name)"
+      },
+      {
+        "value": "Prerelease Promo",
+        "definition": "A promo variant given out at prerelease events. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Limited prerelease supply.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name) (unconfirmed beyond the name)"
+      },
+      {
+        "value": "RQ Champion",
+        "definition": "An organized-play champion prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Day Two",
+        "definition": "An organized-play Day Two prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code) Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Finalist",
+        "definition": "An organized-play finalist prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Judge",
+        "definition": "An organized-play judge prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Participation",
+        "definition": "An organized-play participation prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Prize Wall",
+        "definition": "An organized-play prize-wall card printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code) Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Top 4",
+        "definition": "An organized-play Top 4 finish prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "RQ Top 8",
+        "definition": "An organized-play Top 8 finish prize printing from the Regional Qualifier prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Champion",
+        "definition": "An organized-play champion prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Day Two",
+        "definition": "An organized-play Day Two prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Event Pack",
+        "definition": "An organized-play event-pack card printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Finalist",
+        "definition": "An organized-play finalist prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Judge",
+        "definition": "An organized-play judge prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Participation",
+        "definition": "An organized-play participation prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Prize Wall",
+        "definition": "An organized-play prize-wall card printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts} Exact meaning of the tier name is unconfirmed.",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Top 4",
+        "definition": "An organized-play Top 4 finish prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SQ Top 8",
+        "definition": "An organized-play Top 8 finish prize printing from the Sector Qualifier prize tier. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Champion",
+        "definition": "An organized-play champion prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Finalist",
+        "definition": "An organized-play finalist prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Judge",
+        "definition": "An organized-play judge prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Participation",
+        "definition": "An organized-play participation prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Top 4",
+        "definition": "An organized-play Top 4 finish prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "SS Top 8",
+        "definition": "An organized-play Top 8 finish prize printing from the Store Showdown prize tier. Variant code {code}. {@variantCounts} (unconfirmed: the family name is read from the code)",
+        "strategicValue": "Tiny supply tied to a placement, so it is priced as a collectible rather than as a playable.",
+        "source": "https://starwarsunlimited.com/articles/tickets-to-galactics (names Planetary Qualifiers, Sector Qualifiers, Regional Championships); https://admin.starwarsunlimited.com/api/card-list (variant name)"
+      },
+      {
+        "value": "Serialized Prestige",
+        "definition": "The Prestige tier with a serial number (inferred from the word Serialized, unconfirmed). Variant code {code}. {@variantCounts}",
+        "strategicValue": "The scarcest and most valuable variant of the card.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name) (unconfirmed)"
+      },
+      {
+        "value": "Showcase",
+        "definition": "A special alternate-art variant. Variant code {code}. {@variantCounts} Of those, {leaderPrintings} are Leader printings.",
+        "strategicValue": "Scarce and visually distinct, so Showcase leaders command a premium.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name; the Leader-only fact is computed from the data)"
+      },
+      {
+        "value": "Standard",
+        "definition": "The regular-art, non-foil printing of a card. Variant code {code}. {@variantCounts}",
+        "strategicValue": "The baseline price; every other variant is compared with it.",
+        "source": "rules digest section 2; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Standard Foil",
+        "definition": "The foil version of the standard art. Variant code {code}. {@variantCounts}",
+        "strategicValue": "A modest premium over Standard that grows with the card's popularity.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant foil flag)"
+      },
+      {
+        "value": "Standard Prestige",
+        "definition": "A premium variant tier with Prestige treatment; Homeworlds says Prestige variants come from Carbonite Edition packs. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Scarce collector variant with a high price.",
+        "source": "https://starwarsunlimited.com/products/set-9-homeworlds"
+      },
+      {
+        "value": "Weekly Play",
+        "definition": "A promo printing given as a prize in Weekly Play organized play. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Small supply; priced by scarcity.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name; Weekly Play expansions) (unconfirmed beyond the name)"
+      },
+      {
+        "value": "Weekly Play Foil",
+        "definition": "The foil Weekly Play promo printing. Variant code {code}. {@variantCounts}",
+        "strategicValue": "Small supply; priced by scarcity.",
+        "source": "https://admin.starwarsunlimited.com/api/card-list (variant name) (unconfirmed beyond the name)"
+      }
+    ],
+    "token": [
+      {
+        "value": "Advantage",
+        "definition": "A token upgrade created by card abilities, not drawn from a deck. Stats 1/0. Card text: When attached unit's attack or defense ends: Defeat this upgrade. {@tokenCounts}",
+        "strategicValue": "A temporary +1/+0 for one combat; cheap, so it rewards sequencing.",
+        "source": "https://starwarsunlimited.com/articles/insights-to-ashes; card text"
+      },
+      {
+        "value": "Battle Droid",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 1/1. {@tokenCounts}",
+        "strategicValue": "Cheap 1/1 bodies that chump block or carry upgrades.",
+        "source": "rules digest section 3.7"
+      },
+      {
+        "value": "Beast",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 3/3. {@tokenCounts}",
+        "strategicValue": "The biggest token body yet at 3/3; costlier to create than earlier tokens.",
+        "source": "https://starwarsunlimited.com/articles/homeworlds; https://admin.starwarsunlimited.com/api/card-list"
+      },
+      {
+        "value": "Clone Trooper",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 2/2. {@tokenCounts}",
+        "strategicValue": "A 2/2 body that is more efficient than a Battle Droid.",
+        "source": "rules digest section 3.7"
+      },
+      {
+        "value": "Credit",
+        "definition": "A credit token created by card abilities, not drawn from a deck. Card text: While paying resources, you may defeat this token. If you do, pay 1 resource less. {@tokenCounts}",
+        "strategicValue": "Stored resource discount that smooths expensive turns.",
+        "source": "https://starwarsunlimited.com/articles/aspects-and-credits; card text"
+      },
+      {
+        "value": "Experience",
+        "definition": "A token upgrade created by card abilities, not drawn from a deck. Modifies the attached unit by +1/+1. {@tokenCounts}",
+        "strategicValue": "A permanent +1/+1, the standard reward for units that grow over time.",
+        "source": "rules digest section 3.7; card text and API upgrade stats"
+      },
+      {
+        "value": "Mandalorian",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 2/2. Card text: Shielded (When you create this token, give a Shield token to it.) {@tokenCounts}",
+        "strategicValue": "A 2/2 body that arrives with a Shield, so it is sturdy for a token.",
+        "source": "https://starwarsunlimited.com/articles/welcome-to-ashes; card text"
+      },
+      {
+        "value": "Shield",
+        "definition": "A token upgrade created by card abilities, not drawn from a deck. Card text: If damage would be dealt to attached unit, prevent that damage. If you do, defeat a Shield token on it. {@tokenCounts}",
+        "strategicValue": "Absorbs the first damage a unit would take, so it makes a unit much harder to remove.",
+        "source": "rules digest section 6.3; card text"
+      },
+      {
+        "value": "Spy",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 0/2. Card text: Raid 2 (This unit gets +2/+0 while attacking.) {@tokenCounts}",
+        "strategicValue": "A 0/2 unit with Raid 2 that attacks hard for a token.",
+        "source": "card text"
+      },
+      {
+        "value": "TIE Fighter",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 1/1. {@tokenCounts}",
+        "strategicValue": "A 1/1 space body that can hold the space arena or carry Pilot upgrades.",
+        "source": "rules digest section 3.7"
+      },
+      {
+        "value": "The Force",
+        "definition": "A force token created by card abilities, not drawn from a deck. Card text: (The Force is with you. When you use the Force, remove this token from play.) {@tokenCounts}",
+        "strategicValue": "Fuels cards that ask you to use the Force.",
+        "source": "rules digest section 8.38; card text"
+      },
+      {
+        "value": "Weakness",
+        "definition": "A token upgrade created by card abilities, not drawn from a deck. Modifies the attached unit by -1/-1. {@tokenCounts}",
+        "strategicValue": "The inverse of Experience: -1/-1 on an enemy unit, which can kill small units.",
+        "source": "https://starwarsunlimited.com/articles/homeworlds; https://admin.starwarsunlimited.com/api/card-list (upgradePower and upgradeHp)"
+      },
+      {
+        "value": "X-Wing",
+        "definition": "A token unit created by card abilities, not drawn from a deck. Stats 2/2. {@tokenCounts}",
+        "strategicValue": "A 2/2 space body that is stronger than a TIE Fighter.",
+        "source": "rules digest section 3.7"
+      }
+    ]
+  }
+}
