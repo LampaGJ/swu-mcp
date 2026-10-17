@@ -4,13 +4,55 @@ Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discov
 
 Status: MVP (swu-mcp#7). All 28 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
 
-## Register the server
+## Install
 
-    claude mcp add swu-mcp -- pnpm --silent --dir "/Volumes/Local Files/Projects/swu-mcp" mcp
+Needs Node.js 22 or newer. Site: https://lampagj.github.io/swu-mcp/ (placeholder until Pages is enabled).
 
-`--silent` is required: without it pnpm prints a banner to stdout, which corrupts the MCP stdio stream. The server reads the newest `data/runs/<date>/`. Set `SWU_MCP_DATA` to a run directory to use another one. It logs the card count to stderr at start. It also serves the resource `rules://core-primer`, the verbatim core Comprehensive Rules.
+Claude Code:
+
+    claude mcp add swu -- npx -y github:LampaGJ/swu-mcp
+
+Claude Desktop, in `claude_desktop_config.json`:
+
+    {
+      "mcpServers": {
+        "swu": { "command": "npx", "args": ["-y", "github:LampaGJ/swu-mcp"] }
+      }
+    }
+
+npm installs the repository, runs its `prepare` script (an esbuild bundle into `dist/server.js`) and starts the `swu-mcp` bin over stdio. `"private": true` only blocks `npm publish`.
+
+### Data release
+
+The built data (`data/runs/<date>/`, 27 MB raw) is not in git. It ships as a GitHub Release asset, `swu-mcp-data-<date>.tar.gz` (about 2 MB), pinned by `src/data-release.json` (version, URL, sha256, size, build hash). The server picks its data in this order:
+
+1. `SWU_MCP_DATA`: a run directory you name.
+2. The newest `data/runs/<date>/` when running from a checkout.
+3. A per-user cache, `<cache>/swu-mcp/<dataVersion>/` (`SWU_MCP_CACHE` overrides the cache root). If it is missing, the server downloads the pinned URL, checks the sha256 and size, extracts to a temp directory and renames it into place. A mismatch fails with an error and extracts nothing. `SWU_MCP_DATA_URL` replaces the download URL for testing; the pinned hash still applies.
+
+Progress goes to stderr; stdout is the MCP stream.
+
+To publish new data (the maintainer's step):
+
+    pnpm build:data
+    pnpm release:data [--date <YYYY-MM-DD>]
+
+`release:data` writes `tmp/release/swu-mcp-data-<date>.tar.gz` and the pin file, then prints the `gh release create` command. It does not run it. The archive holds `llm`, `features`, `scores`, `synergy`, `market`, `rules`, `similarity` and the build records, with sorted entries and fixed times, owners and modes, so the same run gives the same bytes. Commit the pin together with the release.
+
+### From a checkout
+
+    claude mcp add swu-mcp -- pnpm --silent --dir "/path/to/swu-mcp" mcp
+
+`--silent` is required: without it pnpm prints a banner to stdout, which corrupts the MCP stdio stream. The server logs the card count to stderr at start. It also serves the resource `rules://core-primer`, the verbatim core Comprehensive Rules.
 
 Tool results are TOON, a compact table format (column names once, then one line per row), not JSON. Failures set `isError` with a plain sentence. All tools are read-only.
+
+## Read more
+
+- [What it does](docs/public/what-it-does.md), in plain words.
+- [How it was built](docs/public/how-we-built-it.md).
+- [The Claude Code setup behind it](docs/public/claude-code-setup.md).
+- [Verification report](docs/verification/2026-10-16.md).
 
 ## Tools (28)
 
@@ -121,6 +163,8 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
     pnpm mcp                  # the stdio server
     pnpm build:data           # rebuild every data product
     pnpm package:zip          # assemble the reader zip
+    pnpm release:data         # deterministic data release archive and pin
+    pnpm build              # bundle dist/server.js
     pnpm fit:coefficients [--check]
     pnpm rules:check [--verify-hash]
 
@@ -128,7 +172,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 
 ## Layout
 
-- `src/` the MCP server. `server.ts` is the stdio entry, `create-server.ts` registers the tools, `tools.ts` and `tools/` hold the handlers, `data.ts` loads and validates the package.
+- `src/` the MCP server. `server.ts` is the stdio entry, `data-source.ts` resolves and downloads the data, `data-release.json` pins the release, `create-server.ts` registers the tools, `tools.ts` and `tools/` hold the handlers, `data.ts` loads and validates the package.
 - `src/swu/` the flatten pipeline ported from mault. `src/scorer/`, `src/ability-grammar/`, `src/synergy/`, `src/market/`, `src/rules/`, `src/embed/` the transforms behind each step. `src/package/` the zip tables and README.
 - `scripts/` one script per step, `build-data.ts`, `package-zip.ts`. `scripts/curation/`, `scripts/rubric/` and `scripts/embed/` are research scripts.
 - `data/curated-rules.json` the curated ability table and `data/complementarity.json` the pair table (pinned inputs). `data/pinned/` small pinned captures with hashes. `data/runs/<date>/` and `data/packages/<date>/` generated output (git-ignored).
