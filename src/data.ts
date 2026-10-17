@@ -1,13 +1,12 @@
 import { decode } from "@toon-format/toon";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { REPO_ROOT } from "./paths.js";
 import { compareCodePoints } from "./swu/canonical.js";
 import { INDEX_FACETS, type IndexFacet } from "./swu/llm-flatten.js";
 
 const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const text = z.string().nullable();
 const num = z.number().nullable();
@@ -64,20 +63,25 @@ export function isFacet(name: string): name is IndexFacet {
   return (INDEX_FACETS as readonly string[]).includes(name);
 }
 
+/** Newest dated directory under <runsDir>, or undefined when there is none. */
+export function newestRun(runsDir: string): string | undefined {
+  if (!existsSync(runsDir)) return undefined;
+  const newest = readdirSync(runsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
+    .map((entry) => entry.name)
+    .sort(compareCodePoints)
+    .at(-1);
+  return newest === undefined ? undefined : path.join(runsDir, newest);
+}
+
 /** SWU_MCP_DATA wins; otherwise the newest dated directory under <repo>/data/runs. */
 export function resolveDataDir(env: NodeJS.ProcessEnv = process.env): string {
   const configured = z.string().min(1).optional().parse(env.SWU_MCP_DATA);
   if (configured !== undefined) return path.resolve(configured);
   const runs = path.join(REPO_ROOT, "data/runs");
-  const newest = existsSync(runs)
-    ? readdirSync(runs, { withFileTypes: true })
-        .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-        .map((entry) => entry.name)
-        .sort(compareCodePoints)
-        .at(-1)
-    : undefined;
+  const newest = newestRun(runs);
   if (newest === undefined) throw new Error(`no data package under ${runs}; run "pnpm export:package" or set SWU_MCP_DATA`);
-  return path.join(runs, newest);
+  return newest;
 }
 
 function readToon(file: string): unknown {
