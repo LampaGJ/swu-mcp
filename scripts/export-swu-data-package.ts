@@ -14,7 +14,6 @@
  *   --date       default: the day the raw card-list run finished
  */
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -98,10 +97,6 @@ function git(args: string[]): string {
   return execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
 }
 
-function sha256Buffer(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
-}
-
 function newestDatedDir(root: string): string {
   const names = readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
@@ -162,7 +157,7 @@ function main(): void {
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
       if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-      const digest = sha256Buffer(body);
+      const digest = sha256Hex(body);
       if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
       p.tick(index + 1, { phase: "verify-pages" });
       return { name, body };
@@ -276,14 +271,14 @@ function main(): void {
   const dirty = git(["status", "--porcelain"]) === "" ? "" : "-dirty";
   const replay = {
     inputs: {
-      rawManifestSha256: sha256Buffer(manifestBytes),
+      rawManifestSha256: sha256Hex(manifestBytes),
       pages: manifest.pages
         .slice()
         .sort((a, b) => a.page - b.page)
         .map((page) => page.sha256),
       priceImportId: importId,
       priceRowsSha256: sha256Hex(canonicalJson({ printings: priceRows, corrections, quarantine })),
-      snapshots: snapshots.map((snapshot) => ({ name: snapshot.name, sha256: sha256Buffer(snapshot.bytes) })),
+      snapshots: snapshots.map((snapshot) => ({ name: snapshot.name, sha256: sha256Hex(snapshot.bytes) })),
     },
     codeCommit: `${git(["rev-parse", "HEAD"])}${dirty}`,
     outputs: Object.fromEntries([...llmFiles].map(([relPath, content]) => [relPath, sha256Hex(content)])),

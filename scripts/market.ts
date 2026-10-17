@@ -12,7 +12,6 @@
  *   --captures   default: <repo>/data/pinned/gt
  */
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,7 +28,6 @@ const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-ori
 
 const importSchema = z.looseObject({ id: z.number().int(), finished_at: z.string().nullable().optional() });
 
-const sha256Buffer = (buffer: Buffer): string => createHash("sha256").update(buffer).digest("hex");
 
 function codeCommit(): string {
   const git = (args: string[]): string => execFileSync("git", ["-C", REPO_ROOT, ...args], { encoding: "utf8" }).trim();
@@ -69,7 +67,7 @@ function main(): void {
   if (captureFiles.length === 0) throw new Error(`no swustats-premier-w*.json under ${capturesDir}`);
   const captureBytes = captureFiles.map((file) => ({ file, bytes: readFileSync(path.join(capturesDir, file)) }));
   const play = buildPlay({
-    captures: captureBytes.map(({ file, bytes }) => ({ file, sha256: sha256Buffer(bytes), rows: z.array(captureRowSchema).parse(JSON.parse(bytes.toString("utf8"))) })),
+    captures: captureBytes.map(({ file, bytes }) => ({ file, sha256: sha256Hex(bytes), rows: z.array(captureRowSchema).parse(JSON.parse(bytes.toString("utf8"))) })),
     cardKeyOfUid,
     leaderKeys,
   });
@@ -80,9 +78,9 @@ function main(): void {
     inputs: {
       rawManifestSha256: packageManifestSha,
       priceImportId: importRow.id,
-      priceImportFileSha256: sha256Buffer(importBytes),
-      priceRowsFileSha256: sha256Buffer(printingsBytes),
-      captures: Object.fromEntries(captureBytes.map(({ file, bytes }) => [file, sha256Buffer(bytes)])),
+      priceImportFileSha256: sha256Hex(importBytes),
+      priceRowsFileSha256: sha256Hex(printingsBytes),
+      captures: Object.fromEntries(captureBytes.map(({ file, bytes }) => [file, sha256Hex(bytes)])),
       originalsPath: originals,
     },
     codeCommit: codeCommit(),

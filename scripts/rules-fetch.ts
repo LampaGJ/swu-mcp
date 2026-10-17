@@ -15,7 +15,6 @@
  *   --out            default: <repo>/data/runs/<date>/rules, <date> = --date or the fetch date
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -26,7 +25,7 @@ import { z } from "zod";
 import { buildRulesRun } from "../src/rules/build.js";
 import { buildCardRulings } from "../src/rules/rulings.js";
 import { rulesCoreFileSchema, rulesReplaySchema, type CardRulingsFile } from "../src/rules/schemas.js";
-import { canonicalJson, compareCodePoints } from "../src/swu/canonical.js";
+import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import type { RawCardRecord } from "../src/swu/llm-flatten.js";
 import { swuGlossarySchema } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
@@ -41,7 +40,6 @@ const DEFAULT_PRIMER_TOKENS = 4000;
 const pageSchema = z.object({ data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })) });
 const fetchRecordSchema = z.strictObject({ url: z.string().nullable(), fetchedAt: z.iso.date(), sha256: z.string(), bytes: z.number().int(), fileName: z.string() });
 
-const sha256 = (data: Buffer | string): string => createHash("sha256").update(data).digest("hex");
 const expandHome = (value: string): string => (value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value);
 
 function newestDatedDir(root: string): string {
@@ -86,11 +84,11 @@ function loadRawRecords(originalsDir: string, tick: (done: number) => void): { r
     .forEach((entry, index) => {
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
-      if (sha256(body) !== entry.sha256) throw new Error(`${name}: sha256 does not match the manifest`);
+      if (sha256Hex(body) !== entry.sha256) throw new Error(`${name}: sha256 does not match the manifest`);
       for (const record of pageSchema.parse(JSON.parse(body.toString("utf8"))).data) records.push(record);
       tick(index + 1);
     });
-  return { records, source: { originalsRun: path.basename(originalsDir), rawPagesManifestSha256: sha256(manifestBody) } };
+  return { records, source: { originalsRun: path.basename(originalsDir), rawPagesManifestSha256: sha256Hex(manifestBody) } };
 }
 
 async function main(): Promise<void> {
@@ -115,7 +113,7 @@ async function main(): Promise<void> {
 
   p.log({ phase: "pdf" });
   const pdf = await acquirePdf(values.url as string, values.pdf);
-  const pdfSha256 = sha256(pdf.bytes);
+  const pdfSha256 = sha256Hex(pdf.bytes);
   const staging = path.join(rulesOriginals, `.staging-${pdfSha256}.pdf`);
   writeFileSync(staging, pdf.bytes);
   const text = execFileSync("pdftotext", ["-layout", staging, "-"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -149,7 +147,7 @@ async function main(): Promise<void> {
   const recordPath = path.join(pdfDir, "fetch.json");
   mkdirSync(pdfDir, { recursive: true });
   const stored = path.join(pdfDir, fileName);
-  if (existsSync(stored) && sha256(readFileSync(stored)) !== pdfSha256) {
+  if (existsSync(stored) && sha256Hex(readFileSync(stored)) !== pdfSha256) {
     throw new Error(`${stored} exists with a different sha256; a new CR needs a new version directory, not an overwrite`);
   }
   renameSync(staging, stored);
@@ -170,7 +168,7 @@ async function main(): Promise<void> {
     source: { url: fetchRecord.url, fetchedAt: fetchRecord.fetchedAt, pdfSha256, pdfBytes: fetchRecord.bytes },
     tool: { pdftotext: pdftotextVersion(), codeCommit: codeCommit() },
     rulesVersion: version,
-    textSha256: sha256(text),
+    textSha256: sha256Hex(text),
     rulings: cardRulings === null ? null : cardRulings.source,
     outputs: run.hashes,
   });

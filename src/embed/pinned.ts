@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../swu/canonical.js";
 
 /**
  * @displayName Pinned embedding capture
@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
  * matrices (ability and abstract, one row per card in index order).
  */
 
-export const sha256Bytes = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
+export const sha256Bytes = sha256Hex;
 
 export const hex64 = z.string().regex(/^[0-9a-f]{64}$/);
 

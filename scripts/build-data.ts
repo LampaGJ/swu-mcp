@@ -13,7 +13,6 @@
  * The rules step reads the pinned PDF under data/originals/rules/<version>/ when one exists and downloads it otherwise.
  */
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
@@ -169,7 +168,7 @@ function main(): void {
       files
         .filter((rel) => ownedBy(step, rel))
         .sort(compareCodePoints)
-        .map((rel) => [rel, createHash("sha256").update(readFileSync(path.join(runDir, rel))).digest("hex")] as const),
+        .map((rel) => [rel, sha256Hex(readFileSync(path.join(runDir, rel)))] as const),
     );
     return {
       name: step.name,

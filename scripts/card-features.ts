@@ -15,7 +15,6 @@
  * Exit codes: 0 ok, 3 stale curated entries (outputs are still written).
  */
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -24,7 +23,7 @@ import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { StaleCuratedEntriesError, assertNoStaleCurated, buildFeatureRun } from "../src/ability-grammar/index.js";
-import { compareCodePoints } from "../src/swu/canonical.js";
+import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { buildLogicalCards, flattenPrinting, newFlattenIssues, splitByCurrentSets, type FlatRow } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { progress } from "./lib/progress.mjs";
@@ -72,7 +71,7 @@ function cardsFromOriginals(originalsDir: string, tick: (done: number) => void):
       const name = `page-${String(entry.page).padStart(4, "0")}.json`;
       const body = readFileSync(path.join(pagesDir, name));
       if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-      const digest = createHash("sha256").update(body).digest("hex");
+      const digest = sha256Hex(body);
       if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
       const parsed = pageSchema.parse(JSON.parse(body.toString("utf8")));
       declaredTotal = parsed.meta.pagination.total;

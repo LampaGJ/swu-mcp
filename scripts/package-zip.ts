@@ -12,7 +12,6 @@
  *   --no-zip  stage the package only
  */
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -40,7 +39,7 @@ import {
 } from "../src/package/tables.js";
 import { cardRulingsFileSchema } from "../src/rules/schemas.js";
 import { scoresFileSchema } from "../src/scorer/scores-file.js";
-import { canonicalJson, compareCodePoints } from "../src/swu/canonical.js";
+import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { INDEX_FACETS, encodeToonTable, type FlatRow } from "../src/swu/llm-flatten.js";
 import { loadSynergyContext } from "../src/synergy/context.js";
 import { TRIO_FANOUT } from "../src/synergy/trios.js";
@@ -69,7 +68,6 @@ function expandHome(value: string): string {
   return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
 }
 
-const sha256 = (data: string | Buffer): string => createHash("sha256").update(data).digest("hex");
 const read = (dir: string, rel: string): string => readFileSync(path.join(dir, rel), "utf8");
 const readJson = (dir: string, rel: string): unknown => JSON.parse(read(dir, rel));
 
@@ -202,7 +200,7 @@ ${rubric}
     codeCommit: codeCommit("whole-tree"),
     tokenizer: "gpt-tokenizer o200k_base, a proxy; null for files that are not read as text",
     files: Object.fromEntries(
-      [...files].sort(([a], [b]) => compareCodePoints(a, b)).map(([rel, content]) => [rel, { bytes: Buffer.byteLength(content), sha256: sha256(content), tokens: measured.find((file) => file.path === rel)?.tokens ?? null }]),
+      [...files].sort(([a], [b]) => compareCodePoints(a, b)).map(([rel, content]) => [rel, { bytes: Buffer.byteLength(content), sha256: sha256Hex(content), tokens: measured.find((file) => file.path === rel)?.tokens ?? null }]),
     ),
   };
   files.set("audit/package.json", `${JSON.stringify(JSON.parse(canonicalJson(record)), null, 1)}\n`);

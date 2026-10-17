@@ -8,12 +8,11 @@
  * flattener, folds printings into logical cards, and marks the cards in the delivered package scope
  * (a printing in Jump to Lightspeed or later).
  */
-import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
-import { compareCodePoints } from "../../src/swu/canonical.js";
+import { compareCodePoints, sha256Hex } from "../../src/swu/canonical.js";
 import {
   buildLogicalCards,
   flattenPrinting,
@@ -84,7 +83,7 @@ export function loadOriginals(originalsDir: string): Originals {
     const name = `page-${String(entry.page).padStart(4, "0")}.json`;
     const body = readFileSync(path.join(pagesDir, name));
     if (body.length !== entry.byteLength) throw new Error(`${name}: byteLength ${body.length} != manifest ${entry.byteLength}`);
-    const digest = createHash("sha256").update(body).digest("hex");
+    const digest = sha256Hex(body);
     if (digest !== entry.sha256) throw new Error(`${name}: sha256 ${digest} != manifest ${entry.sha256}`);
     const parsed = pageSchema.parse(JSON.parse(body.toString("utf8")));
     declaredTotal = parsed.meta.pagination.total;
