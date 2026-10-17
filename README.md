@@ -198,6 +198,15 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 
 `tests/e2e.test.ts` starts the real server over stdio, lists the tools, calls every one with valid arguments and reads `rules://core-primer`. It has an arguments entry per tool and fails if a registered tool lacks one. It skips when `data/runs` has no dated run.
 
+## Verification
+
+    pnpm verify:audit                # deterministic audit of every derived product
+    pnpm verify:pair-fixture         # 200-pair stratified sample -> tmp/pair-fixture/packets/p1..p8.json (+ index.json)
+    pnpm verify:pair-fixture:pin     # pin the captured verdicts -> data/fixtures/pairs-v1.json (committed, byte-identical on rerun)
+    pnpm verify:pairs [--run <dir>]  # pairing precision and recall-of-correct vs the fixture -> <run>/verify/pair-precision.json
+
+The pair fixture is a labelled benchmark: model verdicts are captured once under `tmp/pair-fixture/verdicts/` (and `adjudication/`), then pinned. `verify:pairs` only reads the pinned file.
+
 ## Layout
 
 - `src/` the MCP server. `server.ts` is the stdio entry, `data-source.ts` resolves and downloads the data, `data-release.json` pins the release, `create-server.ts` registers the tools, `tools.ts` and `tools/` hold the handlers, `data.ts` loads and validates the package.

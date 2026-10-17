@@ -30,6 +30,9 @@
     "similarity": "tsx scripts/similarity.ts",
     "verify:audit": "tsx scripts/verify/audit.ts",
     "verify:sample": "tsx scripts/verify/sample.ts",
+    "verify:pair-fixture": "tsx scripts/verify/pair-fixture.ts",
+    "verify:pair-fixture:pin": "tsx scripts/verify/pair-fixture-pin.ts",
+    "verify:pairs": "tsx scripts/verify/pair-precision.ts",
     "release:data": "tsx scripts/release-data.ts"
   },
   "devDependencies": {
