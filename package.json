@@ -9,6 +9,7 @@
   },
   "packageManager": "pnpm@10.27.0",
   "scripts": {
+    "prepare": "node scripts/bundle.mjs",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -28,25 +29,37 @@
     "embed:capture": "tsx scripts/embed-capture.ts",
     "similarity": "tsx scripts/similarity.ts",
     "verify:audit": "tsx scripts/verify/audit.ts",
-    "verify:sample": "tsx scripts/verify/sample.ts"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "@toon-format/toon": "^4.4.0",
-    "minisearch": "^7.2.0",
-    "stemmer": "^2.0.1",
-    "zod": "^4.3.6"
+    "verify:sample": "tsx scripts/verify/sample.ts",
+    "release:data": "tsx scripts/release-data.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@toon-format/toon": "^4.4.0",
     "@types/node": "^22",
     "cheerio": "^1.2.0",
+    "env-paths": "^4.0.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "gpt-tokenizer": "^4.0.3",
+    "minisearch": "^7.2.0",
     "prettier": "^3",
+    "stemmer": "^2.0.1",
+    "tar": "^7.5.22",
     "tsx": "^4.19.3",
     "typescript": "^5.9",
     "typescript-eslint": "^8",
-    "vitest": "^3.2.4"
-  }
+    "vitest": "^3.2.4",
+    "zod": "^4.3.6"
+  },
+  "bin": {
+    "swu-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "data/rubric-coefficients.json",
+    "data/rules-core.json",
+    "data/complementarity.json",
+    "src/data-release.json"
+  ]
 }

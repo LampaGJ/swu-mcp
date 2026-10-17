@@ -7,9 +7,9 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import MiniSearch from "minisearch";
 import { stemmer } from "stemmer";
+import { REPO_ROOT } from "../paths.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { RuleSection } from "./parse-cr.js";
 import {
@@ -26,7 +26,6 @@ import {
 } from "./schemas.js";
 
 const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /**
  * Added to a hit's relevance (best hit of the query = 1.0) when its section is in data/rules-core.json or sits under

@@ -1,9 +1,9 @@
 import { encode } from "@toon-format/toon";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { walkAbilities } from "../ability-grammar/walk.js";
+import { REPO_ROOT } from "../paths.js";
 import { packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
 import {
   SWU_CURATED_EFFECT_CATS,
@@ -29,7 +29,6 @@ import type { ToolResult } from "../tools.js";
  * read from committed files; nothing is computed by a model.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 interface ValueData {

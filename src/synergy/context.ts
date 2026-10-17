@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { REPO_ROOT } from "../paths.js";
 import { coverCombos, type CoverCombo } from "./cover.js";
 import { buildFungibility, type FungibilityIndex } from "./fungibility.js";
 import { buildPairGraph, type PairGraph } from "./graph.js";
@@ -16,7 +16,7 @@ import { searchTrios, type TrioSearchOptions, type TrioSearchResult } from "./tr
  * `data/complementarity.json`; the trio search is lazy because it is the slow part.
  */
 
-export const DEFAULT_TABLE_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../data/complementarity.json");
+export const DEFAULT_TABLE_PATH = path.join(REPO_ROOT, "data/complementarity.json");
 
 export interface SynergyContext {
   cards: readonly SynergyCard[];
