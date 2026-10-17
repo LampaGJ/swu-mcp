@@ -63,7 +63,7 @@ This is the owner's standing intent for swu-mcp, one entry per decision, with th
 
 **D21. Play-data precedence** (2026-10-17). The order is: tournament results joined to decklists and placements, then tournament decklists, then community decklists, then casual online games, then bot simulations. Tiers are never pooled, and every output names its source and population. Enforced in: `scripts/bench/real-play.ts`, the #25 meta tools; CLAUDE.md "Play-data precedence".
 
-**D22. Karabast spectated games are private** (2026-10-17). Raw rows and per-game extracts stay in git-ignored `data/originals/`. Only code, synthetic-fixture tests and aggregates are committed. No player names, player ids or game ids. Why: Karabast terms treat deck contents as private to play.
+**D22. Karabast spectated games are private** (2026-10-17). Raw rows and per-game extracts stay in git-ignored `data/originals/`. Only code, synthetic-fixture tests and aggregates are committed. No player names, player ids or game ids. Karabast-derived numbers, aggregates included, never ship in the public data release or tool output; they are for local benchmarks only (owner ruling 2026-10-17). Public win rates come from swumetastats tournament data. Why: Karabast terms treat deck contents as private to play.
 
 ## Product direction
 
