@@ -176,10 +176,11 @@ describe("committed curated table (data/swu/curated-rules.json)", () => {
     for (const e of parsed.entries) expect(sha256Hex(e.sourceClause), e.id).toBe(e.clauseSha256);
   });
 
-  it("has unique, sequential ids", () => {
+  it("has unique, ascending ids (a removed entry leaves a gap; ids are never renumbered)", () => {
     const ids = parsed.entries.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toEqual(ids.map((_, i) => `cur-${String(i + 1).padStart(4, "0")}`));
+    expect(ids).toEqual([...ids].sort());
+    expect(ids.every((id) => /^cur-\d{4}$/.test(id))).toBe(true);
   });
 
   it("has unique (cardKey, face, clause) keys", () => {

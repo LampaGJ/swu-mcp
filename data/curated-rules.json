@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "tableVersion": 3,
+ "tableVersion": 4,
  "note": "Rung 4: curated per-card rules. Each entry is keyed by (cardKey, face, clauseSha256) where clauseSha256 = sha256 of sourceClause, the exact normalized clause the extractor produces. An entry applies only when the grammar leaves that clause unclassified, unless override is true. An entry whose clause no longer exists is stale and fails the run; an entry for a clause the grammar now classifies is redundant and is reported for pruning. PROTOTYPE entries: not yet owner-reviewed.",
  "entries": [
   {
@@ -121,55 +121,6 @@
     ]
    },
    "rationale": "Deploy-box version: Poe attaches himself as an upgrade to a friendly Vehicle without a Pilot instead of deploying as a unit.",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
-  },
-  {
-   "id": "cur-0005",
-   "cardKey": "04010013",
-   "title": "Poe Dameron",
-   "face": "text",
-   "sourceClause": "Flip this leader and attach him as an upgrade to a friendly Vehicle unit without a Pilot on it.",
-   "clauseSha256": "23fb923565dd16652de0849c666dab859e451340bbfa96f75c6d85ae65d12d3e",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "friendly",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [
-        "trait:Vehicle",
-        "no:Pilot"
-       ],
-       "text": "a friendly Vehicle unit without a Pilot on it"
-      }
-     }
-    ],
-    "conditions": [],
-    "structure": [
-     {
-      "rule": "curated",
-      "cat": "flip_leader",
-      "n": 1
-     }
-    ],
-    "offers": [
-     "offers:upgrade-to-attach"
-    ],
-    "wants": [
-     "wants:trait-Vehicle"
-    ]
-   },
-   "rationale": "Leader action: flips and attaches Poe as a Pilot upgrade to a friendly Vehicle with no Pilot, so it needs Vehicles and offers an upgrade to attach.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -664,107 +615,6 @@
    "addedIn": "curation-2026-10-16"
   },
   {
-   "id": "cur-0021",
-   "cardKey": "04010049",
-   "title": "L3-37",
-   "face": "text",
-   "sourceClause": "If this unit would be defeated, you may instead attach her as an upgrade to a friendly Vehicle unit without a Pilot on it.",
-   "clauseSha256": "9e257a6ec1b856d809233962833b0363bbf942959d3265d9e8cfc594ba1c3afd",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "friendly",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [
-        "trait:Vehicle",
-        "no:Pilot"
-       ],
-       "text": "a friendly Vehicle unit without a Pilot on it"
-      }
-     }
-    ],
-    "conditions": [
-     {
-      "rule": "curated",
-      "cat": "replacement_window",
-      "target": {
-       "side": "self",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [],
-       "text": "this unit"
-      }
-     }
-    ],
-    "structure": [],
-    "offers": [
-     "offers:upgrade-to-attach"
-    ],
-    "wants": [
-     "wants:trait-Vehicle"
-    ]
-   },
-   "rationale": "Replacement effect: if defeated, L3-37 becomes a Pilot upgrade on a friendly Vehicle instead, so it survives as an upgrade. Shape fix: replacement target = this unit.",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
-  },
-  {
-   "id": "cur-0022",
-   "cardKey": "04010050",
-   "title": "Phantom II",
-   "face": "text",
-   "sourceClause": "If this card is a unit, attach it as an upgrade to The Ghost.",
-   "clauseSha256": "624c33f77b957842572656bcc972aac3d63f8bf00023836ae341d0d59d66473d",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "friendly",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [],
-       "text": "The Ghost"
-      }
-     }
-    ],
-    "conditions": [
-     {
-      "rule": "curated",
-      "cat": "self_state",
-      "w": "this card is a unit",
-      "state": "unit"
-     }
-    ],
-    "structure": [],
-    "offers": [
-     "offers:upgrade-to-attach"
-    ],
-    "wants": []
-   },
-   "rationale": "Action from hand/play: if this is a unit it attaches as an upgrade to The Ghost, converting it into a buff upgrade. Shape fix: self_state.state=unit (this card is a unit).",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
-  },
-  {
    "id": "cur-0023",
    "cardKey": "04010053",
    "title": "The Ghost",
@@ -869,98 +719,6 @@
     ]
    },
    "rationale": "After attacking, may move an upgrade from this unit to another eligible friendly Vehicle; only useful with upgrades on it.",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
-  },
-  {
-   "id": "cur-0026",
-   "cardKey": "04010083",
-   "title": "Pantoran Starship Thief",
-   "face": "text",
-   "sourceClause": "If you do, attach this unit as an upgrade to a Fighter or Transport unit without a Pilot on it.",
-   "clauseSha256": "bca35b9fc55b4c6c242bff69e007d57c32f5084ffd8b484422b4bd6c30a80400",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "any",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [
-        "trait:Fighter|Transport",
-        "no:Pilot"
-       ],
-       "text": "a Fighter or Transport unit without a Pilot on it"
-      }
-     }
-    ],
-    "conditions": [
-     {
-      "rule": "curated",
-      "cat": "if_you_do"
-     }
-    ],
-    "structure": [],
-    "offers": [
-     "offers:upgrade-to-attach"
-    ],
-    "wants": [
-     "wants:trait-Fighter",
-     "wants:trait-Transport"
-    ]
-   },
-   "rationale": "If you paid 3 resources, this unit attaches as an upgrade to a Fighter or Transport (even an enemy one), then takes control of it in the next clause.",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
-  },
-  {
-   "id": "cur-0027",
-   "cardKey": "04010100",
-   "title": "Poe Dameron",
-   "face": "text",
-   "sourceClause": "You may attach this unit as an upgrade to a friendly Vehicle unit without a Pilot on it.",
-   "clauseSha256": "46a373aa92698f87f466482b900f6e11d227a1cd7bcc8f7dae7c21a0fc062b83",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "friendly",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [
-        "trait:Vehicle",
-        "no:Pilot"
-       ],
-       "text": "a friendly Vehicle unit without a Pilot on it"
-      }
-     }
-    ],
-    "conditions": [],
-    "structure": [],
-    "offers": [
-     "offers:upgrade-to-attach"
-    ],
-    "wants": [
-     "wants:trait-Vehicle"
-    ]
-   },
-   "rationale": "When played as a unit, may attach as a Pilot upgrade to a friendly Vehicle with no Pilot.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -1469,45 +1227,6 @@
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
-  },
-  {
-   "id": "cur-0041",
-   "cardKey": "04010213",
-   "title": "Sidon Ithano",
-   "face": "text",
-   "sourceClause": "You may attach this unit as an upgrade to an enemy Vehicle unit without a Pilot on it.",
-   "clauseSha256": "275c724988b94df3bddf36a99c1f4a318676117a92daa336af0cd324639f8410",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "attach",
-      "n": 1,
-      "target": {
-       "side": "enemy",
-       "kind": "unit",
-       "arena": "any",
-       "quant": "one",
-       "restrict": [
-        "trait:Vehicle",
-        "no:Pilot"
-       ],
-       "text": "an enemy Vehicle unit without a Pilot on it"
-      }
-     }
-    ],
-    "conditions": [],
-    "structure": [],
-    "offers": [],
-    "wants": []
-   },
-   "rationale": "May attach to an enemy Vehicle without a Pilot, a downside Pilot upgrade; offers nothing to the friendly attach pool.",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16",
-   "newVocab": [
-    "attach: attach a card (unit/pilot/upgrade) to another unit as an upgrade, or move an attached upgrade"
-   ]
   },
   {
    "id": "cur-0042",
@@ -5087,43 +4806,6 @@
    "addedIn": "curation-2026-10-16"
   },
   {
-   "id": "cur-0134",
-   "cardKey": "07010242",
-   "title": "Improvise",
-   "face": "text",
-   "sourceClause": "You may play it.",
-   "clauseSha256": "8051d2301cf6441c30e4a8fd44cc0e9845f80d6ddaef90936d64ce0d3d6477ba",
-   "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "play_extra",
-      "n": 1,
-      "target": {
-       "side": "self",
-       "kind": "card",
-       "arena": "deck",
-       "quant": "one",
-       "restrict": [],
-       "text": "the looked-at card"
-      },
-      "zone": "your deck",
-      "what": "the looked-at card"
-     }
-    ],
-    "conditions": [],
-    "structure": [],
-    "offers": [
-     "offers:cheat-play"
-    ],
-    "wants": []
-   },
-   "rationale": "Optionally play the top card you looked at; the next clause discounts it by 1. Shape fix: play_extra zone=your deck (top card looked at).",
-   "confidence": "high",
-   "reviewedBy": null,
-   "addedIn": "curation-2026-10-16"
-  },
-  {
    "id": "cur-0135",
    "cardKey": "07010256",
    "title": "Fire Across the Galaxy",
@@ -6739,8 +6421,8 @@
    "cardKey": "09010037",
    "title": "Bacta Tank",
    "face": "text",
-   "sourceClause": "Put a non‑Vehicle unit from your discard pile on top of your deck.",
-   "clauseSha256": "62c8092bac10ba7da63c008d634a9921ae0f81cfa3af5c9cd27ee34bbcb67f21",
+   "sourceClause": "Put a non-Vehicle unit from your discard pile on top of your deck.",
+   "clauseSha256": "1258dcf7178f7d6fc102cace1b7baaf3bb8b66a26aa607691c98ef55e6454a2c",
    "features": {
     "effects": [
      {
@@ -6768,7 +6450,7 @@
      "wants:cards-in-discard"
     ]
    },
-   "rationale": "Puts a non-Vehicle unit from your discard on top of your deck, a recursion to redraw it.",
+   "rationale": "Puts a non-Vehicle unit from your discard on top of your deck, a recursion to redraw it. Revision (table v4): sourceClause hyphen U+2011 replaced by \"-\" because the segmenter now normalises it; clauseSha256 updated.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
