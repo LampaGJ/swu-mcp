@@ -52,6 +52,8 @@ export interface TagQualifier {
   onSelf: boolean;
   /** The clause text, used for the attack-timing guard. */
   text: string;
+  /** The want is an ability of the unit that only works while that unit is upgraded. */
+  hostAbility?: boolean;
 }
 
 interface TargetLite {
@@ -69,6 +71,7 @@ interface ClauseLite {
   text: string;
   curatedId?: string;
   effects: EffectLite[];
+  conditions?: { cat?: string; state?: string }[];
   modifiers?: { cat?: string }[];
 }
 interface AbilityNode {
@@ -250,7 +253,17 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     viaCat,
     onSelf: side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:heal" && /\bthis unit\b/i.test(triggerText)) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(payload)),
     text,
+    hostAbility: side === "wants" && (clause?.conditions ?? []).some((k) => k.cat === "self_state" && k.state === "upgraded"),
   };
+}
+
+/** True when the card is an upgrade that strips the abilities of the unit it attaches to. */
+function blanksHost(c: SynergyCard): boolean {
+  return Object.keys(c.faces).some((f) =>
+    [...abilitiesOf(c.faces[f])].some(({ ability }) =>
+      clausesOf(ability).some((cl) => cl.effects.some((e) => e.cat === "blank" && /\battached\b/i.test(e.target?.text ?? ""))),
+    ),
+  );
 }
 
 const cardArena = (c: SynergyCard): Arena | undefined => {
@@ -268,6 +281,9 @@ const cardSubject = (c: SynergyCard): Subject => ({
 });
 
 const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
+
+/** Wants on a lasting state; a combat scope limits when the payoff applies, not when the state may be created. */
+const STATE_WANTS = new Set(["wants:exhausted-enemy", "wants:exhausted-own", "wants:damaged-units"]);
 
 const PLAYS_NON_UNIT = /\b(?:play|for) (?:an? |up to \d+ |any number of )?(?:[\w-]+ )?(?:upgrades?|events?|non-unit)\b/i;
 const NAMES_UNIT = /(?<!non-)\bunits?\b/i;
@@ -328,7 +344,10 @@ export function conflictBetween(
   if (wantTag === "wants:pilot-attached" && offerTag !== "offers:return-upgrade" && !(offerTag === "offers:upgrade-to-attach" ? a.structured.traits.includes("Pilot") : /\bpilot/i.test(offer.text))) {
     return "the offer is not a Pilot and does not play one";
   }
-  if (want.scope !== undefined && offer.triggers.length > 0 && !offer.triggers.some((t) => ATTACK_TRIGGERS.has(t)) && !/\battack/i.test(offer.text)) {
+  if (offerTag === "offers:upgrade-to-attach" && want.hostAbility === true && a.type === "Upgrade" && blanksHost(a)) {
+    return "the upgrade removes the abilities of the unit it attaches to, including the one that needs the unit upgraded";
+  }
+  if (want.scope !== undefined && !STATE_WANTS.has(wantTag) && offer.triggers.length > 0 && !offer.triggers.some((t) => ATTACK_TRIGGERS.has(t)) && !/\battack/i.test(offer.text)) {
     return `the want triggers only ${want.scope}, the offer does not happen in combat`;
   }
   if (want.forAttackOnly && (offerTag === "offers:ready-unit" || offerTag === "offers:extra-attack")) {
