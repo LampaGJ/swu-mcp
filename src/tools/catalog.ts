@@ -1,10 +1,10 @@
-import { encode } from "@toon-format/toon";
 import MiniSearch from "minisearch";
 import { z } from "zod";
 import { splitCell, type CardRow, type CardStore } from "../data.js";
 import { rulesFor } from "../rules/store.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { ToolResult } from "../tools.js";
+import { ok, fail } from "./common.js";
 
 /**
  * @displayName Catalog tools
@@ -13,14 +13,6 @@ import type { ToolResult } from "../tools.js";
  * @tacticalObjective Answers from the shipped card table, its expansion index and card-rulings.json only. Set legality is
  * parsed from the expansion definitions, so a set whose note is not understood reads "unknown", never "legal".
  */
-
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
-}
 
 const FORMATS = ["premier", "eternal", "twin_suns"] as const;
 
@@ -133,6 +125,7 @@ const normalizeName = (text: string): string =>
     .toLowerCase()
     .replace(/['’]/g, "");
 
+// Hand-rolled Levenshtein for the fuzzy-match tie-break: MiniSearch reports a score, not an edit distance.
 function editDistance(a: string, b: string): number {
   let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i += 1) {

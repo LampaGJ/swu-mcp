@@ -20,13 +20,13 @@ import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
+import { DATED_DIR } from "../src/data.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 const TSX = path.join(REPO_ROOT, "node_modules/.bin/tsx");
 
 interface Step {

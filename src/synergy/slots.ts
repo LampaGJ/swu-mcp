@@ -1,4 +1,4 @@
-import { mechanicalRows, type PairGraph } from "./graph.js";
+import { primaryRows, type PairGraph } from "./graph.js";
 import { cmp } from "./order.js";
 import type { PairEdge, TrioRecord } from "./schema.js";
 
@@ -17,7 +17,7 @@ export interface SlotRole {
 }
 
 const topRow = (e: PairEdge): PairEdge["rows"][number] =>
-  [...(e.traitOnly ? e.rows : mechanicalRows(e))].sort((x, y) => y.weight - x.weight || cmp(x.row, y.row))[0];
+  [...primaryRows(e)].sort((x, y) => y.weight - x.weight || cmp(x.row, y.row))[0];
 
 /** The pair edges that make up a trio, by shape (convergent: A and B both feed C). */
 export function trioLinks(graph: PairGraph, t: Pick<TrioRecord, "cardA" | "cardB" | "cardC" | "shape">): PairEdge[] {

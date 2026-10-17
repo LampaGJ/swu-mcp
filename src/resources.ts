@@ -39,6 +39,12 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 ## Price and play
 - Price: \`card_price\`. Premier inclusion and win figures: \`play_stats\`. Score per dollar: \`value_vs_price\`.
 
+## Decks and collections
+- Whole-deck report under a leader and base: \`deck_audit\`. Construction legality: \`deck_legality_check\`. Best leader and base for a pile of cards: \`suggest_leader_base\`.
+- Best cards for a leader and base: \`playable_cards\`. Substitutes for the cards of a deck: \`fungible_in_deck\`. Cheaper substitutes: \`budget_alternatives\`.
+- Price a list: \`price_list\`. Compare two lists: \`trade_balance\`. What a deck still needs from a collection: \`owned_vs_needed\`.
+- Cards played most or least per dollar: \`play_value_vs_price\`. Cards whose score and play rank disagree: \`score_vs_play\`.
+
 ## Rules
 - Start with \`rules_core\` for a rules question, then \`rules_search\` and \`get_rule\`. A section is also readable as swu://rules/{section}.
 - A keyword: \`keyword_rules\`. One card's rulings: \`card_rulings\`. Rulings by text, keyword or date: \`search_rulings\`.
@@ -70,10 +76,16 @@ Work in this order:
 5. Check every card with \`format_legality\`, and check the evidence with \`play_stats\`.
 6. Report the list with a one-line reason per card, the aspect penalty, and the data version from \`data_version\`. Say that bans are not in the data.`;
 
+const docs = new Map<string, string>();
+
 function readDoc(store: CardStore, name: string): string {
   const file = path.join(packageDirOf(store), "docs", name);
+  const memo = docs.get(file);
+  if (memo !== undefined) return memo;
   try {
-    return readFileSync(file, "utf8");
+    const text = readFileSync(file, "utf8");
+    docs.set(file, text);
+    return text;
   } catch {
     throw new Error(`${file} is missing; the data package should ship docs/${name}`);
   }
@@ -88,6 +100,16 @@ function ruleMarkdown(section: RuleSection, rules: RulesStore, depth: number): s
 export function registerResources(server: McpServer, store: CardStore): void {
   const markdown = (uri: URL, text: string, mimeType = "text/markdown") => ({ contents: [{ uri: uri.href, mimeType, text }] });
 
+  server.registerResource(
+    "rules-core-primer",
+    "rules://core-primer",
+    {
+      title: "Core rules primer",
+      description: "Verbatim official text of the core Comprehensive Rules sections, each line prefixed by its section id. Read before searching.",
+      mimeType: "text/markdown",
+    },
+    (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: rulesFor(store.dataDir).primer }] }),
+  );
   server.registerResource(
     "rubric",
     "swu://rubric",

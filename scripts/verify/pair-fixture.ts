@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { compareCodePoints } from "../../src/swu/canonical.js";
+import { buildRecordSchema } from "../lib/build-record.js";
 import { PAIRINGS_INSTRUCTIONS, buildIndex, loadInputs, orderBySeed, pairingItemBuilder, serialize, type Packet } from "./sample.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -136,7 +137,7 @@ function main(): void {
   const runDir = path.resolve(values.run ?? newestDatedDir(path.join(REPO_ROOT, "data/runs")));
   const outDir = path.resolve(values.out ?? path.join(REPO_ROOT, "tmp/pair-fixture"));
   const seed = values.seed ?? FIXTURE_SEED;
-  const build = JSON.parse(readFileSync(path.join(runDir, "build.json"), "utf8")) as { buildHash: string; date: string };
+  const build = buildRecordSchema.parse(JSON.parse(readFileSync(path.join(runDir, "build.json"), "utf8")));
   const inputs = loadInputs({ originalsDir, runDir });
   const allUnits = pairUnits(inputs.pairs);
   const { packets, selected } = buildFixturePackets(inputs, seed, Number(values.total ?? FIXTURE_TOTAL), Number(values.floor ?? FIXTURE_FLOOR));

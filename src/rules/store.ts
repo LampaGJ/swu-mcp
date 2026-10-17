@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import MiniSearch from "minisearch";
 import { stemmer } from "stemmer";
+import { DATED_DIR } from "../data.js";
 import { REPO_ROOT } from "../paths.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { RuleSection } from "./parse-cr.js";
@@ -24,8 +25,6 @@ import {
   type RulesReplay,
   type SectionsFile,
 } from "./schemas.js";
-
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Added to a hit's relevance (best hit of the query = 1.0) when its section is in data/rules-core.json or sits under
@@ -93,7 +92,9 @@ export function loadRules(dir: string, corePath = path.join(REPO_ROOT, "data/rul
   const children = new Map<string, RuleSection[]>();
   for (const section of sections) {
     if (section.parentId === null) continue;
-    children.set(section.parentId, [...(children.get(section.parentId) ?? []), section]);
+    const bucket = children.get(section.parentId);
+    if (bucket === undefined) children.set(section.parentId, [section]);
+    else bucket.push(section);
   }
   const rulingsPath = path.join(dir, "card-rulings.json");
   const cardRulings = existsSync(rulingsPath) ? cardRulingsFileSchema.parse(readJson(rulingsPath)) : null;
@@ -112,7 +113,12 @@ export function loadRules(dir: string, corePath = path.join(REPO_ROOT, "data/rul
     return parts.join(" > ");
   };
 
-  const isCore = (id: string): boolean => coreIds.some((coreId) => id === coreId || id.startsWith(`${coreId}.`));
+  const coreSet = new Set(coreIds);
+  const isCore = (id: string): boolean => {
+    if (coreSet.has(id)) return true;
+    for (let dot = id.indexOf("."); dot !== -1; dot = id.indexOf(".", dot + 1)) if (coreSet.has(id.slice(0, dot))) return true;
+    return false;
+  };
 
   const index = new MiniSearch<{ id: string; title: string; path: string; text: string }>({
     idField: "id",
@@ -145,12 +151,15 @@ export function loadRules(dir: string, corePath = path.join(REPO_ROOT, "data/rul
 }
 
 const cache = new Map<string, RulesStore>();
+const byRequest = new Map<string, RulesStore>();
 
 export function rulesFor(dataDir: string): RulesStore {
+  const requestKey = `${dataDir}\0${process.env.SWU_MCP_RULES ?? ""}`;
+  const memo = byRequest.get(requestKey);
+  if (memo !== undefined) return memo;
   const dir = resolveRulesDir(dataDir);
-  const cached = cache.get(dir);
-  if (cached !== undefined) return cached;
-  const loaded = loadRules(dir);
-  cache.set(dir, loaded);
-  return loaded;
+  const cached = cache.get(dir) ?? loadRules(dir);
+  cache.set(dir, cached);
+  byRequest.set(requestKey, cached);
+  return cached;
 }

@@ -1,10 +1,9 @@
-import { encode } from "@toon-format/toon";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { walkAbilities } from "../ability-grammar/walk.js";
 import { REPO_ROOT } from "../paths.js";
-import { packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
+import { DATED_DIR, packageDirOf, splitCell, type CardRow, type CardStore } from "../data.js";
 import {
   SWU_CURATED_EFFECT_CATS,
   SWU_EFFECT_CATS,
@@ -19,6 +18,7 @@ import { parseCoefficients, type Coefficients } from "../scorer/coefficients.js"
 import { scoresFileSchema, scoresReplaySchema, type ScoreRow, type ScoresReplay } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { ToolResult } from "../tools.js";
+import { ok, fail, lower, hasValue } from "./common.js";
 
 /**
  * @displayName Value tools
@@ -28,8 +28,6 @@ import type { ToolResult } from "../tools.js";
  * directory that holds llm/, resolved by src/data.ts), and answers in compact TOON. Every number is
  * read from committed files; nothing is computed by a model.
  */
-
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 export interface ValueData {
   packageDir: string;
@@ -70,14 +68,6 @@ export function valueData(store: CardStore): ValueData {
   return data;
 }
 
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
-}
-
 /** Wraps a handler so a missing or invalid scores package becomes a tool error, not a thrown exception. */
 function guarded(handler: (store: CardStore, data: ValueData, input: unknown) => ToolResult): (store: CardStore, input: unknown) => ToolResult {
   return (store, input) => {
@@ -92,15 +82,9 @@ function guarded(handler: (store: CardStore, data: ValueData, input: unknown) =>
 }
 
 const r2 = (x: number | null): number | null => (x === null ? null : Math.round(x * 100) / 100 || 0);
-const lower = (value: string | null | undefined): string => (value ?? "").toLowerCase();
 const limit = z.number().int().min(1).max(200).default(20);
 
-function hasValue(cell: string | null, wanted: string): boolean {
-  const target = wanted.toLowerCase();
-  return splitCell(cell).some((item) => item.toLowerCase() === target);
-}
-
-const dataVersion = (data: ValueData): string => `${data.replay.rubricVersion}/${data.replay.outputHash.slice(0, 12)}`;
+export const dataVersion = (replay: ScoresReplay): string => `${replay.rubricVersion}/${replay.outputHash.slice(0, 12)}`;
 
 const cardRef = {
   cardKey: z.string().min(1).optional().describe("Exact cardKey, for example 0101033"),
@@ -179,7 +163,7 @@ export const scoreCardHandler = guarded((store, data, input) => {
   if (typeof card === "string") return fail(card);
   const row = data.rows.get(card.cardKey);
   if (row === undefined) return fail(`no score for cardKey ${card.cardKey}; rerun "pnpm score"`);
-  if (!row.scored) return ok({ card: { cardKey: row.cardKey, title: row.title, type: row.type }, scored: false, flags: row.flags, dataVersion: dataVersion(data) });
+  if (!row.scored) return ok({ card: { cardKey: row.cardKey, title: row.title, type: row.type }, scored: false, flags: row.flags, dataVersion: dataVersion(data.replay) });
   return ok({
     card: { cardKey: row.cardKey, title: row.title, subtitle: row.subtitle, type: row.type, cost: row.cost, set: row.set },
     total: r2(row.total),
@@ -191,7 +175,7 @@ export const scoreCardHandler = guarded((store, data, input) => {
     flags: row.flags,
     unclassifiedClauses: row.unclassifiedClauses,
     rubricVersion: data.replay.rubricVersion,
-    dataVersion: dataVersion(data),
+    dataVersion: dataVersion(data.replay),
   });
 });
 
@@ -257,7 +241,7 @@ export const rankCardsHandler = guarded((store, data, input) => {
       total: r2(row.total),
       playCalibrated: r2(row.playCalibrated),
     })),
-    dataVersion: dataVersion(data),
+    dataVersion: dataVersion(data.replay),
   });
 });
 
@@ -318,7 +302,7 @@ export const compareCardsHandler = guarded((store, data, input) => {
       metric("flags", (p) => (p.row.flags.length === 0 ? null : p.row.flags.join(","))),
     ],
     highest,
-    dataVersion: dataVersion(data),
+    dataVersion: dataVersion(data.replay),
   });
 });
 
@@ -399,7 +383,7 @@ export const cardFeaturesHandler = guarded((store, data, input) => {
     ...(args.includeProvenance
       ? { provenance: { grammarClauses: clauses.filter((c) => c.clause.source === "grammar").length, curatedClauses: clauses.filter((c) => c.clause.source === "curated").length } }
       : {}),
-    dataVersion: dataVersion(data),
+    dataVersion: dataVersion(data.replay),
   });
 });
 
@@ -456,7 +440,7 @@ export const findByEffectHandler = guarded((store, data, input) => {
   }
   rows.sort((a, b) => compareCodePoints(a.cardKey, b.cardKey));
   const shown = rows.slice(0, args.limit);
-  return ok({ role: args.role, effect: args.effect, total: rows.length, shown: shown.length, cards: shown, dataVersion: dataVersion(data) });
+  return ok({ role: args.role, effect: args.effect, total: rows.length, shown: shown.length, cards: shown, dataVersion: dataVersion(data.replay) });
 });
 
 // ---------------------------------------------------------------------------------------------

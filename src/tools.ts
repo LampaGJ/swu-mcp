@@ -1,6 +1,5 @@
-import { encode } from "@toon-format/toon";
 import { z } from "zod";
-import { isFacet, splitCell, type CardRow, type CardStore } from "./data.js";
+import { type CardRow, type CardStore } from "./data.js";
 import { INDEX_FACETS } from "./swu/llm-flatten.js";
 import { SIMILARITY_TOOLS } from "./tools/similarity.js";
 import { SYNERGY_TOOLS } from "./tools/synergy.js";
@@ -9,6 +8,7 @@ import { VALUE_TOOLS } from "./tools/value.js";
 import { RULES_TOOLS } from "./tools/rules.js";
 import { CATALOG_TOOLS } from "./tools/catalog.js";
 import { DECK_TOOLS } from "./tools/deck.js";
+import { ok, fail, lower, hasValue } from "./tools/common.js";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -77,15 +77,6 @@ export const cardsByFacetShape = {
   limit,
 };
 
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
-}
-
-const lower = (value: string | null | undefined): string => (value ?? "").toLowerCase();
 
 function detail(card: CardRow): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -98,11 +89,6 @@ function detail(card: CardRow): Record<string, unknown> {
 
 function summary(card: CardRow): Record<string, unknown> {
   return Object.fromEntries(SUMMARY_COLUMNS.map((column) => [column, card[column] ?? null]));
-}
-
-function hasValue(cell: string | null, wanted: string): boolean {
-  const target = wanted.toLowerCase();
-  return splitCell(cell).some((item) => item.toLowerCase() === target);
 }
 
 export function getCard(store: CardStore, input: unknown): ToolResult {
@@ -151,7 +137,6 @@ export function listFacet(store: CardStore, input: unknown): ToolResult {
 
 export function cardsByFacet(store: CardStore, input: unknown): ToolResult {
   const args = z.object(cardsByFacetShape).parse(input);
-  if (!isFacet(args.facet)) return fail(`unknown facet ${args.facet}`);
   const entries = store.facets.get(args.facet);
   if (entries === undefined) return fail(`facet index "${args.facet}" is not in the loaded package`);
   const entry = entries.find((candidate) => candidate.value.toLowerCase() === args.value.toLowerCase());

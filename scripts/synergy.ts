@@ -15,12 +15,12 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { DATED_DIR } from "../src/data.js";
 import { buildSynergyRun } from "../src/synergy/index.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 import { progress } from "./lib/progress.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 function newestFeatures(): string {
   const runs = path.join(REPO_ROOT, "data/runs");

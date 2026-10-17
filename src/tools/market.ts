@@ -1,4 +1,3 @@
-import { encode } from "@toon-format/toon";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -7,6 +6,7 @@ import { playFileSchema, pricesFileSchema, type PlayFile, type PricesFile } from
 import { scoresFileSchema, type ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { ToolResult } from "../tools.js";
+import { ok, fail, lower } from "./common.js";
 
 /**
  * @displayName Market tools
@@ -49,14 +49,6 @@ export function marketData(store: CardStore): MarketData {
   return data;
 }
 
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
-}
-
 function guarded(handler: (store: CardStore, data: MarketData, input: unknown) => ToolResult): (store: CardStore, input: unknown) => ToolResult {
   return (store, input) => {
     let data: MarketData;
@@ -69,7 +61,6 @@ function guarded(handler: (store: CardStore, data: MarketData, input: unknown) =
   };
 }
 
-const lower = (value: string | null | undefined): string => (value ?? "").toLowerCase();
 const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 
 const cardRef = {

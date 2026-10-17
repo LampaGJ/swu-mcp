@@ -1,17 +1,9 @@
-import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import type { CardStore } from "../data.js";
 import type { RuleSection } from "../rules/parse-cr.js";
 import { CORE_BOOST, rulesFor, tokenize, type RulesStore } from "../rules/store.js";
 import type { ToolResult } from "../tools.js";
-
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
-}
+import { ok, fail } from "./common.js";
 
 const SNIPPET_LENGTH = 220;
 

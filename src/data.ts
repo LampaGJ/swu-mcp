@@ -6,7 +6,7 @@ import { REPO_ROOT } from "./paths.js";
 import { compareCodePoints } from "./swu/canonical.js";
 import { INDEX_FACETS, type IndexFacet } from "./swu/llm-flatten.js";
 
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
+export const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const text = z.string().nullable();
 const num = z.number().nullable();
@@ -57,10 +57,6 @@ export function packageDirOf(store: CardStore): string {
 
 export function splitCell(value: string | null | undefined): string[] {
   return value === null || value === undefined || value === "" ? [] : value.split("|");
-}
-
-export function isFacet(name: string): name is IndexFacet {
-  return (INDEX_FACETS as readonly string[]).includes(name);
 }
 
 /** Newest dated directory under <runsDir>, or undefined when there is none. */

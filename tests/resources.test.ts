@@ -53,6 +53,11 @@ describe("resources", () => {
     expect(named.filter((name) => !(name in TOOLS))).toEqual([]);
   });
 
+  it("names every registered tool in the usage guide", () => {
+    const named = new Set([...USAGE_GUIDE.matchAll(/`([a-z_]+)`/g)].map((match) => match[1]));
+    expect(Object.keys(TOOLS).filter((name) => !named.has(name))).toEqual([]);
+  });
+
   it("serves a rules section through the swu://rules/{section} template", async () => {
     const templates = (await client.listResourceTemplates()).resourceTemplates.map((template) => template.uriTemplate);
     expect(templates).toContain("swu://rules/{section}");

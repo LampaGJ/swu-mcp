@@ -18,18 +18,16 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { gzipSync } from "node:zlib";
 import * as tar from "tar";
-import { z } from "zod";
 import { dataReleaseSchema, DATA_RELEASE_PATH } from "../src/data-release.js";
 import { REPO_ROOT } from "../src/paths.js";
 import { resolveDataDir } from "../src/data.js";
+import { buildRecordSchema } from "./lib/build-record.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 
 const REPO = "LampaGJ/swu-mcp";
 const SERVER_DIRS = ["docs", "features", "llm", "market", "rules", "scores", "similarity", "synergy"];
 const RECORD_FILES = ["README.md", "build.json", "replay.json"];
 const FIXED_MTIME = new Date(0);
-
-const buildRecordSchema = z.looseObject({ date: z.iso.date(), buildHash: z.string().regex(/^[0-9a-f]{64}$/) });
 
 function walk(root: string, relative: string): string[] {
   const entries = readdirSync(path.join(root, relative), { withFileTypes: true });

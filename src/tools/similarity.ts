@@ -1,4 +1,3 @@
-import { encode } from "@toon-format/toon";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -12,6 +11,7 @@ import {
   type SimilarityReplay,
 } from "../embed/files.js";
 import type { ToolResult } from "../tools.js";
+import { ok, fail } from "./common.js";
 
 /**
  * @displayName Similarity tools
@@ -54,14 +54,6 @@ export function similarityData(store: CardStore): SimilarityData {
   };
   cache.set(store, data);
   return data;
-}
-
-function ok(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: encode(value) }] };
-}
-
-function fail(message: string): ToolResult {
-  return { content: [{ type: "text", text: message }], isError: true };
 }
 
 function guarded(

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { swuCardFeaturesReplaySchema } from "../schemas/card-features.js";
 import { sha256Hex } from "../swu/canonical.js";
 import { parseCoefficients } from "./coefficients.js";
 import { loadScorerInputs } from "./inputs.js";
@@ -21,7 +22,7 @@ export interface ScoringRun {
 export function runScoring(dataDir: string, coefficientsText: string, codeCommit: string): ScoringRun {
   const loaded = parseCoefficients(coefficientsText);
   const inputs = loadScorerInputs(dataDir);
-  const featuresReplay = JSON.parse(readFileSync(path.join(dataDir, "features/replay.json"), "utf8")) as { inputHash: string };
+  const featuresReplay = swuCardFeaturesReplaySchema.parse(JSON.parse(readFileSync(path.join(dataDir, "features/replay.json"), "utf8")));
   const rows = toScoreRows(inputs.cards.map((card) => scoreCard(card, loaded.coefficients)));
   const scoresText = `${JSON.stringify(scoresFileSchema.parse({ rubricVersion: loaded.coefficients.rubricVersion, coefficientsSha256: loaded.sha256, cards: rows }), null, 1)}\n`;
   const replay = scoresReplaySchema.parse({

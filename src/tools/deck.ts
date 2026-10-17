@@ -1,4 +1,3 @@
-import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { splitCell, type CardRow, type CardStore } from "../data.js";
 import type { ClustersFile } from "../embed/files.js";
@@ -14,7 +13,8 @@ import type { ToolResult } from "../tools.js";
 import { marketData, type MarketData } from "./market.js";
 import { similarityData } from "./similarity.js";
 import { synergyContextOf } from "./synergy.js";
-import { valueData } from "./value.js";
+import { dataVersion, valueData } from "./value.js";
+import { ok, fail, lower } from "./common.js";
 
 /**
  * @displayName Deck tools
@@ -55,21 +55,17 @@ export function deckEnvOf(store: CardStore): DeckEnv {
     market: marketData(store),
     scores: value.rows,
     clusters,
-    dataVersion: `${value.replay.rubricVersion}/${value.replay.outputHash.slice(0, 12)}`,
+    dataVersion: dataVersion(value.replay),
   };
   envs.set(store, env);
   return env;
 }
-
-const ok = (value: unknown): ToolResult => ({ content: [{ type: "text", text: encode(value) }] });
-const fail = (message: string): ToolResult => ({ content: [{ type: "text", text: message }], isError: true });
 
 const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 const r2 = (x: number): number => round(x, 2);
 const r4 = (x: number): number => round(x, 4);
 const r6 = (x: number): number => round(x, 6);
 const sumBy = <T>(items: readonly T[], f: (item: T) => number): number => items.reduce((s, item) => s + f(item), 0);
-const lowerCase = (value: string | null | undefined): string => (value ?? "").toLowerCase();
 
 // ---------------------------------------------------------------------------------------------
 // Comprehensive Rules citations (v8.0 sections in the data; verified at run time by citedRules)
@@ -389,7 +385,9 @@ function edgesInto(ctx: SynergyContext): Map<string, PairEdge[]> {
   const index = new Map<string, PairEdge[]>();
   for (const edge of ctx.graph.edges) {
     if (edge.traitOnly) continue;
-    index.set(edge.b, [...(index.get(edge.b) ?? []), edge]);
+    const bucket = index.get(edge.b);
+    if (bucket === undefined) index.set(edge.b, [edge]);
+    else bucket.push(edge);
   }
   intoIndex.set(ctx, index);
   return index;
@@ -1324,12 +1322,16 @@ export function scoreVsPlay(env: DeckEnv, input: unknown): ToolResult {
     if (!score.scored || value === null || row === undefined || !MAIN_TYPES.has(score.type) || cardScope(env.store, row) === "rotated")
       return [];
     if (args.type !== undefined && score.type !== args.type) return [];
-    if (args.set !== undefined && lowerCase(score.set) !== lowerCase(args.set)) return [];
+    if (args.set !== undefined && lower(score.set) !== lower(args.set)) return [];
     const included = playByKey.get(score.cardKey)?.byWindow[window.id]?.included ?? 0;
     return [{ score, row, value, included, inclusionRate: included / window.playerGames }];
   });
   const byType = new Map<string, typeof pool>();
-  for (const p of pool) byType.set(p.score.type, [...(byType.get(p.score.type) ?? []), p]);
+  for (const p of pool) {
+    const bucket = byType.get(p.score.type);
+    if (bucket === undefined) byType.set(p.score.type, [p]);
+    else bucket.push(p);
+  }
   const rows = [...byType.values()].flatMap((group) => {
     const scoreRank = percentRanks(group.map((g) => g.value));
     const playRank = percentRanks(group.map((g) => g.inclusionRate));

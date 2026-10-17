@@ -46,6 +46,9 @@ export const isTraitRow = (r: Pick<PairRowHit, "baseId">): boolean => r.baseId =
 /** The rows that make a pair mechanical; empty on a trait-only pair. */
 export const mechanicalRows = (e: PairEdge): PairRowHit[] => e.rows.filter((r) => !isTraitRow(r));
 
+/** The rows that carry a pair's reason: all rows on a trait-only pair, otherwise the mechanical ones. */
+export const primaryRows = (e: PairEdge): PairRowHit[] => (e.traitOnly ? e.rows : mechanicalRows(e));
+
 /** The pair score under a traits mode; "bonus" is the stored score, "exclude" gives a trait-only pair 0. */
 export function edgeScore(e: PairEdge, mode: TraitsMode): number {
   if (mode === "bonus") return e.score;

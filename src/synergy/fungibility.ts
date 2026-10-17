@@ -265,6 +265,7 @@ export function commonMembers(
   const classes = tags.map((t) => roleOf(index, slotCardKey, t));
   if (classes.length === 0 || classes.some((c) => c === undefined)) return { classIds: [], members: [] };
   const found = classes as RoleClass[];
-  const members = found[0].members.filter((k) => found.every((c) => c.members.includes(k)));
+  const others = found.slice(1).map((c) => new Set(c.members));
+  const members = found[0].members.filter((k) => others.every((set) => set.has(k)));
   return { classIds: found.map((c) => c.id), members };
 }

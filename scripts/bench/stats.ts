@@ -4,6 +4,7 @@
  * live here with tests instead of pulling in a statistics library.
  * @tacticalObjective Shrunk log-lift (observed over expected), seeded percentile bootstrap (over pairs or clustered by card), Mann-Whitney U with tie-corrected normal
  * approximation (AUC and rank-biserial), Mantel-Haenszel risk difference. No clocks, no Math.random.
+ * Randomness is allowed only as seeded determinism: the same seed gives the same draws, as in src/embed/math.ts.
  */
 import { createHash } from "node:crypto";
 import { mulberry32 } from "../../src/embed/math.js";

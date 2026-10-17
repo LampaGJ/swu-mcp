@@ -1,4 +1,3 @@
-import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { packageDirOf, type CardStore } from "../data.js";
 import { CANDIDATE_STATUS, clip, evidenceOf, tagEvidence } from "../synergy/evidence.js";
@@ -12,12 +11,13 @@ import {
   type SubstituteGroup,
   type SubstituteOptions,
 } from "../synergy/fungibility.js";
-import { edgeOrder, edgeScore, mechanicalRows, TRAIT_BONUS } from "../synergy/graph.js";
+import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "../synergy/graph.js";
 import { cardLabel, cmp } from "../synergy/order.js";
 import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
+import { ok, fail } from "./common.js";
 
 /**
  * @displayName SWU synergy MCP tools
@@ -27,9 +27,6 @@ import type { ToolResult } from "../tools.js";
  * @tacticalObjective Handlers take a SynergyContext so tests can run them on in-code fixtures; the
  * registered tools build the context lazily from `<packageDir>/features/features.json`.
  */
-
-const ok = (value: unknown): ToolResult => ({ content: [{ type: "text", text: encode(value) }] });
-const fail = (message: string): ToolResult => ({ content: [{ type: "text", text: message }], isError: true });
 
 const evidenceFlag = z
   .boolean()
@@ -229,7 +226,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
       partnerIs: e.a === card.cardKey ? "payoff" : "enabler",
       linkKind: e.linkKind,
       link: linkRows.map((r) => `${r.offer} -> ${r.want}`).join("; "),
-      reason: (e.traitOnly ? e.rows : mechanicalRows(e))[0].reason,
+      reason: primaryRows(e)[0].reason,
       score,
       aspectPair: cover.aspectPair,
       penalty: cover.penalty,
@@ -312,7 +309,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
     };
     if (args.evidence) {
       out.evidence = trioLinks(ctx.graph, t).flatMap((e) =>
-        evidenceOf(e, ctx.graph.byKey, (e.traitOnly ? e.rows : mechanicalRows(e)).slice(0, 1)).map((ev) => ({
+        evidenceOf(e, ctx.graph.byKey, primaryRows(e).slice(0, 1)).map((ev) => ({
           link: `${cardLabel(ctx.graph.byKey.get(e.a) as SynergyCard)} > ${cardLabel(ctx.graph.byKey.get(e.b) as SynergyCard)}`,
           ...ev,
         })),
