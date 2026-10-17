@@ -2,11 +2,12 @@
  * @displayName Real-play statistics
  * @strategicPurpose The benchmarks need a handful of textbook statistics; each is a short closed formula, so they
  * live here with tests instead of pulling in a statistics library.
- * @tacticalObjective Shrunk log-lift (observed over expected), seeded percentile bootstrap, Mann-Whitney U with tie-corrected normal
+ * @tacticalObjective Shrunk log-lift (observed over expected), seeded percentile bootstrap (over pairs or clustered by card), Mann-Whitney U with tie-corrected normal
  * approximation (AUC and rank-biserial), Mantel-Haenszel risk difference. No clocks, no Math.random.
  */
 import { createHash } from "node:crypto";
 import { mulberry32 } from "../../src/embed/math.js";
+import { compareCodePoints } from "../../src/swu/canonical.js";
 
 export function seededRandom(seed: string): () => number {
   return mulberry32(createHash("sha256").update(seed, "utf8").digest().readUInt32BE(0));
@@ -64,6 +65,47 @@ export function bootstrapCI(
   draws.sort();
   const at = (q: number): number => draws[Math.min(draws.length - 1, Math.max(0, Math.round(q * (draws.length - 1))))];
   return { value: round(stat(values)), low: round(at(0.025)), high: round(at(0.975)), n: values.length };
+}
+
+export interface ClusterCI extends CI {
+  /** Distinct cards resampled. */
+  cards: number;
+}
+
+/**
+ * Card-clustered (two-way pigeonhole) percentile bootstrap of a mean over pairs: each draw resamples the distinct
+ * cards with replacement and weights a pair by the product of its two cards' draw counts, so a hub card in many
+ * pairs moves all of them together instead of counting as many independent observations.
+ */
+export function clusterBootstrapMean(
+  values: readonly number[],
+  cards: readonly (readonly [string, string])[],
+  options: { iterations: number; seed: string },
+): ClusterCI {
+  if (values.length === 0) return { value: null, low: null, high: null, n: 0, cards: 0 };
+  const ids = [...new Set(cards.flat())].sort(compareCodePoints);
+  const index = new Map(ids.map((k, i) => [k, i]));
+  const ia = Int32Array.from(cards, ([a]) => index.get(a) as number);
+  const ib = Int32Array.from(cards, ([, b]) => index.get(b) as number);
+  const random = seededRandom(options.seed);
+  const times = new Float64Array(ids.length);
+  const draws: number[] = [];
+  for (let i = 0; i < options.iterations; i++) {
+    times.fill(0);
+    for (let j = 0; j < ids.length; j++) times[Math.floor(random() * ids.length)] += 1;
+    let sum = 0;
+    let weight = 0;
+    for (let k = 0; k < values.length; k++) {
+      const w = times[ia[k]] * times[ib[k]];
+      sum += w * values[k];
+      weight += w;
+    }
+    if (weight > 0) draws.push(sum / weight);
+  }
+  draws.sort((x, y) => x - y);
+  const at = (q: number): number | null =>
+    draws.length === 0 ? null : round(draws[Math.min(draws.length - 1, Math.max(0, Math.round(q * (draws.length - 1))))]);
+  return { value: round(mean(values)), low: at(0.025), high: at(0.975), n: values.length, cards: ids.length };
 }
 
 export interface MannWhitney {

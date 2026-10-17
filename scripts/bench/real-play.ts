@@ -41,10 +41,13 @@ import {
   type Unit,
 } from "./measures.js";
 import { renderMarkdown } from "./real-play-md.js";
-import { bootstrapCI, mannWhitney, mean, median, type CI } from "./stats.js";
+import { bootstrapCI, clusterBootstrapMean, mannWhitney, mean, median, type CI, type ClusterCI } from "./stats.js";
 
 const SEED = "real-play-v1";
 const TRAIT_ROW = "trait-reference";
+/** The headline stratum: trait-only pairs are obvious tribal links and are reported apart (#24). */
+export const HEADLINE = "excluding-trait-only";
+const TOP_GROUPS = 3;
 const MIN_DECKS_PER_LEADER = 20;
 
 const deckRecordSchema = z.looseObject({
@@ -90,7 +93,13 @@ const simManifestSchema = z.looseObject({
   output: z.looseObject({ sha256Uncompressed: z.string(), games: z.number() }),
   inputs: z.array(z.looseObject({ file: z.string() })),
 });
-const pairRowSchema = z.looseObject({ cardA: z.string(), cardB: z.string(), rows: z.string(), score: z.number() });
+const pairRowSchema = z.looseObject({
+  cardA: z.string(),
+  cardB: z.string(),
+  rows: z.string(),
+  linkKind: z.enum(["mechanical", "trait+mechanical", "trait-only"]).optional(),
+  score: z.number(),
+});
 const trioRowSchema = z.looseObject({ cardA: z.string(), cardB: z.string(), cardC: z.string(), shape: z.string(), score: z.number() });
 const fungibilitySchema = z.looseObject({
   classes: z.array(z.looseObject({ id: z.string(), members: z.array(z.string()), typeGroup: z.string().optional() })),
@@ -102,6 +111,7 @@ export interface Pair {
   a: string;
   b: string;
   rows: string[];
+  traitOnly: boolean;
   score: number;
 }
 
@@ -126,6 +136,8 @@ interface LiftSummary {
   unplayed: number;
   measured: number;
   meanLogLift: CI;
+  /** The same mean with a card-clustered bootstrap (resampling cards, not pairs); top-level groups only. */
+  meanLogLiftByCard: ClusterCI | null;
   medianLogLift: CI | null;
   shareLiftAboveOne: Interval;
   scoreAuc: number | null;
@@ -149,6 +161,13 @@ function summarizeLifts(
     unplayed: rows.filter((m) => m.status === "unplayed").length,
     measured: measured.length,
     meanLogLift: bootstrapCI(logs, mean, { iterations, seed: `${seed}|mean` }),
+    meanLogLiftByCard: withMedian
+      ? clusterBootstrapMean(
+          logs,
+          measured.map((p) => [p.a, p.b] as const),
+          { iterations, seed: `${seed}|mean-by-card` },
+        )
+      : null,
     medianLogLift: withMedian ? bootstrapCI(logs, median, { iterations, seed: `${seed}|median` }) : null,
     shareLiftAboveOne: wilson(above.length, measured.length),
     scoreAuc:
@@ -169,14 +188,22 @@ function pairedDifference(
   baseline: ReadonlyMap<string, PairMeasure>,
   seed: string,
   iterations: number,
-): CI {
+  byCard: boolean,
+): { pairs: CI; byCard: ClusterCI | null } {
   const diffs: number[] = [];
+  const cards: (readonly [string, string])[] = [];
   for (const p of pairs) {
     const m = measures.get(p.id);
     const b = baseline.get(p.id);
-    if (m?.status === "measured" && b?.status === "measured") diffs.push((m.lift?.logLift as number) - (b.lift?.logLift as number));
+    if (m?.status === "measured" && b?.status === "measured") {
+      diffs.push((m.lift?.logLift as number) - (b.lift?.logLift as number));
+      cards.push([p.a, p.b]);
+    }
   }
-  return bootstrapCI(diffs, mean, { iterations, seed: `${seed}|paired` });
+  return {
+    pairs: bootstrapCI(diffs, mean, { iterations, seed: `${seed}|paired` }),
+    byCard: byCard ? clusterBootstrapMean(diffs, cards, { iterations, seed: `${seed}|paired-by-card` }) : null,
+  };
 }
 
 interface Groups {
@@ -188,7 +215,8 @@ function groupsOf(pairs: readonly Pair[]): Groups[] {
   const rows = [...new Set(pairs.flatMap((p) => p.rows))].sort(compareCodePoints);
   return [
     { name: "all", pairs: [...pairs] },
-    { name: "all-excluding-trait-only", pairs: pairs.filter((p) => p.rows.some((r) => r !== TRAIT_ROW)) },
+    { name: HEADLINE, pairs: pairs.filter((p) => !p.traitOnly) },
+    { name: "trait-only", pairs: pairs.filter((p) => p.traitOnly) },
     ...rows.map((row) => ({ name: `row:${row}`, pairs: pairs.filter((p) => p.rows.includes(row)) })),
   ];
 }
@@ -247,13 +275,13 @@ async function main(): Promise<void> {
   const pairs: Pair[] = z
     .array(pairRowSchema)
     .parse(pairTable.pairings)
-    .map((r) => ({
-      id: `${r.cardA}>${r.cardB}`,
-      a: r.cardA,
-      b: r.cardB,
-      rows: [...new Set(rowIdsOf(r.rows))].sort(compareCodePoints),
-      score: r.score,
-    }));
+    .map((r) => {
+      const rows = [...new Set(rowIdsOf(r.rows))].sort(compareCodePoints);
+      const traitOnly = rows.every((x) => x === TRAIT_ROW);
+      if (r.linkKind !== undefined && (r.linkKind === "trait-only") !== traitOnly)
+        throw new Error(`pairing ${r.cardA}>${r.cardB}: linkKind ${r.linkKind} disagrees with rows ${r.rows}`);
+      return { id: `${r.cardA}>${r.cardB}`, a: r.cardA, b: r.cardB, rows, traitOnly, score: r.score };
+    });
   const pairIds = new Set<string>();
   for (const x of pairs) {
     if (pairIds.has(x.id)) throw new Error(`duplicate pairing ${x.id}`);
@@ -280,7 +308,7 @@ async function main(): Promise<void> {
     const key = [a, top[0]].sort(compareCodePoints).join(CO_SEP);
     if (seenSimilar.has(key)) continue;
     seenSimilar.add(key);
-    similarPairs.push({ id: `${a}~${top[0]}`, a, b: top[0], rows: ["similar"], score: top[1] });
+    similarPairs.push({ id: `${a}~${top[0]}`, a, b: top[0], rows: ["similar"], traitOnly: false, score: top[1] });
   }
   tick("loaded");
 
@@ -358,15 +386,17 @@ async function main(): Promise<void> {
     const ms = measureAll(similarPairs, pop, scopeOf, conditioned);
     const groups = groupsOf(pairs);
     const out: Record<string, unknown> = {};
-    for (const g of rowsDetail ? groups : groups.slice(0, 2)) {
+    for (const g of rowsDetail ? groups : groups.slice(0, TOP_GROUPS)) {
       const seed = `${SEED}|${label}|${g.name}`;
-      const top = g.name.startsWith("all");
+      const top = groups.indexOf(g) < TOP_GROUPS;
       const ids = new Set(g.pairs.map((y) => y.id));
       const rand = randomPairs.filter((x) => ids.has(x.id));
+      const diff = pairedDifference(g.pairs, m, mr, seed, iterations, top);
       out[g.name] = {
         pairs: summarizeLifts(g.pairs, m, seed, iterations, top),
         randomMatched: summarizeLifts(rand, mr, `${seed}|random`, iterations, top),
-        pairedDiffVsRandom: pairedDifference(g.pairs, m, mr, seed, iterations),
+        pairedDiffVsRandom: diff.pairs,
+        ...(diff.byCard === null ? {} : { pairedDiffVsRandomByCard: diff.byCard }),
       };
     }
     out.similarBaseline = summarizeLifts(similarPairs, ms, `${SEED}|${label}|similar`, iterations, true);

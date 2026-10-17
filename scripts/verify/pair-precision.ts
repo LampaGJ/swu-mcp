@@ -1,6 +1,7 @@
 /**
  * Measures a run's pairing precision against the pinned fixture data/fixtures/pairs-v1.json (LampaGJ/swu-mcp#15).
  * Only fixture pairs the run still emits count toward precision; recall-of-correct is over all fixture-correct pairs.
+ * Precision is reported overall, on mechanical rows only and on trait-only rows (the trait-reference family, #24).
  *
  * Usage: tsx scripts/verify/pair-precision.ts [--run <dir>] [--fixture <file>]
  *   --run  default: newest dated directory under data/runs
@@ -61,11 +62,15 @@ export function measure(items: Fixture["items"], emitted: ReadonlySet<string>): 
   };
 }
 
+const isTraitRow = (row: string): boolean => row === "trait-reference" || row.startsWith("trait-reference:");
+
 export function report(fixture: Fixture, emitted: ReadonlySet<string>): Record<string, unknown> {
   const rows = [...new Set(fixture.items.map((item) => item.row))].sort(compareCodePoints);
   return {
     fixture: { version: fixture.version, seed: fixture.seed, sourceRun: fixture.sourceRun, inputsSha256: fixture.inputsSha256 },
     overall: measure(fixture.items, emitted),
+    mechanical: measure(fixture.items.filter((item) => !isTraitRow(item.row)), emitted),
+    traitOnly: measure(fixture.items.filter((item) => isTraitRow(item.row)), emitted),
     perRow: Object.fromEntries(rows.map((row) => [row, measure(fixture.items.filter((item) => item.row === row), emitted)])),
   };
 }

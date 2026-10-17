@@ -31,6 +31,15 @@ function pct(obj: unknown): string {
   return `${p(value)}% (95% CI ${p(at(obj, "low"))} to ${p(at(obj, "high"))}%, ${at(obj, "n")} of ${at(obj, "of")})`;
 }
 
+/** "card-clustered 95% CI 0.100 to 0.150 over 812 cards" for a card-clustered bootstrap. */
+function byCard(obj: unknown, digits = 3): string {
+  if (num(at(obj, "value")) === null) return "card-clustered CI n/a";
+  return `card-clustered 95% CI ${fmt(num(at(obj, "low")), digits)} to ${fmt(num(at(obj, "high")), digits)} over ${at(obj, "cards")} cards`;
+}
+
+/** The headline stratum: every pair except the trait-only ones (scripts/bench/real-play.ts HEADLINE). */
+const HEAD = "excluding-trait-only";
+
 const lift = (logCi: unknown): string => {
   const v = num(at(logCi, "value"));
   return v === null ? "" : ` (lift ×${Math.exp(v).toFixed(2)})`;
@@ -41,19 +50,23 @@ function rowNames(section: unknown): string[] {
 }
 
 function coInclusionBullets(section: unknown, label: string): string[] {
-  const all = at(section, "all");
-  const noTrait = at(section, "all-excluding-trait-only");
+  const head = at(section, HEAD);
   const out = [
-    `- ${label}, all ${at(all, "pairs", "pairs")} pairs: ${at(all, "pairs", "measured")} measured, ${at(all, "pairs", "unplayed")} with a card never included, ${at(all, "pairs", "notObservable")} not observable.`,
-    `  - Mean log-lift ${ci(at(all, "pairs", "meanLogLift"))}${lift(at(all, "pairs", "meanLogLift"))}; median ${ci(at(all, "pairs", "medianLogLift"))}.`,
-    `  - Random matched partners (same type, cost band, aspect icons): mean log-lift ${ci(at(all, "randomMatched", "meanLogLift"))}; paired difference pair minus its random partner ${ci(at(all, "pairedDiffVsRandom"))}.`,
+    `- ${label}, ${at(head, "pairs", "pairs")} pairs excluding trait-only: ${at(head, "pairs", "measured")} measured, ${at(head, "pairs", "unplayed")} with a card never included, ${at(head, "pairs", "notObservable")} not observable.`,
+    `  - Mean log-lift ${ci(at(head, "pairs", "meanLogLift"))}${lift(at(head, "pairs", "meanLogLift"))}, ${byCard(at(head, "pairs", "meanLogLiftByCard"))}; median ${ci(at(head, "pairs", "medianLogLift"))}.`,
+    `  - Random matched partners (same type, cost band, aspect icons): mean log-lift ${ci(at(head, "randomMatched", "meanLogLift"))}; paired difference pair minus its random partner ${ci(at(head, "pairedDiffVsRandom"))}, ${byCard(at(head, "pairedDiffVsRandomByCard"))}.`,
     `  - Top embedding-similar pairs: mean log-lift ${ci(at(section, "similarBaseline", "meanLogLift"))}.`,
-    `  - Share with lift above 1: ${pct(at(all, "pairs", "shareLiftAboveOne"))}; random partners ${pct(at(all, "randomMatched", "shareLiftAboveOne"))}.`,
-    `  - Pair score as a ranker of lift above 1 (AUC): ${fmt(num(at(all, "pairs", "scoreAuc")))}.`,
+    `  - Share with lift above 1: ${pct(at(head, "pairs", "shareLiftAboveOne"))}; random partners ${pct(at(head, "randomMatched", "shareLiftAboveOne"))}.`,
+    `  - Pair score as a ranker of lift above 1 (AUC): ${fmt(num(at(head, "pairs", "scoreAuc")))}.`,
   ];
-  if (noTrait !== undefined) {
+  for (const [name, text] of [
+    ["trait-only", "Trait-only pairs (own stratum, not in the headline)"],
+    ["all", "All pairs including trait-only"],
+  ] as const) {
+    const g = at(section, name);
+    if (g === undefined) continue;
     out.push(
-      `  - Excluding trait-only pairs (${at(noTrait, "pairs", "measured")} measured): mean log-lift ${ci(at(noTrait, "pairs", "meanLogLift"))}; paired difference vs random ${ci(at(noTrait, "pairedDiffVsRandom"))}.`,
+      `  - ${text}, ${at(g, "pairs", "pairs")} pairs (${at(g, "pairs", "measured")} measured): mean log-lift ${ci(at(g, "pairs", "meanLogLift"))}, ${byCard(at(g, "pairs", "meanLogLiftByCard"))}; paired difference vs random ${ci(at(g, "pairedDiffVsRandom"))}, ${byCard(at(g, "pairedDiffVsRandomByCard"))}.`,
     );
   }
   return out;
@@ -122,7 +135,7 @@ export function renderMarkdown(report: Json): string {
     "---",
     "type: report",
     "status: final",
-    'related: ["#18"]',
+    'related: ["#18", "#24"]',
     "review_by: 2027-01-17",
     "---",
     "",
@@ -132,16 +145,18 @@ export function renderMarkdown(report: Json): string {
     "",
     "## TL;DR",
     "",
-    `- Decklists (${at(inputs, "decks", "decks")} unique Premier lists): emitted pairs have mean deck co-inclusion log-lift ${ci(at(pooled, "all", "pairs", "meanLogLift"))}${lift(at(pooled, "all", "pairs", "meanLogLift"))}, against ${ci(at(pooled, "all", "randomMatched", "meanLogLift"))} for random partners matched on type, cost band and aspect icons. The paired difference is ${ci(at(pooled, "all", "pairedDiffVsRandom"))}.`,
-    `- Human Karabast games (${at(inputs, "humanGames", "games")} games, ${at(inputs, "humanGames", "sides")} sides): co-occurrence on one side has mean log-lift ${ci(at(games, "all", "pairs", "meanLogLift"))} against ${ci(at(games, "all", "randomMatched", "meanLogLift"))} for random partners. When both cards appear, the offering card is in play when the wanting card is played on ${pct(at(inter, "all", "pairs", "offerInPlayWhenWantPlayed"))} of sides (random partners ${pct(at(inter, "all", "randomMatched", "offerInPlayWhenWantPlayed"))}).`,
-    `- Win rate, human games, both cards versus only one, Mantel-Haenszel by leader: ${ci(at(inter, "all", "pairs", "mhRiskDifferenceByLeader"))} (random partners ${ci(at(inter, "all", "randomMatched", "mhRiskDifferenceByLeader"))}). Confounded by deck strength and by how long a game lasts.`,
+    "- Headline figures exclude trait-only pairs (two cards linked only by a shared trait: obvious tribal links); they are reported as their own stratum below.",
+    `- Decklists (${at(inputs, "decks", "decks")} unique Premier lists): emitted pairs excluding trait-only have mean deck co-inclusion log-lift ${ci(at(pooled, HEAD, "pairs", "meanLogLift"))}${lift(at(pooled, HEAD, "pairs", "meanLogLift"))} (${byCard(at(pooled, HEAD, "pairs", "meanLogLiftByCard"))}), against ${ci(at(pooled, HEAD, "randomMatched", "meanLogLift"))} for random partners matched on type, cost band and aspect icons. The paired difference is ${ci(at(pooled, HEAD, "pairedDiffVsRandom"))} (${byCard(at(pooled, HEAD, "pairedDiffVsRandomByCard"))}).`,
+    `- Decklists, trait-only pairs alone: paired difference ${ci(at(pooled, "trait-only", "pairedDiffVsRandom"))} (${byCard(at(pooled, "trait-only", "pairedDiffVsRandomByCard"))}); all pairs together: ${ci(at(pooled, "all", "pairedDiffVsRandom"))} (${byCard(at(pooled, "all", "pairedDiffVsRandomByCard"))}).`,
+    `- Human Karabast games (${at(inputs, "humanGames", "games")} games, ${at(inputs, "humanGames", "sides")} sides): pairs excluding trait-only co-occur on one side with mean log-lift ${ci(at(games, HEAD, "pairs", "meanLogLift"))} (${byCard(at(games, HEAD, "pairs", "meanLogLiftByCard"))}) against ${ci(at(games, HEAD, "randomMatched", "meanLogLift"))} for random partners. When both cards appear, the offering card is in play when the wanting card is played on ${pct(at(inter, HEAD, "pairs", "offerInPlayWhenWantPlayed"))} of sides (random partners ${pct(at(inter, HEAD, "randomMatched", "offerInPlayWhenWantPlayed"))}).`,
+    `- Win rate, human games, both cards versus only one, Mantel-Haenszel by leader, pairs excluding trait-only: ${ci(at(inter, HEAD, "pairs", "mhRiskDifferenceByLeader"))} (random partners ${ci(at(inter, HEAD, "randomMatched", "mhRiskDifferenceByLeader"))}). Confounded by deck strength and by how long a game lasts.`,
     ...rowVerdicts(pooled, "decklists"),
     ...rowVerdicts(games, "human-game co-occurrence"),
     agreementBullets(at(fix, "decksPooledConditioned"), "pairs-v1 judges vs decklists"),
     agreementBullets(at(fix, "humanGamesConditioned"), "pairs-v1 judges vs human games"),
     `- Fungible classes (substitutes): pooled observed/expected co-occurrence within a leader ${fmt(num(at(fung, "classes", "pooledOE")))} against ${fmt(num(at(fung, "randomMatchedGroups", "pooledOE")))} for matched random groups; classes below chance ${pct(at(fung, "classes", "shareBelowChance"))}.`,
     `- Trios: mean log(observed/expected) of all three in one deck ${ci(at(trios, "trios", "meanLogOE"))} against ${ci(at(trios, "randomMatched", "meanLogOE"))} for matched random trios.`,
-    `- Engine simulations (bot play, reported separately): decks holding both cards versus one, MH win-rate difference by leader ${ci(at(sims, "all", "pairs", "mhRiskDifferenceByLeader"))} (random partners ${ci(at(sims, "all", "randomMatched", "mhRiskDifferenceByLeader"))}).`,
+    `- Engine simulations (bot play, reported separately): decks holding both cards of a pair excluding trait-only versus one, MH win-rate difference by leader ${ci(at(sims, HEAD, "pairs", "mhRiskDifferenceByLeader"))} (random partners ${ci(at(sims, HEAD, "randomMatched", "mhRiskDifferenceByLeader"))}).`,
     "",
     "## Sources and observability windows",
     "",
@@ -158,7 +173,8 @@ export function renderMarkdown(report: Json): string {
     "- Units: a decklist (main deck), a human game side, or a simulated decklist seat. Lift = P(A and B) / (P(A) P(B)) over units; log-lift is ln((observed + 0.5) / (expected + 0.5)), which shrinks rare pairs toward 0. Conditioned figures keep only units whose leader and base cover both cards' aspect icons, so the +2 penalty never applies.",
     "- A pair is measured when both cards appear in at least one unit of the source. Pairs counts are emitted pairings (offer card A, want card B); a pairing claimed by several rows counts once overall and once in each row.",
     "- Baselines: (1) each pair's B replaced by a seeded random card of the same type, cost band and aspect icons that A is not paired with; (2) each card's nearest ability-text embedding neighbour (similarity/similar.json).",
-    "- Intervals: Wilson 95% for proportions, seeded percentile bootstrap (resampling pairs) for means, medians and ratio estimates; n is the number of pairs (or classes, trios) behind an estimate. Pairs share cards, so they are not independent and the intervals are optimistic. Proportions pooled over pairs count one side or seat once per pair it holds.",
+    "- Strata: trait-only pairs (linked only by the trait-reference row) are their own stratum; headline figures exclude them. A trait shared on a mechanical pair stays in the headline, since the pair has a mechanical link.",
+    "- Intervals: Wilson 95% for proportions, seeded percentile bootstrap (resampling pairs) for means, medians and ratio estimates; n is the number of pairs (or classes, trios) behind an estimate. Pairs share cards, so they are not independent and the pair intervals are optimistic. Each stratum mean and paired difference also carries a card-clustered interval: every draw resamples the distinct cards and weights a pair by how often both its cards were drawn, so a hub card in hundreds of pairs moves them together. Proportions pooled over pairs count one side or seat once per pair it holds.",
     "- In-game events: the extract records, for every card played from hand, which cards were already on that player's board; the player's leader and base count as always in play.",
     "- Win-rate differences: units holding both cards against units holding exactly one, Mantel-Haenszel risk difference stratified by leader, bootstrapped over pairs.",
     "- Fungible classes: within each leader with at least 20 decks, observed member co-occurrences against the independence expectation; below 1 means members replace each other. Rate similarity is the coefficient of variation of member inclusion rates among aspect-eligible decks.",
@@ -213,7 +229,10 @@ export function renderMarkdown(report: Json): string {
     "## Engine simulations (separate source)",
     "",
     "- Bot-vs-bot games on the Karabast engine (forceteki). The bots do not build or pilot decks like people, so a pair that wins for bots may only suit the bot's play pattern. The records name decks, not played cards, so only deck-level win rates are available. Never pooled with human play.",
-    `- All pairs, seat-games pooled over pairs (not independent): win rate holding both ${pct(at(sims, "all", "pairs", "winRateBoth"))}, holding one ${pct(at(sims, "all", "pairs", "winRateOnlyOne"))}; MH difference by leader ${ci(at(sims, "all", "pairs", "mhRiskDifferenceByLeader"))}; random partners ${ci(at(sims, "all", "randomMatched", "mhRiskDifferenceByLeader"))}.`,
+    ...([HEAD, "trait-only", "all"] as const).map(
+      (g) =>
+        `- ${g === HEAD ? "Pairs excluding trait-only" : g === "all" ? "All pairs" : "Trait-only pairs"}, seat-games pooled over pairs (not independent): win rate holding both ${pct(at(sims, g, "pairs", "winRateBoth"))}, holding one ${pct(at(sims, g, "pairs", "winRateOnlyOne"))}; MH difference by leader ${ci(at(sims, g, "pairs", "mhRiskDifferenceByLeader"))}; random partners ${ci(at(sims, g, "randomMatched", "mhRiskDifferenceByLeader"))}.`,
+    ),
     ...rowNames(sims).map(
       (k) =>
         `- ${k.slice(4)}: MH difference ${ci(at(sims, k, "pairs", "mhRiskDifferenceByLeader"))} vs random ${ci(at(sims, k, "randomMatched", "mhRiskDifferenceByLeader"))}.`,
