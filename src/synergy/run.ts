@@ -10,6 +10,7 @@ import {
   replaySchema,
   synergyCardsSchema,
   TRIO_SHAPES,
+  type ComplementarityTable,
   type PairEdge,
   type SynergyCard,
   type SynergyReplay,
@@ -62,6 +63,13 @@ const json = (value: unknown): string => `${JSON.stringify(value, null, 1)}\n`;
 
 export function pairReason(e: PairEdge): string {
   return e.rows.map((r) => `${r.row}: ${r.reason}`).join(" | ");
+}
+
+/** Offer tags on the cards that no row feeds and no table note explains; empty when every offer is a decision. */
+export function uncoveredOffers(cards: readonly SynergyCard[], table: ComplementarityTable): string[] {
+  const covered = new Set([...table.rows.flatMap((r) => Object.keys(r.offers)), ...(table.feedsNothing ?? []).map((n) => n.tag)]);
+  const seen = new Set(cards.flatMap((c) => c.tags.offers.map((t) => t.tag)));
+  return [...seen].filter((t) => !covered.has(t) && !t.startsWith("offers:is-trait-")).sort(compareCodePoints);
 }
 
 export function buildSynergyRun(featuresText: string, tableText: string, codeCommit: string): SynergyRun {
@@ -136,6 +144,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
     pairs: graph.edges.length,
     pairsExcludingTraitOnly: graph.edges.filter((e) => !e.traitOnly).length,
     pairCountsPerRow: graph.rowCounts,
+    offersWithoutRowOrNote: uncoveredOffers(cards, table),
     exampleChecks: graph.exampleChecks,
     examplePairs: picked.map((e) => ({
       a: describe(byKey.get(e.a) as SynergyCard),

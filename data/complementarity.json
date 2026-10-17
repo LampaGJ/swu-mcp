@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "tableVersion": 3,
- "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row.",
+ "tableVersion": 4,
+ "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note.",
  "rows": [
   {
    "id": "sac-outlet-when-defeated",
@@ -323,6 +323,104 @@
    ]
   },
   {
+   "id": "when-played-repeater",
+   "offers": {
+    "offers:has-when-played": 1
+   },
+   "wants": {
+    "wants:when-played-cards": 1
+   },
+   "strength": 0.9,
+   "reason": "Cards that use a When Played ability again need units that carry one. Example: Death Trooper feeds Qui-Gon Jinn's Aethersprite.",
+   "example": null
+  },
+  {
+   "id": "exhaust-enemy-payoff",
+   "offers": {
+    "offers:exhaust-enemy": 1,
+    "offers:exhaust-any": 0.5
+   },
+   "wants": {
+    "wants:exhausted-enemy": 1
+   },
+   "strength": 0.8,
+   "reason": "Exhausting an enemy unit switches on cards that reward or punish an exhausted enemy unit. Example: Cat and Mouse feeds Assassin Probe.",
+   "example": null
+  },
+  {
+   "id": "weaken-enemy-payoff",
+   "offers": {
+    "offers:give-weakness-enemy": 1,
+    "offers:give-weakness": 0.5
+   },
+   "wants": {
+    "wants:enemy-weakened": 1
+   },
+   "strength": 0.8,
+   "reason": "A Weakness token on an enemy unit feeds cards that act on enemy units carrying one. Example: Maz Kanata feeds Rish Loo.",
+   "example": null
+  },
+  {
+   "id": "own-upgrade-defeat-watcher",
+   "offers": {
+    "offers:defeat-own-upgrade": 1
+   },
+   "wants": {
+    "wants:friendly-upgrade-defeated": 1
+   },
+   "strength": 0.9,
+   "reason": "Defeating your own upgrade triggers cards that watch for a friendly upgrade being defeated. Example: Reforge feeds Zeb Orrelios.",
+   "example": null
+  },
+  {
+   "id": "enemy-base-damage-payoff",
+   "offers": {
+    "offers:damage-enemy-base": 1
+   },
+   "wants": {
+    "wants:enemy-base-damaged": 1
+   },
+   "strength": 0.8,
+   "reason": "Damaging the enemy base switches on cards that need an enemy base damaged this phase. Example: Shoot Down feeds Tempest Assault.",
+   "example": null
+  },
+  {
+   "id": "grant-sentinel-payoff",
+   "offers": {
+    "offers:grant-sentinel": 1
+   },
+   "wants": {
+    "wants:keyword-sentinel": 1
+   },
+   "strength": 0.6,
+   "reason": "A granted Sentinel makes the unit a target for cards that act on units with Sentinel. Example: Academy Graduate feeds Kylo Ren's Command Shuttle.",
+   "example": null
+  },
+  {
+   "id": "grant-hidden-payoff",
+   "offers": {
+    "offers:grant-hidden": 1
+   },
+   "wants": {
+    "wants:keyword-hidden": 1
+   },
+   "strength": 0.6,
+   "reason": "A granted Hidden makes the unit a target for cards that act on units with Hidden. Example: Third Sister feeds Dooku.",
+   "example": null
+  },
+  {
+   "id": "grant-shielded-payoff",
+   "offers": {
+    "offers:grant-shielded": 1
+   },
+   "wants": {
+    "wants:keyword-shielded": 1
+   },
+   "strength": 0.6,
+   "reason": "A granted Shielded makes the unit a target for cards that act on units with Shielded. Example: Rio Durant feeds The Armorer.",
+   "example": null
+  },
+  {
    "id": "trait-reference",
    "family": "trait",
    "offers": {
@@ -334,6 +432,96 @@
    "strength": 0.35,
    "reason": "A card that references a trait wants units with that trait (tribal; ranks as obvious).",
    "example": null
+  }
+ ],
+ "feedsNothing": [
+  {
+   "tag": "offers:buff",
+   "note": "Raises stats; the only readers are power thresholds (4 or more power) worded per card, which no want tag models. Reviewed #14, decided no row."
+  },
+  {
+   "tag": "offers:grant-ambush",
+   "note": "No card text acts on 'units with Ambush'. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-grit",
+   "note": "Grit is the grantee's own damaged-state bonus; no card acts on units with Grit. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-overwhelm",
+   "note": "Breach reads a friendly unit that has Overwhelm, worded as a condition no want tag models. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-raid",
+   "note": "No card text acts on 'units with Raid'. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-restore",
+   "note": "No card text acts on 'units with Restore'. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-saboteur",
+   "note": "No card text acts on 'units with Saboteur'. Reviewed #14."
+  },
+  {
+   "tag": "offers:grant-support",
+   "note": "No card text acts on 'units with Support'. Reviewed #14."
+  },
+  {
+   "tag": "offers:give-advantage",
+   "note": "Advantage tokens have givers only; no card reads 'a unit with an Advantage token'. Reviewed #14."
+  },
+  {
+   "tag": "offers:give-shield-self",
+   "note": "The Shield lands on the card that grants it, so it cannot satisfy another card's 'if this unit is upgraded' (The Mandalorian 07010052 and Yellow Aces Bomber, round 2). Reviewed #14."
+  },
+  {
+   "tag": "offers:give-experience-self",
+   "note": "Same as give-shield-self: the Experience stays on the granting card. Reviewed #14."
+  },
+  {
+   "tag": "offers:give-shield-enemy",
+   "note": "A Shield on an enemy unit helps the opponent; nothing wants it. Reviewed #14."
+  },
+  {
+   "tag": "offers:give-weakness-own",
+   "note": "A Weakness on a friendly unit is a drawback to you, not a payoff (Geonosian Picador, round 2). Reviewed #14."
+  },
+  {
+   "tag": "offers:discard-opponent",
+   "note": "No card reads the opponent's hand size or discard. Reviewed #14."
+  },
+  {
+   "tag": "offers:mill-opponent",
+   "note": "No card reads the opponent's deck or discard pile. Reviewed #14."
+  },
+  {
+   "tag": "offers:bounce-enemy",
+   "note": "Returns an enemy card to the opponent's hand; no replay payoff applies to it. Reviewed #14."
+  },
+  {
+   "tag": "offers:defeat-upgrade",
+   "note": "Targets any upgrade, so it cannot be relied on to defeat your own; the only watcher names a friendly upgrade (see defeat-own-upgrade). Reviewed #14."
+  },
+  {
+   "tag": "offers:capture",
+   "note": "Capturing enemy units feeds only the rescue wording (DJ, Arrest, Libertine), which no want tag models. Reviewed #14."
+  },
+  {
+   "tag": "offers:capture-own",
+   "note": "Same as capture. Reviewed #14."
+  },
+  {
+   "tag": "offers:return-from-discard",
+   "note": "It consumes the discard pile rather than feeding it; the card already wants cards-in-discard on its own side. Reviewed #14."
+  },
+  {
+   "tag": "offers:tutor-to-deck",
+   "note": "Puts a card on top of the deck; nothing reads the top card. Reviewed #14."
+  },
+  {
+   "tag": "offers:damage-own-base",
+   "note": "Only scaling wordings such as 'every 5 damage on your base' read it, and they parse as self-damaged. Reviewed #14."
   }
  ]
 }

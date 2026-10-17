@@ -26,11 +26,15 @@ export const complementarityRowSchema = z.strictObject({
 });
 export type ComplementarityRow = z.infer<typeof complementarityRowSchema>;
 
+/** An offer tag the table decides feeds no want, with the reason, so an uncovered tag is a choice and not a gap. */
+export const feedsNothingSchema = z.strictObject({ tag: z.string().min(1), note: z.string().min(1) });
+
 export const complementarityTableSchema = z.strictObject({
   schemaVersion: z.literal(SYNERGY_TABLE_SCHEMA_VERSION),
   tableVersion: z.number().int().positive(),
   note: z.string().optional(),
   rows: z.array(complementarityRowSchema).min(1),
+  feedsNothing: z.array(feedsNothingSchema).optional(),
 });
 export type ComplementarityTable = z.infer<typeof complementarityTableSchema>;
 

@@ -38,7 +38,7 @@ describe("buildSynergyRun", () => {
     const replay = replaySchema.parse(JSON.parse(run.files["replay.json"]));
     expect(replay.inputHash["features.json"]).toBe(sha256Hex(features));
     expect(replay.inputHash["complementarity.json"]).toBe(sha256Hex(TABLE_TEXT));
-    expect(replay.complementarityTableVersion).toBe(3);
+    expect(replay.complementarityTableVersion).toBe(4);
     expect(replay.codeCommit).toBe("test-commit");
     for (const name of ["fungibility.json", "pairs.toon", "report.json", "trios.toon"]) {
       expect(replay.outputHash[name]).toBe(sha256Hex(run.files[name]));
