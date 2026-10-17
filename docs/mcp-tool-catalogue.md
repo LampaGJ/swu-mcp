@@ -164,18 +164,18 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
 - P1 `cards_by_facet` (shipped; merged F promo_scarcity) [F]
   - Purpose: cards in one facet value (includes variant and expansion). Shipped.
   - In: facet string, value string, limit number. Out: summary rows. Tier A. V6. Serves: AI assistants.
-- P1 `get_cards_batch` (merged M card_fields_projection, M play_stats_batch use for cards) [M]
+- P1 `get_cards_batch` (merged M card_fields_projection, M play_stats_batch use for cards) [M] **[shipped, #5]**
   - Purpose: many cards by id in one call, with field projection, to cut round trips and context.
   - In: ids string array, fields string array.
   - Out: array of projected card objects.
   - Source: logical-card folder. Tier A. V7. Serves: AI assistants (context window).
   - Rationale: M names the context window as a constraint; batch is the cheapest answer to it.
-- P1 `resolve_card_name` (merged M suggest_cards, J scan_match_candidates) [M J]
+- P1 `resolve_card_name` (merged M suggest_cards, J scan_match_candidates) [M J] **[shipped, #5]**
   - Purpose: fuzzy name or partial text to ranked card candidates, with distance.
   - In: text string, limit number. Out: array of cardKey, title, subtitle, match score.
   - Source: deterministic string similarity over titles. Tier A. V7. Serves: AI assistants (typos, voice), mault.
   - Rationale: voice assistants and typos are the M use case; scan guesses are the J mault use case.
-- P1 `get_printings` (merged J get_printing, J list_printings, M printings_of_card, D printing_variants, D raw_printing, D legal_printings, P printing_list, J card_image_url, M card_image_url, D image_url, F rarity_scarcity, F reprint_history) [J M D P F]
+- P1 `get_printings` (merged J get_printing, J list_printings, M printings_of_card, D printing_variants, D raw_printing, D legal_printings, P printing_list, J card_image_url, M card_image_url, D image_url, F rarity_scarcity, F reprint_history) [J M D P F] **[shipped, #5]**
   - Purpose: every printing of a logical card with set, number, rarity, variant, image URL stem, legality flag, and optionally the original 49 raw fields.
   - In: cardKey string, raw boolean.
   - Out: array of printings with set, number, rarity, variant, imageStem, legal.
@@ -213,7 +213,7 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - In: direction enum (underplayed, overplayed), minSampleSize, limit. Out: rows with score, inclusion, residual, n.
   - Source: scorer and play stats. Tier B. V7. Serves: content creator, deckbuilder.
   - Trap: play-calibrated weights make the residual partly circular; the output must say which weights are play-fitted.
-- P1 resource `swu://rubric` (merged J explain_rubric, M explain_rubric, P explain_rubric, M rubric_version, D designer_price_lookup, M resource swu://rubric) [J M D P]
+- P1 resource `swu://rubric` (merged J explain_rubric, M explain_rubric, P explain_rubric, M rubric_version, D designer_price_lookup, M resource swu://rubric) [J M D P] **[shipped, #5]**
   - Purpose: formula, weights, designer keyword prices and calibration date as a static, cacheable resource.
   - Source: scorer config. Tier B. V6. Serves: competitive deckbuilder (trust). Resource, not a tool.
 
@@ -351,27 +351,27 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
 - P1 `keyword_rules` (merged J keyword_explainer, M keyword_rules, D keyword_rule_for_card, P keyword_explainer) [J M D P]
   - Purpose: rule text for a keyword, examples, and cards that carry it, or the rule sections for every keyword on a card.
   - In: keyword string or cardKey. Out: rule sections, cards. Source: keyword-to-rule linker (#6). Tier B. V7. Serves: new player, judge.
-- P1 `search_rulings` (merged M search_rulings, M rulings_for_keyword, M rulings_by_date, D rulings_for_rule, J rulings_since, D rulings_since, P ruling_changes_since) [J M D P]
+- P1 `search_rulings` (merged M search_rulings, M rulings_for_keyword, M rulings_by_date, D rulings_for_rule, J rulings_since, D rulings_since, P ruling_changes_since) [J M D P] **[shipped, #5]**
   - Purpose: text, keyword, rule and date filters over all dated rulings.
   - In: query, keyword, rule, since date, limit. Out: rows with card, date, text, linked rule if any.
   - Source: rulings field; the rule filter needs the ruling-to-rule linker (#6). Tier A for text and date, B for rule filter. V7. Serves: judge, content creator.
-- P1 resource `swu://rules/{section}` (merged M resource) [M]
+- P1 resource `swu://rules/{section}` (merged M resource) [M] **[shipped, #5]**
   - Purpose: static rules sections for host caching. Tier B. V5. Serves: AI assistants. Resource, not a tool.
-- P1 prompt `rules_question` (M) [M]
+- P1 prompt `rules_question` (M) [M] **[shipped, #5]**
   - Purpose: workflow template: find the rule, find the ruling, answer with citations. Tier A (text only). V6. Serves: judge.
 - P2 `interaction_check` (merged J interaction_check, P interaction_rulings) [J P]
   - Purpose: retrieval bundle only: both cards' keywords, linked rule sections and rulings for two named cards (no verdict). Tier B. V5. Serves: judge. In: cardKeyA, cardKeyB. Out: keywords, rules, rulings.
 
 ### Sets and legality
 
-- P1 `list_sets` (merged J list_sets, M set_info, M legal_sets) [J M]
+- P1 `list_sets` (merged J list_sets, M set_info, M legal_sets) [J M] **[shipped, #5]**
   - Purpose: sets with code, release date, card count and Premier-legality status.
   - In: none. Out: array of sets. Source: set calendar from the card list. Tier A. V6. Serves: organiser.
-- P1 `format_legality` (merged M, P format_legality, J legality_history, D legality_on_date, F rotation_status) [J M D P F]
+- P1 `format_legality` (merged M, P format_legality, J legality_history, D legality_on_date, F rotation_status) [J M D P F] **[shipped #5 with limits: set-based, current only; no ban list]**
   - Purpose: legality of a card in Premier, Eternal and Twin Suns on a date, with reason and ban or suspension.
   - In: cardKey, format, asOf. Out: legal boolean, reason, source article link.
   - Source: set calendar plus ban ledger. Tier C (ban ledger from the articles API; without it every folded card reads legal). V8. Serves: organiser, judge.
-- P1 `ban_list` (merged J ban_list, M ban_suspension_list, D bans_timeline, P banlist_history) [J M D P]
+- P1 `ban_list` (merged J ban_list, M ban_suspension_list, D bans_timeline, P banlist_history) [J M D P] **[not built: needs the articles ingest]**
   - Purpose: current and past bans and suspensions with dates and the article link.
   - In: format, asOf. Out: rows of card, status, date, articleUrl.
   - Source: ledger extracted from the articles API. Tier C (new ingest: articles). V8. Serves: organiser, content creator.
@@ -386,17 +386,17 @@ Only P0, P1 and P2 tools appear here, each with the details owed. Parked and Rej
   - In: none. Out: sources with hash and date, packageDate, codeCommit.
   - Source: pinned data-version manifest. Tier A. V8. Serves: AI assistants (citeability).
   - Rationale: the #5 contract says every tool cites its data version.
-- P1 `diff_data_version` (merged D diff_data_version, M new_cards_since, M changes_between_versions, P set_spoiler_diff) [D M P]
+- P1 `diff_data_version` (merged D diff_data_version, M new_cards_since, M changes_between_versions, P set_spoiler_diff) [D M P] **[not built: a package holds one run]**
   - Purpose: card-, tag- and score-level changes between two pinned versions (new cards, text changes).
   - In: fromVersion, toVersion. Out: added, changed, removed with kind. Source: manifest plus folder. Tier A. V7. Serves: content creator, mault.
-- P1 resource `swu://usage-guide` (merged M list_tools_guide, M usage_hints_resource) [M]
+- P1 resource `swu://usage-guide` (merged M list_tools_guide, M usage_hints_resource) [M] **[shipped, #5]**
   - Purpose: which tool for which question type, and how to ask well. Tier A. V6. Serves: AI assistants.
-- P1 resource `swu://glossary` (merged J glossary, M glossary_term) [J M]
+- P1 resource `swu://glossary` (merged J glossary, M glossary_term) [J M] **[shipped, #5]**
   - Purpose: game terms plus offers, wants, kin, fungible. Source: docs/concepts/swu-glossary.json. Tier A. V6. Serves: new player.
 
 ### MCP resources and prompts
 
-- P1 prompt `build_deck_for_leader` (M) [M]
+- P1 prompt `build_deck_for_leader` (M) [M] **[shipped, #5]**
   - Purpose: workflow: choose leader and base, fill chains with substitutes, audit. Tier B (calls B tools). V7. Serves: competitive deckbuilder.
 - P2 static catalogue resources (merged M swu://facets, swu://clusters, swu://sets, swu://card/{id}) [M]
   - Purpose: cacheable catalogues. Tier A. V4. Serves: hosts that cache resources.

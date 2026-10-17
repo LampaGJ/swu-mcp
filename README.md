@@ -2,7 +2,7 @@
 
 Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discovery and card similarity, served to AI assistants over the Model Context Protocol (MCP, stdio). Every number comes from deterministic code over pinned inputs. No model runs at query time and none decides a score.
 
-Status: MVP (swu-mcp#7). All 28 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
+Status: MVP (swu-mcp#7). All 34 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
 
 ## Install
 
@@ -54,7 +54,7 @@ Tool results are TOON, a compact table format (column names once, then one line 
 - [The Claude Code setup behind it](docs/public/claude-code-setup.md).
 - [Verification report](docs/verification/2026-10-16.md).
 
-## Tools (28)
+## Tools (34)
 
 Cards and search
 
@@ -62,6 +62,9 @@ Cards and search
 - `search_cards` substring search over title, subtitle and text, narrowed by type, aspect, trait, keyword, set and max cost.
 - `list_facet` every value of one facet (aspect, trait, keyword, type, arena, rarity, expansion, variant) with count and definition.
 - `cards_by_facet` the cards that carry one facet value.
+- `get_cards_batch` up to 50 cards by `cardKey` in one call, with the columns you name.
+- `resolve_card_name` typo-tolerant name lookup (MiniSearch fuzzy match, edit distance as tiebreak) to ranked candidate cards.
+- `get_printings` the sets a card is printed in with Premier status, variants and the canonical printing's number, rarity and image stem. The package keeps no per-printing rows.
 
 Value
 
@@ -100,6 +103,12 @@ Rules
 - `card_rulings` dated official rulings for one card.
 - `keyword_rules` a keyword's definition and the rules sections that define it.
 - `rules_version` which Comprehensive Rules the rules tools use.
+- `search_rulings` card rulings filtered by text, keyword and date. No filter by rules section.
+
+Sets and legality
+
+- `list_sets` every expansion with kind, main set number, stated release date and Premier status, parsed from the expansion notes.
+- `format_legality` Premier, Eternal and Twin Suns legality of a card with the reason. Set-based and current only: no ban list or legality history is in the data.
 
 Similarity
 
@@ -110,6 +119,11 @@ Similarity
 Provenance
 
 - `data_version` package date, rubric version, code commit and input hashes behind every score.
+
+### Resources and prompts
+
+- `swu://rubric` the card value rubric, `swu://glossary` the game glossary (JSON), `swu://usage-guide` which tool answers which question, `swu://rules/{section}` one Comprehensive Rules section, and `rules://core-primer`. The rubric and glossary are read from the data package's `docs/`, so an npx install serves them.
+- Prompts `rules_question` (find the rule, find the ruling, answer with citations) and `build_deck_for_leader`.
 
 ## Data pipeline
 
