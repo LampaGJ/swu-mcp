@@ -18,6 +18,8 @@ pnpm rules:check [--data <dir>] [--verify-hash]   # is the pinned CR still the n
 pnpm market [--data <dir>] [--originals <dir>] [--captures <dir>]   # prices.json, play.json -> data/runs/<date>/market
 pnpm embed:capture            # the one model call: Ollama nomic-embed-text -> data/pinned/embeddings/<renderVersion>-<hash12>/ (pinned, refuses to overwrite)
 pnpm similarity               # deterministic: pinned vectors -> data/runs/<date>/similarity/ (similar, kin, clusters, vectors, replay)
+pnpm verify:audit             # nine deterministic checks of every derived product against the originals -> data/runs/<date>/verify/audit.json (exit 1 on any failure)
+pnpm verify:sample            # seeded evidence packets for semantic verification -> tmp/verify/packets/ (8 packets + index.json with the verdict schema)
 ```
 
 The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
