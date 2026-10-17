@@ -15,7 +15,6 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
@@ -46,8 +45,8 @@ import { TRIO_FANOUT } from "../src/synergy/trios.js";
 import { TOOLS } from "../src/tools.js";
 import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PAIRS_PER_CARD = 10;
 const TRIOS_PER_SHAPE = 200;
 const TRIO_MAX_COST = 9;

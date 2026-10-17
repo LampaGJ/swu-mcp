@@ -9,13 +9,13 @@
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { buildRecordSchema } from "../lib/build-record.js";
 import { PAIRINGS_INSTRUCTIONS, buildIndex, loadInputs, orderBySeed, pairingItemBuilder, serialize, type Packet } from "./sample.js";
+import { REPO_ROOT } from "../../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
 export const FIXTURE_SEED = "pair-fixture-v1";

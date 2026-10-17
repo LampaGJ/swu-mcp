@@ -12,15 +12,14 @@
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { DATED_DIR } from "../src/data.js";
 import { buildSynergyRun } from "../src/synergy/run.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function newestFeatures(): string {
   const runs = path.join(REPO_ROOT, "data/runs");

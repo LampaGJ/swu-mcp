@@ -9,7 +9,7 @@
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { z } from "zod";
@@ -17,8 +17,8 @@ import { compareCodePoints } from "../../src/swu/canonical.js";
 import { FixtureSchema, type Fixture } from "./pair-fixture-pin.js";
 import { pairUnits } from "./pair-fixture.js";
 import { serialize } from "./sample.js";
+import { REPO_ROOT } from "../../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 export interface Interval {
   value: number | null;

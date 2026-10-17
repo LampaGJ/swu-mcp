@@ -11,13 +11,12 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { resolveDataDir } from "../src/data.js";
 import { runScoring } from "../src/scorer/run.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, coefficients: { type: "string" }, out: { type: "string" } } });

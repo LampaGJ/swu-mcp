@@ -13,7 +13,6 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
@@ -22,8 +21,8 @@ import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { printingCardKeys } from "../src/swu/llm-flatten.js";
 import { codeCommit } from "./lib/code-commit.js";
 import { loadRawPrintings, packageRawManifestSha256 } from "./lib/raw-pages.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
 const importSchema = z.looseObject({ id: z.number().int(), finished_at: z.string().nullable().optional() });

@@ -1,10 +1,11 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { compareCodePoints } from "../../src/swu/canonical.js";
+import { REPO_ROOT } from "../../src/paths.js";
 import { codeCommit as codeCommitScoped } from "../lib/code-commit.js";
 
-export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+export { REPO_ROOT } from "../../src/paths.js";
 
 /** HEAD, suffixed -dirty when src/, scripts/ or package.json differ from it. */
 export const codeCommit = (): string => codeCommitScoped(["src", "scripts", "package.json"]);

@@ -9,7 +9,6 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
 import { captureDirName, CAPTURE_ROOT, loadCapture } from "../src/embed/pinned.js";
@@ -17,8 +16,8 @@ import { inputHashOf, parseRenderCards, renderAll } from "../src/embed/render.js
 import { buildSimilarityRun, PARAMS } from "../src/embed/similarity-run.js";
 import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function main(): void {
   const { values } = parseArgs({ options: { data: { type: "string" }, out: { type: "string" } } });

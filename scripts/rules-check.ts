@@ -11,14 +11,13 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { resolveDataDir } from "../src/data.js";
 import { sha256Hex } from "../src/swu/canonical.js";
 import { CR_FILE_NAME, EXIT_CURRENT, EXIT_ERROR, EXIT_NEWER, evaluate, pinnedRulesSchema, type Article, type Observed, type Pinned } from "../src/rules/check.js";
+import { REPO_ROOT } from "../src/paths.js";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_URL = "https://cdn.starwarsunlimited.com//SWH_Comp_Rules_v8_0_e26603c6e1.pdf";
 const PAGES = ["https://starwarsunlimited.com/how-to-play", "https://starwarsunlimited.com/organized-play"];
 const ARTICLES = "https://admin.starwarsunlimited.com/api/articles";
