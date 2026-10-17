@@ -92,7 +92,12 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   if (/\bwith less remaining hp than\b/.test(l)) t.restrict.push("hp_lt_ref");
   if (named) t.restrict.push(`named:${s}`);
   else {
-    for (const tm of head.matchAll(TRAIT_RE)) t.restrict.push(`${tm[1] ? "non_" : ""}trait:${tm[2]}`);
+    for (const tm of head.matchAll(TRAIT_RE)) {
+      // "use the Force": a trait word after "the" is a noun, not a restriction, unless a card kind follows it.
+      const after = head.slice((tm.index ?? 0) + tm[0].length);
+      if (!tm[1] && /\bthe $/i.test(head.slice(0, tm.index)) && !/^ (?:units?|cards?|upgrades?|leaders?|bases?)\b/i.test(after)) continue;
+      t.restrict.push(`${tm[1] ? "non_" : ""}trait:${tm[2]}`);
+    }
     for (const am of head.matchAll(ASPECT_RE)) t.restrict.push(`${am[1] ? "non_" : ""}aspect:${am[2]}`);
   }
   if ((m = s.match(HAS_RE))) t.restrict.push(`${m[1].toLowerCase()}:${m.groups?.x ?? ""}`);

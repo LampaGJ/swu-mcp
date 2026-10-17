@@ -22,6 +22,10 @@ const keywordName = (k: string | { keyword: string }): string => (typeof k === "
 /** Effects that cost the player something; a When Played made only of these is not worth replaying. */
 const COSTLY_CATS = new Set(["self_defeat", "restriction", "cost_increase", "discard_self", "blank", "remove_keyword", "opponent_token", "self_exhaust", "mill"]);
 const HARM_CATS = new Set(["damage", "indirect_damage", "defeat", "exhaust", "capture", "bounce"]);
+/** On a target of either side, these effects are aimed at the opponent, so the trait they name is not one you want. */
+const HOSTILE_CATS = new Set([...HARM_CATS, "take_control"]);
+const hostile = (e: { cat: string; sign?: string; tokens?: readonly (readonly [string, unknown])[] }): boolean =>
+  HOSTILE_CATS.has(e.cat) || (e.cat === "stat_mod" && e.sign !== "buff") || (e.tokens ?? []).some(([tok]) => tok === "Weakness");
 const SELF_DISCARD = /\bdiscarded this way\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 const SEARCH_OFFER: Record<string, string> = {
@@ -211,7 +215,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const restr = target?.restrict ?? [];
           if (restr.includes("damaged") && p !== "enemy") add(wants, "wants:damaged-units", why);
           if (restr.includes("exhausted") && target && FRIENDLYISH.has(target.side)) add(wants, "wants:exhausted-own", why);
-          if ((target && FRIENDLYISH.has(target.side)) || (target?.side === "any" && e.cat !== "damage" && e.cat !== "defeat")) {
+          if ((target && FRIENDLYISH.has(target.side)) || (target?.side === "any" && !hostile(e))) {
             for (const tr of traitsOf(target)) add(wants, `wants:trait-${tr}`, why);
           }
           if (target?.kind === "token" && target && FRIENDLYISH.has(target.side)) add(wants, "wants:tokens", why);
@@ -220,7 +224,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const why = `${face}: ${c.text}`;
           if (k.cat === "control") {
             const what = asTarget(k.what);
-            for (const tr of traitsOf(what)) add(wants, `wants:trait-${tr}`, why);
+            if (/\byou control\b/i.test(c.text)) for (const tr of traitsOf(what)) add(wants, `wants:trait-${tr}`, why);
             if (what?.kind === "token" || /token/i.test(what?.text ?? "")) add(wants, "wants:tokens", why);
             if (what?.restrict.includes("damaged")) add(wants, "wants:damaged-units", why);
             if (what?.restrict.includes("exhausted")) add(wants, "wants:exhausted-own", why);
