@@ -21,15 +21,13 @@ import { z } from "zod";
 import { loadStore, packageDirOf, resolveDataDir } from "../src/data.js";
 import { buildPlay, buildPrices, captureRowSchema, priceRowSchema } from "../src/market/build.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
-import { flattenPrinting, newFlattenIssues, printingCardKeys, type FlatRow } from "../src/swu/llm-flatten.js";
-import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
+import { printingCardKeys } from "../src/swu/llm-flatten.js";
+import { loadRawPrintings, packageRawManifestSha256 } from "./lib/raw-pages.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
-const pageSchema = z.object({ data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })) });
 const importSchema = z.looseObject({ id: z.number().int(), finished_at: z.string().nullable().optional() });
-const replayInputsSchema = z.looseObject({ inputs: z.looseObject({ rawManifestSha256: z.string() }) });
 
 const sha256Buffer = (buffer: Buffer): string => createHash("sha256").update(buffer).digest("hex");
 
@@ -46,18 +44,8 @@ function main(): void {
   const originals = path.resolve(values.originals ?? path.join(DEFAULT_ORIGINALS_ROOT, path.basename(packageDir)));
   const capturesDir = path.resolve(values.captures ?? path.join(REPO_ROOT, "data/pinned/gt"));
 
-  const pagesDir = path.join(originals, "swu-cards/raw-pages");
-  const manifestBytes = readFileSync(path.join(pagesDir, "manifest.json"));
-  const packageManifestSha = replayInputsSchema.parse(JSON.parse(readFileSync(path.join(packageDir, "replay.json"), "utf8"))).inputs.rawManifestSha256;
-  if (sha256Buffer(manifestBytes) !== packageManifestSha) throw new Error(`${pagesDir}/manifest.json differs from the raw manifest the package in ${packageDir} was built from`);
-  const manifest = swuRawCacheManifestSchema.parse(JSON.parse(manifestBytes.toString("utf8")));
-
-  const issues = newFlattenIssues();
-  const printings: FlatRow[] = [];
-  for (const entry of [...manifest.pages].sort((a, b) => a.page - b.page)) {
-    const page = pageSchema.parse(JSON.parse(readFileSync(path.join(pagesDir, `page-${String(entry.page).padStart(4, "0")}.json`), "utf8")));
-    for (const record of page.data) printings.push(flattenPrinting(record, issues));
-  }
+  const packageManifestSha = packageRawManifestSha256(path.join(packageDir, "replay.json"));
+  const { printings } = loadRawPrintings(path.join(originals, "swu-cards/raw-pages"), packageManifestSha);
   const cardKeyOfPrinting = printingCardKeys(printings);
   const cardKeyOfUid = new Map<string, string>();
   for (const row of printings) {
