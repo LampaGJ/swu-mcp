@@ -5,8 +5,7 @@ import { packageDirOf, readJson, splitCell, type CardRow, type CardStore } from 
 import { playFileSchema, pricesFileSchema, type PlayFile, type PricesFile } from "../market/build.js";
 import { scoresFileSchema, type ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import type { ToolResult } from "../tools.js";
-import { ok, fail, lower } from "./common.js";
+import { ok, fail, guardedBy, lower } from "./common.js";
 
 /**
  * @displayName Market tools
@@ -45,17 +44,7 @@ export function marketData(store: CardStore): MarketData {
   return data;
 }
 
-function guarded(handler: (store: CardStore, data: MarketData, input: unknown) => ToolResult): (store: CardStore, input: unknown) => ToolResult {
-  return (store, input) => {
-    let data: MarketData;
-    try {
-      data = marketData(store);
-    } catch (error) {
-      return fail(error instanceof Error ? error.message : String(error));
-    }
-    return handler(store, data, input);
-  };
-}
+const guarded = guardedBy(marketData);
 
 const round = (x: number, places: number): number => Math.round(x * 10 ** places) / 10 ** places || 0;
 

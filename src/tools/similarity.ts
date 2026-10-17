@@ -10,8 +10,7 @@ import {
   type NeighboursFile,
   type SimilarityReplay,
 } from "../embed/files.js";
-import type { ToolResult } from "../tools.js";
-import { ok, fail } from "./common.js";
+import { ok, fail, guardedBy } from "./common.js";
 
 /**
  * @displayName Similarity tools
@@ -52,19 +51,7 @@ export function similarityData(store: CardStore): SimilarityData {
   return data;
 }
 
-function guarded(
-  handler: (store: CardStore, data: SimilarityData, input: unknown) => ToolResult,
-): (store: CardStore, input: unknown) => ToolResult {
-  return (store, input) => {
-    let data: SimilarityData;
-    try {
-      data = similarityData(store);
-    } catch (error) {
-      return fail(error instanceof Error ? error.message : String(error));
-    }
-    return handler(store, data, input);
-  };
-}
+const guarded = guardedBy(similarityData);
 
 const limit = z.number().int().min(1).max(10).default(10);
 const dataVersion = (data: SimilarityData): string => `${data.replay.capture}/${data.replay.outputHash["similar.json"].slice(0, 12)}`;

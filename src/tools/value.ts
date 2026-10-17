@@ -17,8 +17,7 @@ import {
 import { parseCoefficients, type Coefficients } from "../scorer/coefficients.js";
 import { scoresFileSchema, scoresReplaySchema, type ScoreRow, type ScoresReplay } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import type { ToolResult } from "../tools.js";
-import { ok, fail, lower, hasValue } from "./common.js";
+import { ok, fail, guardedBy, lower, hasValue } from "./common.js";
 
 /**
  * @displayName Value tools
@@ -65,17 +64,7 @@ export function valueData(store: CardStore): ValueData {
 }
 
 /** Wraps a handler so a missing or invalid scores package becomes a tool error, not a thrown exception. */
-function guarded(handler: (store: CardStore, data: ValueData, input: unknown) => ToolResult): (store: CardStore, input: unknown) => ToolResult {
-  return (store, input) => {
-    let data: ValueData;
-    try {
-      data = valueData(store);
-    } catch (error) {
-      return fail(error instanceof Error ? error.message : String(error));
-    }
-    return handler(store, data, input);
-  };
-}
+const guarded = guardedBy(valueData);
 
 const r2 = (x: number | null): number | null => (x === null ? null : Math.round(x * 100) / 100 || 0);
 const limit = z.number().int().min(1).max(200).default(20);
