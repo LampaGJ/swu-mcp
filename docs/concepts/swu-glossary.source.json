@@ -431,7 +431,7 @@
       {
         "value": "Fortify",
         "definition": "Reminder text on the cards: Fortify (Attach this to your base, not a unit.)",
-        "strategicValue": "Puts an upgrade on your base instead of a unit, so it protects or heals the base rather than boosting an attacker.",
+        "strategicValue": "Puts an upgrade on your base instead of a unit, so it cannot be lost when a unit is defeated or bounced. What it then does varies widely: some give every friendly unit Overwhelm, Raid or +1/+0, some draw cards or deal damage to units, some exhaust or stall enemy units, and only a few protect or heal the base.",
         "source": "https://starwarsunlimited.com/articles/homeworlds; card text"
       },
       {
