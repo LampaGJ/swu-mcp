@@ -25,6 +25,16 @@ export interface Subject {
   arena?: Arena;
   traits: string[];
   notTraits: string[];
+  /** Cost bounds stated by the target ("a unit that costs 3 or less"). */
+  maxCost?: number;
+  minCost?: number;
+  nonLeader?: boolean;
+  /** The aspect a target must have ("a Heroism unit"). */
+  aspect?: string;
+  /** The card itself, used when the want acts on the card that carries it. */
+  cost?: number | null;
+  isLeader?: boolean;
+  aspects?: string[];
 }
 
 export interface TagQualifier {
@@ -122,7 +132,7 @@ const OFFER_CATS: [RegExp, string[]][] = [
   [/^offers:damage-/, ["damage", "indirect_damage"]],
   [/^offers:heal$/, ["heal"]],
   [/^offers:ready-unit$/, ["ready"]],
-  [/^offers:(?:return-(?:own|any)-to-hand|bounce-enemy)$/, ["bounce"]],
+  [/^offers:(?:return-(?:own|any)-to-hand|return-upgrade|bounce-enemy)$/, ["bounce"]],
   [/^offers:exhaust-(?:enemy|any)$/, ["exhaust"]],
   [/^offers:extra-attack$/, ["extra_attack"]],
   [/^offers:give-/, ["give_token"]],
@@ -175,7 +185,22 @@ function subjectOf(t: TargetLite | undefined): Subject {
   const lower = text.toLowerCase();
   const kind = headKind(text, t.kind);
   const arena: Arena | undefined = t.arena === "ground" || t.arena === "space" ? t.arena : /\bground units?\b/.test(lower) ? "ground" : /\bspace units?\b/.test(lower) ? "space" : undefined;
-  return { side, kind, arena, traits: [...new Set(traits)].sort(cmp), notTraits: notTraits.sort(cmp) };
+  const bound = (prefix: string): number | undefined => {
+    const hit = restrict.map((r) => new RegExp(`^${prefix}_(\\d+)$`).exec(r)).find((m) => m !== null);
+    return hit == null ? undefined : Number(hit[1]);
+  };
+  const aspect = restrict.find((r) => r.startsWith("aspect:"))?.slice(7);
+  return {
+    side,
+    kind,
+    arena,
+    traits: [...new Set(traits)].sort(cmp),
+    notTraits: notTraits.sort(cmp),
+    maxCost: bound("cost_le"),
+    minCost: bound("cost_ge"),
+    nonLeader: restrict.includes("non_leader") || restrict.includes("non-leader") || undefined,
+    aspect,
+  };
 }
 
 const WATCHED = /\bfriendly (?:([A-Z][\w']*(?: [A-Z][\w']*)*) )?(?:(space|ground) )?units?\b/;
@@ -237,6 +262,9 @@ const cardSubject = (c: SynergyCard): Subject => ({
   arena: cardArena(c),
   traits: c.structured.traits,
   notTraits: [],
+  cost: c.structured.cost,
+  isLeader: c.type === "Leader",
+  aspects: c.structured.aspects,
 });
 
 const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
@@ -280,6 +308,17 @@ export function conflictBetween(
     if (missing !== undefined) return `the offer needs a ${missing}, the wanting card is not`;
     const excluded = offer.subject.notTraits.find((t) => wantConcrete.traits.includes(t));
     if (excluded !== undefined) return `the offer excludes ${excluded}`;
+  }
+  if (wantConcrete !== undefined) {
+    const { maxCost, minCost, nonLeader, aspect } = offer.subject;
+    const cost = wantConcrete.cost;
+    if (maxCost !== undefined && typeof cost === "number" && cost > maxCost) return `the offer reaches units costing ${maxCost} or less, the wanting card costs ${cost}`;
+    if (minCost !== undefined && typeof cost === "number" && cost < minCost) return `the offer reaches units costing ${minCost} or more, the wanting card costs ${cost}`;
+    if (nonLeader === true && wantConcrete.isLeader === true) return "the offer reaches non-leader units, the wanting card is a leader";
+    if (aspect !== undefined && !(wantConcrete.aspects ?? []).includes(aspect)) return `the offer reaches ${aspect} units, the wanting card is not`;
+  }
+  if (offerTag === "offers:return-upgrade" && wantTag === "wants:pilot-attached" && offer.subject.side === "enemy") {
+    return "the returned upgrades belong to the opponent, who takes them back";
   }
   const barred = offer.subject.notTraits.find((t) => want.subject.traits.includes(t));
   if (barred !== undefined) return `the offer excludes ${barred}`;

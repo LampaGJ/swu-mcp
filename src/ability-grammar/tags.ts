@@ -14,7 +14,8 @@ const pol = (t: SwuTarget | undefined): Polarity => {
 const isUnitKind = (t: SwuTarget | undefined): boolean =>
   !!t && (t.kind === "unit" || t.kind === "unit_or_base" || t.kind === "ref" || t.kind === "leader");
 const traitsOf = (t: SwuTarget | undefined): string[] =>
-  (t?.restrict ?? []).filter((r) => r.startsWith("trait:")).map((r) => r.slice(6));
+  (t?.restrict ?? []).filter((r) => r.startsWith("trait:")).map((r) => r.slice(6).trim()).filter((r) => r !== "");
+const KEYWORD_WANT = /\bwith (?:an? )?(Sentinel|Hidden|Shielded)\b/;
 const asTarget = (w: unknown): SwuTarget | undefined => (typeof w === "object" && w !== null ? (w as SwuTarget) : undefined);
 const keywordName = (k: string | { keyword: string }): string => (typeof k === "string" ? k : k.keyword);
 
@@ -83,6 +84,9 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (t.trigger === "when_defeated" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_played" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-played", `${face}: When Played`);
         if (/when you use a when defeated|when defeated ability/i.test(tt)) add(wants, "wants:when-defeated-cards", tt);
+        if (/when played ability/i.test(tt)) add(wants, "wants:when-played-cards", tt);
+        if (/friendly upgrade is defeated/i.test(tt)) add(wants, "wants:friendly-upgrade-defeated", tt);
+        if (/enemy (?:[\w-]+ )*unit with an? weakness token/i.test(tt)) add(wants, "wants:enemy-weakened", tt);
         if (t.trigger === "when_played" && replayCats.length > 0) add(wants, "wants:replay-when-played", `${face}: When Played (${replayCats.join(", ")})`);
         if (wantsExtraAttacks && (t.trigger === "on_attack" || t.trigger === "attack_end" || t.trigger === "on_attack_kill")) add(wants, "wants:extra-attacks", `${face}: ${t.trigger}`);
         if (t.trigger === "action" && t.cost?.exhaust && card.type !== "Leader") add(wants, "wants:ready-unit", `${face}: Action [Exhaust]`);
@@ -94,7 +98,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (/pilot .*attaches/i.test(tt)) add(wants, "wants:pilot-attached", tt);
         else if (/upgrade attaches|you play an upgrade on/i.test(tt)) add(wants, "wants:upgrades-attached", tt);
         if (/use the force/i.test(tt) || t.cost?.force) add(wants, "wants:the-force", tt);
-        if (/draws? \d+ or more cards/i.test(tt)) add(wants, "wants:draw", tt);
+        if (/\bopponent draws? \d+ or more cards/i.test(tt)) add(wants, "wants:opponent-draws", tt);
+        else if (/draws? \d+ or more cards/i.test(tt)) add(wants, "wants:draw", tt);
         if (/heal/i.test(tt)) add(wants, "wants:heal", tt);
         if (/initiative/i.test(tt)) add(wants, "wants:initiative", tt);
         if (/reveal or discard|discard/i.test(tt)) add(wants, "wants:discard-own", tt);
@@ -106,10 +111,18 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (c.source === "none") continue;
         for (const o of c.offers ?? []) add(offers, o, `curated ${c.curatedId}`);
         for (const w of c.wants ?? []) add(wants, w, `curated ${c.curatedId}`);
+        const clauseWhy = `${face}: ${c.text}`;
+        if (/when played ability/i.test(c.text)) add(wants, "wants:when-played-cards", clauseWhy);
+        if (/\b(?:dealt damage to an enemy base this phase|enemy base was damaged this phase)/i.test(c.text)) add(wants, "wants:enemy-base-damaged", clauseWhy);
+        if (/\benemy (?:[\w-]+ )*unit with an? weakness token/i.test(c.text)) add(wants, "wants:enemy-weakened", clauseWhy);
+        if (/\bexhausted enemy\b|\benemy (?:[\w-]+ )*units? (?:is|are) exhausted\b/i.test(c.text)) add(wants, "wants:exhausted-enemy", clauseWhy);
+        const createsToken = c.effects.some((x) => x.cat === "create_token");
         for (const e of c.effects) {
           const target = e.target;
           const p = pol(target);
           const why = `${face}: ${c.text}`;
+          const keywordWant = KEYWORD_WANT.exec(target?.text ?? "");
+          if (keywordWant !== null && p !== "enemy") add(wants, `wants:keyword-${keywordWant[1].toLowerCase()}`, why);
           if (target?.kind === "resource") continue;
           switch (e.cat) {
             case "defeat":
@@ -125,6 +138,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "self_defeat": add(offers, "offers:defeat-self", why); break;
             case "damage":
             case "indirect_damage":
+              if (p === "ref" && createsToken) break;
               if (target?.kind === "base") add(offers, p === "friendly" || p === "self" ? "offers:damage-own-base" : "offers:damage-enemy-base", why);
               else if (p === "friendly" || p === "self") add(offers, "offers:damage-friendly-unit", why);
               else if (p === "enemy") add(offers, "offers:damage-enemy-unit", why);
@@ -139,6 +153,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "recursion": add(offers, "offers:return-from-discard", why); add(wants, "wants:cards-in-discard", why); break;
             case "create_token": {
               const token = e.token ?? "";
+              if (token === "" || token.toLowerCase() === "token") break;
               if (UNIT_TOKENS.has(token)) add(offers, "offers:create-token-units", why);
               else if (token === "Credit") add(offers, "offers:credit-tokens", why);
               else if (token === "Force") add(offers, "offers:the-force", why);
@@ -147,10 +162,13 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             }
             case "give_token":
               for (const [tok] of e.tokens ?? []) {
-                const tp = p === "enemy" ? "enemy" : "friendly";
-                if (tok === "Experience") add(offers, tp === "enemy" ? "offers:give-experience-enemy" : "offers:give-experience", why);
-                else if (tok === "Shield") add(offers, tp === "enemy" ? "offers:give-shield-enemy" : "offers:give-shield", why);
-                else if (tok === "Weakness") add(offers, "offers:give-weakness", why);
+                const tp = p === "enemy" ? "enemy" : p === "self" ? "self" : "friendly";
+                if (tok === "Experience") add(offers, `offers:give-experience${tp === "friendly" ? "" : `-${tp}`}`, why);
+                else if (tok === "Shield") add(offers, `offers:give-shield${tp === "friendly" ? "" : `-${tp}`}`, why);
+                else if (tok === "Weakness") {
+                  const opponentPicks = p === "ref" && clauses.some((x) => /\bopponent chooses\b/i.test(x.text));
+                  add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : p === "friendly" || p === "self" ? "offers:give-weakness-own" : "offers:give-weakness", why);
+                }
                 else add(offers, `offers:give-${tok.toLowerCase()}`, why);
               }
               break;
