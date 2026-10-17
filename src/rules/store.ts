@@ -58,12 +58,17 @@ export interface RulesStore {
   isCore(id: string): boolean;
 }
 
-/** SWU_MCP_RULES wins; then <dataDir>/rules; then the newest data/runs/<date>/rules that holds sections.json. */
+/**
+ * SWU_MCP_RULES wins; then <dataDir>/rules, or <package>/rules when dataDir is the package's llm/ directory (as a
+ * loaded CardStore's is); then the newest data/runs/<date>/rules that holds sections.json.
+ */
 export function resolveRulesDir(dataDir: string, env: NodeJS.ProcessEnv = process.env): string {
   const configured = env.SWU_MCP_RULES;
   if (configured !== undefined && configured !== "") return path.resolve(configured);
-  const beside = path.join(dataDir, "rules");
-  if (existsSync(path.join(beside, "sections.json"))) return beside;
+  const packageDir = path.basename(dataDir) === "llm" ? path.dirname(dataDir) : dataDir;
+  for (const beside of [path.join(dataDir, "rules"), path.join(packageDir, "rules")]) {
+    if (existsSync(path.join(beside, "sections.json"))) return beside;
+  }
   const runs = path.join(REPO_ROOT, "data/runs");
   const newest = existsSync(runs)
     ? readdirSync(runs, { withFileTypes: true })
