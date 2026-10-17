@@ -1,9 +1,10 @@
 import { decode } from "@toon-format/toon";
-import { existsSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
-import { loadStore, newestRun, type CardRow, type CardStore } from "../src/data.js";
+import { describe, expect, it, vi } from "vitest";
+import { MissingDataError, loadStore, newestRun, type CardRow, type CardStore } from "../src/data.js";
 import type { ClustersFile } from "../src/embed/files.js";
 import type { PlayFile, PricesFile } from "../src/market/build.js";
 import { rulesFor } from "../src/rules/store.js";
@@ -27,6 +28,21 @@ import {
   type DeckEnv,
 } from "../src/tools/deck.js";
 import { COMMITTED_TABLE, mk } from "./synergy/fixtures.js";
+
+const rulesMode = vi.hoisted(() => ({ value: "real" as "real" | "missing" | "corrupt" }));
+
+vi.mock("../src/rules/store.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/rules/store.js")>();
+  const { MissingDataError: Missing } = await import("../src/data.js");
+  return {
+    ...actual,
+    rulesFor: (dataDir: string) => {
+      if (rulesMode.value === "missing") throw new Missing("no rules data");
+      if (rulesMode.value === "corrupt") throw new SyntaxError("Unexpected token in sections.json");
+      return actual.rulesFor(dataDir);
+    },
+  };
+});
 
 interface Spec {
   key: string;
@@ -385,6 +401,26 @@ describe("deck_legality_check", () => {
     expect(out.warnings).toEqual([expect.objectContaining({ rule: "9.2.2.d", check: "cardpool" })]);
   });
 
+  it("says the cited sections are unverified when no Comprehensive Rules are loaded", () => {
+    rulesMode.value = "missing";
+    try {
+      const out = body(deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC" }));
+      expect(out.rulesVersion).toBeNull();
+      expect(out.dataLimits.join(" ")).toContain("No Comprehensive Rules are loaded in this package");
+    } finally {
+      rulesMode.value = "real";
+    }
+  });
+
+  it("fails rather than reporting every section missing when the rules data is corrupt", () => {
+    rulesMode.value = "corrupt";
+    try {
+      expect(() => deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC" })).toThrow(SyntaxError);
+    } finally {
+      rulesMode.value = "real";
+    }
+  });
+
   it("states the data limits", () => {
     const out = body(deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC" }));
     const limits = out.dataLimits.join(" ");
@@ -668,6 +704,33 @@ describe("against the test fixtures", () => {
 
   it("loads one environment per store", () => {
     expect(deckEnvOf(fixtureStore)).toBe(deckEnvOf(fixtureStore));
+  });
+
+  const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
+  const copyWithSimilarity = (clustersJson: string | null): CardStore => {
+    const dir = mkdtempSync(path.join(tmpdir(), "deck-similarity-"));
+    cpSync(fixturesDir, dir, { recursive: true });
+    if (clustersJson !== null) {
+      mkdirSync(path.join(dir, "similarity"), { recursive: true });
+      for (const name of ["similar.json", "kin.json", "replay.json"]) writeFileSync(path.join(dir, "similarity", name), "{}");
+      writeFileSync(path.join(dir, "similarity", "clusters.json"), clustersJson);
+    }
+    return loadStore(dir);
+  };
+
+  it("reports no similarity run as a note when the similarity directory is absent", () => {
+    const store = copyWithSimilarity(null);
+    expect(deckEnvOf(store).clusters).toBeNull();
+    const out = body(
+      DECK_TOOLS.deck_audit.handler(store, { decklist: lines(["Death Trooper", 3]), leader: "04010001", base: "0101030" }),
+    );
+    expect(out.clusterGaps.note).toContain("unavailable");
+  });
+
+  it("fails the deck environment when clusters.json is corrupt instead of returning empty clusters", () => {
+    const store = copyWithSimilarity("{ not json");
+    expect(() => deckEnvOf(store)).toThrow(SyntaxError);
+    expect(MissingDataError.name).toBe("MissingDataError");
   });
 });
 

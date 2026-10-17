@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { splitCell, type CardRow, type CardStore } from "../data.js";
+import { MissingDataError, splitCell, type CardRow, type CardStore } from "../data.js";
 import type { ClustersFile } from "../embed/files.js";
 import { rulesFor } from "../rules/store.js";
 import type { ScoreRow } from "../scorer/scores-file.js";
@@ -46,7 +46,8 @@ export function deckEnvOf(store: CardStore): DeckEnv {
   let clusters: ClustersFile | null = null;
   try {
     clusters = similarityData(store).clusters;
-  } catch {
+  } catch (error) {
+    if (!(error instanceof MissingDataError)) throw error;
     clusters = null;
   }
   const env: DeckEnv = {
@@ -90,7 +91,8 @@ function citedRules(store: CardStore, ids: readonly string[]): { rulesVersion: s
   try {
     const rules = rulesFor(store.dataDir);
     return { rulesVersion: rules.document.version, missing: ids.filter((id) => !rules.byId.has(id)) };
-  } catch {
+  } catch (error) {
+    if (!(error instanceof MissingDataError)) throw error;
     return { rulesVersion: null, missing: [...ids] };
   }
 }
@@ -657,7 +659,9 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     "Copy limits count one cardKey as one card; different cards that share a name are counted separately.",
     ...(verified.missing.length === 0
       ? []
-      : [`Cited Comprehensive Rules sections not found in the loaded rules: ${verified.missing.join(", ")}`]),
+      : verified.rulesVersion === null
+        ? [`No Comprehensive Rules are loaded in this package, so the cited sections (${verified.missing.join(", ")}) are not verified.`]
+        : [`Cited Comprehensive Rules sections not found in the loaded rules: ${verified.missing.join(", ")}`]),
   ];
 
   return ok({

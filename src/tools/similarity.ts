@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { packageDirOf, type CardRow, type CardStore } from "../data.js";
+import { MissingDataError, packageDirOf, type CardRow, type CardStore } from "../data.js";
 import {
   clustersFileSchema,
   neighboursFileSchema,
@@ -42,7 +42,7 @@ export function similarityData(store: CardStore): SimilarityData {
   const dir = path.join(packageDirOf(store), "similarity");
   for (const needed of ["similar.json", "kin.json", "clusters.json", "replay.json"]) {
     if (!existsSync(path.join(dir, needed)))
-      throw new Error(`${path.join(dir, needed)} is missing; run "pnpm similarity" (needs the capture from "pnpm embed:capture")`);
+      throw new MissingDataError(`${path.join(dir, needed)} is missing; run "pnpm similarity" (needs the capture from "pnpm embed:capture")`);
   }
   const clusters = clustersFileSchema.parse(readJson(path.join(dir, "clusters.json")));
   const data: SimilarityData = {

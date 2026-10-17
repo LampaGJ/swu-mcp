@@ -6,6 +6,11 @@ import { REPO_ROOT } from "./paths.js";
 import { compareCodePoints } from "./swu/canonical.js";
 import { INDEX_FACETS, type IndexFacet } from "./swu/llm-flatten.js";
 
+/** A derived data directory the package does not hold; every other load failure is a defect, not an absence. */
+export class MissingDataError extends Error {
+  override name = "MissingDataError";
+}
+
 export const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const text = z.string().nullable();
