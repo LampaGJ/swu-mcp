@@ -128,7 +128,12 @@ export function cardRulings(store: CardStore, input: unknown): ToolResult {
             (args.subtitle === undefined || (entry.subtitle ?? "").toLowerCase() === args.subtitle.toLowerCase()),
         );
   if (hits.length > 0) {
-    const cards = hits.map((entry) => ({ cardKey: entry.cardKey, title: entry.title, subtitle: entry.subtitle, rulings: entry.rulings }));
+    const cards = hits.map((entry) => ({
+      cardKey: entry.cardKey,
+      title: entry.title,
+      subtitle: entry.subtitle,
+      rulings: entry.rulings.map((ruling) => ({ ...ruling, dated: ruling.date !== null })),
+    }));
     return ok({ ...source, cards });
   }
   const known =
@@ -205,7 +210,7 @@ export const RULES_TOOLS = {
   },
   card_rulings: {
     title: "Card rulings",
-    description: "Dated official rulings for one card, newest first, by cardKey or by exact title. Quote them with their date.",
+    description: "Official rulings for one card, by cardKey or by exact title: dated rulings newest first, then undated ones (date null, dated false, source rules: the card text carries them with no date). Quote dated rulings with their date; say plainly when a ruling is undated.",
     shape: cardRulingsShape,
     handler: cardRulings,
   },

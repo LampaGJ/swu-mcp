@@ -30,7 +30,12 @@ export const sectionsFileSchema = z.strictObject({
 });
 export type SectionsFile = z.infer<typeof sectionsFileSchema>;
 
-export const rulingSchema = z.strictObject({ date: z.iso.date(), text: z.string().min(1) });
+export const rulingSchema = z.strictObject({
+  /** ISO date of a styled ruling row; null for an undated plain `rules` line that has no styled row. */
+  date: z.iso.date().nullable(),
+  source: z.enum(["rulesStyled", "rules"]),
+  text: z.string().min(1),
+});
 
 export const cardRulingsFileSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -44,6 +49,7 @@ export const cardRulingsFileSchema = z.strictObject({
     distinctRulesFields: z.number().int(),
     distinctRulingTexts: z.number().int(),
     distinctDatedRulings: z.number().int(),
+    distinctUndatedRulings: z.number().int(),
     rulingRows: z.number().int(),
   }),
   cards: z.array(
