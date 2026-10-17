@@ -1,5 +1,6 @@
 import { compareCodePoints } from "../swu/canonical.js";
 import { cmp, r3 } from "./order.js";
+import { conflictBetween, qualifierOf, type TagQualifier } from "./qualifiers.js";
 import type { ComplementarityRow, ComplementarityTable, NonObviousness, PairEdge, SynergyCard } from "./schema.js";
 
 /**
@@ -86,6 +87,25 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   const wantsOf = new Map(cards.map((c) => [c.cardKey, new Set(c.tags.wants.map((w) => w.tag))]));
   const words = new Map(cards.map((c) => [c.cardKey, wordSet(c)]));
   const rows = expandRows(cards, table);
+  const qualifiers = new Map<string, TagQualifier>();
+  const qualifier = (c: SynergyCard, side: "offers" | "wants", tag: string): TagQualifier => {
+    const key = `${c.cardKey}|${side}|${tag}`;
+    let q = qualifiers.get(key);
+    if (q === undefined) {
+      const why = c.tags[side].find((t) => t.tag === tag)?.why ?? "";
+      q = qualifierOf(c, side, tag, why);
+      qualifiers.set(key, q);
+    }
+    return q;
+  };
+
+  /** The offer and want tags of A and B that no stated qualifier contradicts. */
+  const linkable = (a: SynergyCard, offerHits: readonly string[], b: SynergyCard, wantHits: readonly string[]) => {
+    const okPairs = offerHits.flatMap((o) =>
+      wantHits.filter((w) => conflictBetween(a, o, qualifier(a, "offers", o), b, w, qualifier(b, "wants", w)) === null).map((w) => [o, w] as const),
+    );
+    return { offers: offerHits.filter((o) => okPairs.some(([x]) => x === o)), wants: wantHits.filter((w) => okPairs.some(([, y]) => y === w)) };
+  };
 
   const nonObvious = (a: SynergyCard, b: SynergyCard): NonObviousness => {
     const aspects = disjoint(COLOUR_FREE(a.structured.aspects), COLOUR_FREE(b.structured.aspects)) ? 1 : 0;
@@ -104,13 +124,15 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
     let n = 0;
     for (const a of offerers) {
       const hitOffers = offerTags.filter((t) => offersOf.get(a.cardKey)?.has(t));
-      const w = Math.max(...hitOffers.map((t) => row.offers[t]));
-      const viaOffer = [...hitOffers].sort(cmp)[0];
       for (const b of wanters) {
         if (a.cardKey === b.cardKey || a.title === b.title) continue;
+        const allWants = wantTags.filter((t) => wantsOf.get(b.cardKey)?.has(t)).sort(cmp);
+        const { offers: usableOffers, wants: hitWants } = row.family === "trait" ? { offers: hitOffers, wants: allWants } : linkable(a, hitOffers, b, allWants);
+        if (usableOffers.length === 0 || hitWants.length === 0) continue;
+        const w = Math.max(...usableOffers.map((t) => row.offers[t]));
+        const viaOffer = [...usableOffers].sort(cmp)[0];
         n++;
         const k = `${a.cardKey}>${b.cardKey}`;
-        const hitWants = wantTags.filter((t) => wantsOf.get(b.cardKey)?.has(t)).sort(cmp);
         const ww = Math.max(...hitWants.map((t) => row.wants[t]));
         const e: PairEdge = edges.get(k) ?? {
           a: a.cardKey,

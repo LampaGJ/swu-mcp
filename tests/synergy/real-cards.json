@@ -1,0 +1,7668 @@
+{
+ "source": "data/runs/2026-10-16/features/features.json, cards sampled in docs/verification/2026-10-16.md (#9) and adjudicated; copied verbatim, filtered by cardKey",
+ "cards": [
+  {
+   "cardKey": "09010094",
+   "title": "Sando Aqua Monster",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 8,
+    "power": 5,
+    "hp": 9,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Creature"
+    ],
+    "keywordsField": [
+     "Grit"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Grit",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control": 1
+    },
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 1
+     },
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit_ground": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Grit"
+       }
+      ],
+      "granted": false,
+      "source": "Grit"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "If you control a Naboo base, you may defeat any number of ground units with combined power equal to or less than this unit's power.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "ground",
+           "quant": "any_number",
+           "restrict": [],
+           "text": "any number of ground units with combined power equal to or less than this unit's power"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "control_n",
+          "cat": "control",
+          "n": 1,
+          "what": {
+           "side": "any",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "trait:Naboo"
+           ],
+           "text": "Naboo base"
+          }
+         }
+        ],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p1s1",
+        "text": "Deal damage to this unit equal to the combined power of the defeated units.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage_to_equal",
+          "cat": "damage",
+          "n": "var",
+          "basis": "the combined power of the defeated units",
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-friendly-unit",
+      "why": "text: Deal damage to this unit equal to the combined power of the defeated units."
+     },
+     {
+      "tag": "offers:defeat-any-unit",
+      "why": "text: If you control a Naboo base, you may defeat any number of ground units with combined power equal to or less than this unit's power."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Creature",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:self-damaged",
+      "why": "Grit"
+     },
+     {
+      "tag": "wants:trait-Naboo",
+      "why": "text: If you control a Naboo base, you may defeat any number of ground units with combined power equal to or less than this unit's power."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "04010033",
+   "title": "Onyx Squadron Brute",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 2,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "traits": [
+     "Fighter",
+     "Imperial",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:heal": {
+      "byRepeat": {
+       "once_on_defeat": 1
+      },
+      "byTarget": {
+       "any_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:when_defeated": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_defeat",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Heal 2 damage from a base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "heal",
+          "cat": "heal",
+          "n": 2,
+          "target": {
+           "side": "any",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:heal",
+      "why": "text: Heal 2 damage from a base."
+     },
+     {
+      "tag": "offers:is-trait-Fighter",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Imperial",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "08010110",
+   "title": "Admiral Ackbar",
+   "subtitle": "Assume Attack Coordinates",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 6,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Heroism"
+    ],
+    "traits": [
+     "Official",
+     "Rebel"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:search": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 10,
+      "varN": 0
+     },
+     "text:self_defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may defeat this unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat_self",
+          "cat": "self_defeat",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, search the top 10 cards of your deck for any number of space units with combined cost 5 or less and play each of them for free.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "search",
+          "cat": "search",
+          "n": 10,
+          "for": "any number of space units with combined cost 5 or less and play each of them for free",
+          "upTo": null
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-self",
+      "why": "text: You may defeat this unit."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Official",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Rebel",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:tutor",
+      "why": "text: If you do, search the top 10 cards of your deck for any number of space units with combined cost 5 or less and play each of them for free."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "06010013",
+   "title": "Luthen Rael",
+   "subtitle": "Don't You Want to Fight For Real?",
+   "type": "Leader",
+   "structured": {
+    "cost": 5,
+    "power": 2,
+    "hp": 7,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Heroism"
+    ],
+    "traits": [
+     "Rebel"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": true
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control_resources": 1,
+     "if_you_do": 1
+    },
+    "effects": {
+     "deployBox:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_unit_or_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     },
+     "text:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_unit_or_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:self_exhaust": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 2,
+    "triggers": {
+     "deployBox:reactive_friendly": 1,
+     "epicAction:epic_action": 1,
+     "text:reactive_friendly": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_friendly",
+        "repeat": "per_event",
+        "text": "When a friendly unit is defeated while attacking"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may exhaust this leader.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust_self",
+          "cat": "self_exhaust",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, deal 1 damage to a unit or base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit_or_base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit or base"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "deployBox": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_friendly",
+        "repeat": "per_event",
+        "text": "When a friendly unit is defeated while attacking"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "deployBox.p0s0",
+        "text": "You may deal 2 damage to a unit or base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 2,
+          "target": {
+           "side": "any",
+           "kind": "unit_or_base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit or base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "epicAction": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "epic_action",
+        "repeat": "once_per_game",
+        "cost": {
+         "exhaust": false,
+         "resources": 0,
+         "force": false,
+         "other": []
+        },
+        "text": "Epic Action"
+       }
+      ],
+      "repeat": "once_per_game",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p0s0",
+        "text": "If you control 5 or more resources, deploy this leader.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [
+         {
+          "rule": "control_resources",
+          "cat": "control_resources",
+          "n": 5
+         }
+        ],
+        "structure": [
+         {
+          "rule": "deploy",
+          "cat": "deploy",
+          "asUpgrade": false
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: If you do, deal 1 damage to a unit or base."
+     },
+     {
+      "tag": "offers:exhaust-own",
+      "why": "text: You may exhaust this leader."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:friendly-unit-defeated",
+      "why": "When a friendly unit is defeated while attacking"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010232",
+   "title": "Champion's KT9 Podracer",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 2,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Cunning"
+    ],
+    "traits": [
+     "Speeder",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:create_token": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Create a Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "create_tokens",
+          "cat": "create_token",
+          "token": "Credit",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:credit-tokens",
+      "why": "text: Create a Credit token."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Speeder",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010106",
+   "title": "Defiant Scrapper",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 3,
+    "hp": 4,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Heroism",
+     "Vigilance"
+    ],
+    "traits": [
+     "Fringe"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "enemy_token": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may defeat an enemy Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "enemy",
+           "kind": "token",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "an enemy Credit token"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-enemy-unit",
+      "why": "text: You may defeat an enemy Credit token."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Fringe",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:credit-tokens",
+      "why": "text: You may defeat an enemy Credit token."
+     },
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010061",
+   "title": "Asajj Ventress",
+   "subtitle": "Reluctant Hunter",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 3,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Aggression"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Command"
+    ],
+    "traits": [
+     "Bounty Hunter",
+     "Force",
+     "Underworld"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:ready": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may ready another Bounty Hunter unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "other",
+            "trait:Bounty Hunter"
+           ],
+           "text": "another Bounty Hunter unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Bounty Hunter",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:ready-unit",
+      "why": "text: You may ready another Bounty Hunter unit."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:trait-Bounty Hunter",
+      "why": "text: You may ready another Bounty Hunter unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010074",
+   "title": "Maz Kanata",
+   "subtitle": "Where's My Boyfriend?",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 4,
+    "hp": 4,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Cunning"
+    ],
+    "traits": [
+     "Underworld"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "event_this_phase": 1
+    },
+    "effects": {
+     "text:cost_reduction": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 4,
+      "varN": 0
+     },
+     "text:ready": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:search": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 5,
+      "varN": 0
+     },
+     "text:tuck": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "ref_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:attack_end": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "attack_end",
+        "repeat": "per_attack",
+        "text": "When Attack Ends"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "If this unit survived, search the top 5 cards of your deck for an Underworld unit and play it.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "search",
+          "cat": "search",
+          "n": 5,
+          "for": "an Underworld unit and play it",
+          "upTo": null
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "unit",
+         "survived"
+        ]
+       },
+       {
+        "path": "text.p0s1",
+        "text": "It costs 4 resources less and enters play ready.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "cost_less_subject",
+          "cat": "cost_reduction",
+          "n": 4,
+          "applies": {
+           "side": "ref",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "It"
+          },
+          "oneShot": false
+         },
+         {
+          "rule": "enters_ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s2",
+        "text": "At the start of the regroup phase, put that unit on the bottom of your deck.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "tuck",
+          "n": 1,
+          "target": {
+           "side": "ref",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "that unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "curated",
+          "cat": "event_this_phase"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": [],
+        "curatedId": "cur-0104",
+        "wants": [],
+        "offers": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:tutor",
+      "why": "text: If this unit survived, search the top 5 cards of your deck for an Underworld unit and play it."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: attack_end"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010078",
+   "title": "Qui-Gon Jinn",
+   "subtitle": "We'll Handle This",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 2,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Heroism",
+     "Vigilance"
+    ],
+    "traits": [
+     "Force",
+     "Jedi",
+     "Republic"
+    ],
+    "keywordsField": [
+     "Grit"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Grit",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "friendly_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:self_defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Grit"
+       }
+      ],
+      "granted": false,
+      "source": "Grit"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may defeat a unit that attacked your base this phase.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "friendly",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit that attacked your base this phase"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p1s1",
+        "text": "If it's a leader unit, defeat this unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat_self",
+          "cat": "self_defeat",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "leader",
+         "unit"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-self",
+      "why": "text: If it's a leader unit, defeat this unit."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Jedi",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Republic",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:self-damaged",
+      "why": "Grit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010005",
+   "title": "Jyn Erso",
+   "subtitle": "Time to Fight",
+   "type": "Leader",
+   "structured": {
+    "cost": 5,
+    "power": 3,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Heroism",
+     "Vigilance"
+    ],
+    "traits": [
+     "Rebel"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": true
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control_resources": 1,
+     "event_this_phase": 2
+    },
+    "effects": {
+     "deployBox:search": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 3,
+      "varN": 0
+     },
+     "text:search": {
+      "byRepeat": {
+       "per_round": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 3,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "deployBox:on_attack": 1,
+     "epicAction:epic_action": 1,
+     "text:action": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "action",
+        "repeat": "per_round",
+        "cost": {
+         "exhaust": true,
+         "resources": 1,
+         "force": false,
+         "other": []
+        },
+        "text": "Action [1 resource, Exhaust]"
+       }
+      ],
+      "repeat": "per_round",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "If a friendly Rebel unit was defeated this phase, search the top 3 cards of your deck for a card and draw it.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "search",
+          "cat": "search",
+          "n": 3,
+          "for": "a card and draw it",
+          "upTo": null
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "this_phase",
+          "cat": "event_this_phase"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "deployBox": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "deployBox.p0s0",
+        "text": "If a friendly Rebel unit was defeated this phase, search the top 3 cards of your deck for a card and draw it.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "search",
+          "cat": "search",
+          "n": 3,
+          "for": "a card and draw it",
+          "upTo": null
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "this_phase",
+          "cat": "event_this_phase"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "epicAction": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "epic_action",
+        "repeat": "once_per_game",
+        "cost": {
+         "exhaust": false,
+         "resources": 0,
+         "force": false,
+         "other": []
+        },
+        "text": "Epic Action"
+       }
+      ],
+      "repeat": "once_per_game",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p0s0",
+        "text": "If you control 5 or more resources, deploy this leader.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [
+         {
+          "rule": "control_resources",
+          "cat": "control_resources",
+          "n": 5
+         }
+        ],
+        "structure": [
+         {
+          "rule": "deploy",
+          "cat": "deploy",
+          "asUpgrade": false
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:tutor",
+      "why": "text: If a friendly Rebel unit was defeated this phase, search the top 3 cards of your deck for a card and draw it."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "deployBox: on_attack"
+     },
+     {
+      "tag": "wants:friendly-unit-defeated",
+      "why": "text: If a friendly Rebel unit was defeated this phase, search the top 3 cards of your deck for a card and draw it."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010037",
+   "title": "Bacta Tank",
+   "subtitle": "",
+   "type": "Upgrade",
+   "structured": {
+    "cost": 1,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Vigilance",
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Vigilance"
+    ],
+    "traits": [
+     "Fortification"
+    ],
+    "keywordsField": [
+     "Fortify"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Fortify",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:heal": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 3,
+      "varN": 0
+     },
+     "text:recursion": {
+      "byRepeat": {
+       "repeatable_paid": 1
+      },
+      "byTarget": {
+       "self_unit_discard": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:action": 1,
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Fortify"
+       }
+      ],
+      "granted": false,
+      "source": "Fortify"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Heal up to 3 damage from a non‑Vehicle unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "heal",
+          "cat": "heal",
+          "n": 3,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "trait:Vehicle"
+           ],
+           "text": "a non‑Vehicle unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "action",
+        "repeat": "repeatable_paid",
+        "cost": {
+         "exhaust": false,
+         "resources": 0,
+         "force": false,
+         "other": [
+          "defeat this upgrade"
+         ]
+        },
+        "text": "Action [defeat this upgrade]"
+       }
+      ],
+      "repeat": "repeatable_paid",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p2s0",
+        "text": "Put a non‑Vehicle unit from your discard pile on top of your deck.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "recursion",
+          "n": 1,
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "discard",
+           "quant": "one",
+           "restrict": [
+            "non_trait:Vehicle"
+           ],
+           "text": "a non-Vehicle unit from your discard pile"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [],
+        "curatedId": "cur-0173",
+        "wants": [
+         "wants:cards-in-discard"
+        ],
+        "offers": [
+         "offers:tutor"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:heal",
+      "why": "text: Heal up to 3 damage from a non‑Vehicle unit."
+     },
+     {
+      "tag": "offers:return-from-discard",
+      "why": "text: Put a non‑Vehicle unit from your discard pile on top of your deck."
+     },
+     {
+      "tag": "offers:tutor",
+      "why": "curated cur-0173"
+     },
+     {
+      "tag": "offers:upgrade-to-attach",
+      "why": "is an upgrade or Pilot"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:cards-in-discard",
+      "why": "curated cur-0173"
+     },
+     {
+      "tag": "wants:trait-Vehicle",
+      "why": "text: Heal up to 3 damage from a non‑Vehicle unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "04010062",
+   "title": "Silver Angel",
+   "subtitle": "Trace's Hope",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 2,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Fringe",
+     "Transport",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_unit_space": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:reactive_other": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_other",
+        "repeat": "per_event",
+        "text": "When 1 or more damage is healed from this unit"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may deal 1 damage to a space unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "space",
+           "quant": "one",
+           "restrict": [],
+           "text": "a space unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: You may deal 1 damage to a space unit."
+     },
+     {
+      "tag": "offers:is-trait-Fringe",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Transport",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:heal",
+      "why": "When 1 or more damage is healed from this unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010224",
+   "title": "Liberty",
+   "subtitle": "Draw Their Fire!",
+   "type": "Unit",
+   "structured": {
+    "cost": 8,
+    "power": 9,
+    "hp": 7,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Capital Ship",
+     "Rebel",
+     "Vehicle"
+    ],
+    "keywordsField": [
+     "Sentinel"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Sentinel",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:bounce": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_upgrade": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:exhaust": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "enemy_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:on_attack": 1,
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Sentinel"
+       }
+      ],
+      "granted": false,
+      "source": "Sentinel"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       },
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Exhaust an enemy unit and return all upgrades on it that cost 4 or less to their owner's hands.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust",
+          "cat": "exhaust",
+          "n": 1,
+          "target": {
+           "side": "enemy",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "an enemy unit"
+          }
+         },
+         {
+          "rule": "bounce",
+          "cat": "bounce",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "upgrade",
+           "arena": "any",
+           "quant": "all",
+           "restrict": [
+            "cost_le_4"
+           ],
+           "text": "all upgrades on it that cost 4 or less"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:exhaust-enemy",
+      "why": "text: Exhaust an enemy unit and return all upgrades on it that cost 4 or less to their owner's hands."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Capital Ship",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Rebel",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:return-any-to-hand",
+      "why": "text: Exhaust an enemy unit and return all upgrades on it that cost 4 or less to their owner's hands."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     },
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010159",
+   "title": "General Grievous",
+   "subtitle": "Scourge of Dathomir",
+   "type": "Unit",
+   "structured": {
+    "cost": 7,
+    "power": 8,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Villainy"
+    ],
+    "traits": [
+     "Official",
+     "Separatist"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 4,
+      "varN": 0
+     },
+     "text:restriction": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "any_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 1,
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Bases can't be healed.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "cant",
+          "cat": "restriction",
+          "what": "be healed",
+          "target": {
+           "side": "any",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "Bases"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Deal 4 damage to a base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 4,
+          "target": {
+           "side": "any",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Deal 4 damage to a base."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Official",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Separatist",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "08010042",
+   "title": "Jabba the Hutt",
+   "subtitle": "Eminence of Tatooine",
+   "type": "Unit",
+   "structured": {
+    "cost": 4,
+    "power": 2,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Vigilance",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Vigilance",
+     "Villainy"
+    ],
+    "traits": [
+     "Hutt",
+     "Underworld"
+    ],
+    "keywordsField": [
+     "Restore"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Restore",
+     "n": 2,
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:bounce": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_upgrade": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:cost_reduction": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 1
+     }
+    },
+    "optionalEffects": 2,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Restore",
+        "n": 2
+       }
+      ],
+      "granted": false,
+      "source": "Restore 2"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may return an upgrade to its owner's hand.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "bounce",
+          "cat": "bounce",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "upgrade",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "an upgrade"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p1s1",
+        "text": "If it's returned to your hand, you may play it for free.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "free",
+          "cat": "cost_reduction",
+          "n": "all"
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": [
+         "returned",
+         "hand",
+         "play"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Hutt",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:return-any-to-hand",
+      "why": "text: You may return an upgrade to its owner's hand."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "05010234",
+   "title": "Darth Malak",
+   "subtitle": "Covetous Apprentice",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 4,
+    "hp": 7,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Villainy"
+    ],
+    "traits": [
+     "Force",
+     "Sith"
+    ],
+    "keywordsField": [
+     "Overwhelm"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Overwhelm",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control": 1
+    },
+    "effects": {
+     "text:ready": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Overwhelm"
+       }
+      ],
+      "granted": false,
+      "source": "Overwhelm"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "If you control a Sith leader unit, you may ready this unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "control_n",
+          "cat": "control",
+          "n": 1,
+          "what": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "trait:Sith"
+           ],
+           "text": "Sith leader unit"
+          }
+         }
+        ],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Sith",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:trait-Sith",
+      "why": "text: If you control a Sith leader unit, you may ready this unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "04010145",
+   "title": "BB-8",
+   "subtitle": "Happy Beeps",
+   "type": "Unit",
+   "structured": {
+    "cost": 1,
+    "power": 1,
+    "hp": 4,
+    "upgradePower": 1,
+    "upgradeHp": 2,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Heroism"
+    ],
+    "traits": [
+     "Droid",
+     "Pilot",
+     "Resistance"
+    ],
+    "keywordsField": [
+     "Piloting"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Piloting",
+     "cost": "1 resource Aggression Heroism",
+     "n": 1,
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "epicAction:ready": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "epicAction:when_played_as_upgrade": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "epicAction": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Piloting",
+        "cost": "1 resource Aggression Heroism",
+        "n": 1
+       }
+      ],
+      "granted": false,
+      "source": "Piloting [1 resource Aggression Heroism]"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played_as_upgrade",
+        "repeat": "once_on_play",
+        "text": "When played as an upgrade"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p1s0",
+        "text": "You may pay 2 resources.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "pay_cost",
+          "cat": "pay_cost",
+          "n": 2
+         }
+        ],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "epicAction.p1s1",
+        "text": "If you do, ready a Resistance unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "trait:Resistance"
+           ],
+           "text": "a Resistance unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:is-trait-Droid",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Pilot",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Resistance",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:ready-unit",
+      "why": "epicAction: If you do, ready a Resistance unit."
+     },
+     {
+      "tag": "offers:upgrade-to-attach",
+      "why": "is an upgrade or Pilot"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:trait-Resistance",
+      "why": "epicAction: If you do, ready a Resistance unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "05010205",
+   "title": "Force Speed",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 1,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Cunning"
+    ],
+    "traits": [
+     "Force"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:bounce": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "enemy_upgrade": 1
+      },
+      "count": 1,
+      "granted": 1,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:extra_attack": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1,
+     "text:on_attack": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Attack with a unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "extra_attack",
+          "cat": "extra_attack",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "For this attack, it gains: ⟦G0⟧",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "granted_ref",
+          "cat": "granted_ability",
+          "target": {
+           "side": "ref",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "it"
+          }
+         }
+        ],
+        "modifiers": [
+         {
+          "rule": "for_attack",
+          "cat": "duration_attack"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [
+       {
+        "index": 0,
+        "abilities": [
+         {
+          "kind": "ability",
+          "triggers": [
+           {
+            "trigger": "on_attack",
+            "repeat": "per_attack",
+            "text": "On Attack"
+           }
+          ],
+          "repeat": "per_attack",
+          "granted": true,
+          "clauses": [
+           {
+            "path": "text.p0g0.p0s0",
+            "text": "Return any number of non-unique upgrades attached to the defender to their owners' hands.",
+            "source": "grammar",
+            "effects": [
+             {
+              "rule": "bounce",
+              "cat": "bounce",
+              "n": 1,
+              "target": {
+               "side": "enemy",
+               "kind": "upgrade",
+               "arena": "any",
+               "quant": "any_number",
+               "restrict": [
+                "non_unique"
+               ],
+               "text": "any number of non-unique upgrades attached to the defender"
+              }
+             }
+            ],
+            "conditions": [],
+            "structure": [],
+            "modifiers": [],
+            "residue": []
+           }
+          ],
+          "grantedAbilities": [],
+          "options": []
+         }
+        ]
+       }
+      ],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:bounce-enemy",
+      "why": "text: Return any number of non-unique upgrades attached to the defender to their owners' hands."
+     },
+     {
+      "tag": "offers:extra-attack",
+      "why": "text: Attack with a unit."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "06010074",
+   "title": "Relief Request",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 2,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Law"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:heal": {
+      "byRepeat": {
+       "once_on_play": 2
+      },
+      "byTarget": {
+       "any_unit": 2
+      },
+      "count": 2,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 6,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 2
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Heal 3 damage from a unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "heal",
+          "cat": "heal",
+          "n": 3,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may disclose Vigilance.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "disclose",
+          "cat": "disclose",
+          "icons": [
+           "Vigilance"
+          ]
+         }
+        ],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p1s1",
+        "text": "If you do, heal 3 damage from another unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "heal",
+          "cat": "heal",
+          "n": 3,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "other"
+           ],
+           "text": "another unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:heal",
+      "why": "text: Heal 3 damage from a unit."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "07010133",
+   "title": "Lost and Forgotten",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 6,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Innate"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:heal": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "friendly_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 3,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Defeat a non-leader unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "non_leader"
+           ],
+           "text": "a non-leader unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, heal 3 damage from your base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "heal",
+          "cat": "heal",
+          "n": 3,
+          "target": {
+           "side": "friendly",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "your base"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-any-unit",
+      "why": "text: Defeat a non-leader unit."
+     },
+     {
+      "tag": "offers:heal",
+      "why": "text: If you do, heal 3 damage from your base."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "05010064",
+   "title": "Tauntaun",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 3,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Creature"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:give_token": {
+      "byRepeat": {
+       "once_on_defeat": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_defeated": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_defeat",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may give a Shield token to a damaged non-Vehicle unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "give_tokens",
+          "cat": "give_token",
+          "tokens": [
+           [
+            "Shield",
+            1
+           ]
+          ],
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "damaged",
+            "non_trait:Vehicle"
+           ],
+           "text": "a damaged non-Vehicle unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:give-shield",
+      "why": "text: You may give a Shield token to a damaged non-Vehicle unit."
+     },
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:is-trait-Creature",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:damaged-units",
+      "why": "text: You may give a Shield token to a damaged non-Vehicle unit."
+     },
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010207",
+   "title": "Maim",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 1,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Cunning",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Villainy"
+    ],
+    "traits": [
+     "Tactic"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:self_exhaust": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Deal 1 damage to a unit and exhaust it.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         },
+         {
+          "rule": "exhaust_self",
+          "cat": "self_exhaust",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Deal 1 damage to a unit and exhaust it."
+     },
+     {
+      "tag": "offers:exhaust-own",
+      "why": "text: Deal 1 damage to a unit and exhaust it."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "09010179",
+   "title": "Feisty Blurrg",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 1,
+    "hp": 4,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression"
+    ],
+    "aspectIcons": [
+     "Aggression"
+    ],
+    "traits": [
+     "Creature"
+    ],
+    "keywordsField": [
+     "Grit"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Grit",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Grit"
+       }
+      ],
+      "granted": false,
+      "source": "Grit"
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:is-trait-Creature",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:self-damaged",
+      "why": "Grit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "06010016",
+   "title": "Padmé Amidala",
+   "subtitle": "What Do You Have to Hide?",
+   "type": "Leader",
+   "structured": {
+    "cost": 6,
+    "power": 3,
+    "hp": 8,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Naboo",
+     "Official",
+     "Republic"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": true
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control_resources": 1,
+     "if_you_do": 1
+    },
+    "effects": {
+     "deployBox:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:self_exhaust": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 2,
+    "triggers": {
+     "deployBox:reactive_you": 1,
+     "epicAction:epic_action": 1,
+     "text:reactive_you": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_you",
+        "repeat": "per_event",
+        "text": "When you reveal or discard 1 or more cards from your hand"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may exhaust this leader.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust_self",
+          "cat": "self_exhaust",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, deal 1 damage to a unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "deployBox": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_you",
+        "repeat": "per_event",
+        "text": "When you reveal or discard 1 or more cards from your hand"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "deployBox.p0s0",
+        "text": "You may deal 1 damage to a unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "epicAction": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "epic_action",
+        "repeat": "once_per_game",
+        "cost": {
+         "exhaust": false,
+         "resources": 0,
+         "force": false,
+         "other": []
+        },
+        "text": "Epic Action"
+       }
+      ],
+      "repeat": "once_per_game",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p0s0",
+        "text": "If you control 6 or more resources, deploy this leader.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [
+         {
+          "rule": "control_resources",
+          "cat": "control_resources",
+          "n": 6
+         }
+        ],
+        "structure": [
+         {
+          "rule": "deploy",
+          "cat": "deploy",
+          "asUpgrade": false
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: If you do, deal 1 damage to a unit."
+     },
+     {
+      "tag": "offers:exhaust-own",
+      "why": "text: You may exhaust this leader."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:discard-own",
+      "why": "When you reveal or discard 1 or more cards from your hand"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010069",
+   "title": "Imperial Venator",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 7,
+    "power": 7,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "traits": [
+     "Capital Ship",
+     "Imperial",
+     "Vehicle"
+    ],
+    "keywordsField": [
+     "Grit",
+     "Sentinel"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Sentinel",
+     "granted": false
+    },
+    {
+     "keyword": "Grit",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Sentinel"
+       }
+      ],
+      "granted": false,
+      "source": "Sentinel"
+     },
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Grit"
+       }
+      ],
+      "granted": false,
+      "source": "Grit"
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:is-trait-Capital Ship",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Imperial",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:self-damaged",
+      "why": "Grit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010155",
+   "title": "Getaway Freighter",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 1,
+    "hp": 4,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command"
+    ],
+    "traits": [
+     "Transport",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control": 1
+    },
+    "effects": {
+     "text:create_token": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:on_attack": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "If you control a ground unit, create a Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "create_tokens",
+          "cat": "create_token",
+          "token": "Credit",
+          "n": 1
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "control_n",
+          "cat": "control",
+          "n": 1,
+          "what": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "ground",
+           "quant": "one",
+           "restrict": [],
+           "text": "ground unit"
+          }
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:credit-tokens",
+      "why": "text: If you control a ground unit, create a Credit token."
+     },
+     {
+      "tag": "offers:is-trait-Transport",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010040",
+   "title": "Taramyn Barcona",
+   "subtitle": "Eyes Front!",
+   "type": "Unit",
+   "structured": {
+    "cost": 5,
+    "power": 4,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Vigilance"
+    ],
+    "traits": [
+     "Rebel",
+     "Trooper"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_token": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:give_token": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may defeat a Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "token",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a Credit token"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, give an Experience token to this unit and another friendly unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "give_tokens",
+          "cat": "give_token",
+          "tokens": [
+           [
+            "Experience",
+            1
+           ]
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "other"
+           ],
+           "text": "this unit and another friendly unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-any-unit",
+      "why": "text: You may defeat a Credit token."
+     },
+     {
+      "tag": "offers:give-experience",
+      "why": "text: If you do, give an Experience token to this unit and another friendly unit."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Rebel",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Trooper",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:credit-tokens",
+      "why": "text: You may defeat a Credit token."
+     },
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010231",
+   "title": "Dragonboat Freighter",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 6,
+    "power": 5,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Cunning"
+    ],
+    "traits": [
+     "Transport",
+     "Underworld",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:give_token": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     },
+     "text:self_exhaust": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may give a Weakness token to a unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "give_tokens",
+          "cat": "give_token",
+          "tokens": [
+           [
+            "Weakness",
+            1
+           ]
+          ],
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If it's a unique unit, exhaust it.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust_self",
+          "cat": "self_exhaust",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "unique",
+         "unit"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:exhaust-own",
+      "why": "text: If it's a unique unit, exhaust it."
+     },
+     {
+      "tag": "offers:give-weakness",
+      "why": "text: You may give a Weakness token to a unit."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Transport",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "08010035",
+   "title": "Tatooine Repulsor Train",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 7,
+    "power": 8,
+    "hp": 7,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Aggression"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Command"
+    ],
+    "traits": [
+     "Speeder",
+     "Underworld",
+     "Vehicle"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control": 1,
+     "scaling": 1
+    },
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "any_unit_ground": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     },
+     "text:restriction": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 1,
+     "text:on_attack": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "This unit can't be attacked while you control 2 or more exhausted units.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "cant",
+          "cat": "restriction",
+          "what": "be attacked",
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "control_n",
+          "cat": "control",
+          "n": 2,
+          "what": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "exhausted"
+           ],
+           "text": "exhausted units"
+          }
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Deal 2 damage to a ground unit for each friendly exhausted unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 2,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "ground",
+           "quant": "one",
+           "restrict": [],
+           "text": "a ground unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "friendly exhausted unit"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Deal 2 damage to a ground unit for each friendly exhausted unit."
+     },
+     {
+      "tag": "offers:is-trait-Speeder",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:exhausted-own",
+      "why": "text: This unit can't be attacked while you control 2 or more exhausted units."
+     },
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     },
+     {
+      "tag": "wants:wide-board",
+      "why": "text: This unit can't be attacked while you control 2 or more exhausted units."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010099",
+   "title": "Always a Bigger Fish",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 2,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Innate"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:cost_reduction": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 1
+     },
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "friendly_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:play_extra": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Defeat a friendly Creature unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "friendly",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "trait:Creature"
+           ],
+           "text": "a friendly Creature unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, play a Creature unit that costs up to 3 more than the defeated unit from your hand for free.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "play_from",
+          "cat": "play_extra",
+          "n": 1,
+          "zone": "your hand",
+          "what": "a Creature unit that costs up to 3 more than the defeated unit"
+         },
+         {
+          "rule": "free",
+          "cat": "cost_reduction",
+          "n": "all"
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:cheat-play",
+      "why": "text: If you do, play a Creature unit that costs up to 3 more than the defeated unit from your hand for free."
+     },
+     {
+      "tag": "offers:defeat-friendly-unit",
+      "why": "text: Defeat a friendly Creature unit."
+     },
+     {
+      "tag": "offers:units-entering",
+      "why": "text: If you do, play a Creature unit that costs up to 3 more than the defeated unit from your hand for free."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:sac-fodder",
+      "why": "defeats your own units"
+     },
+     {
+      "tag": "wants:trait-Creature",
+      "why": "text: Defeat a friendly Creature unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "05010128",
+   "title": "Protect the Pod",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 4,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command"
+    ],
+    "traits": [
+     "Tactic"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "enemy_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 1
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "A friendly non-Vehicle unit deals damage equal to its remaining HP to an enemy unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage_equal",
+          "cat": "damage",
+          "n": "var",
+          "indirect": false,
+          "basis": "its remaining HP",
+          "fight": true,
+          "source": {
+           "side": "friendly",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "non_trait:Vehicle"
+           ],
+           "text": "A friendly non-Vehicle unit"
+          },
+          "target": {
+           "side": "enemy",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "an enemy unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-enemy-unit",
+      "why": "text: A friendly non-Vehicle unit deals damage equal to its remaining HP to an enemy unit."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "05010130",
+   "title": "HK-47",
+   "subtitle": "Exclamation: Die, Meatbag!",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 2,
+    "hp": 4,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Villainy"
+    ],
+    "traits": [
+     "Droid",
+     "Sith"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "any_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:reactive_opponent": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_opponent",
+        "repeat": "per_event",
+        "text": "When an enemy unit is defeated"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Deal 1 damage to its controller's base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "its controller's base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Deal 1 damage to its controller's base."
+     },
+     {
+      "tag": "offers:is-trait-Droid",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Sith",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:enemy-unit-defeated",
+      "why": "When an enemy unit is defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "04010094",
+   "title": "Luke Skywalker",
+   "subtitle": "You Still With Me?",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 3,
+    "hp": 2,
+    "upgradePower": 3,
+    "upgradeHp": 2,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Heroism"
+    ],
+    "traits": [
+     "Force",
+     "Pilot",
+     "Rebel"
+    ],
+    "keywordsField": [
+     "Piloting"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Piloting",
+     "cost": "3 resources Command Heroism",
+     "n": 3,
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "replacement_window": 1
+    },
+    "effects": {
+     "epicAction:self_exhaust": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "epicAction:constant": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "epicAction": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Piloting",
+        "cost": "3 resources Command Heroism",
+        "n": 3
+       }
+      ],
+      "granted": false,
+      "source": "Piloting [3 resources Command Heroism]"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p1s0",
+        "text": "If this upgrade would be defeated, you may instead move him to the ground arena as a unit and exhaust him.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust_self",
+          "cat": "self_exhaust",
+          "n": 1
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "would_be_defeated",
+          "cat": "replacement_window",
+          "target": {
+           "side": "self",
+           "kind": "upgrade",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this upgrade"
+          }
+         }
+        ],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         },
+         {
+          "rule": "instead",
+          "cat": "replacement"
+         }
+        ],
+        "residue": [
+         "move",
+         "ground",
+         "arena",
+         "unit"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:exhaust-own",
+      "why": "epicAction: If this upgrade would be defeated, you may instead move him to the ground arena as a unit and exhaust him."
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Pilot",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Rebel",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:upgrade-to-attach",
+      "why": "is an upgrade or Pilot"
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "06010114",
+   "title": "Kino Loy",
+   "subtitle": "You Answer to Me",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 1,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command"
+    ],
+    "traits": [
+     "Fringe"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "scaling": 1
+    },
+    "effects": {
+     "text:stat_mod": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "This unit gets +1/+0 for each other exhausted friendly unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "stat_gets",
+          "cat": "stat_mod",
+          "power": 1,
+          "hp": 0,
+          "sign": "buff",
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "other exhausted friendly unit"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:buff",
+      "why": "text: This unit gets +1/+0 for each other exhausted friendly unit."
+     },
+     {
+      "tag": "offers:is-trait-Fringe",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:exhausted-own",
+      "why": "text: This unit gets +1/+0 for each other exhausted friendly unit."
+     },
+     {
+      "tag": "wants:wide-board",
+      "why": "text: This unit gets +1/+0 for each other exhausted friendly unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "08010179",
+   "title": "Boba Fett's Rancor",
+   "subtitle": "Emotionally Complex Creature",
+   "type": "Unit",
+   "structured": {
+    "cost": 8,
+    "power": 8,
+    "hp": 9,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression"
+    ],
+    "aspectIcons": [
+     "Aggression"
+    ],
+    "traits": [
+     "Creature",
+     "Underworld"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 3,
+       "per_attack": 1
+      },
+      "byTarget": {
+       "any_unit": 1,
+       "enemy_unit_ground": 1,
+       "friendly_base": 2
+      },
+      "count": 4,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 16,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:on_attack": 1,
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Deal 5 damage to your base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 5,
+          "target": {
+           "side": "friendly",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "your base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "Then, deal 5 damage to an enemy ground unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 5,
+          "target": {
+           "side": "enemy",
+           "kind": "unit",
+           "arena": "ground",
+           "quant": "one",
+           "restrict": [],
+           "text": "an enemy ground unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s2",
+        "text": "Then, deal 5 damage to the same unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 5,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "the same unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may deal 1 damage to a base for every 5 damage on your base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 1,
+          "target": {
+           "side": "friendly",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a base for every 5 damage on your base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Then, deal 5 damage to the same unit."
+     },
+     {
+      "tag": "offers:damage-enemy-unit",
+      "why": "text: Then, deal 5 damage to an enemy ground unit."
+     },
+     {
+      "tag": "offers:damage-friendly-unit",
+      "why": "text: Deal 5 damage to your base."
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Creature",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Underworld",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     },
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "05010137",
+   "title": "Savage Opress",
+   "subtitle": "Imbued With Hate",
+   "type": "Unit",
+   "structured": {
+    "cost": 6,
+    "power": 9,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Villainy"
+    ],
+    "traits": [
+     "Force",
+     "Night"
+    ],
+    "keywordsField": [
+     "Overwhelm"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Overwhelm",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:damage": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "friendly_base": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 9,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:when_defeated": 1,
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Overwhelm"
+       }
+      ],
+      "granted": false,
+      "source": "Overwhelm"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       },
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may use the Force.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "use_force_cost",
+          "cat": "force_cost"
+         }
+        ],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "text.p1s1",
+        "text": "If you don't, deal 9 damage to your base.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 9,
+          "target": {
+           "side": "friendly",
+           "kind": "base",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "your base"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "don't"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:damage-friendly-unit",
+      "why": "text: If you don't, deal 9 damage to your base."
+     },
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Night",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "wants:the-force",
+      "why": "text: You may use the Force."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010123",
+   "title": "King Grakchawwaa",
+   "subtitle": "King of Kashyyyk",
+   "type": "Unit",
+   "structured": {
+    "cost": 6,
+    "power": 6,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Heroism"
+    ],
+    "traits": [
+     "Official",
+     "Wookiee"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "scaling": 1
+    },
+    "effects": {
+     "text:ramp": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:ready": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "any_card": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "For each other friendly Wookiee unit, resource the top card of your deck.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ramp",
+          "cat": "ramp",
+          "n": 1
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "other friendly Wookiee unit"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "Ready each card resourced this way.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "card",
+           "arena": "any",
+           "quant": "all",
+           "restrict": [],
+           "text": "each card resourced this way"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Official",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Wookiee",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:ready-unit",
+      "why": "text: Ready each card resourced this way."
+     },
+     {
+      "tag": "offers:resource-ramp",
+      "why": "text: For each other friendly Wookiee unit, resource the top card of your deck."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     },
+     {
+      "tag": "wants:wide-board",
+      "why": "text: For each other friendly Wookiee unit, resource the top card of your deck."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010218",
+   "title": "New Tactics",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 5,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Learned",
+     "Tactic"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:tuck": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "ref_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Choose a non-leader unit.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "choose_unit",
+          "cat": "select",
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "non_leader"
+           ],
+           "text": "a non-leader unit"
+          }
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       },
+       {
+        "path": "text.p0s1",
+        "text": "Its owner puts it on the top or bottom of their deck.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "tuck",
+          "n": 1,
+          "target": {
+           "side": "ref",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "it"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [],
+        "curatedId": "cur-0194",
+        "wants": [],
+        "offers": [
+         "offers:return-any-to-hand"
+        ]
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:return-any-to-hand",
+      "why": "curated cur-0194"
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "06010235",
+   "title": "The Wrong Ride",
+   "subtitle": "",
+   "type": "Event",
+   "structured": {
+    "cost": 3,
+    "power": null,
+    "hp": null,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Cunning"
+    ],
+    "traits": [
+     "Disaster"
+    ],
+    "keywordsField": [
+     "Plot"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Plot",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:exhaust": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "enemy_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:event_resolve": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "event_resolve",
+        "repeat": "once_on_play"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Exhaust 2 enemy resources.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "exhaust",
+          "cat": "exhaust",
+          "n": 1,
+          "target": {
+           "side": "enemy",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "exactly_2",
+           "restrict": [],
+           "text": "2 enemy resources"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Plot"
+       }
+      ],
+      "granted": false,
+      "source": "Plot"
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:exhaust-enemy",
+      "why": "text: Exhaust 2 enemy resources."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "04010040",
+   "title": "Fleet Interdictor",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 7,
+    "power": 6,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Space"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Vigilance",
+     "Villainy"
+    ],
+    "traits": [
+     "Capital Ship",
+     "Imperial",
+     "Vehicle"
+    ],
+    "keywordsField": [
+     "Sentinel"
+    ],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Sentinel",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:defeat": {
+      "byRepeat": {
+       "once_on_defeat": 1
+      },
+      "byTarget": {
+       "any_unit_space": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_defeated": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Sentinel"
+       }
+      ],
+      "granted": false,
+      "source": "Sentinel"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_defeat",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "You may defeat a space unit that costs 3 or less.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "space",
+           "quant": "one",
+           "restrict": [
+            "cost_le_3"
+           ],
+           "text": "a space unit that costs 3 or less"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:defeat-any-unit",
+      "why": "text: You may defeat a space unit that costs 3 or less."
+     },
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:is-trait-Capital Ship",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Imperial",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Vehicle",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "04010060",
+   "title": "Desperate Commando",
+   "subtitle": "",
+   "type": "Unit",
+   "structured": {
+    "cost": 2,
+    "power": 2,
+    "hp": 2,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance"
+    ],
+    "aspectIcons": [
+     "Vigilance"
+    ],
+    "traits": [
+     "Resistance",
+     "Trooper"
+    ],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:stat_mod": {
+      "byRepeat": {
+       "once_on_defeat": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_defeated": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_defeat",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may give a unit -1/-1 for this phase.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "stat_give",
+          "cat": "stat_mod",
+          "power": -1,
+          "hp": -1,
+          "sign": "debuff",
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         },
+         {
+          "rule": "for_phase",
+          "cat": "duration_phase"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:is-trait-Resistance",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Trooper",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010044",
+   "title": "Ima-Gun Di",
+   "subtitle": "Holding Out For Resupply",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 5,
+    "hp": 3,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Aggression",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Command",
+     "Heroism"
+    ],
+    "traits": [
+     "Force",
+     "Jedi",
+     "Republic"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control_resources": 1,
+     "if_you_do": 1
+    },
+    "effects": {
+     "text:ramp": {
+      "byRepeat": {
+       "once_on_defeat": 2
+      },
+      "byTarget": {
+       "none": 1,
+       "self_card_hand": 1
+      },
+      "count": 2,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:when_defeated": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_defeated",
+        "repeat": "once_on_defeat",
+        "text": "When Defeated"
+       }
+      ],
+      "repeat": "once_on_defeat",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "If you control fewer resources than an opponent, you may resource a card from your hand.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "ramp",
+          "n": 1,
+          "target": {
+           "side": "self",
+           "kind": "card",
+           "arena": "hand",
+           "quant": "one",
+           "restrict": [],
+           "text": "a card from your hand"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "curated",
+          "cat": "control_resources",
+          "text": "you control fewer resources than an opponent",
+          "n": 0
+         }
+        ],
+        "structure": [
+         {
+          "rule": "curated",
+          "cat": "optional"
+         }
+        ],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": [],
+        "curatedId": "cur-0176",
+        "wants": [
+         "wants:cards-in-hand"
+        ],
+        "offers": [
+         "offers:resource-ramp"
+        ]
+       },
+       {
+        "path": "text.p0s1",
+        "text": "If you do, resource the top card of your deck.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ramp",
+          "cat": "ramp",
+          "n": 1
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-defeated",
+      "why": "text: When Defeated"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Jedi",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Republic",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:resource-ramp",
+      "why": "curated cur-0176"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:cards-in-hand",
+      "why": "curated cur-0176"
+     },
+     {
+      "tag": "wants:resource-ramp",
+      "why": "text: If you control fewer resources than an opponent, you may resource a card from your hand."
+     },
+     {
+      "tag": "wants:self-defeated",
+      "why": "text: When Defeated"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010043",
+   "title": "Darth Vader",
+   "subtitle": "Any Methods Necessary",
+   "type": "Unit",
+   "structured": {
+    "cost": 9,
+    "power": 9,
+    "hp": 8,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Aggression",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Command",
+     "Villainy"
+    ],
+    "traits": [
+     "Force",
+     "Imperial",
+     "Sith"
+    ],
+    "keywordsField": [
+     "Saboteur"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Saboteur",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:search": {
+      "byRepeat": {
+       "once_on_play": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 8,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:when_played": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Saboteur"
+       }
+      ],
+      "granted": false,
+      "source": "Saboteur"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "when_played",
+        "repeat": "once_on_play",
+        "text": "When Played"
+       }
+      ],
+      "repeat": "once_on_play",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Search the top 8 cards of your deck for up to 2 units that each cost 4 or less, play them for free, and deal 2 damage to each of them.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "search",
+          "cat": "search",
+          "n": 8,
+          "for": "up to 2 units that each cost 4 or less, play them for free, and deal 2 damage to each of them",
+          "upTo": "2"
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:has-when-played",
+      "why": "text: When Played"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Imperial",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Sith",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:tutor",
+      "why": "text: Search the top 8 cards of your deck for up to 2 units that each cost 4 or less, play them for free, and deal 2 damage to each of them."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:replay-when-played",
+      "why": "text: When Played on a unit"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "07010013",
+   "title": "Chewbacca",
+   "subtitle": "Hero of Kessel",
+   "type": "Leader",
+   "structured": {
+    "cost": 4,
+    "power": 5,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Aggression",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Heroism"
+    ],
+    "traits": [
+     "Underworld",
+     "Wookiee"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": true
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "if_you_do": 1
+    },
+    "effects": {
+     "deployBox:create_token": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "deployBox:damage": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     },
+     "deployBox:defeat": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "friendly_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:create_token": {
+      "byRepeat": {
+       "per_round": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     },
+     "text:damage": {
+      "byRepeat": {
+       "per_round": 1
+      },
+      "byTarget": {
+       "any_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 2,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "deployBox:on_attack": 1,
+     "epicAction:epic_action": 1,
+     "text:action": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "action",
+        "repeat": "per_round",
+        "cost": {
+         "exhaust": true,
+         "resources": 1,
+         "force": false,
+         "other": [
+          "defeat a friendly resource"
+         ]
+        },
+        "text": "Action [1 resource, Exhaust, defeat a friendly resource]"
+       }
+      ],
+      "repeat": "per_round",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Deal 2 damage to a unit and create a Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 2,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         },
+         {
+          "rule": "create_tokens",
+          "cat": "create_token",
+          "token": "Credit",
+          "n": 1
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "deployBox": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "deployBox.p0s0",
+        "text": "You may defeat a friendly resource.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "defeat",
+          "cat": "defeat",
+          "n": 1,
+          "target": {
+           "side": "friendly",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a friendly resource"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       },
+       {
+        "path": "deployBox.p0s1",
+        "text": "If you do, deal 2 damage to a unit and create a Credit token.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "damage",
+          "cat": "damage",
+          "n": 2,
+          "target": {
+           "side": "any",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a unit"
+          }
+         },
+         {
+          "rule": "create_tokens",
+          "cat": "create_token",
+          "token": "Credit",
+          "n": 1
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "if_you_do",
+          "cat": "if_you_do"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "epicAction": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "epic_action",
+        "repeat": "once_per_game",
+        "cost": {
+         "exhaust": false,
+         "resources": 4,
+         "force": false,
+         "other": []
+        },
+        "text": "Epic Action [4 resources]"
+       }
+      ],
+      "repeat": "once_per_game",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p0s0",
+        "text": "Deploy this leader.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [],
+        "structure": [
+         {
+          "rule": "deploy",
+          "cat": "deploy",
+          "asUpgrade": false
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:credit-tokens",
+      "why": "text: Deal 2 damage to a unit and create a Credit token."
+     },
+     {
+      "tag": "offers:damage-any-unit",
+      "why": "text: Deal 2 damage to a unit and create a Credit token."
+     },
+     {
+      "tag": "offers:defeat-friendly-unit",
+      "why": "deployBox: You may defeat a friendly resource."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "deployBox: on_attack"
+     },
+     {
+      "tag": "wants:sac-fodder",
+      "why": "defeats your own units"
+     }
+    ]
+   }
+  }
+ ]
+}
