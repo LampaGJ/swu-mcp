@@ -43,7 +43,6 @@ export const vectorsFileSchema = z.strictObject({
   decode: z.string(),
   cards: z.record(z.string(), z.string()),
 });
-export type VectorsFile = z.infer<typeof vectorsFileSchema>;
 
 export const similarityReplaySchema = z.strictObject({
   codeCommit: z.string(),

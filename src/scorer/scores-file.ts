@@ -53,7 +53,6 @@ export const scoresFileSchema = z.strictObject({
   coefficientsSha256: sha,
   cards: z.array(scoreRowSchema),
 });
-export type ScoresFile = z.infer<typeof scoresFileSchema>;
 
 export const scoresReplaySchema = z.strictObject({
   rubricVersion: z.string(),

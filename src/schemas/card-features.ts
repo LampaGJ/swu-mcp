@@ -112,7 +112,6 @@ export const swuConditionSchema = z.looseObject({ ...featureBase, cat: swuCondit
 export const swuFeatureSchema = z.looseObject({ ...featureBase, cat: z.string().min(1) });
 export type SwuFeature = z.infer<typeof swuFeatureSchema>;
 export type SwuEffect = z.infer<typeof swuEffectSchema>;
-export type SwuCondition = z.infer<typeof swuConditionSchema>;
 
 export const SWU_TRIGGER_IDS = [
   "when_played",
@@ -191,7 +190,6 @@ export const swuKeywordAbilitySchema = z.strictObject({
   granted: z.boolean(),
   source: z.string(),
 });
-export type SwuKeywordAbility = z.infer<typeof swuKeywordAbilitySchema>;
 
 export const swuAbilitySchema = z.strictObject({
   kind: z.literal("ability"),
@@ -217,7 +215,6 @@ export const swuGrantedSlotSchema = z.strictObject({
     return z.array(swuAbilityNodeSchema);
   },
 });
-export type SwuGrantedSlot = z.infer<typeof swuGrantedSlotSchema>;
 
 export const swuOptionSchema = z.strictObject({
   clauses: z.array(swuClauseSchema),
@@ -225,7 +222,6 @@ export const swuOptionSchema = z.strictObject({
     return z.array(swuGrantedSlotSchema);
   },
 });
-export type SwuOption = z.infer<typeof swuOptionSchema>;
 
 const countMap = z.record(z.string(), z.number().int());
 
