@@ -50,4 +50,31 @@ describe.skipIf(!existsSync(ORIGINALS))("field guide against the pinned original
       `${counts.variantId.serialMatchesNeither} match neither`,
     ]) expect(GUIDE).toContain(phrase);
   });
+
+  it("states the Printing-section numbers for the raw card list (verification RC21)", () => {
+    const n = (x: number): string => x.toLocaleString("en-US");
+    const p = counts.printing;
+    const list = (m: Record<string, number>, order: readonly string[]): string => order.map((k) => `${k} ${n(m[k] ?? 0)}`).join(", ");
+    const byCount = (m: Record<string, number>): string[] => Object.keys(m).sort((a, b) => m[b] - m[a] || (a < b ? -1 : 1));
+    for (const phrase of [
+      `${n(p.cardNumberDistinct)} distinct values in the raw card list`,
+      `${n(p.titleDistinct)} distinct titles in the raw card list`,
+      `In the raw card list ${n(p.subtitleEmpty)} are the empty string and ${n(p.subtitleNull)} are null`,
+      `${n(counts.other.artistDistinct)} distinct in the raw card list`,
+      `Empty string on ${n(p.textEmpty)} printings; null on ${n(p.textNull)}`,
+      `Non-null on ${n(p.deployBoxNonNullByType.Leader)} printings in the raw card list, all Leaders`,
+      `Empty string ${n(p.epicActionEmpty)} times, null ${n(p.epicActionNull)}, non-empty on ${n(p.epicActionNonEmptyByType.Leader)} Leaders and ${n(p.epicActionNonEmptyByType.Unit)} Units`,
+      `null on ${n(p.costNull)} printings in the raw card list`,
+      `null on ${n(p.powerNull)} printings in the raw card list`,
+      `Closed set in the raw card list (9): ${list(p.byType, byCount(p.byType))}.`,
+      `Observed in the raw card list: ${list(p.byRarity, ["Common", "Uncommon", "Rare", "Legendary", "Special"])}.`,
+      `Closed set (6), counted in the raw card list: ${list(p.byAspect, byCount(p.byAspect))}.`,
+      `exactly one entry for ${n(counts.variantId.withOneVariant)} printings in the raw card list and is empty for ${counts.variantId.withNoVariant}`,
+      `\`false\` ${n(p.foil.false)}; \`true\` ${n(p.foil.true)}; \`null\` ${n(p.foil.null)}`,
+      `${n(p.withKeyword)} printings in the raw card list have at least one`,
+      `Empty on all ${p.traitlessBases} Bases and 2 Force Tokens in the raw card list`,
+    ]) expect(GUIDE).toContain(phrase);
+    expect(Object.keys(p.deployBoxNonNullByType)).toEqual(["Leader"]);
+    expect(Object.keys(p.epicActionNonEmptyByType)).toEqual(["Leader", "Unit"]);
+  });
 });

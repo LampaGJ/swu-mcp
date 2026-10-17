@@ -23,6 +23,10 @@ const relationName = (value: unknown): string | undefined => {
   const name = data?.attributes?.name;
   return typeof name === "string" ? name : undefined;
 };
+const relationNames = (value: unknown): string[] =>
+  ((value as { data?: { attributes?: { name?: unknown } }[] } | null | undefined)?.data ?? [])
+    .map((entry) => entry.attributes?.name)
+    .filter((name): name is string => typeof name === "string");
 const isNonEmptyString = (value: unknown): boolean => typeof value === "string" && value !== "";
 const sortedEntries = (counts: Map<string, number>): Record<string, number> => Object.fromEntries([...counts].sort((a, b) => compareCodePoints(a[0], b[0])));
 const tally = (values: Iterable<string>): Map<string, number> => {
@@ -30,6 +34,32 @@ const tally = (values: Iterable<string>): Map<string, number> => {
   for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
   return counts;
 };
+
+/** The Printing-section counts of the field guide, over every raw printing. */
+function printingCounts(attrs: readonly Attrs[]) {
+  const typeOf = (a: Attrs): string => relationName(a.type) ?? "none";
+  const foils = attrs.flatMap((a) => ((a.variantTypes as { data?: { attributes?: { foil?: unknown } }[] } | null)?.data ?? []).map((v) => String(v.attributes?.foil ?? null)));
+  return {
+    cardNumberDistinct: new Set(attrs.map((a) => a.cardNumber)).size,
+    titleDistinct: new Set(attrs.map((a) => a.title)).size,
+    subtitleEmpty: attrs.filter((a) => a.subtitle === "").length,
+    subtitleNull: attrs.filter((a) => a.subtitle == null).length,
+    textEmpty: attrs.filter((a) => a.text === "").length,
+    textNull: attrs.filter((a) => a.text == null).length,
+    deployBoxNonNullByType: sortedEntries(tally(attrs.filter((a) => a.deployBox != null).map(typeOf))),
+    epicActionEmpty: attrs.filter((a) => a.epicAction === "").length,
+    epicActionNull: attrs.filter((a) => a.epicAction == null).length,
+    epicActionNonEmptyByType: sortedEntries(tally(attrs.filter((a) => isNonEmptyString(a.epicAction)).map(typeOf))),
+    costNull: attrs.filter((a) => a.cost == null).length,
+    powerNull: attrs.filter((a) => a.power == null).length,
+    byType: sortedEntries(tally(attrs.map(typeOf))),
+    byRarity: sortedEntries(tally(attrs.map((a) => relationName(a.rarity) ?? "none"))),
+    byAspect: sortedEntries(tally(attrs.flatMap((a) => relationNames(a.aspects)))),
+    foil: sortedEntries(tally(foils)),
+    withKeyword: attrs.filter((a) => relationNames(a.keywords).length > 0).length,
+    traitlessBases: attrs.filter((a) => typeOf(a) === "Base" && relationNames(a.traits).length === 0).length,
+  };
+}
 
 export function fieldGuideCounts(raw: readonly RawPrinting[], runDate: string) {
   const attrs: Attrs[] = raw.map((record) => record.attributes);
@@ -98,6 +128,7 @@ export function fieldGuideCounts(raw: readonly RawPrinting[], runDate: string) {
       namesForVariantId05: names(namesByCode, "05"),
       namesForSerialDigits3to4Equal60: names(namesBySerialDigits, "60"),
     },
+    printing: printingCounts(attrs),
     other: {
       deployBoxNonNull: attrs.filter((a) => a.deployBox != null).length,
       artistDistinct: new Set(attrs.map((a) => a.artist)).size,

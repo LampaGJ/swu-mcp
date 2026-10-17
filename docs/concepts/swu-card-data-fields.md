@@ -19,7 +19,7 @@ Conventions:
 ## The files
 
 - Official card list, `official-card-list-import-43.json`: `{ printings: [...] }`, 10,211 printings. Keeps only the fields conformance reads: `serialCode`, `cardNumber`, `title`, `subtitle`, `cost`, `power`, `hp`, `type`, `rarity`, `aspects`, `expansion`, `variantTypes` ([`packages/server/src/lib/adapters/swu/conform/snapshot-types.ts:12`](https://github.com/LampaGJ/mault/blob/feature/swu-support/packages/server/src/lib/adapters/swu/conform/snapshot-types.ts#L12)).
-- Catalogue snapshots, four older files: same shape, differing field subsets, 10,193 printings each. Counts in this guide say which population they cover: the 10,246-printing raw card list of 2026-10-16, or the 10,193-printing snapshots. The hp, rulesStyled and variantId counts are recomputed from the raw card list by `scripts/glossary/field-guide-counts.ts` in swu-mcp (`pnpm exec tsx scripts/glossary/field-guide-counts.ts`). Details per field below and in "Which snapshot has which field".
+- Catalogue snapshots, four older files: same shape, differing field subsets, 10,193 printings each. Counts in this guide say which population they cover: the 10,246-printing raw card list of 2026-10-16, or the 10,193-printing snapshots. Every count in the Printing section that the raw card list can answer, and the hp, rulesStyled and variantId counts, are recomputed from the raw card list by `scripts/glossary/field-guide-counts.ts` in swu-mcp (`pnpm exec tsx scripts/glossary/field-guide-counts.ts`); the official list and the snapshots are not pinned inputs there, so those counts say "in the raw card list". Details per field below and in "Which snapshot has which field".
 - Price export, `tcgplayer-prices-rectified-import-43.json`: `{ import: {...}, printings: [...] }`. 8,882 `tcg_printings` rows plus the one `price_imports` row.
 - Corrections, `corrections-import-43.json`: array of `tcg_corrections` rows (1,038).
 - Quarantine, `quarantine-import-43.json`: array of `tcg_quarantine` rows (122).
@@ -38,22 +38,22 @@ One record per printing. A card the game treats as "the same card" can have doze
   - **Strategic value**: the join key to price data and to a scanned card. A collector or the sorter decides "which exact printing is this" with it.
   - **Interacts with**: equals `tcg_printings.card_id` in the price export. Its variant digits must agree with `variantTypes` (see `swuPrintingVariant`, variant-kind.ts:59-66). Same-title cards across sets have different serials.
 - **`printings[].cardNumber`**
-  - Type: integer. Example: `1`, `65`, `1062`. 1,167 distinct values in the official list.
+  - Type: integer. Example: `1`, `65`, `1062`. 1,167 distinct values in the raw card list.
   - Meaning: the collector number inside its expansion, as the official API gives it. It can differ from the number in the serial (the Red Leader case: official 1062, serial 1063, `conform/rules.ts:111`).
   - **Strategic value**: finds a card in a binder or set list; distinguishes a printing from its Showcase or Hyperspace twin only together with the variant.
   - **Interacts with**: TCGplayer lists a "Number" per product; the classifier matches it to `cardNumber` within an expansion and variant pool, and `number-shift` corrections move it by one (`conform/rules.ts:202-206`).
 - **`printings[].title`**
-  - Type: string. Example: `"Luke Skywalker"`. 2,060 distinct titles in the official list.
+  - Type: string. Example: `"Luke Skywalker"`. 2,061 distinct titles in the raw card list.
   - Meaning: the card's name. The rules digest says a card's name is its title; the subtitle has no mechanical function (digest section 2, "Subtitle").
   - **Strategic value**: what players say aloud and what deck lists show.
   - **Interacts with**: with `subtitle` it forms the card's identity (unique leaders share a title across versions). Suspension and legality matching uses the normalised title plus subtitle ([`docs/concepts/swu-formats.md`](https://github.com/LampaGJ/mault/blob/feature/swu-support/docs/concepts/swu-formats.md), "Matching rule"). TCGplayer title typos are fixed by the `title-drift` rule (`conform/rules.ts:197-199`).
 - **`printings[].subtitle`**
-  - Type: string or null. Example: `"Championing Her People"`, `""`, `null`. In the official list 5,084 are the empty string and 706 are null (a Base has `null`).
+  - Type: string or null. Example: `"Championing Her People"`, `""`, `null`. In the raw card list 5,106 are the empty string and 706 are null (a Base has `null`).
   - Meaning: the second line of the name. Digest: "no mechanical function"; but the digest's Unique rule says the subtitle differentiates versions of a unique card (section 8.30).
   - **Strategic value**: tells two versions of the same character apart (a leader versus a unit version). Matters for the Unique rule: you may control only one copy per player (section 8.30).
   - **Interacts with**: `title` for identity; the `unique` icon (not in the export).
 - **`printings[].artist`** (snapshots only)
-  - Type: string. Example: `"Johnny Morrow"`. 199 distinct. Required in the code (`api-types.ts:120`).
+  - Type: string. Example: `"Johnny Morrow"`. 201 distinct in the raw card list. Required in the code (`api-types.ts:120`).
   - Meaning: the credited illustrator, printed on the card's credit line (digest section 2, item 13).
   - **Strategic value**: collectors chase artists; a signed or alter piece is valued by it.
   - **Interacts with**: nothing in the rules. It is also a sentinel: a stored row without `artist` is the old partial shape and triggers a fallback (`api-types.ts:155-160`).
@@ -61,17 +61,17 @@ One record per printing. A card the game treats as "the same card" can have doze
 ### Rules-text fields (snapshots only)
 
 - **`printings[].text`** (snapshots abba1a4e and a9fa9369 and aa0e0918 and 69ceeab2: all four carry it)
-  - Type: string or null. Example: `"Each friendly damaged unit gets +1/+0. "`. Empty string on 541 printings; null on 64 (bases with no text, such as Capital City Base).
+  - Type: string or null. Example: `"Each friendly damaged unit gets +1/+0. "`. Empty string on 553 printings; null on 64 (bases with no text, such as Capital City Base).
   - Meaning: the card's rules text box. Keyword reminder text sits in brackets. Paragraphs are separated by `\n\n`.
   - **Strategic value**: what the card does; the field a deck builder searches. Lets you find every card that mentions a trait or keyword.
   - **Interacts with**: `keywords` (the keywords usually appear as the first words of this text), `traits` (other cards' text targets traits, such as "a Republic card"), `type` (Events resolve their text once, then go to the discard pile: digest 3.3), `cost` and `aspects` (what it takes to play).
 - **`printings[].deployBox`** (snapshot abba1a4e and a9fa9369)
-  - Type: string or null. Example: `"On Attack: You may give another unit a Shield token. "`. Non-null on 513 printings, all Leaders.
+  - Type: string or null. Example: `"On Attack: You may give another unit a Shield token. "`. Non-null on 515 printings in the raw card list, all Leaders.
   - Meaning: the text on a Leader's back (the Leader Unit side), which applies after the leader deploys (digest 3.4: leaders are double-sided).
   - **Strategic value**: shows what the deployed leader unit does, so you can judge whether reaching the deploy threshold is worth it.
   - **Interacts with**: `epicAction` (the deploy condition), `power` and `hp` (the unit side's stats), and `keywords` (a deployed leader can have Restore, Saboteur and so on).
 - **`printings[].epicAction`** (snapshot abba1a4e and a9fa9369)
-  - Type: string or null. Example: `"Epic Action: If you control 5 or more resources, deploy this leader."`. Empty string 6,578 times, null 2,917, non-empty on 510 Leaders and 188 Units.
+  - Type: string or null. Example: `"Epic Action: If you control 5 or more resources, deploy this leader."`. Empty string 6,629 times, null 2,917, non-empty on 512 Leaders and 188 Units.
   - Meaning: the once-per-game Epic Action ability. Digest 7.2: "Epic Action: Once per game only", marked by an epic action counter (digest 1.12). On a Leader it is the deploy trigger. The 188 Units that carry non-empty text are Pilot units (their text begins with "Piloting [...]") (inferred).
   - **Strategic value**: tells you when a leader can flip into a unit; a leader that deploys at 4 resources is faster than one that needs 6.
   - **Interacts with**: resources in play (the zone the threshold counts), `deployBox`, `cost` (a deployed leader is not played, so cost is not paid).
@@ -79,12 +79,12 @@ One record per printing. A card the game treats as "the same card" can have doze
 ### Numbers
 
 - **`printings[].cost`**
-  - Type: integer or null. Example: `2`. Values 0 to 15 (all of 0, 1, 2, ..., 12, 14, 15 occur); null on 268 official printings.
+  - Type: integer or null. Example: `2`. Values 0 to 15 (all of 0, 1, 2, ..., 12, 14, 15 occur); null on 270 printings in the raw card list.
   - Meaning: the resources you exhaust to play the card (the yellow box, digest 1.8). Null for Bases, Credit and Force tokens, and 3 Leaders (the last is data as given; meaning inferred: tokens and bases are not played from hand).
   - **Strategic value**: sets your curve. Players count how many cheap cards a deck holds.
   - **Interacts with**: resources per turn (you resource one card each regroup, digest 5.5); the aspect penalty adds 2 per icon the leader and base do not provide (digest 1.5.6, 8.1); `Exploit X` and `Smuggle` change the effective cost (digest 7.5). TCGplayer drift on cost is counted in `byDriftField.cost`.
 - **`printings[].power`**
-  - Type: integer or null. Values 0 to 15; null on 2,649 official printings (Bases, Events, Upgrades, tokens, some Leaders).
+  - Type: integer or null. Values 0 to 15; null on 2,655 printings in the raw card list (Bases, Events, Upgrades, tokens, some Leaders).
   - Meaning: damage dealt in combat (red box); only units have power (digest 1.10). Upgrades are null here although they carry a modifier on the card (inferred: the API does not give the modifier in this field).
   - **Strategic value**: trade math: who survives an attack.
   - **Interacts with**: `hp`; `Raid X` adds power while attacking; `Grit` adds power per damage; `Overwhelm` sends excess damage to the base (digest 7.5). TCGplayer sometimes lists wrong power; the classifier records the difference as drift (`conform/rules.ts:49`).
@@ -99,17 +99,17 @@ One record per printing. A card the game treats as "the same card" can have doze
 Each of the following is a Strapi relation. Structure paths are listed once per relation, then the field that matters.
 
 - **`printings[].type`, `printings[].type.data`, `printings[].type.data.attributes`, `printings[].type.data.attributes.name`**
-  - Type: object, object, object, string. Example: `"Unit"`. Closed set in the data (9): Unit 7,003, Event 1,695, Upgrade 666, Leader 515, Base 260, Token Upgrade 37, Token Unit 30, Credit Token 3, Force Token 2.
+  - Type: object, object, object, string. Example: `"Unit"`. Closed set in the raw card list (9): Unit 7,032, Event 1,698, Upgrade 667, Leader 515, Base 262, Token Upgrade 37, Token Unit 30, Credit Token 3, Force Token 2.
   - Meaning: the card type. The digest has six types (base, event, leader, unit, upgrade, token, digest 3.1); the official list splits Token into Token Unit, Token Upgrade, Credit Token and Force Token.
   - **Strategic value**: decides where it goes in a deck (one Leader, one Base, 50+ other cards in Premier, digest 9.2) and what it can be.
   - **Interacts with**: `cost`/`power`/`hp` nullability (see above); `type` drift in TCGplayer (Unit versus Upgrade slips); the classifier refuses to price a Base from a non-Base listing (`conform/rules.ts:60-66`). Tokens are not in a deck and do not count toward deck size (digest 1.2).
 - **`printings[].rarity`, `printings[].rarity.data`, `printings[].rarity.data.attributes`, `printings[].rarity.data.attributes.name`**
-  - Type: object, object, object, string. Example: `"Common"`. Observed: Common 3,776, Uncommon 2,449, Rare 2,490, Legendary 1,028, Special 468.
+  - Type: object, object, object, string. Example: `"Common"`. Observed in the raw card list: Common 3,789, Uncommon 2,459, Rare 2,491, Legendary 1,028, Special 479.
   - Meaning: the rarity tier shown on the credit line (digest section 2, item 13). The code does not close this set so a new tier will not break a sync (`api-types.ts:3-8`). Special is the tier used for the extra cards in Spotlight Decks (https://starwarsunlimited.com/articles/homeworlds), Intro Battle: Hoth cards, 66 leaders and some promos; most Special cards are Units (computed from the raw pages).
   - **Strategic value**: drives pull rates and price: Legendary and Special cards are scarcer; a Common reprint is cheap. Collectors track completion per rarity.
   - **Interacts with**: `variantTypes` (a Common's Showcase or Prestige variant is priced far above the Common); `expansion` (rarity ratios per set); drift on `rarity` is recorded (15 in import 43).
 - **`printings[].aspects`, `printings[].aspects.data`, `printings[].aspects.data[]`, `printings[].aspects.data[].attributes`, `printings[].aspects.data[].attributes.name`**
-  - Type: object, array, object, object, string. Example: `"Vigilance"`. Closed set (6): Heroism 2,929, Villainy 2,835, Command 2,441, Cunning 2,435, Vigilance 2,419, Aggression 2,392. Zero to three entries per printing; no repeats within a printing.
+  - Type: object, array, object, object, string. Example: `"Vigilance"`. Closed set (6), counted in the raw card list: Heroism 2,941, Villainy 2,852, Command 2,447, Cunning 2,440, Vigilance 2,428, Aggression 2,397. Zero to three entries per printing; no repeats within a printing.
   - Meaning: the aspect icons on the card. Digest 1.5.6: six aspects; a card with no icon is neutral. A Leader or Base provides aspects; every other card requires them (digest section 2, item 6).
   - **Strategic value**: decides which decks can play the card cheaply. A deck's leader and base set its aspect pool; this is the main deck-building constraint.
   - **Interacts with**: the aspect penalty (pay 2 extra resources per icon beyond what leader and base provide, digest 1.5.6 and 8.1); "for free" bypasses it (digest 8.1); `Fortify` ignores penalties on upgrades (the Tarkin text in the data; the digest does not define Fortify). The drift check compares the aspect list for equality, or by inclusion on combo listings (`conform/rules.ts:26-29`).
@@ -126,7 +126,7 @@ Each of the following is a Strapi relation. Structure paths are listed once per 
   - **Strategic value**: display and sorting by release. Promo names flag events: Judge Program, Convention Exclusive, Gamegenic, Costco Exclusive, Movie Promo.
   - **Interacts with**: `code` (one-to-one in the data).
 - **`printings[].variantTypes`, `printings[].variantTypes.data`, `printings[].variantTypes.data[]`, `printings[].variantTypes.data[].attributes`**
-  - Type: object, array, object, object. Structure paths. The array has exactly one entry for 10,141 official printings and is empty for 70 (mostly promos).
+  - Type: object, array, object, object. Structure paths. The array has exactly one entry for 10,176 printings in the raw card list and is empty for 70 (mostly promos).
 - **`printings[].variantTypes.data[].attributes.name`**
   - Type: string. Example: `"Hyperspace Foil"`. 58 distinct values in the official list: Standard, Hyperspace, Showcase, Standard Foil, Hyperspace Foil, Standard Prestige, Foil Prestige, Serialized Prestige, Weekly Play, Weekly Play Foil, plus event tiers (Judge Program, Convention Exclusive, Prerelease Promo, Event Exclusive, Movie Promo, Costco Exclusive, and the SS, PQ, SQ, RQ, GC families: Participation, Top 64, Top 16, Top 8, Top 4, Finalist, Champion, Judge, Day Two, Day Three, Prize Wall, Event Pack, VIP Promo).
   - Meaning: which finish or tier this printing is. `swuPrintingVariant` folds the first entry into the closed `PrintingVariant` set; anything not listed becomes `promo` (`variant-kind.ts:26-37, 59-66`).
@@ -138,17 +138,17 @@ Each of the following is a Strapi relation. Structure paths are listed once per 
   - **Strategic value**: lets you spot a printing's finish from the serial for about 90% of printings; read `variantId` itself for the rest.
   - **Interacts with**: `serialCode`; the price file's `variant`.
 - **`printings[].variantTypes.data[].attributes.foil`**
-  - Type: boolean or null. `false` 4,969; `true` 3,456; `null` 1,716 (all promo-type variants).
+  - Type: boolean or null. `false` 5,004; `true` 3,456; `null` 1,716 (all promo-type variants).
   - Meaning: whether the variant is a foil. Null means the API does not say (inferred: promo finishes).
   - **Strategic value**: foil cards price separately. Null promos need a manual look.
   - **Interacts with**: `price_foil` versus `price_normal` in the price export; `Foil` in the variant name.
 - **`printings[].keywords`, `printings[].keywords.data`, `printings[].keywords.data[]`, `printings[].keywords.data[].attributes`, `printings[].keywords.data[].attributes.name`** (snapshot abba1a4e only)
-  - Type: object, array, object, object, string. Example: `"Sentinel"`. Closed set in the data (17): Ambush, Bounty, Coordinate, Exploit, Fortify, Grit, Hidden, Overwhelm, Piloting, Plot, Raid, Restore, Saboteur, Sentinel, Shielded, Smuggle, Support. Zero or more per printing (4,296 printings have at least one).
+  - Type: object, array, object, object, string. Example: `"Sentinel"`. Closed set in the data (17): Ambush, Bounty, Coordinate, Exploit, Fortify, Grit, Hidden, Overwhelm, Piloting, Plot, Raid, Restore, Saboteur, Sentinel, Shielded, Smuggle, Support. Zero or more per printing (4,308 printings in the raw card list have at least one).
   - Meaning: the keyword abilities on the card. Digest 7.5 defines each of these except Fortify, Plot and Support, which the digest does not cover (Fortify and Support are explained in "Set 7 to 9 additions"; Plot is not, see below). A leader's own keyword list can include keywords it grants (inferred from "gains Hidden" text).
   - **Strategic value**: the shape of a deck. Sentinel decks wall, Raid and Ambush decks pressure, Overwhelm finishes bases.
   - **Interacts with**: each keyword and what it touches. Ambush: attack when played if an enemy unit exists. Bounty: opponent resolves it when the card is defeated or captured. Coordinate: active with 3+ units. Exploit X: defeat friendly units to reduce cost (also cost). Grit: +1/+0 per damage (power). Hidden: cannot be attacked if played this phase. Overwhelm: excess damage hits the base (hp of a base). Piloting [Y]: play as an upgrade on a Vehicle (see traits). Raid X: +X power while attacking. Restore X: heal X from the base on attack. Saboteur: ignore Sentinel and defeat shields. Sentinel: must be attacked, which constrains attacks within an arena (digest 6.3). Shielded: gives a Shield token when played. Smuggle [Y]: play from resources for Y (cost). Fortify and Support: see "Set 7 to 9 additions" (official articles). Plot: first appears in SEC. Reminder text on the cards: "When you deploy a leader, you may play this card from your resources, paying its cost. Replace it with the top card of your deck."
 - **`printings[].traits`, `printings[].traits.data`, `printings[].traits.data[]`, `printings[].traits.data[].attributes`, `printings[].traits.data[].attributes.name`** (snapshot abba1a4e only)
-  - Type: object, array, object, object, string. Example: `"Vehicle"`. 59 distinct values: Armor, Bounty, Bounty Hunter, Capital Ship, Clone, Condition, Creature, Disaster, Droid, Ewok, Fighter, First Order, Force, Fortification, Fringe, Gambit, Gungan, Hutt, Imperial, Innate, Inquisitor, Item, Jawa, Jedi, Kaminoan, Law, Learned, Lightsaber, Mandalorian, Modification, Musician, Naboo, New Republic, Night, Nihil, Official, Pilot, Plan, Rebel, Republic, Resistance, Separatist, Sith, Spectre, Speeder, Supply, Tactic, Tank, Transport, Trick, Trooper, Tusken, Twi'lek, Undead, Underworld, Vehicle, Walker, Weapon, Wookiee. Empty on all 258 Bases and 2 Force Tokens in this snapshot, although the digest says bases have traits (digest 3.2): the export drops them or the API leaves them empty (inferred).
+  - Type: object, array, object, object, string. Example: `"Vehicle"`. 59 distinct values: Armor, Bounty, Bounty Hunter, Capital Ship, Clone, Condition, Creature, Disaster, Droid, Ewok, Fighter, First Order, Force, Fortification, Fringe, Gambit, Gungan, Hutt, Imperial, Innate, Inquisitor, Item, Jawa, Jedi, Kaminoan, Law, Learned, Lightsaber, Mandalorian, Modification, Musician, Naboo, New Republic, Night, Nihil, Official, Pilot, Plan, Rebel, Republic, Resistance, Separatist, Sith, Spectre, Speeder, Supply, Tactic, Tank, Transport, Trick, Trooper, Tusken, Twi'lek, Undead, Underworld, Vehicle, Walker, Weapon, Wookiee. Empty on all 262 Bases and 2 Force Tokens in the raw card list, although the digest says bases have traits (digest 3.2): the export drops them or the API leaves them empty (inferred).
   - Meaning: thematic categories printed under the art (digest section 2, item 11).
   - **Strategic value**: tribal and synergy deck building: a Republic deck counts on other Republic cards.
   - **Interacts with**: other cards' text and abilities target traits ("Attach to a non-Vehicle unit", "a Separatist card", "friendly Imperial unit"); `Piloting` needs a Vehicle host; `Plot` and `Exploit` texts reference traits.
