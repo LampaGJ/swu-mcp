@@ -147,6 +147,7 @@ const rulingsFileSchema = z.looseObject({
     distinctRulesFields: z.number(),
     distinctRulingTexts: z.number(),
     distinctDatedRulings: z.number(),
+    distinctUndatedRulings: z.number(),
     rulingRows: z.number(),
   }),
   cards: z.array(
@@ -155,7 +156,7 @@ const rulingsFileSchema = z.looseObject({
       title: z.string(),
       subtitle: z.string().nullable(),
       printings: z.number(),
-      rulings: z.array(z.looseObject({ date: z.string(), text: z.string() })),
+      rulings: z.array(z.looseObject({ date: z.string().nullable(), source: z.string(), text: z.string() })),
     }),
   ),
 });
@@ -675,8 +676,19 @@ function isoOf(raw: string): string | null {
 }
 
 interface DatedRuling {
-  date: string;
+  date: string | null;
+  source: "rulesStyled" | "rules";
   text: string;
+}
+
+/** Whitespace and quote-style folding used to match a plain `rules` line to a styled ruling. */
+const foldText = (t: string): string => t.replace(/[\u2018\u2019\u201A\u2032]/g, "'").replace(/[\u201C\u201D\u201E\u2033]/g, '"').replace(/\s+/g, " ").trim();
+
+const plainLinesOf = (rules: string | null): string[] => (rules ?? "").split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter((l) => l !== "");
+
+function compareRulingOrder(a: DatedRuling, b: DatedRuling): number {
+  if (a.date === null || b.date === null) return a.date === null && b.date === null ? codePointCompare(a.text, b.text) : a.date === null ? 1 : -1;
+  return codePointCompare(b.date, a.date) || codePointCompare(a.text, b.text);
 }
 
 function rawRulings(html: string): DatedRuling[] | null {
@@ -686,28 +698,26 @@ function rawRulings(html: string): DatedRuling[] | null {
     if (cells.length !== 2) return null;
     const date = isoOf(stripTags(cells[0]));
     if (date === null) return null;
-    out.push({ date, text: stripTags(cells[1]) });
+    out.push({ date, source: "rulesStyled", text: stripTags(cells[1]) });
   }
   return out;
 }
 
 function check6(ctx: Ctx): AuditCheck {
-  const c = new Check("rulings", "Rulings: card-rulings equal the raw rules/rulesStyled fields (dates and text).", "card or assertion");
+  const c = new Check("rulings", "Rulings: card-rulings equal the raw rules/rulesStyled fields (dated styled rows, plus undated plain lines with no styled match); no plain rules line is dropped.", "card or assertion");
   const file = path.join(ctx.runDir, "rules/card-rulings.json");
   inputRecord(ctx, file);
   const prod = readJson(file, rulingsFileSchema);
-  const perCard = new Map<string, Map<string, DatedRuling>>();
-  let printingsWithRulings = 0;
+  const styledByCard = new Map<string, Map<string, DatedRuling>>();
+  const printingsWith = new Set<string>();
   let rulingRows = 0;
   const plainFields = new Set<string>();
   let unparseable = 0;
   let plainDisagree = 0;
   const plainExamples: Rec[] = [];
   for (const p of ctx.printings) {
-    if (p.rulesStyled === null || !p.rulesStyled.includes("<tr")) {
-      if (p.rules !== null && p.rules.trim() !== "") c.notes.push(`${p.serial}: plain rules present without a styled table`);
-      continue;
-    }
+    const key = ctx.cardKeyOfSerial.get(p.serial) as string;
+    if (p.rulesStyled === null || !p.rulesStyled.includes("<tr")) continue;
     const parsed = rawRulings(p.rulesStyled);
     if (parsed === null) {
       unparseable += 1;
@@ -715,59 +725,79 @@ function check6(ctx: Ctx): AuditCheck {
       continue;
     }
     if (parsed.length === 0) continue;
-    printingsWithRulings += 1;
-    if (p.rules !== null) plainFields.add(p.rules);
-    const plainLines = (p.rules ?? "").split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter((l) => l !== "");
+    printingsWith.add(p.serial);
+    const plainLines = plainLinesOf(p.rules);
     if (!same(plainLines, parsed.map((r) => r.text))) {
       plainDisagree += 1;
       if (plainExamples.length < 3) plainExamples.push({ serial: p.serial, styled: parsed.map((r) => r.text), plain: plainLines });
     }
-    const key = ctx.cardKeyOfSerial.get(p.serial) as string;
-    const bucket = perCard.get(key) ?? new Map<string, DatedRuling>();
-    perCard.set(key, bucket);
+    const bucket = styledByCard.get(key) ?? new Map<string, DatedRuling>();
+    styledByCard.set(key, bucket);
     for (const r of parsed) {
       rulingRows += 1;
       bucket.set(`${r.date}\u0000${r.text}`, r);
     }
   }
-  c.universe = { printingsWithRulings, cardsWithRulings: perCard.size, rulingRows, productionCards: prod.cards.length };
+  const perCard = new Map<string, Map<string, DatedRuling>>();
+  for (const [key, bucket] of styledByCard) perCard.set(key, new Map(bucket));
+  let undatedLines = 0;
+  for (const p of ctx.printings) {
+    const key = ctx.cardKeyOfSerial.get(p.serial) as string;
+    const styledFolded = new Set([...(styledByCard.get(key)?.values() ?? [])].map((r) => foldText(r.text)));
+    for (const line of plainLinesOf(p.rules)) {
+      printingsWith.add(p.serial);
+      if (p.rules !== null) plainFields.add(p.rules);
+      if (styledFolded.has(foldText(line))) continue;
+      undatedLines += 1;
+      rulingRows += 1;
+      const bucket = perCard.get(key) ?? new Map<string, DatedRuling>();
+      perCard.set(key, bucket);
+      const k = `\u0000undated\u0000${foldText(line)}`;
+      if (!bucket.has(k)) bucket.set(k, { date: null, source: "rules", text: line });
+    }
+  }
+  c.universe = { printingsWithRulings: printingsWith.size, cardsWithRulings: perCard.size, rulingRows, undatedPlainLines: undatedLines, productionCards: prod.cards.length };
   const gotCards = new Map(prod.cards.map((card) => [card.cardKey, card]));
   c.expect(gotCards.size === prod.cards.length, () => ({ id: "card-rulings.json", field: "cardKey unique" }));
   c.expect(gotCards.size === perCard.size, () => ({ id: "card-rulings.json", field: "card count", expected: perCard.size, actual: gotCards.size }));
   c.expect(prod.source.rawPagesManifestSha256 === sha256(ctx.manifestBytes), () => ({ id: "card-rulings.json", field: "source.rawPagesManifestSha256", expected: sha256(ctx.manifestBytes), actual: prod.source.rawPagesManifestSha256 }));
   const distinctDated = new Set<string>();
+  const distinctUndated = new Set<string>();
   const distinctTexts = new Set<string>();
-  for (const bucket of perCard.values()) {
+  for (const [key, bucket] of perCard) {
     for (const [k, r] of bucket) {
-      distinctDated.add(k);
+      if (r.date === null) distinctUndated.add(`${key}${k}`);
+      else distinctDated.add(k);
       distinctTexts.add(r.text);
     }
   }
-  const statsWant = { printingsWithRulings, logicalCardsWithRulings: perCard.size, distinctRulesFields: plainFields.size, distinctRulingTexts: distinctTexts.size, distinctDatedRulings: distinctDated.size, rulingRows };
+  const statsWant = { printingsWithRulings: printingsWith.size, logicalCardsWithRulings: perCard.size, distinctRulesFields: plainFields.size, distinctRulingTexts: distinctTexts.size, distinctDatedRulings: distinctDated.size, distinctUndatedRulings: distinctUndated.size, rulingRows };
   for (const [field, want] of Object.entries(statsWant)) {
     c.expect((prod.stats as Rec)[field] === want, () => ({ id: "card-rulings.json stats", field, expected: want, actual: (prod.stats as Rec)[field] }));
   }
   for (const [key, bucket] of perCard) {
     const got = gotCards.get(key);
     const l = ctx.byCardKey.get(key) as Logical;
-    const want = [...bucket.values()].sort((a, b) => codePointCompare(b.date, a.date) || codePointCompare(a.text, b.text));
+    const want = [...bucket.values()].sort(compareRulingOrder);
     c.expect(got !== undefined, () => ({ id: key, field: "card-rulings entry", note: "missing", rulings: want.length }));
     if (got === undefined) continue;
-    c.expect(same(got.rulings.map((r) => ({ date: r.date, text: r.text })), want), () => ({ id: key, title: got.title, field: "rulings (date, text, order)", expected: clip(want), actual: clip(got.rulings) }));
+    c.expect(same(got.rulings.map((r) => ({ date: r.date, source: r.source, text: r.text })), want), () => ({ id: key, title: got.title, field: "rulings (date, source, text, order)", expected: clip(want), actual: clip(got.rulings) }));
     const subtitle = typeof l.canonical.cells.subtitle === "string" && l.canonical.cells.subtitle !== "" ? l.canonical.cells.subtitle : null;
     c.expect(got.title === String(l.canonical.cells.title ?? "") && got.subtitle === subtitle, () => ({ id: key, field: "title/subtitle", expected: [l.canonical.cells.title, subtitle], actual: [got.title, got.subtitle] }));
     c.expect(got.printings === l.members.length, () => ({ id: key, field: "printings", expected: l.members.length, actual: got.printings }));
   }
   for (const key of gotCards.keys()) c.expect(perCard.has(key), () => ({ id: key, field: "card-rulings entry", note: "no raw printing of this card has rulings" }));
-  const lostLines: Rec[] = [];
+  // No silent drops: every plain line of every printing must be present in its card's shipped rulings.
+  let plainLinesChecked = 0;
   for (const p of ctx.printings) {
-    const bucket = perCard.get(ctx.cardKeyOfSerial.get(p.serial) as string);
-    const texts = new Set([...(bucket?.values() ?? [])].map((r) => r.text));
-    const lines = (p.rules ?? "").split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter((l) => l !== "");
-    const missing = lines.filter((l) => !texts.has(l));
-    if (missing.length > 0) lostLines.push({ serial: p.serial, card: ctx.cardKeyOfSerial.get(p.serial), missing });
+    const key = ctx.cardKeyOfSerial.get(p.serial) as string;
+    const shipped = new Set((gotCards.get(key)?.rulings ?? []).map((r) => foldText(r.text)));
+    for (const line of plainLinesOf(p.rules)) {
+      plainLinesChecked += 1;
+      c.expect(shipped.has(foldText(line)), () => ({ id: p.serial, card: key, field: "plain rules line", note: "not in card-rulings.json", line }));
+    }
   }
-  c.notes.push(`${lostLines.length} printings have plain \`rules\` lines that appear in no styled ruling of the same logical card (not in card-rulings.json; the plain field carries no date). Examples: ${JSON.stringify(lostLines.slice(0, 5))}`);
+  c.notes.push(`${plainLinesChecked} plain \`rules\` lines checked; each lands in card-rulings.json (${undatedLines} as undated rulings with date null and source "rules", the rest matched a dated styled ruling).`);
   c.notes.push(`${plainDisagree} printings have a plain \`rules\` field that differs from their styled table (second witness; counted, not failed). Examples: ${JSON.stringify(plainExamples)}`);
   c.notes.push(`${unparseable} printings had a rulesStyled table the audit's own parser could not read.`);
   return c;
