@@ -1,4 +1,4 @@
-import type { SwuCardFeatures, SwuTarget } from "./deps.js";
+import type { SwuCardFeatures, SwuClause, SwuTarget } from "./deps.js";
 import { compareCodePoints } from "./deps.js";
 import { walkAbilities } from "./walk.js";
 
@@ -18,7 +18,32 @@ const traitsOf = (t: SwuTarget | undefined): string[] =>
 const asTarget = (w: unknown): SwuTarget | undefined => (typeof w === "object" && w !== null ? (w as SwuTarget) : undefined);
 const keywordName = (k: string | { keyword: string }): string => (typeof k === "string" ? k : k.keyword);
 
+/** Effects that cost the player something; a When Played made only of these is not worth replaying. */
+const COSTLY_CATS = new Set(["self_defeat", "restriction", "cost_increase", "discard_self", "blank", "remove_keyword", "opponent_token", "self_exhaust", "mill"]);
+const HARM_CATS = new Set(["damage", "indirect_damage", "defeat", "exhaust", "capture", "bounce"]);
+const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
+const SEARCH_OFFER: Record<string, string> = {
+  deck_top: "offers:tutor-to-deck",
+  play: "offers:tutor-to-play",
+  discard: "offers:tutor-to-discard",
+};
+
 type TagInput = Omit<SwuCardFeatures, "tags">;
+
+/** The effect categories of a When Played that give something worth getting again, or none. */
+function replayWorthyCats(clauses: readonly SwuClause[]): string[] {
+  const cats = new Set<string>();
+  for (const c of clauses) {
+    if (c.source === "none") continue;
+    if (c.source === "curated" && c.effects.length === 0) cats.add("curated");
+    for (const e of c.effects) {
+      const side = pol(e.target);
+      const hurtsYou = HARM_CATS.has(e.cat) && (side === "friendly" || side === "self");
+      if (!COSTLY_CATS.has(e.cat) && !hurtsYou) cats.add(e.cat);
+    }
+  }
+  return [...cats].sort(compareCodePoints);
+}
 
 /**
  * @displayName SWU offers/wants tag builder
@@ -49,28 +74,33 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
   for (const face of Object.keys(card.faces) as (keyof typeof card.faces)[]) {
     const nodes = card.faces[face];
     if (!nodes) continue;
-    for (const { a, clauses } of walkAbilities(nodes, null)) {
+    for (const { a, clauses, grantedBy } of walkAbilities(nodes, null)) {
+      const wantsExtraAttacks = card.type !== "Event" && !(grantedBy && ONE_SHOT_GRANT.test(grantedBy.text));
+      const replayCats = !a.granted && card.type === "Unit" ? replayWorthyCats(clauses) : [];
       for (const t of a.triggers) {
         const tt = t.text ?? "";
         if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted)) add(wants, "wants:self-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_defeated" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_played" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-played", `${face}: When Played`);
         if (/when you use a when defeated|when defeated ability/i.test(tt)) add(wants, "wants:when-defeated-cards", tt);
-        if (t.trigger === "when_played" && card.type === "Unit") add(wants, "wants:replay-when-played", `${face}: When Played on a unit`);
-        if (t.trigger === "on_attack" || t.trigger === "attack_end" || t.trigger === "on_attack_kill") add(wants, "wants:extra-attacks", `${face}: ${t.trigger}`);
+        if (t.trigger === "when_played" && replayCats.length > 0) add(wants, "wants:replay-when-played", `${face}: When Played (${replayCats.join(", ")})`);
+        if (wantsExtraAttacks && (t.trigger === "on_attack" || t.trigger === "attack_end" || t.trigger === "on_attack_kill")) add(wants, "wants:extra-attacks", `${face}: ${t.trigger}`);
         if (t.trigger === "action" && t.cost?.exhaust && card.type !== "Leader") add(wants, "wants:ready-unit", `${face}: Action [Exhaust]`);
         if (/friendly unit is defeated|friendly .*unit is defeated/i.test(tt)) add(wants, "wants:friendly-unit-defeated", tt);
         if (/enemy unit is defeated|unit .* among enemy units is defeated/i.test(tt)) add(wants, "wants:enemy-unit-defeated", tt);
         if (/dealt damage and survives|damage is dealt to (?:this unit|a friendly)|non-combat damage is dealt to a friendly/i.test(tt)) add(wants, "wants:damage-friendly", tt);
-        if (/you play or create a unit|you play another .*unit|you play a .*unit/i.test(tt)) add(wants, "wants:units-entering", tt);
-        if (/upgrade attaches|you play an upgrade on|pilot .*attaches/i.test(tt)) add(wants, "wants:upgrades-attached", tt);
+        if (/you play or create a unit/i.test(tt)) add(wants, "wants:units-entering", tt);
+        else if (/you play another .*unit|you play a .*unit/i.test(tt)) add(wants, "wants:units-played", tt);
+        if (/pilot .*attaches/i.test(tt)) add(wants, "wants:pilot-attached", tt);
+        else if (/upgrade attaches|you play an upgrade on/i.test(tt)) add(wants, "wants:upgrades-attached", tt);
         if (/use the force/i.test(tt) || t.cost?.force) add(wants, "wants:the-force", tt);
         if (/draws? \d+ or more cards/i.test(tt)) add(wants, "wants:draw", tt);
         if (/heal/i.test(tt)) add(wants, "wants:heal", tt);
         if (/initiative/i.test(tt)) add(wants, "wants:initiative", tt);
         if (/reveal or discard|discard/i.test(tt)) add(wants, "wants:discard-own", tt);
         if (/friendly .*unit attacks|friendly unit's attack ends/i.test(tt)) add(wants, "wants:extra-attacks", tt);
-        if (/play a card from your resources|deploy a leader/i.test(tt)) add(wants, "wants:resource-ramp", tt);
+        if (/play a card from your resources/i.test(tt)) add(wants, "wants:resource-ramp", tt);
+        if (/deploy a leader/i.test(tt)) add(wants, "wants:leader-deployed", tt);
       }
       for (const c of clauses) {
         if (c.source === "none") continue;
@@ -80,6 +110,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const target = e.target;
           const p = pol(target);
           const why = `${face}: ${c.text}`;
+          if (target?.kind === "resource") continue;
           switch (e.cat) {
             case "defeat":
               if (target?.kind === "upgrade" || (target?.kind === "token" && /\b(?:experience|shield|advantage|weakness)\b/i.test(target.text))) {
@@ -94,14 +125,14 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "self_defeat": add(offers, "offers:defeat-self", why); break;
             case "damage":
             case "indirect_damage":
-              if (target?.kind === "base" && p === "enemy") add(offers, "offers:damage-enemy-base", why);
+              if (target?.kind === "base") add(offers, p === "friendly" || p === "self" ? "offers:damage-own-base" : "offers:damage-enemy-base", why);
               else if (p === "friendly" || p === "self") add(offers, "offers:damage-friendly-unit", why);
               else if (p === "enemy") add(offers, "offers:damage-enemy-unit", why);
               else add(offers, "offers:damage-any-unit", why);
               break;
             case "heal": add(offers, "offers:heal", why); break;
             case "draw": add(offers, "offers:draw", why); break;
-            case "search": add(offers, "offers:tutor", why); break;
+            case "search": add(offers, SEARCH_OFFER[e.dest ?? ""] ?? "offers:tutor", why); break;
             case "discard_self": add(offers, "offers:discard-own", why); break;
             case "discard_opponent": add(offers, "offers:discard-opponent", why); break;
             case "mill": add(offers, e.whose === "your" ? "offers:self-mill" : "offers:mill-opponent", why); break;
@@ -124,10 +155,10 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
               }
               break;
             case "gain_force": add(offers, "offers:the-force", why); break;
-            case "ready": if (p !== "enemy" && p !== "self") add(offers, "offers:ready-unit", why); break;
+            case "ready": if (p !== "enemy" && p !== "self" && (!target || isUnitKind(target))) add(offers, "offers:ready-unit", why); break;
             case "exhaust": add(offers, p === "friendly" ? "offers:exhaust-own" : p === "enemy" ? "offers:exhaust-enemy" : "offers:exhaust-any", why); break;
             case "self_exhaust": add(offers, "offers:exhaust-own", why); break;
-            case "bounce": add(offers, p === "friendly" || p === "self" ? "offers:return-own-to-hand" : p === "enemy" ? "offers:bounce-enemy" : "offers:return-any-to-hand", why); break;
+            case "bounce": add(offers, target?.kind === "upgrade" ? "offers:return-upgrade" : p === "friendly" || p === "self" ? "offers:return-own-to-hand" : p === "enemy" ? "offers:bounce-enemy" : "offers:return-any-to-hand", why); break;
             case "play_extra": {
               const zone = e.zone ?? "";
               if (/discard/.test(zone)) { add(offers, "offers:play-from-discard", why); add(wants, "wants:cards-in-discard", why); }
@@ -145,6 +176,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "grant_keyword":
               for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
               break;
+            case "attach": if (e.rule === "attach_self") add(offers, "offers:upgrade-to-attach", why); break;
             case "cost_reduction": if (/credit/i.test(c.text)) add(wants, "wants:credit-tokens", why); break;
             default: break;
           }
@@ -167,6 +199,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/upgrade/i.test(what?.text ?? "")) add(wants, "wants:upgrades-attached", why);
             if (typeof k.n === "number" && k.n >= 2) add(wants, "wants:wide-board", why);
           }
+          if (k.cat === "target_check" && k.check === "attached_is") for (const tr of traitsOf(asTarget(k.what))) add(wants, `wants:trait-${tr}`, why);
           if (k.cat === "control_resources" && face !== "epicAction") add(wants, "wants:resource-ramp", why);
           if (k.cat === "initiative") add(wants, "wants:initiative", why);
           if (k.cat === "force") add(wants, "wants:the-force", why);
