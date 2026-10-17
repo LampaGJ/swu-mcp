@@ -11,7 +11,8 @@ import { REPO_ROOT } from "./paths.js";
  * @tacticalObjective Parses the pin with Zod; written by scripts/release-data.ts, read by src/data-source.ts.
  */
 export const dataReleaseSchema = z.strictObject({
-  dataVersion: z.iso.date(),
+  dataVersion: z.string().regex(/^\d{4}-\d{2}-\d{2}(\.r(?:[2-9]|[1-9]\d+))?$/, { error: "dataVersion is YYYY-MM-DD with an optional .rN revision (N >= 2)" })
+    .refine((v) => z.iso.date().safeParse(v.slice(0, 10)).success, { error: "dataVersion must start with a valid calendar date" }),
   tag: z.string().min(1),
   asset: z.string().min(1),
   url: z.url(),

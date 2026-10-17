@@ -51,10 +51,13 @@ export function buildArchive(runDir: string, files: string[], tarPath: string): 
   return gz;
 }
 
-const { values } = parseArgs({ options: { date: { type: "string" }, data: { type: "string" }, out: { type: "string" } } });
+const { values } = parseArgs({ options: { date: { type: "string" }, data: { type: "string" }, out: { type: "string" }, revision: { type: "string" } } });
 const runDir = path.resolve(values.data ?? (values.date === undefined ? resolveDataDir({}) : path.join(REPO_ROOT, "data/runs", values.date)));
 const build = buildRecordSchema.parse(JSON.parse(readFileSync(path.join(runDir, "build.json"), "utf8")));
-const date = build.date;
+const revision = values.revision === undefined ? 1 : Number(values.revision);
+if (!Number.isInteger(revision) || revision < 1) throw new Error("--revision must be an integer >= 1");
+// A second release built on the same day must not reuse a published tag: published commits pin that tag's sha256.
+const date = revision === 1 ? build.date : `${build.date}.r${revision}`;
 const outDir = path.resolve(values.out ?? path.join(REPO_ROOT, "tmp/release"));
 mkdirSync(outDir, { recursive: true });
 
