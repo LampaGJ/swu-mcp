@@ -1,0 +1,130 @@
+{
+ "packet": "p1",
+ "items": [
+  {
+   "id": "08010217>06010249:trait-reference",
+   "final": "correct",
+   "reason": "A is a printed Official unit; B says \"While you control another Official unit, this unit gains Raid 2\". Agrees with haiku."
+  },
+  {
+   "id": "05010204>05010141:trait-reference",
+   "final": "correct",
+   "reason": "A has printed trait Force; B says \"If you control a Force unit, draw a card\". Agrees with haiku."
+  },
+  {
+   "id": "04010142>08010197:upgrade-stacking",
+   "final": "correct",
+   "reason": "A has Piloting [3 resources] and can attach as an upgrade to another friendly Vehicle; B gets \"+1/+0 for each upgrade on other friendly units\". Agrees with haiku."
+  },
+  {
+   "id": "09010050>05010063:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A says \"you may attack with a ground unit\"; B is a Ground unit whose \"When this unit attacks and defeats a unit: Heal 2\" fires (B must be damaged to attack). Agrees with haiku."
+  },
+  {
+   "id": "09010263>04010001:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"Each player chooses a unit they control. Deal 3 damage to each chosen unit\" so you can damage your own deployed Asajj, who has Grit (leader unit keywords: Grit). Agrees with haiku."
+  },
+  {
+   "id": "07010018>07010032:credits",
+   "final": "correct",
+   "reason": "A creates a Credit token on a matching aspect; B says \"Defeat any number of friendly Credit tokens\" and gets Experience per Credit. Agrees with haiku."
+  },
+  {
+   "id": "04010163>04010161:trait-reference",
+   "final": "correct",
+   "reason": "A has printed trait Vehicle; B says \"Each friendly Vehicle unit gets +1/+0 and gains Overwhelm\" (A already has Overwhelm, still +1/+0). Agrees with haiku."
+  },
+  {
+   "id": "06010053>04010183:sac-outlet-when-defeated",
+   "final": "wrong",
+   "reason": "A says \"Defeat a unit with power and remaining HP both equal to the number of ready resources you control\"; it is not friendly-specific and B (2/3, power not equal to HP unless damaged) is not reliably targetable on demand. Agrees with haiku."
+  },
+  {
+   "id": "04010205>07010009:fodder-for-outlet",
+   "final": "correct",
+   "reason": "A creates an X-Wing token (a unit) and B says \"While you control 2 or more units, ignore the aspect penalties on Heroism units you play\", so the token counts toward 2 units. Agrees with haiku."
+  },
+  {
+   "id": "09010047>05010068:ready-reuse",
+   "final": "wrong",
+   "reason": "A: \"Create a Beast token and ready it\" readies only the new token, not Luthen Rael; B has only a search On Attack. Agrees with haiku."
+  },
+  {
+   "id": "07010185>0301058:trait-reference",
+   "final": "correct",
+   "reason": "A has printed trait Force; B says \"While you control a Force unit or a Force upgrade, this unit gets +1/+1\". Agrees with haiku."
+  },
+  {
+   "id": "04010195>05010178:ready-reuse",
+   "final": "correct",
+   "reason": "A: \"ready a friendly unit in the same arena with power equal to or less than that enemy unit\" can ready Adept of Anger (1 power, Ground) to reuse its \"Action [Exhaust...]\" (needs another Force token, a cost not a block). Agrees with haiku."
+  },
+  {
+   "id": "07010187>08010032:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"Deal 1 damage to each of up to 3 different ground units\" can hit friendly units that survive; B triggers \"When a friendly unit is dealt damage and survives\". Agrees with haiku."
+  },
+  {
+   "id": "06010179>04010048:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a unit\"; Cassian as Pilot upgrade gives \"On Attack: Discard a card from the defending player's deck...\" to the attached Vehicle, which fires on the attack. Agrees with haiku."
+  },
+  {
+   "id": "05010197>04010013:trait-reference",
+   "final": "correct",
+   "reason": "A has printed trait Vehicle; B attaches \"to a friendly Vehicle unit without a Pilot on it\". Agrees with haiku."
+  },
+  {
+   "id": "06010227>05010186:fodder-for-outlet",
+   "final": "wrong",
+   "reason": "A's Spy token is created only if the attached unit is a Transport and a Spy token has no Raid; B only doubles Raid (\"Each friendly unit's Raid is doubled\"), so a token body gives it nothing. Agrees with haiku."
+  },
+  {
+   "id": "09010238>09010231:bounce-replay",
+   "final": "wrong",
+   "reason": "A returns \"a non-leader unit with 6 or more power\" and B has printed power 5, so as printed A cannot return B. Agrees with haiku."
+  },
+  {
+   "id": "06010231>09010125:fodder-for-outlet",
+   "final": "correct",
+   "reason": "A gives Sentinel so the unit gets attacked, creating a Spy token (a friendly unit) within the phase; B says \"you may choose any number of friendly units... this unit costs 1 resource less\" for each, so an extra unit is an extra discount. Conditional on an enemy attack but supported by the text. Overrides haiku: unsure -> correct."
+  },
+  {
+   "id": "09010101>08010197:upgrade-stacking",
+   "final": "correct",
+   "reason": "A: \"Give a Shield token to a unit\" (a Shield is an upgrade) on another friendly unit; B gets \"+1/+0 for each upgrade on other friendly units\". Agrees with haiku."
+  },
+  {
+   "id": "05010239>05010038:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"Give 2 Experience tokens to a unit, then deal 2 damage to it\" on Pong Krell (2/9, survives) switches on his Grit and keeps him alive for \"completes an attack (and survives)\". Agrees with haiku."
+  },
+  {
+   "id": "04010039>04010245:trait-reference",
+   "final": "correct",
+   "reason": "A has printed trait Vehicle; R2-D2 as upgrade \"can be played on a friendly Vehicle unit with a Pilot on it\" (needs an existing Pilot). Agrees with haiku."
+  },
+  {
+   "id": "08010155>05010016:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"When you take the initiative: You may attack with a unit\"; deployed Qui-Gon's \"When this unit completes an attack (and survives)\" trigger fires. Agrees with haiku."
+  },
+  {
+   "id": "09010193>0201057:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"If you control an Endor base, you may attack with a unit\"; B's \"On Attack: You may reveal the top card\" fires. Agrees with haiku."
+  },
+  {
+   "id": "09010051>09010078:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"You may deal 2 damage to a unit\" can target friendly Qui-Gon (2/5, survives), whose \"Grit\" gains power from damage. Agrees with haiku."
+  },
+  {
+   "id": "06010229>09010005:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a unit\" can attack with deployed Jar Jar, whose \"On Attack: If you gave a token upgrade...\" fires (payoff needs a token upgrade A does not supply, but the attack trigger is provided). Agrees with haiku."
+  }
+ ]
+}

@@ -1,0 +1,1611 @@
+{
+  "version": 1,
+  "seed": "pair-fixture-v1",
+  "sourceRun": {
+    "date": "2026-10-17",
+    "buildHash": "d2ad228ad046e969f5f7d4837f5cd63cddcb4815f28e0d858c3e73e6a01d3ef2"
+  },
+  "inputsSha256": "c4737a5af8361e6dddfb690de7bd9be505e9e451ff955d0cd5ea02fcfc009ca4",
+  "items": [
+    {
+      "id": "04010009>08010015:exhaust-own-payoff",
+      "offer": "04010009",
+      "want": "08010015",
+      "row": "exhaust-own-payoff",
+      "label": "wrong",
+      "reason": "Boba Fett's \"exhaust this leader\" exhausts the undeployed leader card, which is not a unit, and his deploy side has no exhaust; Palpatine needs an \"exhausted friendly unit\". Overrides haiku."
+    },
+    {
+      "id": "04010017>09010118:ramp-threshold",
+      "offer": "04010017",
+      "want": "09010118",
+      "row": "ramp-threshold",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Han Solo's deploy text only says 'ready a resource', which adds no resource to control, so it does not help Ryyk Blademaster's 'While you control 6 or more resources'."
+    },
+    {
+      "id": "04010039>04010193:trait-reference",
+      "offer": "04010039",
+      "want": "04010193",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Chimaera is printed Vehicle and I Have You Now says 'Attack with a Vehicle unit'."
+    },
+    {
+      "id": "04010039>04010245:trait-reference",
+      "offer": "04010039",
+      "want": "04010245",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A has printed trait Vehicle; R2-D2 as upgrade \"can be played on a friendly Vehicle unit with a Pilot on it\" (needs an existing Pilot). Agrees with haiku."
+    },
+    {
+      "id": "04010046>04010223:pilot-attach-trigger",
+      "offer": "04010046",
+      "want": "04010223",
+      "row": "pilot-attach-trigger",
+      "label": "correct",
+      "reason": "Paige Tico's Piloting plays her as an upgrade on a Vehicle; Razor Crest is a Vehicle with \"When a Pilot attaches to this unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010046>08010182:upgrade-stacking",
+      "offer": "04010046",
+      "want": "08010182",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "Agrees with haiku. Paige Tico's Piloting attaches her as an upgrade to a Vehicle, and Unfettered Ambition gives Advantage tokens 'For each upgrade on attached unit not named Advantage'; she also gives an Experience token on attack."
+    },
+    {
+      "id": "04010053>04010120:trait-reference",
+      "offer": "04010053",
+      "want": "04010120",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. The Ghost is printed Vehicle and Dorsal Turret says 'Attach to a Vehicle unit'."
+    },
+    {
+      "id": "04010076>04010036:upgrade-stacking",
+      "offer": "04010076",
+      "want": "04010036",
+      "row": "upgrade-stacking",
+      "label": "wrong",
+      "reason": "Iden Versio's \"When this upgrade attaches to a unit: Give a Shield token\" does not depend on other upgrades, so a Shield from Covering the Wing gives her no benefit. Agrees with haiku."
+    },
+    {
+      "id": "04010084>04010101:pilot-attach-trigger",
+      "offer": "04010084",
+      "want": "04010101",
+      "row": "pilot-attach-trigger",
+      "label": "correct",
+      "reason": "Wingman Victor Two has Piloting (\"play this as an upgrade on a friendly Vehicle without a Pilot\") and Red Leader is a Vehicle with \"When a Pilot upgrade attaches to this unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010084>06010095:upgrade-stacking",
+      "offer": "04010084",
+      "want": "06010095",
+      "row": "upgrade-stacking",
+      "label": "wrong",
+      "reason": "B needs \"an opponent controls an upgrade\"; A is a Piloting upgrade only on a friendly Vehicle, so you control it. Agrees with haiku."
+    },
+    {
+      "id": "04010103>04010223:pilot-attach-trigger",
+      "offer": "04010103",
+      "want": "04010223",
+      "row": "pilot-attach-trigger",
+      "label": "correct",
+      "reason": "Chewbacca has Piloting for a Vehicle; Razor Crest triggers on \"When a Pilot attaches to this unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010109>06010032:grant-sentinel-payoff",
+      "offer": "04010109",
+      "want": "06010032",
+      "row": "grant-sentinel-payoff",
+      "label": "correct",
+      "reason": "Agrees with haiku. Jarek's Piloting says 'attached unit gains Sentinel' while you control a ground and a space unit; on a ground Vehicle that matches 'Each friendly ground unit with Sentinel gets +0/+2'."
+    },
+    {
+      "id": "04010116>04010004:trait-reference",
+      "offer": "04010116",
+      "want": "04010004",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Dornean Gunship is printed Vehicle and Rose Tico says 'Heal 2 damage from a Vehicle unit that attacked this phase'."
+    },
+    {
+      "id": "04010116>05010089:trait-reference",
+      "offer": "04010116",
+      "want": "05010089",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Dornean Gunship is printed Vehicle and Supremacy gives 'Other friendly Vehicle units get +6/+6'."
+    },
+    {
+      "id": "04010129>04010151:ping-own-damage-payoff",
+      "offer": "04010129",
+      "want": "04010151",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Focus Fire: \"Choose a unit. Each friendly Vehicle unit in the same arena deals damage equal to its power to that unit\" leaves a damaged unit for Red Five's \"On Attack: You may deal 2 damage to a damaged unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010130>04010101:fodder-for-outlet",
+      "offer": "04010130",
+      "want": "04010101",
+      "row": "fodder-for-outlet",
+      "label": "wrong",
+      "reason": "Red Leader's cost reduction counts only \"friendly Pilot unit and upgrade\" and its trigger needs \"a Pilot upgrade attaches\"; X-Wing tokens are not Pilots and it has no sac, count or enter-play payoff. Agrees with haiku."
+    },
+    {
+      "id": "04010142>08010197:upgrade-stacking",
+      "offer": "04010142",
+      "want": "08010197",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "A has Piloting [3 resources] and can attach as an upgrade to another friendly Vehicle; B gets \"+1/+0 for each upgrade on other friendly units\". Agrees with haiku."
+    },
+    {
+      "id": "04010142>09010182:ping-own-damage-payoff",
+      "offer": "04010142",
+      "want": "09010182",
+      "row": "ping-own-damage-payoff",
+      "label": "wrong",
+      "reason": "Darth Vader's Piloting upgrade can attach only to a Vehicle unit, and Arena Nexu is a Creature, so he cannot give it \"On Attack: You may deal 1 damage to a unit\". Overrides haiku (unsure to wrong)."
+    },
+    {
+      "id": "04010149>07010150:trait-reference",
+      "offer": "04010149",
+      "want": "07010150",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Red Squadron Y-Wing is printed Rebel and Fulcrum gives 'Each other friendly Rebel unit +2/+2'."
+    },
+    {
+      "id": "04010153>06010254:ping-own-damage-payoff",
+      "offer": "04010153",
+      "want": "06010254",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Rebellious Hammerhead's \"deal damage to a unit equal to the number of cards in your hand\" can damage a friendly unit, enabling Heroic ARC-170's \"If you control a damaged unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010160>04010044:trait-reference",
+      "offer": "04010160",
+      "want": "04010044",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Supporting Eta-2 is Republic/Vehicle/Fighter and Echo Base Engineer says \"give a Shield token to a damaged Vehicle unit.\" Agrees with haiku."
+    },
+    {
+      "id": "04010162>04010150:trait-reference",
+      "offer": "04010162",
+      "want": "04010150",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Droid Missile Platform is a Vehicle Transport and Biggs' Piloting says 'If attached unit is a Transport, it gets +0/+1'."
+    },
+    {
+      "id": "04010163>04010161:trait-reference",
+      "offer": "04010163",
+      "want": "04010161",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A has printed trait Vehicle; B says \"Each friendly Vehicle unit gets +1/+0 and gains Overwhelm\" (A already has Overwhelm, still +1/+0). Agrees with haiku."
+    },
+    {
+      "id": "04010174>04010004:extra-attack-on-attack",
+      "offer": "04010174",
+      "want": "04010004",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Hotshot Maneuver says \"Then, attack with the chosen unit,\" so a deployed Rose Tico attacks and her deployed \"On Attack: You may heal 2 damage from a Vehicle unit\" fires. Agrees with haiku."
+    },
+    {
+      "id": "04010174>07010221:extra-attack-on-attack",
+      "offer": "04010174",
+      "want": "07010221",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Then, attack with the chosen unit\" on Gorn fires \"On Attack: Take control of an enemy Credit token\". Agrees with haiku."
+    },
+    {
+      "id": "04010178>07010126:ready-reuse",
+      "offer": "04010178",
+      "want": "07010126",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "Face Off: \"ready an enemy unit. If you do, ready a friendly unit in the same arena\" can re-ready the unit carrying Adventurer Sniper Rifle, whose granted \"Action [Exhaust]\" is reusable. Agrees with haiku."
+    },
+    {
+      "id": "04010194>09010240:exhaust-enemy-payoff",
+      "offer": "04010194",
+      "want": "09010240",
+      "row": "exhaust-enemy-payoff",
+      "label": "correct",
+      "reason": "\"Exhaust a unit\" can hit an enemy, which Sandstorm punishes: \"Give a Weakness token to each exhausted enemy unit\". Agrees with haiku."
+    },
+    {
+      "id": "04010195>05010178:ready-reuse",
+      "offer": "04010195",
+      "want": "05010178",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "A: \"ready a friendly unit in the same arena with power equal to or less than that enemy unit\" can ready Adept of Anger (1 power, Ground) to reuse its \"Action [Exhaust...]\" (needs another Force token, a cost not a block). Agrees with haiku."
+    },
+    {
+      "id": "04010195>07010005:ready-reuse",
+      "offer": "04010195",
+      "want": "07010005",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "Cat and Mouse readies \"a friendly unit in the same arena with power equal to or less than that enemy unit\"; a deployed Jyn Erso (3 power) can be readied and attack again, firing her \"On Attack\" ability, if the enemy has 3+ power. Agrees with haiku."
+    },
+    {
+      "id": "04010203>08010133:extra-attack-on-attack",
+      "offer": "04010203",
+      "want": "08010133",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Han Solo's \"When played as an upgrade: You may attack with attached unit\" attacks with Trask Walker (a Vehicle), firing \"When Played/On Attack\". Agrees with haiku."
+    },
+    {
+      "id": "04010205>07010009:fodder-for-outlet",
+      "offer": "04010205",
+      "want": "07010009",
+      "row": "fodder-for-outlet",
+      "label": "correct",
+      "reason": "A creates an X-Wing token (a unit) and B says \"While you control 2 or more units, ignore the aspect penalties on Heroism units you play\", so the token counts toward 2 units. Agrees with haiku."
+    },
+    {
+      "id": "04010220>08010158:bounce-replay",
+      "offer": "04010220",
+      "want": "08010158",
+      "row": "bounce-replay",
+      "label": "wrong",
+      "reason": "Skyway Cloud Car returns \"a non-leader unit with 2 or less power\"; Han Solo has 3 power, so he cannot be returned and his \"When Played\" cannot be replayed. Agrees with haiku."
+    },
+    {
+      "id": "04010220>08010218:bounce-replay",
+      "offer": "04010220",
+      "want": "08010218",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Agrees with haiku. Skyway Cloud Car's 'When Defeated: You may return a non-leader unit with 2 or less power' can return your own 1-power Ferry Droid, whose 'When Played: Give 4 Advantage tokens to this unit' is then replayed."
+    },
+    {
+      "id": "04010233>07010136:bounce-replay",
+      "offer": "04010233",
+      "want": "07010136",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Sweep the Area returns units \"with a combined cost 3 or less\"; Syndicate Spice Runner (cost 2) can be bounced and replayed for \"When Played: Search the top 3 cards\". Agrees with haiku."
+    },
+    {
+      "id": "04010245>05010062:upgrade-stacking",
+      "offer": "04010245",
+      "want": "05010062",
+      "row": "upgrade-stacking",
+      "label": "wrong",
+      "reason": "R2-D2 \"can be played on a friendly Vehicle unit with a Pilot on it\"; Axe Woves is a Trooper, not a Vehicle. Agrees with haiku."
+    },
+    {
+      "id": "04010246>09010260:upgrade-stacking",
+      "offer": "04010246",
+      "want": "09010260",
+      "row": "upgrade-stacking",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Queen Amidala needs 'If you control an upgraded base'; Hopeful Volunteer's Piloting only attaches to 'a friendly Vehicle', and Experience or Shield tokens go on units, so nothing here upgrades a base."
+    },
+    {
+      "id": "04010262>05010212:exhaust-enemy-payoff",
+      "offer": "04010262",
+      "want": "05010212",
+      "row": "exhaust-enemy-payoff",
+      "label": "correct",
+      "reason": "\"Exhaust a unit\" can hit an enemy, switching on \"While an enemy unit is exhausted, this unit gains Raid 2\". Agrees with haiku."
+    },
+    {
+      "id": "05010001>07010176:discard-payoff",
+      "offer": "05010001",
+      "want": "07010176",
+      "row": "discard-payoff",
+      "label": "wrong",
+      "reason": "Kylo's \"Discard a card from your hand\" does not match Sebulba's \"When you discard a card from your deck\". Agrees with haiku."
+    },
+    {
+      "id": "05010019>05010115:the-force",
+      "offer": "05010019",
+      "want": "05010115",
+      "row": "the-force",
+      "label": "correct",
+      "reason": "Agrees with haiku. Vergence Temple creates your Force token at regroup start, which Dagoyan Master's 'You may use the Force (lose your Force token)' spends."
+    },
+    {
+      "id": "05010020>05010237:the-force",
+      "offer": "05010020",
+      "want": "05010237",
+      "row": "the-force",
+      "label": "correct",
+      "reason": "Agrees with haiku. Nightsister Lair says 'The Force is with you (create your Force token)' when a Force unit attacks, and The Son (Force) says 'While the Force is with you, each friendly unit gets +2/+0'."
+    },
+    {
+      "id": "05010022>05010087:the-force",
+      "offer": "05010022",
+      "want": "05010087",
+      "row": "the-force",
+      "label": "correct",
+      "reason": "Mystic Monastery: \"The Force is with you (create your Force token)\" fuels Eighth Brother's \"You may use the Force (lose your Force token)\". Agrees with haiku."
+    },
+    {
+      "id": "05010038>07010053:removal-defeat-watcher",
+      "offer": "05010038",
+      "want": "07010053",
+      "row": "removal-defeat-watcher",
+      "label": "correct",
+      "reason": "Pong Krell \"may defeat a unit with less remaining HP than this unit's power\", which can be an enemy unit, and that defeat can fire Dengar's \"When a unit with the highest cost among enemy units is defeated\" if it is the costliest. Agrees with haiku."
+    },
+    {
+      "id": "05010039>05010159:sac-outlet-when-defeated",
+      "offer": "05010039",
+      "want": "05010159",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Darth Sidious: \"defeat each non-Sith unit with 3 or less remaining HP\" defeats Jedi In Hiding (Force/Jedi, 3 HP), firing \"When Defeated\". Agrees with haiku."
+    },
+    {
+      "id": "05010055>05010174:trait-reference",
+      "offer": "05010055",
+      "want": "05010174",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Dume is printed Force with 2 power, within Ataru Onslaught's 'Ready a Force unit with 4 or less power'."
+    },
+    {
+      "id": "05010061>05010125:trait-reference",
+      "offer": "05010061",
+      "want": "05010125",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Secretive Sage is a Force unit and The Burden of Masters references the Force trait: \"Put a Force unit from your discard pile on the bottom of your deck.\" Agrees with haiku."
+    },
+    {
+      "id": "05010079>08010079:sac-outlet-when-defeated",
+      "offer": "05010079",
+      "want": "08010079",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Agrees with haiku. Shatterpoint's second mode ('Use the Force ... defeat a non-leader unit') can defeat a friendly unit, enabling Koska Reeves' 'If a friendly unit was defeated this phase, create a Mandalorian token'."
+    },
+    {
+      "id": "05010082>08010161:own-upgrade-defeat-watcher",
+      "offer": "05010082",
+      "want": "08010161",
+      "row": "own-upgrade-defeat-watcher",
+      "label": "correct",
+      "reason": "Experience tokens are upgrades, so \"defeat an Experience token on a friendly unit\" fires Zeb's \"When a friendly upgrade is defeated\". Overrides haiku (wrong to correct)."
+    },
+    {
+      "id": "05010094>08010017:enter-play-triggers",
+      "offer": "05010094",
+      "want": "08010017",
+      "row": "enter-play-triggers",
+      "label": "correct",
+      "reason": "\"Play a unit from your hand\" triggers Greef's \"When you play or create a unit\". Agrees with haiku."
+    },
+    {
+      "id": "05010105>08010064:grant-shielded-payoff",
+      "offer": "05010105",
+      "want": "08010064",
+      "row": "grant-shielded-payoff",
+      "label": "correct",
+      "reason": "Oppo Rancisis \"gains ... Shielded while another friendly unit has\" it, so with the Armorer in play Oppo has Shielded and gets a Shield token from \"each friendly unit with Shielded\". Agrees with haiku."
+    },
+    {
+      "id": "05010125>09010073:upgrade-stacking",
+      "offer": "05010125",
+      "want": "09010073",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "The Burden of Masters: \"play a unit from your hand and give 2 Experience tokens to it\" (Experience counts as an upgrade) turns on Peppi Bow's \"While this unit is upgraded, she gets +1/+1\". Agrees with haiku."
+    },
+    {
+      "id": "05010139>07010176:discard-payoff",
+      "offer": "05010139",
+      "want": "07010176",
+      "row": "discard-payoff",
+      "label": "wrong",
+      "reason": "Battle Fury discards \"a card from your hand\"; Sebulba's Podracer needs \"a card from your deck\". Agrees with haiku."
+    },
+    {
+      "id": "05010140>04010010:extra-attack-on-attack",
+      "offer": "05010140",
+      "want": "04010010",
+      "row": "extra-attack-on-attack",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Darth Maul's Lightsaber only attacks 'If attached unit is Darth Maul'; Captain Phasma is a different unit, and the attach restriction ('non-Vehicle') does not change that."
+    },
+    {
+      "id": "05010140>05010062:upgrade-stacking",
+      "offer": "05010140",
+      "want": "05010062",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "A: \"Attach to a friendly non-Vehicle unit\" fits Axe Woves (Trooper); B gets \"+1/+1 for each upgrade on him\". Agrees with haiku."
+    },
+    {
+      "id": "05010140>07010152:extra-attack-on-attack",
+      "offer": "05010140",
+      "want": "07010152",
+      "row": "extra-attack-on-attack",
+      "label": "wrong",
+      "reason": "A: \"If attached unit is Darth Maul, you may attack with him\"; the attack is only by Maul, so C-3PO's \"On Attack\" does not fire. Agrees with haiku."
+    },
+    {
+      "id": "05010146>09010044:draw-hand-size",
+      "offer": "05010146",
+      "want": "09010044",
+      "row": "draw-hand-size",
+      "label": "wrong",
+      "reason": "Ima-Gun Di's \"you may resource a card from your hand\" needs only a card in hand, not hand size or a draw trigger; the cards-in-hand tag is curated, not text. Agrees with haiku."
+    },
+    {
+      "id": "05010178>05010052:trait-reference",
+      "offer": "05010178",
+      "want": "05010052",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Jedi Trials says 'Attach to a Force unit' and Adept of Anger has the printed Force trait, so it is a legal host."
+    },
+    {
+      "id": "05010185>07010151:bounce-replay",
+      "offer": "05010185",
+      "want": "07010151",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Baylan Skoll returns \"a non-leader unit that costs 4 or less\" and its owner \"may play it for free\"; Profiteering Hunter (cost 1) replays its \"When Played\". Agrees with haiku."
+    },
+    {
+      "id": "05010197>04010013:trait-reference",
+      "offer": "05010197",
+      "want": "04010013",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A has printed trait Vehicle; B attaches \"to a friendly Vehicle unit without a Pilot on it\". Agrees with haiku."
+    },
+    {
+      "id": "05010200>05010138:trait-reference",
+      "offer": "05010200",
+      "want": "05010138",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "B: \"Attach to a Force unit\"; A has printed trait Force. Agrees with haiku."
+    },
+    {
+      "id": "05010204>05010141:trait-reference",
+      "offer": "05010204",
+      "want": "05010141",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A has printed trait Force; B says \"If you control a Force unit, draw a card\". Agrees with haiku."
+    },
+    {
+      "id": "05010204>05010174:trait-reference",
+      "offer": "05010204",
+      "want": "05010174",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Ataru Onslaught says \"Ready a Force unit with 4 or less power\" and Zuckuss is a Force unit with 4 power. Agrees with haiku."
+    },
+    {
+      "id": "05010205>06010048:extra-attack-on-attack",
+      "offer": "05010205",
+      "want": "06010048",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a unit\" on Captain Rex fires \"When this unit completes an attack: Give this unit and an enemy unit Sentinel\". Agrees with haiku."
+    },
+    {
+      "id": "05010211>05010138:trait-reference",
+      "offer": "05010211",
+      "want": "05010138",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Sith Holocron says 'Attach to a Force unit' and Dooku has the printed Force trait."
+    },
+    {
+      "id": "05010221>08010016:extra-attack-on-attack",
+      "offer": "05010221",
+      "want": "08010016",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"attack with a unit\" fires Shin Hati's \"When a friendly unit's attack ends\" again (needs base damage for the payoff, trigger still occurs). Agrees with haiku."
+    },
+    {
+      "id": "05010222>08010018:play-trigger-payoff",
+      "offer": "05010222",
+      "want": "08010018",
+      "row": "play-trigger-payoff",
+      "label": "unsure",
+      "reason": "A's text plays \"a card named It's Worse\" only if the opponent answers \"It could be worse\", and nothing inline says that card is a unit costing 4+ for Grogu's \"play a <uq> unit that costs 4 or more\". Agrees with haiku."
+    },
+    {
+      "id": "05010224>05010086:extra-attack-on-attack",
+      "offer": "05010224",
+      "want": "05010086",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Pounce: \"Attack with a Creature unit. It gets +4/+0\"; Drengir Spawn is a Creature and its \"When this unit attacks and defeats a unit\" trigger is boosted by the +4. Agrees with haiku."
+    },
+    {
+      "id": "05010225>05010211:grant-hidden-payoff",
+      "offer": "05010225",
+      "want": "05010211",
+      "row": "grant-hidden-payoff",
+      "label": "correct",
+      "reason": "\"It gains Hidden for this phase\" gives Dooku's \"Each friendly unit with Hidden can't be attacked\" a target when Dooku is played later that phase. Agrees with haiku."
+    },
+    {
+      "id": "05010239>05010038:ping-own-damage-payoff",
+      "offer": "05010239",
+      "want": "05010038",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"Give 2 Experience tokens to a unit, then deal 2 damage to it\" on Pong Krell (2/9, survives) switches on his Grit and keeps him alive for \"completes an attack (and survives)\". Agrees with haiku."
+    },
+    {
+      "id": "05010242>05010197:when-played-repeater",
+      "offer": "05010242",
+      "want": "05010197",
+      "row": "when-played-repeater",
+      "label": "correct",
+      "reason": "Agrees with haiku. Refugee of The Path has 'When Played: You may give a Shield token to a unit with Sentinel' (it has Sentinel itself, so it always has a target) and Aethersprite says 'you may use that ability again'."
+    },
+    {
+      "id": "06010010>04010044:ping-own-damage-payoff",
+      "offer": "06010010",
+      "want": "04010044",
+      "row": "ping-own-damage-payoff",
+      "label": "wrong",
+      "reason": "Dedra Meero: \"Choose an enemy unit. Its controller may deal 2 damage to it\" damages only an enemy unit, at the opponent's option; it does not ping your own unit, and Echo Base Engineer wants to shield your damaged Vehicle. Agrees with haiku."
+    },
+    {
+      "id": "06010014>04010163:ping-own-damage-payoff",
+      "offer": "06010014",
+      "want": "04010163",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Sly Moore's deployed \"On Attack: You may deal 2 damage to an exhausted unit\" can leave a ground unit damaged, and AT-DP Occupier costs \"1 resource less to play for each damaged ground unit\". Agrees with haiku."
+    },
+    {
+      "id": "06010017>08010120:exhaust-own-payoff",
+      "offer": "06010017",
+      "want": "08010120",
+      "row": "exhaust-own-payoff",
+      "label": "wrong",
+      "reason": "Sabe's \"exhaust this leader\" exhausts the undeployed leader, not a unit; her deploy side (Raid 1) has no exhaust, so Warrior of Clan Kryze's \"another exhausted unit\" is not met. Overrides haiku."
+    },
+    {
+      "id": "06010048>05010242:grant-sentinel-payoff",
+      "offer": "06010048",
+      "want": "05010242",
+      "row": "grant-sentinel-payoff",
+      "label": "correct",
+      "reason": "Rex gives \"this unit and an enemy unit Sentinel for this phase\"; Refugee shields \"a unit with Sentinel\". Agrees with haiku."
+    },
+    {
+      "id": "06010053>04010183:sac-outlet-when-defeated",
+      "offer": "06010053",
+      "want": "04010183",
+      "row": "sac-outlet-when-defeated",
+      "label": "wrong",
+      "reason": "A says \"Defeat a unit with power and remaining HP both equal to the number of ready resources you control\"; it is not friendly-specific and B (2/3, power not equal to HP unless damaged) is not reliably targetable on demand. Agrees with haiku."
+    },
+    {
+      "id": "06010053>09010215:fill-discard",
+      "offer": "06010053",
+      "want": "09010215",
+      "row": "fill-discard",
+      "label": "wrong",
+      "reason": "One in a Million \"can't be played from your hand\" and defeats \"a unit\" (not necessarily friendly), and a defeated unit is not the event L3-37 replays from discard (\"play it again from your discard pile\"). Agrees with haiku."
+    },
+    {
+      "id": "06010067>05010089:trait-reference",
+      "offer": "06010067",
+      "want": "05010089",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Umbaran Mobile Cannon is Fringe/Vehicle/Walker and Supremacy says \"Other friendly Vehicle units get +6/+6.\" Agrees with haiku."
+    },
+    {
+      "id": "06010097>06010181:fodder-for-outlet",
+      "offer": "06010097",
+      "want": "06010181",
+      "row": "fodder-for-outlet",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Unauthorized Investigation only says 'Create a Spy token' (and a second one on disclose); it makes its own tokens and nothing in its text rewards existing tokens."
+    },
+    {
+      "id": "06010101>05010036:fill-discard",
+      "offer": "06010101",
+      "want": "05010036",
+      "row": "fill-discard",
+      "label": "wrong",
+      "reason": "Queen Amidala only defeats \"another friendly unit that shares a trait with this unit\" (Naboo/Official) and only when damage would hit her; the Spy tokens and typical targets are not Night, and Old Daka needs a Night unit. Agrees with haiku."
+    },
+    {
+      "id": "06010115>05010042:fodder-for-outlet",
+      "offer": "06010115",
+      "want": "05010042",
+      "row": "fodder-for-outlet",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Always Two says 'Defeat all other friendly units', a drawback not a payoff that grows with fodder, and it only keeps its 2 chosen Sith units; a Spy token (and only 'If you have the initiative') adds nothing it wants."
+    },
+    {
+      "id": "06010122>04010004:trait-reference",
+      "offer": "06010122",
+      "want": "04010004",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Vuutun Palaa is printed Vehicle and Rose Tico heals 'a Vehicle unit that attacked this phase'."
+    },
+    {
+      "id": "06010136>08010055:fill-discard",
+      "offer": "06010136",
+      "want": "08010055",
+      "row": "fill-discard",
+      "label": "wrong",
+      "reason": "Arihnda Pryce's \"defeat another friendly unit\" is a defeat outlet (and only when she is defeated); Blade of Talzin's \"return this upgrade from your discard pile\" concerns only itself and does not use other discarded cards. Overrides haiku (correct to wrong)."
+    },
+    {
+      "id": "06010142>04010088:trait-reference",
+      "offer": "06010142",
+      "want": "04010088",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Fulminatrix is printed First Order and Captain Phasma gives 'another First Order unit +2/+2 for this phase'."
+    },
+    {
+      "id": "06010144>06010051:removal-defeat-watcher",
+      "offer": "06010144",
+      "want": "06010051",
+      "row": "removal-defeat-watcher",
+      "label": "wrong",
+      "reason": "Tempest Assault only deals \"2 damage to each enemy space unit\" and only if you damaged an enemy base this phase; it does not defeat anything unless the unit has 2 or less HP, so it is not reliable removal for Bo-Katan's defeat trigger. Agrees with haiku."
+    },
+    {
+      "id": "06010165>04010001:ready-reuse",
+      "offer": "06010165",
+      "want": "04010001",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "Academy Disciplinarian readies only \"a friendly unit with 2 or less power\"; deployed Asajj Ventress has 4 power, so she cannot be readied. Agrees with haiku."
+    },
+    {
+      "id": "06010166>05010258:trait-reference",
+      "offer": "06010166",
+      "want": "05010258",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Republic Aurek Starfighter is printed Vehicle and Peli Motto gives an Experience token to 'a friendly Vehicle or Droid unit'."
+    },
+    {
+      "id": "06010174>09010012:extra-attack-on-attack",
+      "offer": "06010174",
+      "want": "09010012",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"You may attack with another Aggression unit\"; Poggle is Aggression and deployed has \"On Attack: You may ready a friendly Creature unit\". Agrees with haiku."
+    },
+    {
+      "id": "06010179>04010048:extra-attack-on-attack",
+      "offer": "06010179",
+      "want": "04010048",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a unit\"; Cassian as Pilot upgrade gives \"On Attack: Discard a card from the defending player's deck...\" to the attached Vehicle, which fires on the attack. Agrees with haiku."
+    },
+    {
+      "id": "06010179>09010063:extra-attack-on-attack",
+      "offer": "06010179",
+      "want": "09010063",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Agrees with haiku. Aggressive Negotiations' 'Attack with a unit' can choose Rho Medical Shuttle, firing its 'When Played/On Attack: You may heal 1 damage' On Attack half."
+    },
+    {
+      "id": "06010180>06010068:ping-own-damage-payoff",
+      "offer": "06010180",
+      "want": "06010068",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Let's Call It War: \"Deal 3 damage to a unit\" can hit friendly Lando Calrissian (8 HP), who has Grit. Agrees with haiku."
+    },
+    {
+      "id": "06010185>04010044:trait-reference",
+      "offer": "06010185",
+      "want": "04010044",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "B: \"give a Shield token to a damaged Vehicle unit\"; A has printed trait Vehicle (must be damaged). Agrees with haiku."
+    },
+    {
+      "id": "06010198>08010008:discard-payoff",
+      "offer": "06010198",
+      "want": "08010008",
+      "row": "discard-payoff",
+      "label": "wrong",
+      "reason": "Bail Organa's hand discard feeds no Gideon text: Gideon has no \"when you discard\" trigger and his deploy side only concerns keywords on an Imperial unit in the discard pile (Bail is Republic). Agrees with haiku."
+    },
+    {
+      "id": "06010203>05010241:grant-hidden-payoff",
+      "offer": "06010203",
+      "want": "05010241",
+      "row": "grant-hidden-payoff",
+      "label": "correct",
+      "reason": "\"Each other friendly unit gains Hidden\" makes targets for \"up to 3 friendly units with Hidden\". Agrees with haiku."
+    },
+    {
+      "id": "06010211>06010247:fodder-for-outlet",
+      "offer": "06010211",
+      "want": "06010247",
+      "row": "fodder-for-outlet",
+      "label": "wrong",
+      "reason": "Evil is Everywhere says \"Defeat a unit with cost equal to or less than the number of Villainy aspect icons among friendly units\"; the target is any unit, so it does not want your own Spy tokens as fodder. Agrees with haiku."
+    },
+    {
+      "id": "06010215>04010161:trait-reference",
+      "offer": "06010215",
+      "want": "04010161",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Emissary's Sheathipede is Separatist/Vehicle/Transport and Captain Tarkin says \"Each friendly Vehicle unit gets +1/+0 and gains Overwhelm.\" Agrees with haiku."
+    },
+    {
+      "id": "06010227>05010186:fodder-for-outlet",
+      "offer": "06010227",
+      "want": "05010186",
+      "row": "fodder-for-outlet",
+      "label": "wrong",
+      "reason": "A's Spy token is created only if the attached unit is a Transport and a Spy token has no Raid; B only doubles Raid (\"Each friendly unit's Raid is doubled\"), so a token body gives it nothing. Agrees with haiku."
+    },
+    {
+      "id": "06010227>09010260:upgrade-stacking",
+      "offer": "06010227",
+      "want": "09010260",
+      "row": "upgrade-stacking",
+      "label": "wrong",
+      "reason": "A is \"Attach to a Vehicle unit\" so it cannot upgrade a base; B needs \"an upgraded base\". Agrees with haiku."
+    },
+    {
+      "id": "06010229>09010005:extra-attack-on-attack",
+      "offer": "06010229",
+      "want": "09010005",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a unit\" can attack with deployed Jar Jar, whose \"On Attack: If you gave a token upgrade...\" fires (payoff needs a token upgrade A does not supply, but the attack trigger is provided). Agrees with haiku."
+    },
+    {
+      "id": "06010231>09010125:fodder-for-outlet",
+      "offer": "06010231",
+      "want": "09010125",
+      "row": "fodder-for-outlet",
+      "label": "correct",
+      "reason": "A gives Sentinel so the unit gets attacked, creating a Spy token (a friendly unit) within the phase; B says \"you may choose any number of friendly units... this unit costs 1 resource less\" for each, so an extra unit is an extra discount. Conditional on an enemy attack but supported by the text. Overrides haiku: unsure -> correct."
+    },
+    {
+      "id": "06010234>06010263:exhaust-enemy-payoff",
+      "offer": "06010234",
+      "want": "06010263",
+      "row": "exhaust-enemy-payoff",
+      "label": "correct",
+      "reason": "\"Exhaust a unit\" can hit an enemy ground unit, giving Assassin Probe's \"each exhausted enemy ground unit\" a target. Agrees with haiku."
+    },
+    {
+      "id": "06010242>07010140:ramp-threshold",
+      "offer": "06010242",
+      "want": "07010140",
+      "row": "ramp-threshold",
+      "label": "wrong",
+      "reason": "Elia Kane's resource swap hits the enemy's resources: \"its controller puts the top card of their deck into play as a resource\". It gives the player no extra resource; agrees with haiku."
+    },
+    {
+      "id": "06010243>05010073:upgrade-stacking",
+      "offer": "06010243",
+      "want": "05010073",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "Agrees with haiku. FN Trooper Corps' 'Give an Experience token to another friendly unit' makes that unit upgraded (Experience is an upgrade), triggering Mythosaur's 'Friendly upgraded units can't be exhausted or returned to hand'."
+    },
+    {
+      "id": "07010018>07010032:credits",
+      "offer": "07010018",
+      "want": "07010032",
+      "row": "credits",
+      "label": "correct",
+      "reason": "A creates a Credit token on a matching aspect; B says \"Defeat any number of friendly Credit tokens\" and gets Experience per Credit. Agrees with haiku."
+    },
+    {
+      "id": "07010043>07010158:ready-reuse",
+      "offer": "07010043",
+      "want": "07010158",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "A: \"Ready a unit and give a Shield token\" readies Khetanna after attacking so \"On Attack: The next Underworld unit you play... costs 1 resource less\" fires again. Agrees with haiku."
+    },
+    {
+      "id": "07010058>06010144:enemy-base-damage-payoff",
+      "offer": "07010058",
+      "want": "06010144",
+      "row": "enemy-base-damage-payoff",
+      "label": "correct",
+      "reason": "Agrees with haiku. Honor-Bound Partisan's 'Deal 1 damage to a base' can target the enemy base, satisfying Tempest Assault's 'If you've dealt damage to an enemy base this phase'."
+    },
+    {
+      "id": "07010069>04010049:trait-reference",
+      "offer": "07010069",
+      "want": "04010049",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. The Ghost is printed Vehicle and L3-37 'may instead attach her as an upgrade to a friendly Vehicle unit without a Pilot'."
+    },
+    {
+      "id": "07010080>04010042:ping-own-damage-payoff",
+      "offer": "07010080",
+      "want": "04010042",
+      "row": "ping-own-damage-payoff",
+      "label": "wrong",
+      "reason": "A says \"An opponent chooses one\" of the modes and only one mode is the 5 damage, so A cannot reliably put damage on your own unit for B's \"+1/+0 ... for each damage on it\". Overrides haiku: correct -> wrong."
+    },
+    {
+      "id": "07010084>04010170:bounce-replay",
+      "offer": "07010084",
+      "want": "04010170",
+      "row": "bounce-replay",
+      "label": "wrong",
+      "reason": "Krrsantan's \"Return this unit to your hand\" returns only itself, never War Juggernaut, and Krrsantan has no When Played. Agrees with haiku."
+    },
+    {
+      "id": "07010096>04010090:sac-outlet-when-defeated",
+      "offer": "07010096",
+      "want": "04010090",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Agrees with haiku. Rhydonium Detonation's 'defeat all non-leader units' defeats Executor and fires its 'When Defeated: Create 3 TIE Fighter tokens'."
+    },
+    {
+      "id": "07010099>04010220:sac-outlet-when-defeated",
+      "offer": "07010099",
+      "want": "04010220",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Governor's Shuttle: \"Each player chooses a unit they control. Defeat those units\" lets you choose Skyway Cloud Car, firing its \"When Defeated\". Agrees with haiku."
+    },
+    {
+      "id": "07010099>08010058:sac-outlet-when-defeated",
+      "offer": "07010099",
+      "want": "08010058",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Agrees with haiku. Governor's Shuttle says 'Each player chooses a unit they control. Defeat those units', so you can choose Duchess's Protector and get 'When Defeated: Create a Mandalorian token'."
+    },
+    {
+      "id": "07010104>06010032:grant-sentinel-payoff",
+      "offer": "07010104",
+      "want": "06010032",
+      "row": "grant-sentinel-payoff",
+      "label": "correct",
+      "reason": "Bodhi can give a friendly Rebel ground unit Sentinel, which Command Shuttle buffs: \"Each friendly ground unit with Sentinel gets +0/+2\". Agrees with haiku."
+    },
+    {
+      "id": "07010107>09010161:draw-hand-size",
+      "offer": "07010107",
+      "want": "09010161",
+      "row": "draw-hand-size",
+      "label": "wrong",
+      "reason": "Raze to Ruin says \"Each player discards all but 3 cards from their hand\"; it does not reward a bigger hand, and extra cards from \"On Attack: Draw a card.\" are simply discarded. Overrides haiku: no hand-size payoff."
+    },
+    {
+      "id": "07010124>04010071:sac-outlet-when-defeated",
+      "offer": "07010124",
+      "want": "04010071",
+      "row": "sac-outlet-when-defeated",
+      "label": "wrong",
+      "reason": "Overrides haiku (correct to wrong): Industrious Team only defeats 'a non-leader unit with 4 or less remaining HP' and CR90 Relief Runner has 6 HP, so it is not a legal target unless already damaged by 2; it is not an on-demand sacrifice outlet for CR90's When Defeated."
+    },
+    {
+      "id": "07010124>08010045:sac-outlet-when-defeated",
+      "offer": "07010124",
+      "want": "08010045",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Industrious Team: \"defeat a non-leader unit with 4 or less remaining HP\" can defeat your 2/2 Reanimated Night Trooper, firing its \"When Defeated\". Agrees with haiku."
+    },
+    {
+      "id": "07010132>07010109:self-defeat-defeat-watcher",
+      "offer": "07010132",
+      "want": "07010109",
+      "row": "self-defeat-defeat-watcher",
+      "label": "wrong",
+      "reason": "The Tree Remembers says \"An enemy unit ... defeat it\"; Tantive IV needs \"a friendly unit was defeated this phase\". Agrees with haiku."
+    },
+    {
+      "id": "07010133>09010109:sac-outlet-when-defeated",
+      "offer": "07010133",
+      "want": "09010109",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "A: \"Defeat a non-leader unit\" on friendly Magnaguard (printed power 5) fires \"When Defeated: If this unit had 5 or more power... play this unit from your discard pile for free\". Agrees with haiku."
+    },
+    {
+      "id": "07010184>06010144:enemy-base-damage-payoff",
+      "offer": "07010184",
+      "want": "06010144",
+      "row": "enemy-base-damage-payoff",
+      "label": "correct",
+      "reason": "Aerie deals \"2 damage to a base\" (choosable as enemy base), enabling \"If you've dealt damage to an enemy base this phase\". Agrees with haiku."
+    },
+    {
+      "id": "07010185>0301058:trait-reference",
+      "offer": "07010185",
+      "want": "0301058",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A has printed trait Force; B says \"While you control a Force unit or a Force upgrade, this unit gets +1/+1\". Agrees with haiku."
+    },
+    {
+      "id": "07010187>08010032:ping-own-damage-payoff",
+      "offer": "07010187",
+      "want": "08010032",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"Deal 1 damage to each of up to 3 different ground units\" can hit friendly units that survive; B triggers \"When a friendly unit is dealt damage and survives\". Agrees with haiku."
+    },
+    {
+      "id": "07010194>08010017:enter-play-triggers",
+      "offer": "07010194",
+      "want": "08010017",
+      "row": "enter-play-triggers",
+      "label": "wrong",
+      "reason": "Aphra only discards from deck and returns a card to hand; it plays no unit, so Greef's \"When you play or create a unit\" is not fed. Agrees with haiku."
+    },
+    {
+      "id": "07010194>09010234:enter-play-triggers",
+      "offer": "07010194",
+      "want": "09010234",
+      "row": "enter-play-triggers",
+      "label": "wrong",
+      "reason": "Aphra's text is \"Discard 3 cards from your deck. You may return an Underworld card discarded this way to your hand.\" Nothing plays or puts a unit into play, so it feeds nothing for Ritual Dragon; agrees with haiku."
+    },
+    {
+      "id": "07010240>09010046:bounce-replay",
+      "offer": "07010240",
+      "want": "09010046",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Agrees with haiku. Milodon Rider's 'You may return another friendly non-leader unit to its owner's hand' can return Krrsantan, whose 'When Played: You may deal damage ... to a ground unit' can then be replayed."
+    },
+    {
+      "id": "07010240>09010072:bounce-replay",
+      "offer": "07010240",
+      "want": "09010072",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Milodon Rider's \"return another friendly non-leader unit to its owner's hand\" can bounce Grand Army Marine, whose \"When Played: Give a Shield token to a friendly Gungan unit\" replays. Agrees with haiku."
+    },
+    {
+      "id": "07010247>06010254:ping-own-damage-payoff",
+      "offer": "07010247",
+      "want": "06010254",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"You may deal damage to a unit equal to the number of friendly Credit tokens\" (at least 1) can damage a friendly unit, enabling B's \"If you control a damaged unit\". Agrees with haiku."
+    },
+    {
+      "id": "07010247>07010040:credits",
+      "offer": "07010247",
+      "want": "07010040",
+      "row": "credits",
+      "label": "correct",
+      "reason": "\"Create a Credit token\" supplies what Taramyn's \"defeat a Credit token (belonging to any player)\" spends. Agrees with haiku."
+    },
+    {
+      "id": "07010262>07010040:credits",
+      "offer": "07010262",
+      "want": "07010040",
+      "row": "credits",
+      "label": "correct",
+      "reason": "\"When Played: Create a Credit token\" feeds Taramyn's \"defeat a Credit token\". Agrees with haiku."
+    },
+    {
+      "id": "08010004>05010130:removal-defeat-watcher",
+      "offer": "08010004",
+      "want": "05010130",
+      "row": "removal-defeat-watcher",
+      "label": "correct",
+      "reason": "Thrawn's deploy side reads \"On Attack: If you control more units than the defending player, you may defeat a non-leader unit they control\", which triggers HK-47's \"When an enemy unit is defeated\". Agrees with haiku."
+    },
+    {
+      "id": "08010005>04010062:heal-payoff",
+      "offer": "08010005",
+      "want": "04010062",
+      "row": "heal-payoff",
+      "label": "correct",
+      "reason": "Agrees with haiku. Luke's 'heal 1 damage from that unit' (the friendly unit whose attack ended) can heal Silver Angel, triggering 'When 1 or more damage is healed from this unit'."
+    },
+    {
+      "id": "08010005>07010047:heal-payoff",
+      "offer": "08010005",
+      "want": "07010047",
+      "row": "heal-payoff",
+      "label": "correct",
+      "reason": "Luke's \"heal 1 damage from that unit\" after a friendly attack can heal Baze, triggering his damage-dealing ability. Agrees with haiku."
+    },
+    {
+      "id": "08010006>08010064:grant-shielded-payoff",
+      "offer": "08010006",
+      "want": "08010064",
+      "row": "grant-shielded-payoff",
+      "label": "correct",
+      "reason": "Sabine: \"the next unit you play this phase gains Shielded for this phase\"; The Armorer gives a Shield token \"to each friendly unit with Shielded\". Works if the Armorer is played after that unit; agrees with haiku."
+    },
+    {
+      "id": "08010008>08010064:grant-shielded-payoff",
+      "offer": "08010008",
+      "want": "08010064",
+      "row": "grant-shielded-payoff",
+      "label": "wrong",
+      "reason": "Gideon's action just plays a unit from hand cheaper; his deploy side only gains keywords for itself when on an Imperial unit in the discard pile. Neither grants Shielded to a board unit for The Armorer. Overrides haiku (unsure to wrong)."
+    },
+    {
+      "id": "08010011>09010182:ping-own-damage-payoff",
+      "offer": "08010011",
+      "want": "09010182",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Cad Bane's \"Deal 1 damage to a unit with 2 or more remaining HP\" can hit friendly Arena Nexu (6 HP), which has Grit (+1/+0 per damage). Agrees with haiku."
+    },
+    {
+      "id": "08010030>05010033:trait-reference",
+      "offer": "08010030",
+      "want": "05010033",
+      "row": "trait-reference",
+      "label": "wrong",
+      "reason": "Overrides haiku (correct to wrong): Nameless Terror's 'You may exhaust a Force unit' is useful aimed at an enemy, and its On Attack makes enemies 'lose the Force trait'; a friendly Marrok is only a bad target, so the right side fails."
+    },
+    {
+      "id": "08010042>04010101:upgrade-return-reattach",
+      "offer": "08010042",
+      "want": "04010101",
+      "row": "upgrade-return-reattach",
+      "label": "correct",
+      "reason": "\"return an upgrade ... play it for free\" can re-attach a Pilot to Red Leader, firing \"When a Pilot upgrade attaches to this unit\". Agrees with haiku."
+    },
+    {
+      "id": "08010045>04010039:when-defeated-doubler",
+      "offer": "08010045",
+      "want": "04010039",
+      "row": "when-defeated-doubler",
+      "label": "correct",
+      "reason": "Agrees with haiku. Reanimated Night Trooper has 'When Defeated: Look at the top card of a deck', which Chimaera's 'You may use a When Defeated ability on another friendly unit' can use."
+    },
+    {
+      "id": "08010053>06010045:trait-reference",
+      "offer": "08010053",
+      "want": "06010045",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Pre Vizsla is printed Official and Senator Chuchi gives 'another friendly Official unit Restore 2'."
+    },
+    {
+      "id": "08010059>06010009:trait-reference",
+      "offer": "08010059",
+      "want": "06010009",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Leia Organa is Rebel/Official; Mon Mothma's deployed side says \"Each other friendly Official unit gets +0/+1\" and Leia is a non-Villainy Official. Agrees with haiku."
+    },
+    {
+      "id": "08010071>05010232:ping-own-damage-payoff",
+      "offer": "08010071",
+      "want": "05010232",
+      "row": "ping-own-damage-payoff",
+      "label": "wrong",
+      "reason": "A deals damage to \"this unit\" (Haulcraft itself) and an enemy space unit; B's Grit needs damage on itself. Agrees with haiku."
+    },
+    {
+      "id": "08010089>07010047:heal-payoff",
+      "offer": "08010089",
+      "want": "07010047",
+      "row": "heal-payoff",
+      "label": "correct",
+      "reason": "\"Heal 3 damage from a unit\" can target Baze, triggering \"When 1 or more damage is healed from this unit\". Agrees with haiku."
+    },
+    {
+      "id": "08010104>09010216:play-trigger-payoff",
+      "offer": "08010104",
+      "want": "09010216",
+      "row": "play-trigger-payoff",
+      "label": "correct",
+      "reason": "\"Play up to 3 non-Vehicle units that each cost 2 or less from your discard pile for free\" are plays, triggering Insurgent Camp's \"When you play a unit with 3 or less power\" for cheap units. Agrees with haiku."
+    },
+    {
+      "id": "08010111>08010115:fodder-for-outlet",
+      "offer": "08010111",
+      "want": "08010115",
+      "row": "fodder-for-outlet",
+      "label": "correct",
+      "reason": "Overrides haiku (unsure to correct): Children of the Watch makes 2 Mandalorian tokens, which are extra friendly units, and The Student Guides the Master gives '+1/+0 ... for each other friendly unit with less power than it'; tokens are low-power bodies (printed 2 power or less), so they raise the count for a bigger target such as the 3-power Children."
+    },
+    {
+      "id": "08010118>07010060:ping-own-damage-payoff",
+      "offer": "08010118",
+      "want": "07010060",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "8D8's \"Deal 1 damage to another friendly unit\" can hit Quarren Contractor, whose Grit gives \"+1/+0 for each damage on it\". Agrees with haiku."
+    },
+    {
+      "id": "08010124>08010052:fodder-for-outlet",
+      "offer": "08010124",
+      "want": "08010052",
+      "row": "fodder-for-outlet",
+      "label": "correct",
+      "reason": "Agrees with haiku. Protectorate Fighter's 'create a Mandalorian token' gives a friendly unit for Chimaera's 'choose a friendly unit and an enemy non-leader unit. If you do, defeat those units', so the token is the cheap sacrifice."
+    },
+    {
+      "id": "08010135>07010087:upgrade-stacking",
+      "offer": "08010135",
+      "want": "07010087",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "Agrees with haiku. The Darksaber attaches to a unique non-Vehicle unit and Jango Fett (unique ground unit) has 'If this unit is upgraded, exhaust an enemy unit'."
+    },
+    {
+      "id": "08010140>07010036:fodder-for-outlet",
+      "offer": "08010140",
+      "want": "07010036",
+      "row": "fodder-for-outlet",
+      "label": "correct",
+      "reason": "Stronger Together: \"Create 2 Mandalorian tokens\" adds units toward Obi-Wan's \"While you control 7 or more units\". Agrees with haiku."
+    },
+    {
+      "id": "08010142>04010170:ping-own-damage-payoff",
+      "offer": "08010142",
+      "want": "04010170",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Agrees with haiku. Mortar Trooper's 'Deal 1 damage to each of up to 3 ground units' creates damaged units (own or enemy) and War Juggernaut 'gets +1/+0 for each damaged unit'; both are ground."
+    },
+    {
+      "id": "08010149>05010197:when-played-repeater",
+      "offer": "08010149",
+      "want": "05010197",
+      "row": "when-played-repeater",
+      "label": "correct",
+      "reason": "Agrees with haiku. Eviscerator has 'When Played/On Attack: Give 2 Advantage tokens ...', a When Played ability Aethersprite can repeat ('you may use that ability again')."
+    },
+    {
+      "id": "08010155>05010016:extra-attack-on-attack",
+      "offer": "08010155",
+      "want": "05010016",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"When you take the initiative: You may attack with a unit\"; deployed Qui-Gon's \"When this unit completes an attack (and survives)\" trigger fires. Agrees with haiku."
+    },
+    {
+      "id": "08010155>06010188:extra-attack-on-attack",
+      "offer": "08010155",
+      "want": "06010188",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Grogu: \"When you take the initiative: You may attack with a unit\" can attack with Darth Traya, firing her \"On Attack\". Agrees with haiku."
+    },
+    {
+      "id": "08010177>05010241:grant-hidden-payoff",
+      "offer": "08010177",
+      "want": "05010241",
+      "row": "grant-hidden-payoff",
+      "label": "correct",
+      "reason": "\"Other friendly units gain Hidden\" gives targets for \"friendly units with Hidden\". Agrees with haiku."
+    },
+    {
+      "id": "08010188>08010168:ready-reuse",
+      "offer": "08010188",
+      "want": "08010168",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "A: \"Ready a unit that was damaged this phase\" can ready Migs after he attacks and takes damage, so \"On Attack\" fires again. Agrees with haiku."
+    },
+    {
+      "id": "08010196>06010076:ping-own-damage-payoff",
+      "offer": "08010196",
+      "want": "06010076",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "Gorian Shard's Corsair's \"You may deal 2 damage to a unit\" makes a damaged non-leader unit, which Charged with Murder defeats (\"defeat a damaged non-leader unit\"). Agrees with haiku."
+    },
+    {
+      "id": "08010217>06010249:trait-reference",
+      "offer": "08010217",
+      "want": "06010249",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "A is a printed Official unit; B says \"While you control another Official unit, this unit gains Raid 2\". Agrees with haiku."
+    },
+    {
+      "id": "08010219>05010197:when-played-repeater",
+      "offer": "08010219",
+      "want": "05010197",
+      "row": "when-played-repeater",
+      "label": "correct",
+      "reason": "Jod Na Nawood has a \"When Played:\" ability and Aethersprite says \"you may use that ability again\". Agrees with haiku."
+    },
+    {
+      "id": "08010224>07010052:draw-hand-size",
+      "offer": "08010224",
+      "want": "07010052",
+      "row": "draw-hand-size",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Elzar Mann's search is by 'an opponent' who 'draws it', so the draw goes to the opponent, not to you for The Mandalorian's 'When you draw 1 or more cards'."
+    },
+    {
+      "id": "08010232>04010223:upgrade-return-reattach",
+      "offer": "08010232",
+      "want": "04010223",
+      "row": "upgrade-return-reattach",
+      "label": "correct",
+      "reason": "\"Return an upgrade that costs 2 or less\" can recycle a cost-2 Pilot upgrade like Paige Tico onto Razor Crest again. Agrees with haiku."
+    },
+    {
+      "id": "08010236>09010200:bounce-replay",
+      "offer": "08010236",
+      "want": "09010200",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Agrees with haiku. Far Far Away's 'Return a friendly non-leader unit' can return Rish Loo, whose 'When Played: Take control of an enemy non-leader unit with a Weakness token' can be replayed (when such a target exists)."
+    },
+    {
+      "id": "08010245>05010087:play-trigger-payoff",
+      "offer": "08010245",
+      "want": "05010087",
+      "row": "play-trigger-payoff",
+      "label": "correct",
+      "reason": "Agrees with haiku. Eye of Sion's 'Play it for free' plays a unit from the deck, which triggers Eighth Brother's 'When you play another unit'."
+    },
+    {
+      "id": "08010246>08010161:own-upgrade-defeat-watcher",
+      "offer": "08010246",
+      "want": "08010161",
+      "row": "own-upgrade-defeat-watcher",
+      "label": "correct",
+      "reason": "\"Defeat a friendly upgrade\" triggers Zeb's \"When a friendly upgrade is defeated\". Agrees with haiku."
+    },
+    {
+      "id": "08010259>09010078:ping-own-damage-payoff",
+      "offer": "08010259",
+      "want": "09010078",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"You may deal 1 damage to a ground unit\" can hit friendly Qui-Gon (Ground, 5 HP), whose \"Grit\" gains power per damage. Agrees with haiku."
+    },
+    {
+      "id": "09010009>05010030:extra-attack-on-attack",
+      "offer": "09010009",
+      "want": "05010030",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a unit, even if it's exhausted\" on a Force unit fires B's \"When a friendly Force unit attacks: ...create your Force token\". Agrees with haiku."
+    },
+    {
+      "id": "09010009>07010011:extra-attack-on-attack",
+      "offer": "09010009",
+      "want": "07010011",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Chewbacca: \"Attack with a unit, even if it's exhausted\" attacks with deployed Darth Vader, firing his \"On Attack\". Agrees with haiku."
+    },
+    {
+      "id": "09010009>08010223:extra-attack-on-attack",
+      "offer": "09010009",
+      "want": "08010223",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a unit, even if it's exhausted\" (not bases) on Halo; its \"When Attack Ends: If the defending unit was defeated, give a Shield token\" can fire. Agrees with haiku."
+    },
+    {
+      "id": "09010042>04010090:ready-reuse",
+      "offer": "09010042",
+      "want": "04010090",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "A: \"When Played: You may ready another unit\" readies exhausted Executor, whose \"When Played/On Attack/When Defeated: Create 3 TIE Fighter tokens\" fires again on a second attack. Agrees with haiku."
+    },
+    {
+      "id": "09010042>05010141:trait-reference",
+      "offer": "09010042",
+      "want": "05010141",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Dooku is a Force unit and Death Field says \"If you control a Force unit, draw a card.\" Agrees with haiku."
+    },
+    {
+      "id": "09010044>04010002:when-defeated-doubler",
+      "offer": "09010044",
+      "want": "04010002",
+      "row": "when-defeated-doubler",
+      "label": "correct",
+      "reason": "Ima-Gun Di has \"When Defeated:\" and Thrawn \"When you use a 'When Defeated' ability: ... use that ability again\". Agrees with haiku."
+    },
+    {
+      "id": "09010047>05010068:ready-reuse",
+      "offer": "09010047",
+      "want": "05010068",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "A: \"Create a Beast token and ready it\" readies only the new token, not Luthen Rael; B has only a search On Attack. Agrees with haiku."
+    },
+    {
+      "id": "09010047>07010112:ready-reuse",
+      "offer": "09010047",
+      "want": "07010112",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "Boonta's text is \"When a friendly unit attacks: If no other units have attacked this phase... heal 2 damage from your base\"; Eravana only readies a Beast token, and a Beast attack after Eravana's own attack cannot meet the 'no other units have attacked' condition. Agrees with haiku."
+    },
+    {
+      "id": "09010048>05010174:trait-reference",
+      "offer": "09010048",
+      "want": "05010174",
+      "row": "trait-reference",
+      "label": "wrong",
+      "reason": "Overrides haiku (correct to wrong): Ataru Onslaught says 'Ready a Force unit with 4 or less power' and Vernestra Rwoh has 5 power, so she is not a legal target."
+    },
+    {
+      "id": "09010050>05010063:extra-attack-on-attack",
+      "offer": "09010050",
+      "want": "05010063",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A says \"you may attack with a ground unit\"; B is a Ground unit whose \"When this unit attacks and defeats a unit: Heal 2\" fires (B must be damaged to attack). Agrees with haiku."
+    },
+    {
+      "id": "09010051>09010078:ping-own-damage-payoff",
+      "offer": "09010051",
+      "want": "09010078",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"You may deal 2 damage to a unit\" can target friendly Qui-Gon (2/5, survives), whose \"Grit\" gains power from damage. Agrees with haiku."
+    },
+    {
+      "id": "09010056>06010035:when-defeated-doubler",
+      "offer": "09010056",
+      "want": "06010035",
+      "row": "when-defeated-doubler",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Darth Sion's only When Defeated is 'If this unit had 7 or more power, return him', and nothing in his text repeats or rewards other units' When Defeated abilities; the want is only curated."
+    },
+    {
+      "id": "09010077>08010161:own-upgrade-defeat-watcher",
+      "offer": "09010077",
+      "want": "08010161",
+      "row": "own-upgrade-defeat-watcher",
+      "label": "correct",
+      "reason": "Shield tokens are upgrades, so \"defeat a Shield token on a friendly Gungan unit\" is a friendly upgrade defeat that fires Zeb. Overrides haiku (wrong to correct)."
+    },
+    {
+      "id": "09010101>08010197:upgrade-stacking",
+      "offer": "09010101",
+      "want": "08010197",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "A: \"Give a Shield token to a unit\" (a Shield is an upgrade) on another friendly unit; B gets \"+1/+0 for each upgrade on other friendly units\". Agrees with haiku."
+    },
+    {
+      "id": "09010109>09010200:weaken-enemy-payoff",
+      "offer": "09010109",
+      "want": "09010200",
+      "row": "weaken-enemy-payoff",
+      "label": "wrong",
+      "reason": "Magnaguard gives \"2 Weakness tokens to it\", meaning itself (friendly), but Rish Loo needs \"an enemy non-leader unit with a Weakness token\". Agrees with haiku."
+    },
+    {
+      "id": "09010124>07010237:extra-attack-on-attack",
+      "offer": "09010124",
+      "want": "07010237",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"When you play a unit... You may attack with a unit\" can attack with Qui-Gon, firing \"When Played/On Attack: Look at the top 3 cards\". Agrees with haiku."
+    },
+    {
+      "id": "09010135>09010099:trait-reference",
+      "offer": "09010135",
+      "want": "09010099",
+      "row": "trait-reference",
+      "label": "correct",
+      "reason": "Agrees with haiku. Arena Reek is printed Creature and Always a Bigger Fish says 'Defeat a friendly Creature unit'."
+    },
+    {
+      "id": "09010149>04010046:extra-attack-on-attack",
+      "offer": "09010149",
+      "want": "04010046",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"Attack with a friendly unit. Then attack with it again\"; Paige as Pilot gives \"On Attack: Give an Experience token to this unit...\", firing twice. Agrees with haiku."
+    },
+    {
+      "id": "09010149>06010085:extra-attack-on-attack",
+      "offer": "09010149",
+      "want": "06010085",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "Log Trap: \"Attack with a friendly unit. Then attack with it again\"; Vice Admiral Rampart's \"On Attack\" fires on both attacks. Agrees with haiku."
+    },
+    {
+      "id": "09010153>09010113:self-defeat-defeat-watcher",
+      "offer": "09010153",
+      "want": "09010113",
+      "row": "self-defeat-defeat-watcher",
+      "label": "correct",
+      "reason": "\"You may defeat this unit\" is a friendly defeat that triggers \"When a friendly unit is defeated: Heal 1 damage\". Agrees with haiku."
+    },
+    {
+      "id": "09010156>08010039:enemy-base-damage-payoff",
+      "offer": "09010156",
+      "want": "08010039",
+      "row": "enemy-base-damage-payoff",
+      "label": "correct",
+      "reason": "Acklay's \"Deal 2 damage to each enemy base\" satisfies Baylan's \"If an enemy base was damaged this phase\"; agrees with haiku."
+    },
+    {
+      "id": "09010171>08010128:self-defeat-defeat-watcher",
+      "offer": "09010171",
+      "want": "08010128",
+      "row": "self-defeat-defeat-watcher",
+      "label": "wrong",
+      "reason": "Trap Field says \"You may defeat this upgrade\", not a unit, so Bothan-5's \"another friendly non-Vehicle unit is defeated\" never fires; agrees with haiku."
+    },
+    {
+      "id": "09010191>08010047:upgrade-stacking",
+      "offer": "09010191",
+      "want": "08010047",
+      "row": "upgrade-stacking",
+      "label": "correct",
+      "reason": "Hunter's Instinct is an Upgrade with no attach restriction, and Gar Saxon says \"When you play an upgrade on this unit: You may create a Mandalorian token.\" Agrees with haiku."
+    },
+    {
+      "id": "09010193>0201057:extra-attack-on-attack",
+      "offer": "09010193",
+      "want": "0201057",
+      "row": "extra-attack-on-attack",
+      "label": "correct",
+      "reason": "A: \"If you control an Endor base, you may attack with a unit\"; B's \"On Attack: You may reveal the top card\" fires. Agrees with haiku."
+    },
+    {
+      "id": "09010195>06010225:ready-reuse",
+      "offer": "09010195",
+      "want": "06010225",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "Catch the Scent \"ready 1 of them\" readies only a new Beast token, never Synara San, whose \"On Attack: For each friendly unit, ready a friendly resource\" readies resources, not units. Agrees with haiku."
+    },
+    {
+      "id": "09010195>07010174:ready-reuse",
+      "offer": "09010195",
+      "want": "07010174",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "Catch the Scent: \"ready 1 of them\" readies only a new Beast token, not 0-0-0. Agrees with haiku."
+    },
+    {
+      "id": "09010197>09010200:weaken-enemy-payoff",
+      "offer": "09010197",
+      "want": "09010200",
+      "row": "weaken-enemy-payoff",
+      "label": "correct",
+      "reason": "Cid: \"An opponent chooses a unit they control. Give a Weakness token to it\" supplies an enemy with a Weakness token for Rish Loo's steal (provided it is not a leader). Agrees with haiku."
+    },
+    {
+      "id": "09010209>09010242:ramp-threshold",
+      "offer": "09010209",
+      "want": "09010242",
+      "row": "ramp-threshold",
+      "label": "wrong",
+      "reason": "\"You may ready a resource\" adds no resource, so it never helps \"If you control 6 or more resources\"; agrees with haiku."
+    },
+    {
+      "id": "09010216>07010104:ready-reuse",
+      "offer": "09010216",
+      "want": "07010104",
+      "row": "ready-reuse",
+      "label": "correct",
+      "reason": "Insurgent Camp: \"When you play a unit with 3 or less power: You may defeat this upgrade. If you do, ready that unit.\" Bodhi Rook (2 power) enters exhausted, so the ready lets it attack this turn and fire \"On Attack\". Overrides haiku: readying a freshly played exhausted unit does enable its On Attack."
+    },
+    {
+      "id": "09010231>08010015:exhaust-own-payoff",
+      "offer": "09010231",
+      "want": "08010015",
+      "row": "exhaust-own-payoff",
+      "label": "correct",
+      "reason": "\"You may give a Weakness token to a unit. If it's a <uq> unit, exhaust it.\" can exhaust a friendly unique unit, giving Palpatine's \"exhausted friendly unit\" a target; agrees with haiku."
+    },
+    {
+      "id": "09010231>09010062:weaken-enemy-payoff",
+      "offer": "09010231",
+      "want": "09010062",
+      "row": "weaken-enemy-payoff",
+      "label": "correct",
+      "reason": "\"give a Weakness token to a unit\" can target an enemy, enabling Nuvo Vindi's \"enemy unit with a Weakness token on it is defeated\". Agrees with haiku."
+    },
+    {
+      "id": "09010234>08010013:ready-reuse",
+      "offer": "09010234",
+      "want": "08010013",
+      "row": "ready-reuse",
+      "label": "wrong",
+      "reason": "A only makes units \"enter play ready\" (needs a Tatooine base); it does not ready an already exhausted unit or re-use an ability, and Ezra's trigger is \"When a friendly unit's attack ends\". Agrees with haiku."
+    },
+    {
+      "id": "09010236>04010223:upgrade-return-reattach",
+      "offer": "09010236",
+      "want": "04010223",
+      "row": "upgrade-return-reattach",
+      "label": "correct",
+      "reason": "\"Return an upgrade that costs 3 or less\" can take a Pilot upgrade back to hand to be replayed onto Razor Crest (\"When a Pilot attaches\"). Agrees with haiku."
+    },
+    {
+      "id": "09010238>06010155:bounce-replay",
+      "offer": "09010238",
+      "want": "06010155",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Agrees with haiku. Exploit Confidence returns 'a non-leader unit with 6 or more power', which fits your own 6-power Kallus, whose 'When Played: Deal 2 damage to each of up to 3 ground units' is then replayed."
+    },
+    {
+      "id": "09010238>09010231:bounce-replay",
+      "offer": "09010238",
+      "want": "09010231",
+      "row": "bounce-replay",
+      "label": "wrong",
+      "reason": "A returns \"a non-leader unit with 6 or more power\" and B has printed power 5, so as printed A cannot return B. Agrees with haiku."
+    },
+    {
+      "id": "09010241>04010070:bounce-replay",
+      "offer": "09010241",
+      "want": "04010070",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "Howl says \"You may return a non-leader unit to its owner's hand,\" which can bounce friendly U-Wing Lander, whose \"When Played: Give 3 Experience tokens to this unit\" then replays. Agrees with haiku."
+    },
+    {
+      "id": "09010241>09010221:bounce-replay",
+      "offer": "09010241",
+      "want": "09010221",
+      "row": "bounce-replay",
+      "label": "correct",
+      "reason": "A: \"You may return a non-leader unit to its owner's hand\" can return friendly Teeka, replaying \"When Played: Choose one\". Agrees with haiku."
+    },
+    {
+      "id": "09010253>04010090:sac-outlet-when-defeated",
+      "offer": "09010253",
+      "want": "04010090",
+      "row": "sac-outlet-when-defeated",
+      "label": "correct",
+      "reason": "Agrees with haiku. Forced Pacification's 'Defeat any number of friendly units' can defeat Executor, triggering 'When Defeated: Create 3 TIE Fighter tokens'."
+    },
+    {
+      "id": "09010261>08010224:trait-reference",
+      "offer": "09010261",
+      "want": "08010224",
+      "row": "trait-reference",
+      "label": "wrong",
+      "reason": "Agrees with haiku. Elzar Mann needs 'a Force leader'; Ben Kenobi is a non-leader unit, so his Force trait does not satisfy it."
+    },
+    {
+      "id": "09010263>04010001:ping-own-damage-payoff",
+      "offer": "09010263",
+      "want": "04010001",
+      "row": "ping-own-damage-payoff",
+      "label": "correct",
+      "reason": "A: \"Each player chooses a unit they control. Deal 3 damage to each chosen unit\" so you can damage your own deployed Asajj, who has Grit (leader unit keywords: Grit). Agrees with haiku."
+    }
+  ]
+}

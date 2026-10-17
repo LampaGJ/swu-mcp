@@ -1,0 +1,130 @@
+{
+ "packet": "p8",
+ "items": [
+  {
+   "id": "07010247>07010040:credits",
+   "final": "correct",
+   "reason": "\"Create a Credit token\" supplies what Taramyn's \"defeat a Credit token (belonging to any player)\" spends. Agrees with haiku."
+  },
+  {
+   "id": "07010184>06010144:enemy-base-damage-payoff",
+   "final": "correct",
+   "reason": "Aerie deals \"2 damage to a base\" (choosable as enemy base), enabling \"If you've dealt damage to an enemy base this phase\". Agrees with haiku."
+  },
+  {
+   "id": "07010194>08010017:enter-play-triggers",
+   "final": "wrong",
+   "reason": "Aphra only discards from deck and returns a card to hand; it plays no unit, so Greef's \"When you play or create a unit\" is not fed. Agrees with haiku."
+  },
+  {
+   "id": "05010094>08010017:enter-play-triggers",
+   "final": "correct",
+   "reason": "\"Play a unit from your hand\" triggers Greef's \"When you play or create a unit\". Agrees with haiku."
+  },
+  {
+   "id": "04010046>04010223:pilot-attach-trigger",
+   "final": "correct",
+   "reason": "Paige Tico's Piloting plays her as an upgrade on a Vehicle; Razor Crest is a Vehicle with \"When a Pilot attaches to this unit\". Agrees with haiku."
+  },
+  {
+   "id": "07010262>07010040:credits",
+   "final": "correct",
+   "reason": "\"When Played: Create a Credit token\" feeds Taramyn's \"defeat a Credit token\". Agrees with haiku."
+  },
+  {
+   "id": "06010198>08010008:discard-payoff",
+   "final": "wrong",
+   "reason": "Bail Organa's hand discard feeds no Gideon text: Gideon has no \"when you discard\" trigger and his deploy side only concerns keywords on an Imperial unit in the discard pile (Bail is Republic). Agrees with haiku."
+  },
+  {
+   "id": "04010194>09010240:exhaust-enemy-payoff",
+   "final": "correct",
+   "reason": "\"Exhaust a unit\" can hit an enemy, which Sandstorm punishes: \"Give a Weakness token to each exhausted enemy unit\". Agrees with haiku."
+  },
+  {
+   "id": "04010103>04010223:pilot-attach-trigger",
+   "final": "correct",
+   "reason": "Chewbacca has Piloting for a Vehicle; Razor Crest triggers on \"When a Pilot attaches to this unit\". Agrees with haiku."
+  },
+  {
+   "id": "09010156>08010039:enemy-base-damage-payoff",
+   "final": "correct",
+   "reason": "Acklay's \"Deal 2 damage to each enemy base\" satisfies Baylan's \"If an enemy base was damaged this phase\"; agrees with haiku."
+  },
+  {
+   "id": "05010001>07010176:discard-payoff",
+   "final": "wrong",
+   "reason": "Kylo's \"Discard a card from your hand\" does not match Sebulba's \"When you discard a card from your deck\". Agrees with haiku."
+  },
+  {
+   "id": "07010104>06010032:grant-sentinel-payoff",
+   "final": "correct",
+   "reason": "Bodhi can give a friendly Rebel ground unit Sentinel, which Command Shuttle buffs: \"Each friendly ground unit with Sentinel gets +0/+2\". Agrees with haiku."
+  },
+  {
+   "id": "08010089>07010047:heal-payoff",
+   "final": "correct",
+   "reason": "\"Heal 3 damage from a unit\" can target Baze, triggering \"When 1 or more damage is healed from this unit\". Agrees with haiku."
+  },
+  {
+   "id": "09010236>04010223:upgrade-return-reattach",
+   "final": "correct",
+   "reason": "\"Return an upgrade that costs 3 or less\" can take a Pilot upgrade back to hand to be replayed onto Razor Crest (\"When a Pilot attaches\"). Agrees with haiku."
+  },
+  {
+   "id": "08010005>07010047:heal-payoff",
+   "final": "correct",
+   "reason": "Luke's \"heal 1 damage from that unit\" after a friendly attack can heal Baze, triggering his damage-dealing ability. Agrees with haiku."
+  },
+  {
+   "id": "09010109>09010200:weaken-enemy-payoff",
+   "final": "wrong",
+   "reason": "Magnaguard gives \"2 Weakness tokens to it\", meaning itself (friendly), but Rish Loo needs \"an enemy non-leader unit with a Weakness token\". Agrees with haiku."
+  },
+  {
+   "id": "09010197>09010200:weaken-enemy-payoff",
+   "final": "correct",
+   "reason": "Cid: \"An opponent chooses a unit they control. Give a Weakness token to it\" supplies an enemy with a Weakness token for Rish Loo's steal (provided it is not a leader). Agrees with haiku."
+  },
+  {
+   "id": "08010042>04010101:upgrade-return-reattach",
+   "final": "correct",
+   "reason": "\"return an upgrade ... play it for free\" can re-attach a Pilot to Red Leader, firing \"When a Pilot upgrade attaches to this unit\". Agrees with haiku."
+  },
+  {
+   "id": "05010225>05010211:grant-hidden-payoff",
+   "final": "correct",
+   "reason": "\"It gains Hidden for this phase\" gives Dooku's \"Each friendly unit with Hidden can't be attacked\" a target when Dooku is played later that phase. Agrees with haiku."
+  },
+  {
+   "id": "08010008>08010064:grant-shielded-payoff",
+   "final": "wrong",
+   "reason": "Gideon's action just plays a unit from hand cheaper; his deploy side only gains keywords for itself when on an Imperial unit in the discard pile. Neither grants Shielded to a board unit for The Armorer. Overrides haiku (unsure to wrong)."
+  },
+  {
+   "id": "08010232>04010223:upgrade-return-reattach",
+   "final": "correct",
+   "reason": "\"Return an upgrade that costs 2 or less\" can recycle a cost-2 Pilot upgrade like Paige Tico onto Razor Crest again. Agrees with haiku."
+  },
+  {
+   "id": "05010105>08010064:grant-shielded-payoff",
+   "final": "correct",
+   "reason": "Oppo Rancisis \"gains ... Shielded while another friendly unit has\" it, so with the Armorer in play Oppo has Shielded and gets a Shield token from \"each friendly unit with Shielded\". Agrees with haiku."
+  },
+  {
+   "id": "08010246>08010161:own-upgrade-defeat-watcher",
+   "final": "correct",
+   "reason": "\"Defeat a friendly upgrade\" triggers Zeb's \"When a friendly upgrade is defeated\". Agrees with haiku."
+  },
+  {
+   "id": "09010077>08010161:own-upgrade-defeat-watcher",
+   "final": "correct",
+   "reason": "Shield tokens are upgrades, so \"defeat a Shield token on a friendly Gungan unit\" is a friendly upgrade defeat that fires Zeb. Overrides haiku (wrong to correct)."
+  },
+  {
+   "id": "05010082>08010161:own-upgrade-defeat-watcher",
+   "final": "correct",
+   "reason": "Experience tokens are upgrades, so \"defeat an Experience token on a friendly unit\" fires Zeb's \"When a friendly upgrade is defeated\". Overrides haiku (wrong to correct)."
+  }
+ ]
+}

@@ -1,0 +1,130 @@
+{
+ "packet": "p4",
+ "items": [
+  {
+   "id": "04010130>04010101:fodder-for-outlet",
+   "final": "wrong",
+   "reason": "Red Leader's cost reduction counts only \"friendly Pilot unit and upgrade\" and its trigger needs \"a Pilot upgrade attaches\"; X-Wing tokens are not Pilots and it has no sac, count or enter-play payoff. Agrees with haiku."
+  },
+  {
+   "id": "04010203>08010133:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Han Solo's \"When played as an upgrade: You may attack with attached unit\" attacks with Trask Walker (a Vehicle), firing \"When Played/On Attack\". Agrees with haiku."
+  },
+  {
+   "id": "07010240>09010072:bounce-replay",
+   "final": "correct",
+   "reason": "Milodon Rider's \"return another friendly non-leader unit to its owner's hand\" can bounce Grand Army Marine, whose \"When Played: Give a Shield token to a friendly Gungan unit\" replays. Agrees with haiku."
+  },
+  {
+   "id": "06010211>06010247:fodder-for-outlet",
+   "final": "wrong",
+   "reason": "Evil is Everywhere says \"Defeat a unit with cost equal to or less than the number of Villainy aspect icons among friendly units\"; the target is any unit, so it does not want your own Spy tokens as fodder. Agrees with haiku."
+  },
+  {
+   "id": "05010061>05010125:trait-reference",
+   "final": "correct",
+   "reason": "Secretive Sage is a Force unit and The Burden of Masters references the Force trait: \"Put a Force unit from your discard pile on the bottom of your deck.\" Agrees with haiku."
+  },
+  {
+   "id": "06010180>06010068:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Let's Call It War: \"Deal 3 damage to a unit\" can hit friendly Lando Calrissian (8 HP), who has Grit. Agrees with haiku."
+  },
+  {
+   "id": "05010125>09010073:upgrade-stacking",
+   "final": "correct",
+   "reason": "The Burden of Masters: \"play a unit from your hand and give 2 Experience tokens to it\" (Experience counts as an upgrade) turns on Peppi Bow's \"While this unit is upgraded, she gets +1/+1\". Agrees with haiku."
+  },
+  {
+   "id": "05010039>05010159:sac-outlet-when-defeated",
+   "final": "correct",
+   "reason": "Darth Sidious: \"defeat each non-Sith unit with 3 or less remaining HP\" defeats Jedi In Hiding (Force/Jedi, 3 HP), firing \"When Defeated\". Agrees with haiku."
+  },
+  {
+   "id": "09010009>07010011:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Chewbacca: \"Attack with a unit, even if it's exhausted\" attacks with deployed Darth Vader, firing his \"On Attack\". Agrees with haiku."
+  },
+  {
+   "id": "04010233>07010136:bounce-replay",
+   "final": "correct",
+   "reason": "Sweep the Area returns units \"with a combined cost 3 or less\"; Syndicate Spice Runner (cost 2) can be bounced and replayed for \"When Played: Search the top 3 cards\". Agrees with haiku."
+  },
+  {
+   "id": "08010140>07010036:fodder-for-outlet",
+   "final": "correct",
+   "reason": "Stronger Together: \"Create 2 Mandalorian tokens\" adds units toward Obi-Wan's \"While you control 7 or more units\". Agrees with haiku."
+  },
+  {
+   "id": "06010215>04010161:trait-reference",
+   "final": "correct",
+   "reason": "Emissary's Sheathipede is Separatist/Vehicle/Transport and Captain Tarkin says \"Each friendly Vehicle unit gets +1/+0 and gains Overwhelm.\" Agrees with haiku."
+  },
+  {
+   "id": "06010144>06010051:removal-defeat-watcher",
+   "final": "wrong",
+   "reason": "Tempest Assault only deals \"2 damage to each enemy space unit\" and only if you damaged an enemy base this phase; it does not defeat anything unless the unit has 2 or less HP, so it is not reliable removal for Bo-Katan's defeat trigger. Agrees with haiku."
+  },
+  {
+   "id": "07010124>08010045:sac-outlet-when-defeated",
+   "final": "correct",
+   "reason": "Industrious Team: \"defeat a non-leader unit with 4 or less remaining HP\" can defeat your 2/2 Reanimated Night Trooper, firing its \"When Defeated\". Agrees with haiku."
+  },
+  {
+   "id": "05010185>07010151:bounce-replay",
+   "final": "correct",
+   "reason": "Baylan Skoll returns \"a non-leader unit that costs 4 or less\" and its owner \"may play it for free\"; Profiteering Hunter (cost 1) replays its \"When Played\". Agrees with haiku."
+  },
+  {
+   "id": "05010022>05010087:the-force",
+   "final": "correct",
+   "reason": "Mystic Monastery: \"The Force is with you (create your Force token)\" fuels Eighth Brother's \"You may use the Force (lose your Force token)\". Agrees with haiku."
+  },
+  {
+   "id": "07010084>04010170:bounce-replay",
+   "final": "wrong",
+   "reason": "Krrsantan's \"Return this unit to your hand\" returns only itself, never War Juggernaut, and Krrsantan has no When Played. Agrees with haiku."
+  },
+  {
+   "id": "05010224>05010086:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Pounce: \"Attack with a Creature unit. It gets +4/+0\"; Drengir Spawn is a Creature and its \"When this unit attacks and defeats a unit\" trigger is boosted by the +4. Agrees with haiku."
+  },
+  {
+   "id": "06010136>08010055:fill-discard",
+   "final": "wrong",
+   "reason": "Arihnda Pryce's \"defeat another friendly unit\" is a defeat outlet (and only when she is defeated); Blade of Talzin's \"return this upgrade from your discard pile\" concerns only itself and does not use other discarded cards. Overrides haiku (correct to wrong)."
+  },
+  {
+   "id": "09010195>07010174:ready-reuse",
+   "final": "wrong",
+   "reason": "Catch the Scent: \"ready 1 of them\" readies only a new Beast token, not 0-0-0. Agrees with haiku."
+  },
+  {
+   "id": "07010099>04010220:sac-outlet-when-defeated",
+   "final": "correct",
+   "reason": "Governor's Shuttle: \"Each player chooses a unit they control. Defeat those units\" lets you choose Skyway Cloud Car, firing its \"When Defeated\". Agrees with haiku."
+  },
+  {
+   "id": "04010142>09010182:ping-own-damage-payoff",
+   "final": "wrong",
+   "reason": "Darth Vader's Piloting upgrade can attach only to a Vehicle unit, and Arena Nexu is a Creature, so he cannot give it \"On Attack: You may deal 1 damage to a unit\". Overrides haiku (unsure to wrong)."
+  },
+  {
+   "id": "04010129>04010151:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Focus Fire: \"Choose a unit. Each friendly Vehicle unit in the same arena deals damage equal to its power to that unit\" leaves a damaged unit for Red Five's \"On Attack: You may deal 2 damage to a damaged unit\". Agrees with haiku."
+  },
+  {
+   "id": "04010160>04010044:trait-reference",
+   "final": "correct",
+   "reason": "Supporting Eta-2 is Republic/Vehicle/Fighter and Echo Base Engineer says \"give a Shield token to a damaged Vehicle unit.\" Agrees with haiku."
+  },
+  {
+   "id": "04010076>04010036:upgrade-stacking",
+   "final": "wrong",
+   "reason": "Iden Versio's \"When this upgrade attaches to a unit: Give a Shield token\" does not depend on other upgrades, so a Shield from Covering the Wing gives her no benefit. Agrees with haiku."
+  }
+ ]
+}

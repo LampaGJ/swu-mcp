@@ -1,0 +1,130 @@
+{
+ "packet": "p7",
+ "items": [
+  {
+   "id": "07010194>09010234:enter-play-triggers",
+   "final": "wrong",
+   "reason": "Aphra's text is \"Discard 3 cards from your deck. You may return an Underworld card discarded this way to your hand.\" Nothing plays or puts a unit into play, so it feeds nothing for Ritual Dragon; agrees with haiku."
+  },
+  {
+   "id": "07010107>09010161:draw-hand-size",
+   "final": "wrong",
+   "reason": "Raze to Ruin says \"Each player discards all but 3 cards from their hand\"; it does not reward a bigger hand, and extra cards from \"On Attack: Draw a card.\" are simply discarded. Overrides haiku: no hand-size payoff."
+  },
+  {
+   "id": "09010209>09010242:ramp-threshold",
+   "final": "wrong",
+   "reason": "\"You may ready a resource\" adds no resource, so it never helps \"If you control 6 or more resources\"; agrees with haiku."
+  },
+  {
+   "id": "09010231>08010015:exhaust-own-payoff",
+   "final": "correct",
+   "reason": "\"You may give a Weakness token to a unit. If it's a <uq> unit, exhaust it.\" can exhaust a friendly unique unit, giving Palpatine's \"exhausted friendly unit\" a target; agrees with haiku."
+  },
+  {
+   "id": "05010139>07010176:discard-payoff",
+   "final": "wrong",
+   "reason": "Battle Fury discards \"a card from your hand\"; Sebulba's Podracer needs \"a card from your deck\". Agrees with haiku."
+  },
+  {
+   "id": "05010222>08010018:play-trigger-payoff",
+   "final": "unsure",
+   "reason": "A's text plays \"a card named It's Worse\" only if the opponent answers \"It could be worse\", and nothing inline says that card is a unit costing 4+ for Grogu's \"play a <uq> unit that costs 4 or more\". Agrees with haiku."
+  },
+  {
+   "id": "05010038>07010053:removal-defeat-watcher",
+   "final": "correct",
+   "reason": "Pong Krell \"may defeat a unit with less remaining HP than this unit's power\", which can be an enemy unit, and that defeat can fire Dengar's \"When a unit with the highest cost among enemy units is defeated\" if it is the costliest. Agrees with haiku."
+  },
+  {
+   "id": "06010242>07010140:ramp-threshold",
+   "final": "wrong",
+   "reason": "Elia Kane's resource swap hits the enemy's resources: \"its controller puts the top card of their deck into play as a resource\". It gives the player no extra resource; agrees with haiku."
+  },
+  {
+   "id": "09010044>04010002:when-defeated-doubler",
+   "final": "correct",
+   "reason": "Ima-Gun Di has \"When Defeated:\" and Thrawn \"When you use a 'When Defeated' ability: ... use that ability again\". Agrees with haiku."
+  },
+  {
+   "id": "08010104>09010216:play-trigger-payoff",
+   "final": "correct",
+   "reason": "\"Play up to 3 non-Vehicle units that each cost 2 or less from your discard pile for free\" are plays, triggering Insurgent Camp's \"When you play a unit with 3 or less power\" for cheap units. Agrees with haiku."
+  },
+  {
+   "id": "06010203>05010241:grant-hidden-payoff",
+   "final": "correct",
+   "reason": "\"Each other friendly unit gains Hidden\" makes targets for \"up to 3 friendly units with Hidden\". Agrees with haiku."
+  },
+  {
+   "id": "08010004>05010130:removal-defeat-watcher",
+   "final": "correct",
+   "reason": "Thrawn's deploy side reads \"On Attack: If you control more units than the defending player, you may defeat a non-leader unit they control\", which triggers HK-47's \"When an enemy unit is defeated\". Agrees with haiku."
+  },
+  {
+   "id": "06010234>06010263:exhaust-enemy-payoff",
+   "final": "correct",
+   "reason": "\"Exhaust a unit\" can hit an enemy ground unit, giving Assassin Probe's \"each exhausted enemy ground unit\" a target. Agrees with haiku."
+  },
+  {
+   "id": "07010132>07010109:self-defeat-defeat-watcher",
+   "final": "wrong",
+   "reason": "The Tree Remembers says \"An enemy unit ... defeat it\"; Tantive IV needs \"a friendly unit was defeated this phase\". Agrees with haiku."
+  },
+  {
+   "id": "09010231>09010062:weaken-enemy-payoff",
+   "final": "correct",
+   "reason": "\"give a Weakness token to a unit\" can target an enemy, enabling Nuvo Vindi's \"enemy unit with a Weakness token on it is defeated\". Agrees with haiku."
+  },
+  {
+   "id": "09010171>08010128:self-defeat-defeat-watcher",
+   "final": "wrong",
+   "reason": "Trap Field says \"You may defeat this upgrade\", not a unit, so Bothan-5's \"another friendly non-Vehicle unit is defeated\" never fires; agrees with haiku."
+  },
+  {
+   "id": "04010084>04010101:pilot-attach-trigger",
+   "final": "correct",
+   "reason": "Wingman Victor Two has Piloting (\"play this as an upgrade on a friendly Vehicle without a Pilot\") and Red Leader is a Vehicle with \"When a Pilot upgrade attaches to this unit\". Agrees with haiku."
+  },
+  {
+   "id": "08010219>05010197:when-played-repeater",
+   "final": "correct",
+   "reason": "Jod Na Nawood has a \"When Played:\" ability and Aethersprite says \"you may use that ability again\". Agrees with haiku."
+  },
+  {
+   "id": "08010006>08010064:grant-shielded-payoff",
+   "final": "correct",
+   "reason": "Sabine: \"the next unit you play this phase gains Shielded for this phase\"; The Armorer gives a Shield token \"to each friendly unit with Shielded\". Works if the Armorer is played after that unit; agrees with haiku."
+  },
+  {
+   "id": "09010153>09010113:self-defeat-defeat-watcher",
+   "final": "correct",
+   "reason": "\"You may defeat this unit\" is a friendly defeat that triggers \"When a friendly unit is defeated: Heal 1 damage\". Agrees with haiku."
+  },
+  {
+   "id": "08010177>05010241:grant-hidden-payoff",
+   "final": "correct",
+   "reason": "\"Other friendly units gain Hidden\" gives targets for \"friendly units with Hidden\". Agrees with haiku."
+  },
+  {
+   "id": "06010048>05010242:grant-sentinel-payoff",
+   "final": "correct",
+   "reason": "Rex gives \"this unit and an enemy unit Sentinel for this phase\"; Refugee shields \"a unit with Sentinel\". Agrees with haiku."
+  },
+  {
+   "id": "04010009>08010015:exhaust-own-payoff",
+   "final": "wrong",
+   "reason": "Boba Fett's \"exhaust this leader\" exhausts the undeployed leader card, which is not a unit, and his deploy side has no exhaust; Palpatine needs an \"exhausted friendly unit\". Overrides haiku."
+  },
+  {
+   "id": "06010017>08010120:exhaust-own-payoff",
+   "final": "wrong",
+   "reason": "Sabe's \"exhaust this leader\" exhausts the undeployed leader, not a unit; her deploy side (Raid 1) has no exhaust, so Warrior of Clan Kryze's \"another exhausted unit\" is not met. Overrides haiku."
+  },
+  {
+   "id": "04010262>05010212:exhaust-enemy-payoff",
+   "final": "correct",
+   "reason": "\"Exhaust a unit\" can hit an enemy, switching on \"While an enemy unit is exhausted, this unit gains Raid 2\". Agrees with haiku."
+  }
+ ]
+}

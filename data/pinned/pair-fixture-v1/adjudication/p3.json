@@ -1,0 +1,130 @@
+{
+ "packet": "p3",
+ "items": [
+  {
+   "id": "09010047>07010112:ready-reuse",
+   "final": "wrong",
+   "reason": "Boonta's text is \"When a friendly unit attacks: If no other units have attacked this phase... heal 2 damage from your base\"; Eravana only readies a Beast token, and a Beast attack after Eravana's own attack cannot meet the 'no other units have attacked' condition. Agrees with haiku."
+  },
+  {
+   "id": "09010195>06010225:ready-reuse",
+   "final": "wrong",
+   "reason": "Catch the Scent \"ready 1 of them\" readies only a new Beast token, never Synara San, whose \"On Attack: For each friendly unit, ready a friendly resource\" readies resources, not units. Agrees with haiku."
+  },
+  {
+   "id": "06010053>09010215:fill-discard",
+   "final": "wrong",
+   "reason": "One in a Million \"can't be played from your hand\" and defeats \"a unit\" (not necessarily friendly), and a defeated unit is not the event L3-37 replays from discard (\"play it again from your discard pile\"). Agrees with haiku."
+  },
+  {
+   "id": "08010059>06010009:trait-reference",
+   "final": "correct",
+   "reason": "Leia Organa is Rebel/Official; Mon Mothma's deployed side says \"Each other friendly Official unit gets +0/+1\" and Leia is a non-Villainy Official. Agrees with haiku."
+  },
+  {
+   "id": "04010174>04010004:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Hotshot Maneuver says \"Then, attack with the chosen unit,\" so a deployed Rose Tico attacks and her deployed \"On Attack: You may heal 2 damage from a Vehicle unit\" fires. Agrees with haiku."
+  },
+  {
+   "id": "08010011>09010182:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Cad Bane's \"Deal 1 damage to a unit with 2 or more remaining HP\" can hit friendly Arena Nexu (6 HP), which has Grit (+1/+0 per damage). Agrees with haiku."
+  },
+  {
+   "id": "06010101>05010036:fill-discard",
+   "final": "wrong",
+   "reason": "Queen Amidala only defeats \"another friendly unit that shares a trait with this unit\" (Naboo/Official) and only when damage would hit her; the Spy tokens and typical targets are not Night, and Old Daka needs a Night unit. Agrees with haiku."
+  },
+  {
+   "id": "04010195>07010005:ready-reuse",
+   "final": "correct",
+   "reason": "Cat and Mouse readies \"a friendly unit in the same arena with power equal to or less than that enemy unit\"; a deployed Jyn Erso (3 power) can be readied and attack again, firing her \"On Attack\" ability, if the enemy has 3+ power. Agrees with haiku."
+  },
+  {
+   "id": "08010118>07010060:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "8D8's \"Deal 1 damage to another friendly unit\" can hit Quarren Contractor, whose Grit gives \"+1/+0 for each damage on it\". Agrees with haiku."
+  },
+  {
+   "id": "04010220>08010158:bounce-replay",
+   "final": "wrong",
+   "reason": "Skyway Cloud Car returns \"a non-leader unit with 2 or less power\"; Han Solo has 3 power, so he cannot be returned and his \"When Played\" cannot be replayed. Agrees with haiku."
+  },
+  {
+   "id": "09010042>05010141:trait-reference",
+   "final": "correct",
+   "reason": "Dooku is a Force unit and Death Field says \"If you control a Force unit, draw a card.\" Agrees with haiku."
+  },
+  {
+   "id": "09010241>04010070:bounce-replay",
+   "final": "correct",
+   "reason": "Howl says \"You may return a non-leader unit to its owner's hand,\" which can bounce friendly U-Wing Lander, whose \"When Played: Give 3 Experience tokens to this unit\" then replays. Agrees with haiku."
+  },
+  {
+   "id": "09010216>07010104:ready-reuse",
+   "final": "correct",
+   "reason": "Insurgent Camp: \"When you play a unit with 3 or less power: You may defeat this upgrade. If you do, ready that unit.\" Bodhi Rook (2 power) enters exhausted, so the ready lets it attack this turn and fire \"On Attack\". Overrides haiku: readying a freshly played exhausted unit does enable its On Attack."
+  },
+  {
+   "id": "05010146>09010044:draw-hand-size",
+   "final": "wrong",
+   "reason": "Ima-Gun Di's \"you may resource a card from your hand\" needs only a card in hand, not hand size or a draw trigger; the cards-in-hand tag is curated, not text. Agrees with haiku."
+  },
+  {
+   "id": "05010204>05010174:trait-reference",
+   "final": "correct",
+   "reason": "Ataru Onslaught says \"Ready a Force unit with 4 or less power\" and Zuckuss is a Force unit with 4 power. Agrees with haiku."
+  },
+  {
+   "id": "04010153>06010254:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Rebellious Hammerhead's \"deal damage to a unit equal to the number of cards in your hand\" can damage a friendly unit, enabling Heroic ARC-170's \"If you control a damaged unit\". Agrees with haiku."
+  },
+  {
+   "id": "06010014>04010163:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Sly Moore's deployed \"On Attack: You may deal 2 damage to an exhausted unit\" can leave a ground unit damaged, and AT-DP Occupier costs \"1 resource less to play for each damaged ground unit\". Agrees with haiku."
+  },
+  {
+   "id": "08010196>06010076:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "Gorian Shard's Corsair's \"You may deal 2 damage to a unit\" makes a damaged non-leader unit, which Charged with Murder defeats (\"defeat a damaged non-leader unit\"). Agrees with haiku."
+  },
+  {
+   "id": "06010010>04010044:ping-own-damage-payoff",
+   "final": "wrong",
+   "reason": "Dedra Meero: \"Choose an enemy unit. Its controller may deal 2 damage to it\" damages only an enemy unit, at the opponent's option; it does not ping your own unit, and Echo Base Engineer wants to shield your damaged Vehicle. Agrees with haiku."
+  },
+  {
+   "id": "06010165>04010001:ready-reuse",
+   "final": "wrong",
+   "reason": "Academy Disciplinarian readies only \"a friendly unit with 2 or less power\"; deployed Asajj Ventress has 4 power, so she cannot be readied. Agrees with haiku."
+  },
+  {
+   "id": "06010067>05010089:trait-reference",
+   "final": "correct",
+   "reason": "Umbaran Mobile Cannon is Fringe/Vehicle/Walker and Supremacy says \"Other friendly Vehicle units get +6/+6.\" Agrees with haiku."
+  },
+  {
+   "id": "09010149>06010085:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Log Trap: \"Attack with a friendly unit. Then attack with it again\"; Vice Admiral Rampart's \"On Attack\" fires on both attacks. Agrees with haiku."
+  },
+  {
+   "id": "09010191>08010047:upgrade-stacking",
+   "final": "correct",
+   "reason": "Hunter's Instinct is an Upgrade with no attach restriction, and Gar Saxon says \"When you play an upgrade on this unit: You may create a Mandalorian token.\" Agrees with haiku."
+  },
+  {
+   "id": "04010178>07010126:ready-reuse",
+   "final": "correct",
+   "reason": "Face Off: \"ready an enemy unit. If you do, ready a friendly unit in the same arena\" can re-ready the unit carrying Adventurer Sniper Rifle, whose granted \"Action [Exhaust]\" is reusable. Agrees with haiku."
+  },
+  {
+   "id": "08010155>06010188:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "Grogu: \"When you take the initiative: You may attack with a unit\" can attack with Darth Traya, firing her \"On Attack\". Agrees with haiku."
+  }
+ ]
+}

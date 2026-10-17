@@ -1,0 +1,264 @@
+{
+  "seed": "pair-fixture-v1",
+  "ordering": "items ordered by sha256(seed + id) (lowercase hex, code-point order); stratified packets interleave strata first",
+  "packets": [
+    {
+      "packet": "p1",
+      "file": "p1.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 69443
+    },
+    {
+      "packet": "p2",
+      "file": "p2.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 68615
+    },
+    {
+      "packet": "p3",
+      "file": "p3.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 72722
+    },
+    {
+      "packet": "p4",
+      "file": "p4.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 68197
+    },
+    {
+      "packet": "p5",
+      "file": "p5.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 72378
+    },
+    {
+      "packet": "p6",
+      "file": "p6.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 71478
+    },
+    {
+      "packet": "p7",
+      "file": "p7.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 73845
+    },
+    {
+      "packet": "p8",
+      "file": "p8.json",
+      "packetType": "pairings",
+      "itemCount": 25,
+      "bytes": 78099
+    }
+  ],
+  "totalItems": 200,
+  "verdictSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Verification verdict for one evidence packet",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "packet",
+      "items",
+      "summary"
+    ],
+    "properties": {
+      "packet": {
+        "type": "string",
+        "description": "The packet name, for example features-1."
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "verdict",
+            "reason"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "The item id from the packet."
+            },
+            "verdict": {
+              "enum": [
+                "correct",
+                "wrong",
+                "unsure"
+              ]
+            },
+            "field": {
+              "type": "string",
+              "description": "The claim or field that is wrong or unclear."
+            },
+            "reason": {
+              "type": "string",
+              "description": "One or two sentences quoting the evidence."
+            }
+          }
+        }
+      },
+      "summary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "correct",
+          "wrong",
+          "unsure"
+        ],
+        "description": "Counts of distinct item ids. An id with any wrong entry counts as wrong; otherwise unsure if any entry is unsure.",
+        "properties": {
+          "correct": {
+            "type": "integer"
+          },
+          "wrong": {
+            "type": "integer"
+          },
+          "unsure": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  "sourceRun": {
+    "date": "2026-10-17",
+    "buildHash": "d2ad228ad046e969f5f7d4837f5cd63cddcb4815f28e0d858c3e73e6a01d3ef2"
+  },
+  "perRow": {
+    "bounce-replay": {
+      "units": 6370,
+      "sampled": 12
+    },
+    "credits": {
+      "units": 119,
+      "sampled": 3
+    },
+    "discard-payoff": {
+      "units": 92,
+      "sampled": 3
+    },
+    "draw-hand-size": {
+      "units": 1096,
+      "sampled": 3
+    },
+    "enemy-base-damage-payoff": {
+      "units": 66,
+      "sampled": 3
+    },
+    "enter-play-triggers": {
+      "units": 154,
+      "sampled": 3
+    },
+    "exhaust-enemy-payoff": {
+      "units": 265,
+      "sampled": 3
+    },
+    "exhaust-own-payoff": {
+      "units": 271,
+      "sampled": 3
+    },
+    "extra-attack-on-attack": {
+      "units": 11710,
+      "sampled": 22
+    },
+    "fill-discard": {
+      "units": 1744,
+      "sampled": 3
+    },
+    "fodder-for-outlet": {
+      "units": 5416,
+      "sampled": 10
+    },
+    "grant-hidden-payoff": {
+      "units": 20,
+      "sampled": 3
+    },
+    "grant-sentinel-payoff": {
+      "units": 86,
+      "sampled": 3
+    },
+    "grant-shielded-payoff": {
+      "units": 5,
+      "sampled": 3
+    },
+    "heal-payoff": {
+      "units": 50,
+      "sampled": 3
+    },
+    "own-upgrade-defeat-watcher": {
+      "units": 6,
+      "sampled": 3
+    },
+    "pilot-attach-trigger": {
+      "units": 86,
+      "sampled": 3
+    },
+    "ping-own-damage-payoff": {
+      "units": 9496,
+      "sampled": 18
+    },
+    "play-trigger-payoff": {
+      "units": 602,
+      "sampled": 3
+    },
+    "ramp-threshold": {
+      "units": 478,
+      "sampled": 3
+    },
+    "ready-reuse": {
+      "units": 6565,
+      "sampled": 13
+    },
+    "removal-defeat-watcher": {
+      "units": 363,
+      "sampled": 3
+    },
+    "sac-outlet-when-defeated": {
+      "units": 4919,
+      "sampled": 10
+    },
+    "self-defeat-defeat-watcher": {
+      "units": 225,
+      "sampled": 3
+    },
+    "the-force": {
+      "units": 1193,
+      "sampled": 3
+    },
+    "trait-reference": {
+      "units": 17131,
+      "sampled": 33
+    },
+    "upgrade-return-reattach": {
+      "units": 18,
+      "sampled": 3
+    },
+    "upgrade-stacking": {
+      "units": 6766,
+      "sampled": 13
+    },
+    "weaken-enemy-payoff": {
+      "units": 41,
+      "sampled": 3
+    },
+    "when-defeated-doubler": {
+      "units": 365,
+      "sampled": 3
+    },
+    "when-played-repeater": {
+      "units": 334,
+      "sampled": 3
+    }
+  }
+}

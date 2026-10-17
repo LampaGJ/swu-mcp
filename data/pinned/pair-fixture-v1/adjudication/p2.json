@@ -1,0 +1,130 @@
+{
+ "packet": "p2",
+ "items": [
+  {
+   "id": "09010009>05010030:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a unit, even if it's exhausted\" on a Force unit fires B's \"When a friendly Force unit attacks: ...create your Force token\". Agrees with haiku."
+  },
+  {
+   "id": "07010043>07010158:ready-reuse",
+   "final": "correct",
+   "reason": "A: \"Ready a unit and give a Shield token\" readies Khetanna after attacking so \"On Attack: The next Underworld unit you play... costs 1 resource less\" fires again. Agrees with haiku."
+  },
+  {
+   "id": "09010234>08010013:ready-reuse",
+   "final": "wrong",
+   "reason": "A only makes units \"enter play ready\" (needs a Tatooine base); it does not ready an already exhausted unit or re-use an ability, and Ezra's trigger is \"When a friendly unit's attack ends\". Agrees with haiku."
+  },
+  {
+   "id": "04010084>06010095:upgrade-stacking",
+   "final": "wrong",
+   "reason": "B needs \"an opponent controls an upgrade\"; A is a Piloting upgrade only on a friendly Vehicle, so you control it. Agrees with haiku."
+  },
+  {
+   "id": "08010071>05010232:ping-own-damage-payoff",
+   "final": "wrong",
+   "reason": "A deals damage to \"this unit\" (Haulcraft itself) and an enemy space unit; B's Grit needs damage on itself. Agrees with haiku."
+  },
+  {
+   "id": "05010140>05010062:upgrade-stacking",
+   "final": "correct",
+   "reason": "A: \"Attach to a friendly non-Vehicle unit\" fits Axe Woves (Trooper); B gets \"+1/+1 for each upgrade on him\". Agrees with haiku."
+  },
+  {
+   "id": "09010241>09010221:bounce-replay",
+   "final": "correct",
+   "reason": "A: \"You may return a non-leader unit to its owner's hand\" can return friendly Teeka, replaying \"When Played: Choose one\". Agrees with haiku."
+  },
+  {
+   "id": "09010042>04010090:ready-reuse",
+   "final": "correct",
+   "reason": "A: \"When Played: You may ready another unit\" readies exhausted Executor, whose \"When Played/On Attack/When Defeated: Create 3 TIE Fighter tokens\" fires again on a second attack. Agrees with haiku."
+  },
+  {
+   "id": "09010009>08010223:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a unit, even if it's exhausted\" (not bases) on Halo; its \"When Attack Ends: If the defending unit was defeated, give a Shield token\" can fire. Agrees with haiku."
+  },
+  {
+   "id": "05010205>06010048:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a unit\" on Captain Rex fires \"When this unit completes an attack: Give this unit and an enemy unit Sentinel\". Agrees with haiku."
+  },
+  {
+   "id": "04010245>05010062:upgrade-stacking",
+   "final": "wrong",
+   "reason": "R2-D2 \"can be played on a friendly Vehicle unit with a Pilot on it\"; Axe Woves is a Trooper, not a Vehicle. Agrees with haiku."
+  },
+  {
+   "id": "05010200>05010138:trait-reference",
+   "final": "correct",
+   "reason": "B: \"Attach to a Force unit\"; A has printed trait Force. Agrees with haiku."
+  },
+  {
+   "id": "05010140>07010152:extra-attack-on-attack",
+   "final": "wrong",
+   "reason": "A: \"If attached unit is Darth Maul, you may attack with him\"; the attack is only by Maul, so C-3PO's \"On Attack\" does not fire. Agrees with haiku."
+  },
+  {
+   "id": "09010124>07010237:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"When you play a unit... You may attack with a unit\" can attack with Qui-Gon, firing \"When Played/On Attack: Look at the top 3 cards\". Agrees with haiku."
+  },
+  {
+   "id": "04010174>07010221:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Then, attack with the chosen unit\" on Gorn fires \"On Attack: Take control of an enemy Credit token\". Agrees with haiku."
+  },
+  {
+   "id": "06010227>09010260:upgrade-stacking",
+   "final": "wrong",
+   "reason": "A is \"Attach to a Vehicle unit\" so it cannot upgrade a base; B needs \"an upgraded base\". Agrees with haiku."
+  },
+  {
+   "id": "07010247>06010254:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"You may deal damage to a unit equal to the number of friendly Credit tokens\" (at least 1) can damage a friendly unit, enabling B's \"If you control a damaged unit\". Agrees with haiku."
+  },
+  {
+   "id": "06010174>09010012:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"You may attack with another Aggression unit\"; Poggle is Aggression and deployed has \"On Attack: You may ready a friendly Creature unit\". Agrees with haiku."
+  },
+  {
+   "id": "05010221>08010016:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"attack with a unit\" fires Shin Hati's \"When a friendly unit's attack ends\" again (needs base damage for the payoff, trigger still occurs). Agrees with haiku."
+  },
+  {
+   "id": "07010080>04010042:ping-own-damage-payoff",
+   "final": "wrong",
+   "reason": "A says \"An opponent chooses one\" of the modes and only one mode is the 5 damage, so A cannot reliably put damage on your own unit for B's \"+1/+0 ... for each damage on it\". Overrides haiku: correct -> wrong."
+  },
+  {
+   "id": "06010185>04010044:trait-reference",
+   "final": "correct",
+   "reason": "B: \"give a Shield token to a damaged Vehicle unit\"; A has printed trait Vehicle (must be damaged). Agrees with haiku."
+  },
+  {
+   "id": "08010188>08010168:ready-reuse",
+   "final": "correct",
+   "reason": "A: \"Ready a unit that was damaged this phase\" can ready Migs after he attacks and takes damage, so \"On Attack\" fires again. Agrees with haiku."
+  },
+  {
+   "id": "07010133>09010109:sac-outlet-when-defeated",
+   "final": "correct",
+   "reason": "A: \"Defeat a non-leader unit\" on friendly Magnaguard (printed power 5) fires \"When Defeated: If this unit had 5 or more power... play this unit from your discard pile for free\". Agrees with haiku."
+  },
+  {
+   "id": "08010259>09010078:ping-own-damage-payoff",
+   "final": "correct",
+   "reason": "A: \"You may deal 1 damage to a ground unit\" can hit friendly Qui-Gon (Ground, 5 HP), whose \"Grit\" gains power per damage. Agrees with haiku."
+  },
+  {
+   "id": "09010149>04010046:extra-attack-on-attack",
+   "final": "correct",
+   "reason": "A: \"Attack with a friendly unit. Then attack with it again\"; Paige as Pilot gives \"On Attack: Give an Experience token to this unit...\", firing twice. Agrees with haiku."
+  }
+ ]
+}
