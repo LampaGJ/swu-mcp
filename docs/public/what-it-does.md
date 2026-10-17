@@ -1,6 +1,6 @@
 # What swu-mcp does
 
-Last updated 2026-10-16.
+Last updated 2026-10-17.
 
 **TL;DR.** swu-mcp is a free add-on for AI assistants such as Claude. It lets the assistant look up Star Wars: Unlimited (SWU) trading cards, score them, suggest card combinations, check prices and quote the official rules. Every answer comes from saved data and fixed code. No AI guesses a number at the moment you ask.
 
@@ -11,7 +11,7 @@ Related pages: [how it was built](how-we-built-it.md) and [the Claude Code setup
 - **Star Wars: Unlimited (SWU)** is a trading card game made by Fantasy Flight Games.
 - **An AI assistant** here means a chat program such as Claude that can use outside tools.
 - **MCP** stands for Model Context Protocol. It is an open standard that lets an assistant call a small program, called a server, and get answers back. swu-mcp is one such server.
-- **A tool** is one question the server can answer, such as "show me this card". There are 28.
+- **A tool** is one question the server can answer, such as "show me this card". There are 45.
 - **Stdio** (standard input and output) means the assistant starts the server on your own computer and talks to it directly. Nothing runs on a website.
 - **Deterministic** means the same input always gives the same output.
 
@@ -26,7 +26,16 @@ You ask the assistant a question in plain language. The assistant picks the righ
 - **Check the market.** It shows the US price from TCGplayer, how often a card appears in online Premier decks (a deck format) and how often those decks win, and a score per dollar.
 - **Check the rules.** It holds the official Comprehensive Rules, the dated rulings for individual cards and the definitions of keywords. The assistant quotes them instead of recalling them.
 - **Find look-alikes.** It lists cards whose text reads alike, cards that do the same job under different names, and 32 groups of cards by role.
+- **Check a deck.** You give the assistant a decklist (a list of cards and how many of each). The server checks it against the deck-building rules, such as 50 cards and no more than 3 copies of one card, and names the rule behind each failure. It also shows the cost curve, the cards with the biggest aspect penalty, and cheaper cards that do the same job.
+- **Value a collection or a trade.** Give it the cards you own, or two piles of cards, and it adds up the US price and the rubric score. It shows what a deck still needs, what you could swap in from cards you own, and which side of a trade is worth more. The server stores none of these lists.
+- **Look up odds and ends.** It resolves a misspelled card name, lists the sets a card was printed in, and says whether a card is legal in each play format.
 - **See where data came from.** One tool reports the data date and the code version behind every score.
+
+## Combos come with proof, but stay guesses
+
+Every pairing, three-card chain and substitute now arrives with the card text that justifies it. The server quotes the short piece of each card's text behind each link, so the assistant can check the claim for itself. Each result is also marked `status: candidate`. That label means "a good idea to test", not "confirmed". The assistant should read both cards before it tells you a combo works.
+
+The server also offers a few reference pages the assistant can open: the scoring rubric, a glossary, a guide to which tool answers which question, and any one section of the rules. Two ready-made prompts guide the assistant through a rules question and through building a deck around a leader.
 
 ## One example, start to finish
 
@@ -46,9 +55,10 @@ You need Node.js 22 or newer. For Claude Code, run `claude mcp add swu -- npx -y
 
 ## What it does not do
 
-- It does not build decks or play the game for you.
+- It does not build a whole deck or play the game for you. It checks and improves a deck you bring.
+- It does not know banned or suspended cards. Legality is based on which sets a card is in.
 - It does not use a live AI model to score cards. Scores are fixed arithmetic over saved data.
-- It does not change anything. All 28 tools only read.
+- It does not change anything. All 45 tools only read.
 - It does not cover cards from before the Jump to Lightspeed set unless they were reprinted in it or later.
 - It does not give prices outside the US.
 - It is not tournament data. The play figures come from online games.

@@ -1,6 +1,6 @@
 # How swu-mcp was built
 
-Last updated 2026-10-16.
+Last updated 2026-10-17.
 
 **TL;DR.** swu-mcp was built in about one day by one maintainer working with Claude Code, an AI coding tool. The work ran from small written tasks, through fixed-rule code, to a check of the finished data against its sources. That check found real errors, and the project reports them openly. Related pages: [what it does](what-it-does.md) and [the Claude Code setup](claude-code-setup.md).
 
@@ -52,6 +52,17 @@ First, a fixed-rule audit ran nine checks over every record. It passed all nine,
 Second, a sampled review looked at the parts that carry meaning, such as parsed abilities and combos. Of 295 sampled items, small AI reviewers flagged 87 as wrong or unsure. A second, stronger reviewer re-checked each flag against the sources. It kept 46 as wrong and overturned 39. A spot check of 15 items marked correct overturned one. That puts the error rate at 15.8 percent of 292 judged items, and the report says it is a floor, not a ceiling.
 
 The errors cluster in combos (35.9 percent of sampled pairs) and parsed abilities (22.5 and 27.5 percent in two samples). The rules text had no errors in 40 sampled sections. The two main causes are conditions that the parser dropped and a combo step that ignored limits such as trait or arena. Follow-up issues (#11, #12 and #13) track the fixes.
+
+## Update, 2026-10-17: a second wave
+
+The first version was fast and rough, so the next wave went back and fixed what the review found. It had four parts.
+
+- **Card-text fixes.** The maintainer corrected the parser that reads each card's abilities, so fewer conditions get dropped.
+- **Pairing coverage (#14).** More cards now receive combo suggestions, so fewer cards come back empty.
+- **Evidence (#15).** Each pairing, three-card chain and substitute now carries the short piece of card text behind it, and a `status: candidate` label. Anyone can check a claim against the words on the cards.
+- **17 new tools (#5).** The server grew from 28 tools to 45. The new ones cover deck checks, collection and trade value, fuzzy name lookup, set and format lists, and ruling search. It also gained reference pages and two prompts. Each new tool got a test that calls it through the real server.
+
+The honest limit is the same. The combos are still candidates, but they now show their work.
 
 ## Rough numbers
 
