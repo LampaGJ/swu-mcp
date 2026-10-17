@@ -147,7 +147,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 
 ## Honest limits
 
-- Tag precision is unmeasured. The offers and wants tags behind pairings, trios and fungible classes come from a grammar plus a hand-reviewed table, and no labelled test set measures how often they are right.
+- Pairings, trios and fungible substitutes are candidates, not facts. Two sampled accuracy reviews ([round 1](docs/verification/2026-10-16.md), [round 2](docs/verification/2026-10-17-round2.md)) found card-text features wrong on about 1 card in 5, and pairing reasons wrong in about 40% of sampled pairs (95% interval 29–59%). Confirm a pairing against both cards' text before relying on it. Copied data is exact: card fields, rulings, prices, play stats and rules sections passed a full deterministic audit against the originals with no failures.
 - The play data is thin. It is online Karabast and Petranaki games in three Premier windows, not tournaments. Homeworlds (HMW) has under one week of play data and is outside the play fit.
 - Prices mostly follow rarity. They are US TCGplayer prices from one import, so cheap commons dominate any value-per-dollar ranking.
 - `total` is comparable only within a card type. `playCalibrated` is rank-meaningful only and is fitted to the same play data it is compared with, so a gap between score and play is partly circular.
