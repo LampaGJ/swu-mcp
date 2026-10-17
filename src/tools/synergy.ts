@@ -389,14 +389,18 @@ export function aspectCover(ctx: SynergyContext, input: unknown): ToolResult {
 
 const contexts = new WeakMap<CardStore, SynergyContext>();
 
+export function synergyContextOf(store: CardStore): SynergyContext {
+  let ctx = contexts.get(store);
+  if (ctx === undefined) {
+    ctx = loadSynergyContext(packageDirOf(store));
+    contexts.set(store, ctx);
+  }
+  return ctx;
+}
+
 function withContext(store: CardStore, run: (ctx: SynergyContext) => ToolResult): ToolResult {
   try {
-    let ctx = contexts.get(store);
-    if (ctx === undefined) {
-      ctx = loadSynergyContext(packageDirOf(store));
-      contexts.set(store, ctx);
-    }
-    return run(ctx);
+    return run(synergyContextOf(store));
   } catch (error) {
     if (error instanceof z.ZodError) throw error;
     return fail(error instanceof Error ? error.message : String(error));

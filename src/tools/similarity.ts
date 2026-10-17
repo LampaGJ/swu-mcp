@@ -22,7 +22,7 @@ import type { ToolResult } from "../tools.js";
  * read from files written by `pnpm similarity`; no model runs at query time.
  */
 
-interface SimilarityData {
+export interface SimilarityData {
   similar: NeighboursFile;
   kin: NeighboursFile;
   clusters: ClustersFile;
@@ -36,7 +36,7 @@ function readJson(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-function similarityData(store: CardStore): SimilarityData {
+export function similarityData(store: CardStore): SimilarityData {
   const hit = cache.get(store);
   if (hit !== undefined) return hit;
   const dir = path.join(packageDirOf(store), "similarity");

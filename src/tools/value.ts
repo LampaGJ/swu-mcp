@@ -31,7 +31,7 @@ import type { ToolResult } from "../tools.js";
 
 const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
-interface ValueData {
+export interface ValueData {
   packageDir: string;
   rows: Map<string, ScoreRow>;
   features: Map<string, SwuCardFeatures>;
@@ -48,7 +48,7 @@ function readJson(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-function valueData(store: CardStore): ValueData {
+export function valueData(store: CardStore): ValueData {
   const hit = cache.get(store);
   if (hit !== undefined) return hit;
   const packageDir = packageDirOf(store);

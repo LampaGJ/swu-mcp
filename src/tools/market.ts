@@ -17,7 +17,7 @@ import type { ToolResult } from "../tools.js";
  * <package>/scores/scores.json once per store, and answers in compact TOON. Nothing is computed by a model.
  */
 
-interface MarketData {
+export interface MarketData {
   prices: PricesFile;
   play: PlayFile;
   priceByKey: Map<string, PricesFile["cards"][number]>;
@@ -30,7 +30,7 @@ function readJson(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-function marketData(store: CardStore): MarketData {
+export function marketData(store: CardStore): MarketData {
   const hit = cache.get(store);
   if (hit !== undefined) return hit;
   const dir = path.join(packageDirOf(store), "market");
