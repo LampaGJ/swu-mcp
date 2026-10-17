@@ -66,10 +66,10 @@ The honest limit is the same. The combos are still candidates, but they now show
 
 ## Rough numbers
 
-- About 60 commits at the time of writing, from the git history.
-- 13 issues, 5 of them closed.
-- 28 tools, and one test that calls each.
-- Nearly 400 automated tests. One test needs a rules PDF that is kept out of the repository, so it fails on a fresh checkout without it.
+- About 105 commits at the time of writing, from the git history.
+- 15 issues, 12 of them closed before this update.
+- 45 tools, and one test that calls each.
+- About 700 automated tests. One test needs a rules PDF that is kept out of the repository, so it fails on a fresh checkout without it.
 
 ## Honest trade-offs
 
