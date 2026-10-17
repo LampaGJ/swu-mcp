@@ -8,7 +8,7 @@
  *
  * Usage: pnpm package:zip [--data <run dir>] [--out <dir>] [--no-zip]
  *   --data    default: newest dated dir under data/runs (SWU_MCP_DATA wins)
- *   --out     default: ~/Library/Mobile Documents/com~apple~CloudDocs/_temp
+ *   --out     default: <repo>/tmp/package
  *   --no-zip  stage the package only
  */
 import { execFileSync } from "node:child_process";
@@ -82,7 +82,7 @@ function withoutWallTimes(value: unknown): unknown {
 }
 
 function main(): void {
-  const { values } = parseArgs({ options: { data: { type: "string" }, out: { type: "string", default: "~/Library/Mobile Documents/com~apple~CloudDocs/_temp" }, "no-zip": { type: "boolean", default: false } } });
+  const { values } = parseArgs({ options: { data: { type: "string" }, out: { type: "string", default: path.join(REPO_ROOT, "tmp/package") }, "no-zip": { type: "boolean", default: false } } });
   const runDir = path.resolve(expandHome(values.data ?? resolveDataDir()));
   const build = buildRecordSchema.parse(readJson(runDir, "build.json"));
   const date = z.iso.date().parse(build.date);
