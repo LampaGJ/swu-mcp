@@ -521,7 +521,7 @@
   },
   {
    "tag": "offers:damage-own-base",
-   "note": "Only scaling wordings such as 'every 5 damage on your base' read it, and they parse as self-damaged. Reviewed #14."
+   "note": "Only scaling wordings such as 'every 5 damage on your base' read it, and they parse as wants:own-base-damaged, which no row feeds. Reviewed #14, #15."
   }
  ]
 }

@@ -41,7 +41,9 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   const s = (raw ?? "").trim();
   const l = s.toLowerCase();
   const t: SwuTarget = { side: "any", kind: "ref", arena: "any", quant: "one", restrict: [], text: "" };
-  if (/\bfriendly\b|\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b|\byou (?:control|play)\b/.test(l)) t.side = "friendly";
+  // "your" inside a relative clause ("a unit that attacked your base") does not make the target friendly.
+  const noun = l.split(/\s(?:that|which|who)\s/)[0];
+  if (/\bfriendly\b|\byou (?:control|play)\b/.test(l) || /\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b/.test(noun)) t.side = "friendly";
   if (/\benemy\b|\bopponent'?s?'?\b|\bthe defender\b|\bthe attacker\b|\bdefending unit\b|\bthey control\b/.test(l)) {
     t.side = t.side === "friendly" ? "mixed" : "enemy";
   }
