@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { hex64 } from "./schemas/hash.js";
 import { REPO_ROOT } from "./paths.js";
 
 /**
@@ -14,9 +15,9 @@ export const dataReleaseSchema = z.strictObject({
   tag: z.string().min(1),
   asset: z.string().min(1),
   url: z.url(),
-  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  sha256: hex64,
   bytes: z.number().int().positive(),
-  buildHash: z.string().regex(/^[0-9a-f]{64}$/),
+  buildHash: hex64,
 });
 export type DataRelease = z.infer<typeof dataReleaseSchema>;
 

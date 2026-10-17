@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "./hash.js";
 
 /**
  * @displayName SWU card-feature schemas
@@ -313,7 +314,7 @@ export const swuCuratedEntrySchema = z.strictObject({
   title: z.string(),
   face: swuFeatureFaceSchema,
   sourceClause: z.string().min(1),
-  clauseSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  clauseSha256: hex64,
   override: z.boolean().optional(),
   confidence: z.enum(["high", "medium", "low"]).optional(),
   newVocab: z.array(z.string()).optional(),
@@ -379,14 +380,13 @@ export const swuCardFeaturesCoverageSchema = z.strictObject({
 });
 export type SwuCardFeaturesCoverage = z.infer<typeof swuCardFeaturesCoverageSchema>;
 
-const sha256Hex = z.string().regex(/^[0-9a-f]{64}$/);
 
 export const swuCardFeaturesReplaySchema = z.strictObject({
-  inputHash: sha256Hex,
+  inputHash: hex64,
   codeCommit: z.string().min(1),
-  curatedTableSha256: sha256Hex,
+  curatedTableSha256: hex64,
   curatedTableVersion: z.number().int(),
   grammarVersion: z.number().int(),
-  outputHashes: z.record(z.string(), sha256Hex),
+  outputHashes: z.record(z.string(), hex64),
 });
 export type SwuCardFeaturesReplay = z.infer<typeof swuCardFeaturesReplaySchema>;

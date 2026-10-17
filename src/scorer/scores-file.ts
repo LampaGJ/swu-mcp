@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { countAtOrBelow } from "./rank.js";
 import type { CardScore } from "./score.js";
@@ -11,7 +12,6 @@ import type { CardScore } from "./score.js";
  * so the file bytes do not depend on floating-point noise.
  */
 
-const sha = z.string().regex(/^[0-9a-f]{64}$/);
 const nullableNumber = z.number().nullable();
 
 export const scoreComponentsSchema = z.strictObject({
@@ -51,23 +51,23 @@ export type ScoreRow = z.infer<typeof scoreRowSchema>;
 
 export const scoresFileSchema = z.strictObject({
   rubricVersion: z.string(),
-  coefficientsSha256: sha,
+  coefficientsSha256: hex64,
   cards: z.array(scoreRowSchema),
 });
 
 export const scoresReplaySchema = z.strictObject({
   rubricVersion: z.string(),
   inputHashes: z.strictObject({
-    featuresJson: sha,
-    cardsToon: sha,
-    featuresReplayInputHash: sha,
-    coefficientsFile: sha,
-    swuStatsCapture: sha,
+    featuresJson: hex64,
+    cardsToon: hex64,
+    featuresReplayInputHash: hex64,
+    coefficientsFile: hex64,
+    swuStatsCapture: hex64,
   }),
   codeCommit: z.string().min(1),
-  coefficientsSha256: sha,
+  coefficientsSha256: hex64,
   scoredCards: z.number().int(),
-  outputHash: sha,
+  outputHash: hex64,
 });
 export type ScoresReplay = z.infer<typeof scoresReplaySchema>;
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { priceCellsByCardId } from "../swu/llm-flatten.js";
 
@@ -121,7 +122,7 @@ export const playFileSchema = z.strictObject({
       endWeek: z.number().int(),
       startDate: z.string(),
       endDate: z.string(),
-      sha256: z.string().regex(/^[0-9a-f]{64}$/),
+      sha256: hex64,
       playerGames: z.number().int(),
     }),
   ),

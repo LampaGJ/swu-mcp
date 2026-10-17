@@ -13,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
+import { hex64 } from "../../src/schemas/hash.js";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { parseUnitId } from "./pair-fixture.js";
 import { serialize } from "./sample.js";
@@ -39,7 +40,7 @@ export const FixtureSchema = z.strictObject({
   version: z.literal(FIXTURE_VERSION),
   seed: z.string(),
   sourceRun: z.strictObject({ date: z.string(), buildHash: z.string() }),
-  inputsSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  inputsSha256: hex64,
   items: z.array(z.strictObject({ id: z.string(), offer: z.string(), want: z.string(), row: z.string(), label: Label, reason: z.string() })),
 });
 export type Fixture = z.infer<typeof FixtureSchema>;

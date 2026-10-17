@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 import { sha256Hex } from "../swu/canonical.js";
 
 /**
@@ -11,7 +12,6 @@ import { sha256Hex } from "../swu/canonical.js";
  * upgrades, leaders, bases), the play-calibrated model and the input hashes behind them.
  */
 
-const sha = z.string().regex(/^[0-9a-f]{64}$/);
 
 export const termSchema = z.strictObject({ b: z.number(), se: z.number(), support: z.number().int().nonnegative() });
 export type Term = z.infer<typeof termSchema>;
@@ -41,13 +41,13 @@ export const coefficientsSchema = z.strictObject({
   rubricVersion: z.string().min(1),
   source: z.strictObject({
     rubricDoc: z.string(),
-    scriptSha256: sha,
-    featuresModuleSha256: sha,
-    featuresJsonSha256: sha,
-    cardsToonSha256: sha,
-    featuresReplayInputHash: sha,
+    scriptSha256: hex64,
+    featuresModuleSha256: hex64,
+    featuresJsonSha256: hex64,
+    cardsToonSha256: hex64,
+    featuresReplayInputHash: hex64,
     swuStatsCapture: z.string(),
-    swuStatsCaptureSha256: sha,
+    swuStatsCaptureSha256: hex64,
   }),
   vanilla: z.strictObject({ n: z.number().int().positive(), power: curveSchema, hp: curveSchema }),
   designer: z.strictObject({

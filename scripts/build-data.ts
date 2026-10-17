@@ -21,6 +21,7 @@ import { parseArgs } from "node:util";
 import { z } from "zod";
 import { DATED_DIR } from "../src/data.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
+import { hex64 } from "../src/schemas/hash.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
 import { progress } from "./lib/progress.mjs";
@@ -44,14 +45,14 @@ const buildRecordSchema = z.strictObject({
   originals: z.string(),
   codeCommit: z.string(),
   wallTimeMs: z.number().int().nonnegative(),
-  buildHash: z.string().regex(/^[0-9a-f]{64}$/),
+  buildHash: hex64,
   steps: z.array(
     z.strictObject({
       name: z.string(),
       command: z.string(),
       wallTimeMs: z.number().int().nonnegative(),
-      replayHash: z.string().regex(/^[0-9a-f]{64}$/),
-      outputs: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/)),
+      replayHash: hex64,
+      outputs: z.record(z.string(), hex64),
     }),
   ),
 });

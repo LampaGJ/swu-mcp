@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 
 export const ruleSectionSchema = z.strictObject({
   id: z.string().min(1),
@@ -17,7 +18,7 @@ export const sectionsFileSchema = z.strictObject({
     version: z.string().min(1),
     coverDate: z.string().min(1),
     pages: z.number().int(),
-    pdfSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    pdfSha256: hex64,
     preamble: z.string(),
   }),
   stats: z.strictObject({
@@ -41,7 +42,7 @@ export const cardRulingsFileSchema = z.strictObject({
   schemaVersion: z.literal(1),
   source: z.strictObject({
     originalsRun: z.string(),
-    rawPagesManifestSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    rawPagesManifestSha256: hex64,
   }),
   stats: z.strictObject({
     printingsWithRulings: z.number().int(),

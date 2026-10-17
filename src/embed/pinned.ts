@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { hex64 } from "../schemas/hash.js";
 import { sha256Hex } from "../swu/canonical.js";
 
 /**
@@ -13,7 +14,7 @@ import { sha256Hex } from "../swu/canonical.js";
 
 export const sha256Bytes = sha256Hex;
 
-export const hex64 = z.string().regex(/^[0-9a-f]{64}$/);
+export { hex64 };
 
 export const captureIndexSchema = z.strictObject({
   renderVersion: z.number().int().positive(),
