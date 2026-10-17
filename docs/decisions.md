@@ -25,7 +25,7 @@ This is the owner's standing intent for swu-mcp, one entry per decision, with th
 
 ## Scope and format
 
-**D6. Logical cards only, Jump to Lightspeed (JTL) and later** (2026-10-16). Reprints and variants fold into one logical card; earlier-only cards are out. Why: matches Premier legality and keeps the package small. Enforced in: `src/swu/` flatten pipeline.
+**D6. Logical cards only, Jump to Lightspeed (JTL) and later** (2026-10-16). Reprints and variants fold into one logical card; earlier-only cards are out. Deck data is Premier only: Eternal decks are excluded by an explicit format filter, never by query alone (owner ruling 2026-10-17). Why: matches Premier legality and keeps the package small. Enforced in: `src/swu/` flatten pipeline.
 
 **D7. No card images; image URL stems only, with the prefix in the package README** (2026-10-16). Why: the owner does not need images; the stems keep them reachable.
 
