@@ -42,6 +42,12 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   similar_cards: { cardKey: ELIA_KANE, limit: 5 },
   kin_cards: { cardKey: ELIA_KANE, limit: 5 },
   cluster: { cardKey: ELIA_KANE, members: 5 },
+  get_cards_batch: { cardKeys: [ELIA_KANE, "0101033"], fields: ["title", "cost"] },
+  resolve_card_name: { text: "elia kane", limit: 3 },
+  get_printings: { cardKey: ELIA_KANE },
+  list_sets: {},
+  format_legality: { cardKey: ELIA_KANE },
+  search_rulings: { query: "damage", since: "2024-01-01", limit: 3 },
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {
@@ -94,5 +100,14 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
     expect(resources).toContain("rules://core-primer");
     const primer = (await client.readResource({ uri: "rules://core-primer" })).contents[0];
     expect("text" in primer ? primer.text.length : 0).toBeGreaterThan(1000);
+  });
+
+  it("serves the rubric, glossary, usage guide and a rules section, and both prompts", async () => {
+    for (const uri of ["swu://rubric", "swu://glossary", "swu://usage-guide", "swu://rules/1.7"]) {
+      const content = (await client.readResource({ uri })).contents[0];
+      expect("text" in content ? content.text.length : 0, uri).toBeGreaterThan(100);
+    }
+    const prompts = (await client.listPrompts()).prompts.map((prompt) => prompt.name);
+    expect(prompts).toEqual(expect.arrayContaining(["rules_question", "build_deck_for_leader"]));
   });
 });
