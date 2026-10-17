@@ -15,7 +15,7 @@ import { GRAMMAR_VERSION } from "./vocab.js";
 export { extractFeatures, sortKeysDeep, type ExtractionResult } from "./extract.js";
 export { CuratedTableError, StaleCuratedEntriesError, curatedReport, loadCuratedTable } from "./curated.js";
 export { SWU_PRODUCTIONS, parseClause, parseTarget } from "./grammar.js";
-export { extractGranted, isKeywordLine, normalizeText, parseHeader, parseKeywordList, splitHeader, splitSentences, stripReminders } from "./segment.js";
+export { extractGranted, isKeywordLine, normalizeText, parseHeader, parseKeywordList, splitHeader, splitSentences, stripReminders, unwrapParenthetical } from "./segment.js";
 export { buildTags } from "./tags.js";
 export { walkAbilities, walkKeywords } from "./walk.js";
 export { GRAMMAR_VERSION } from "./vocab.js";

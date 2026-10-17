@@ -12,7 +12,7 @@ import {
 import { compareCodePoints, sha256Hex } from "./deps.js";
 import { curatedKey, curatedReport, type CuratedIndex, type CuratedReport } from "./curated.js";
 import { parseClause } from "./grammar.js";
-import { extractGranted, isKeywordLine, normalizeText, parseHeader, parseKeywordList, splitHeader, splitSentences, stripReminders } from "./segment.js";
+import { extractGranted, isKeywordLine, normalizeText, parseHeader, parseKeywordList, splitHeader, splitSentences, stripReminders, unwrapParenthetical } from "./segment.js";
 import { buildTags } from "./tags.js";
 import { ASPECTS, KEYWORDS, TOKENS, alternation, escapeRegex } from "./vocab.js";
 import { walkAbilities, walkKeywords } from "./walk.js";
@@ -137,7 +137,8 @@ function parseParagraphs(ctx: Context, card: SwuFeatureInputCard, face: SwuFeatu
   const paragraphs = text.split(/\n+/).map((p) => p.trim()).filter(Boolean);
   let modalHost: SwuAbility | null = null;
   for (let pi = 0; pi < paragraphs.length; pi++) {
-    const { text: p0 } = stripReminders(paragraphs[pi]);
+    const stripped = stripReminders(paragraphs[pi]).text;
+    const p0 = stripped || unwrapParenthetical(paragraphs[pi]) || "";
     if (!p0) {
       ctx.stats.reminderOnly++;
       continue;

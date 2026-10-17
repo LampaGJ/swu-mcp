@@ -66,6 +66,16 @@ const featureFields = {
   state: z.string().optional(),
   per: z.string().optional(),
   trait: z.string().optional(),
+  /** The grammar fills these; the curated table may omit them. */
+  host: swuTargetSchema.optional(),
+  applies: swuTargetSchema.optional(),
+  check: z.string().optional(),
+  conditional: z.boolean().optional(),
+  frequency: z.string().optional(),
+  oneShot: z.boolean().optional(),
+  every: z.number().optional(),
+  verb: z.string().optional(),
+  dest: z.string().optional(),
 };
 
 /** Fields a grammar production or a curated entry may attach to a feature. */

@@ -22,6 +22,7 @@ export function normalizeText(raw: string | null | undefined): string {
     .replace(/<uq>/g, "unique")
     .replace(/<bullet>/g, "\n")
     .replace(/[‘’]/g, "'")
+    .replace(/[\u2010\u2011]/g, "-")
     .replace(/[–−](?=\d|X)/g, "-")
     .replace(new RegExp(`(${ASPECT_RUN})(?=${ASPECT_RUN})`, "g"), "$1 ")
     .replace(/[ \t]+/g, " ");
@@ -45,6 +46,18 @@ export function stripReminders(s: string): { text: string; removed: number } {
     if (depth === 0) out += ch;
   }
   return { text: out.replace(/\s+([.,;:])/g, "$1").replace(/\s{2,}/g, " ").trim(), removed };
+}
+
+/** A paragraph that is one parenthetical from end to end is the card's rules text (a token), not a reminder. */
+export function unwrapParenthetical(paragraph: string): string | null {
+  const p = paragraph.trim();
+  if (!p.startsWith("(") || !p.endsWith(")")) return null;
+  let depth = 0;
+  for (let i = 0; i < p.length; i++) {
+    if (p[i] === "(") depth++;
+    else if (p[i] === ")" && --depth === 0 && i < p.length - 1) return null;
+  }
+  return depth === 0 ? p.slice(1, -1).trim() : null;
 }
 
 /**
