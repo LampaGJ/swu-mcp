@@ -8,11 +8,10 @@
  * flattener, folds printings into logical cards, and marks the cards in the delivered package scope
  * (a printing in Jump to Lightspeed or later).
  */
-import { readdirSync, readFileSync } from "node:fs";
-import os from "node:os";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { compareCodePoints, sha256Hex } from "../../src/swu/canonical.js";
+import { sha256Hex } from "../../src/swu/canonical.js";
 import {
   buildLogicalCards,
   flattenPrinting,
@@ -24,9 +23,10 @@ import {
   type FlatRow,
 } from "../../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../../src/swu/raw-manifest.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestOriginalsDir } from "../lib/originals.js";
 
-export const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
+export { DEFAULT_ORIGINALS_ROOT, expandHome, newestOriginalsDir };
+
 
 /** Release order that setReleaseOrder returns for a code missing from the table (src/swu/llm-flatten.ts). */
 const UNKNOWN_ORDER = Number.MAX_SAFE_INTEGER;
@@ -55,20 +55,6 @@ export interface Originals {
   /** Logical cards with a printing in Jump to Lightspeed or later (the delivered package scope). */
   kept: FlatRow[];
   keptKeys: Set<string>;
-}
-
-export function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-export function newestOriginalsDir(root: string = DEFAULT_ORIGINALS_ROOT): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
 }
 
 export function loadOriginals(originalsDir: string): Originals {

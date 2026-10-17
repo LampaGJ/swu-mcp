@@ -14,42 +14,26 @@
  *
  * Exit codes: 0 ok, 3 stale curated entries (outputs are still written).
  */
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { StaleCuratedEntriesError, assertNoStaleCurated, buildFeatureRun } from "../src/ability-grammar/index.js";
-import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
+import { sha256Hex } from "../src/swu/canonical.js";
 import { buildLogicalCards, flattenPrinting, newFlattenIssues, splitByCurrentSets, type FlatRow } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const pageSchema = z.object({
   data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })),
   meta: z.looseObject({ pagination: z.looseObject({ total: z.number().int() }) }),
 });
 const toonSchema = z.object({ cards: z.array(z.record(z.string(), z.unknown())) });
-
-function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
 
 function cardsFromOriginals(originalsDir: string, tick: (done: number) => void): { rows: FlatRow[]; runDate: string } {
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
@@ -92,7 +76,7 @@ function main(): void {
     rows = toonSchema.parse(decode(readFileSync(path.resolve(expandHome(values.cards)), "utf8"))).cards;
     label = "from-cards";
   } else {
-    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
     const loaded = cardsFromOriginals(originalsDir, (done) => p.tick(done, { phase: "read-pages" }));
     rows = loaded.rows;
     label = loaded.runDate;

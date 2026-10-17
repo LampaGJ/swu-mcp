@@ -13,7 +13,6 @@
  */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
@@ -44,6 +43,7 @@ import { loadSynergyContext } from "../src/synergy/context.js";
 import { TRIO_FANOUT } from "../src/synergy/trios.js";
 import { TOOLS } from "../src/tools.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { expandHome } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
@@ -62,10 +62,6 @@ const TRIO_SHAPE_MEANING: Record<string, string> = {
   "convergent-same-want": "A and B both feed the same want of C.",
   loop: "A feeds B, B feeds C and C feeds A.",
 };
-
-function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
 
 const read = (dir: string, rel: string): string => readFileSync(path.join(dir, rel), "utf8");
 const readJson = (dir: string, rel: string): unknown => JSON.parse(read(dir, rel));

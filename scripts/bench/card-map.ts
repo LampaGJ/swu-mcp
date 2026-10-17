@@ -10,7 +10,7 @@ import { compareCodePoints } from "../../src/swu/canonical.js";
 import { printingCardKeys, type FlatRow } from "../../src/swu/llm-flatten.js";
 import { loadRawPrintings, packageRawManifestSha256 } from "../lib/raw-pages.js";
 
-export const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
+export { DEFAULT_ORIGINALS_ROOT } from "../lib/originals.js";
 
 /** Weekly Play and promo printings reuse a main set's code with their own numbering, so the main-set numbering wins. */
 const VARIANT_RANK = [

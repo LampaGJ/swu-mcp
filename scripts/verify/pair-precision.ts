@@ -7,7 +7,7 @@
  *   --run  default: newest dated directory under data/runs
  * Output: JSON on stdout and <run>/verify/pair-precision.json. Always exits 0.
  */
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -15,6 +15,7 @@ import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { FixtureSchema, type Fixture } from "./pair-fixture-pin.js";
+import { newestDatedDir } from "../lib/originals.js";
 import { pairUnits } from "./pair-fixture.js";
 import { serialize } from "./sample.js";
 import { REPO_ROOT } from "../../src/paths.js";
@@ -81,19 +82,9 @@ export function emittedIds(runDir: string): Set<string> {
   return new Set(pairUnits(pairs).map((unit) => unit.id));
 }
 
-function newestRun(root: string): string {
-  const names = readdirSync(root, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(e.name))
-    .map((e) => e.name)
-    .sort(compareCodePoints);
-  const newest = names.at(-1);
-  if (newest === undefined) throw new Error(`no dated run under ${root}`);
-  return path.join(root, newest);
-}
-
 function main(): void {
   const { values } = parseArgs({ options: { run: { type: "string" }, fixture: { type: "string" } } });
-  const runDir = path.resolve(values.run ?? newestRun(path.join(REPO_ROOT, "data/runs")));
+  const runDir = path.resolve(values.run ?? newestDatedDir(path.join(REPO_ROOT, "data/runs"), "run"));
   const fixtureFile = path.resolve(values.fixture ?? path.join(REPO_ROOT, "data/fixtures/pairs-v1.json"));
   const fixture = FixtureSchema.parse(JSON.parse(readFileSync(fixtureFile, "utf8")));
   const result = { run: path.basename(runDir), ...report(fixture, emittedIds(runDir)) };

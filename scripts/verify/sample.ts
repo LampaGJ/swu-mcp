@@ -23,8 +23,8 @@ import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { REPO_ROOT } from "../../src/paths.js";
+import { DEFAULT_ORIGINALS_ROOT, newestDatedDir } from "../lib/originals.js";
 
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 
 type Rec = Record<string, unknown>;
 
@@ -646,16 +646,6 @@ function parseAt<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
 const recs = z.array(z.record(z.string(), z.unknown()));
 const readJson = <T>(file: string, schema: z.ZodType<T>): T => parseAt(schema, JSON.parse(readFileSync(file, "utf8")), file);
 
-function newestDatedDir(root: string): string {
-  const names = readdirSync(root, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(e.name))
-    .map((e) => e.name)
-    .sort(compareCodePoints);
-  const newest = names.at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
 function decodeTable(file: string, name: string): Rec[] {
   const table = decode(readFileSync(file, "utf8")) as Record<string, unknown>;
   return parseAt(recs, table[name], `${file}#${name}`);
@@ -713,7 +703,7 @@ export function loadInputs(options: { originalsDir: string; runDir: string }): I
 
 function main(): void {
   const { values } = parseArgs({ options: { originals: { type: "string" }, run: { type: "string" }, out: { type: "string" }, seed: { type: "string" }, date: { type: "string" } } });
-  const originalsDir = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT));
+  const originalsDir = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals"));
   const date = values.date ?? path.basename(originalsDir);
   const runDir = path.resolve(values.run ?? path.join(REPO_ROOT, "data/runs", date));
   const outDir = path.resolve(values.out ?? path.join(REPO_ROOT, "tmp/verify/packets"));

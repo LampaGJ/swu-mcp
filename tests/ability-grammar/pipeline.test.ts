@@ -234,6 +234,7 @@ describe("determinism", () => {
       path.join(REPO_ROOT, "scripts/card-features.ts"),
       path.join(REPO_ROOT, "scripts/lib/raw-pages.ts"),
       path.join(REPO_ROOT, "scripts/lib/code-commit.ts"),
+      path.join(REPO_ROOT, "scripts/lib/originals.ts"),
       path.join(REPO_ROOT, "src/scorer/rank.ts"),
     ];
     const banned = /Date\.now|new Date|Math\.random|localeCompare|Intl\.|toLocale|performance\.now/;

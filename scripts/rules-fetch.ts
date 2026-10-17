@@ -15,8 +15,7 @@
  *   --out            default: <repo>/data/runs/<date>/rules, <date> = --date or the fetch date
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
@@ -24,33 +23,20 @@ import { z } from "zod";
 import { buildRulesRun } from "../src/rules/build.js";
 import { buildCardRulings } from "../src/rules/rulings.js";
 import { rulesCoreFileSchema, rulesReplaySchema, type CardRulingsFile } from "../src/rules/schemas.js";
-import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
+import { canonicalJson, sha256Hex } from "../src/swu/canonical.js";
 import type { RawCardRecord } from "../src/swu/llm-flatten.js";
 import { swuGlossarySchema } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
 const DEFAULT_URL = "https://cdn.starwarsunlimited.com//SWH_Comp_Rules_v8_0_e26603c6e1.pdf";
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_PRIMER_TOKENS = 4000;
 
 const pageSchema = z.object({ data: z.array(z.looseObject({ attributes: z.record(z.string(), z.unknown()) })) });
 const fetchRecordSchema = z.strictObject({ url: z.string().nullable(), fetchedAt: z.iso.date(), sha256: z.string(), bytes: z.number().int(), fileName: z.string() });
-
-const expandHome = (value: string): string => (value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value);
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
 
 function pdftotextVersion(): string {
   const result = spawnSync("pdftotext", ["-v"], { encoding: "utf8" });
@@ -114,7 +100,7 @@ async function main(): Promise<void> {
 
   let cardRulings: CardRulingsFile | null = null;
   if (!values["skip-rulings"]) {
-    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+    const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
     p.log({ phase: "read-pages", originalsDir });
     const { records, source } = loadRawRecords(originalsDir, (done) => p.tick(done, { phase: "read-pages" }));
     cardRulings = buildCardRulings(records, source);

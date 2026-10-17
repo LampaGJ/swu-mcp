@@ -14,7 +14,6 @@
  *   --date       default: the day the raw card-list run finished
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
@@ -35,11 +34,10 @@ import {
 import { buildReadme } from "../src/swu/llm-package-readme.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, expandHome, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
-const DATED_DIR = /^\d{4}-\d{2}-\d{2}$/;
 
 const DOCS = [
   {
@@ -88,20 +86,6 @@ const printingPriceSchema = z.object({
   price_foil: z.number().nullable(),
 });
 
-function expandHome(value: string): string {
-  return value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
-}
-
-function newestDatedDir(root: string): string {
-  const names = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints);
-  const newest = names.at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
-
 function readJson<T>(file: string, schema: z.ZodType<T>): T {
   return schema.parse(JSON.parse(readFileSync(file, "utf8")));
 }
@@ -135,7 +119,7 @@ function main(): void {
       date: { type: "string" },
     },
   });
-  const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT)));
+  const originalsDir = path.resolve(expandHome(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals")));
   const runsRoot = path.resolve(expandHome(values.runs ?? path.join(REPO_ROOT, "data/runs")));
   const pagesDir = path.join(originalsDir, "swu-cards/raw-pages");
   const snapshotsDir = path.join(originalsDir, "swu-cards/catalogue-snapshots");

@@ -10,26 +10,19 @@
  *   --table     default: <repo>/data/complementarity.json
  *   --out       default: data/runs/<date>/synergy next to the features directory
  */
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { DATED_DIR } from "../src/data.js";
 import { buildSynergyRun } from "../src/synergy/run.js";
-import { compareCodePoints } from "../src/swu/canonical.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
 
 function newestFeatures(): string {
   const runs = path.join(REPO_ROOT, "data/runs");
-  const newest = readdirSync(runs, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && DATED_DIR.test(e.name))
-    .map((e) => e.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated run under ${runs}; run "pnpm card-features" first`);
-  return path.join(runs, newest, "features/features.json");
+  return path.join(newestDatedDir(runs, "run"), "features/features.json");
 }
 
 function main(): void {

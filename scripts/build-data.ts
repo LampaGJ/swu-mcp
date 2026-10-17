@@ -18,15 +18,14 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { DATED_DIR } from "../src/data.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { hex64 } from "../src/schemas/hash.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
+import { DEFAULT_ORIGINALS_ROOT, newestDatedDir } from "./lib/originals.js";
 import { progress } from "./lib/progress.mjs";
 import { REPO_ROOT } from "../src/paths.js";
 
-const DEFAULT_ORIGINALS_ROOT = "/Volumes/Local Files/Projects/mault/data/swu-originals";
 const TSX = path.join(REPO_ROOT, "node_modules/.bin/tsx");
 
 interface Step {
@@ -55,16 +54,6 @@ const buildRecordSchema = z.strictObject({
     }),
   ),
 });
-
-function newestDatedDir(root: string): string {
-  const newest = readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && DATED_DIR.test(entry.name))
-    .map((entry) => entry.name)
-    .sort(compareCodePoints)
-    .at(-1);
-  if (newest === undefined) throw new Error(`no dated originals directory under ${root}`);
-  return path.join(root, newest);
-}
 
 function pinnedRulesPdf(): string | undefined {
   const root = path.join(REPO_ROOT, "data/originals/rules");
@@ -106,7 +95,7 @@ function ownedBy(step: Step, rel: string): boolean {
 
 function main(): void {
   const { values } = parseArgs({ options: { originals: { type: "string" }, date: { type: "string" } } });
-  const originals = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT));
+  const originals = path.resolve(values.originals ?? newestDatedDir(DEFAULT_ORIGINALS_ROOT, "originals"));
   const manifest = swuRawCacheManifestSchema.parse(JSON.parse(readFileSync(path.join(originals, "swu-cards/raw-pages/manifest.json"), "utf8")));
   const date = z.iso.date().parse(values.date ?? manifest.finishedAt.slice(0, 10));
   const runDir = path.join(REPO_ROOT, "data/runs", date);
