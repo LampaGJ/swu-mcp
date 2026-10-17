@@ -19,7 +19,7 @@ Conventions:
 ## The files
 
 - Official card list, `official-card-list-import-43.json`: `{ printings: [...] }`, 10,211 printings. Keeps only the fields conformance reads: `serialCode`, `cardNumber`, `title`, `subtitle`, `cost`, `power`, `hp`, `type`, `rarity`, `aspects`, `expansion`, `variantTypes` ([`packages/server/src/lib/adapters/swu/conform/snapshot-types.ts:12`](https://github.com/LampaGJ/mault/blob/feature/swu-support/packages/server/src/lib/adapters/swu/conform/snapshot-types.ts#L12)).
-- Catalogue snapshots, four older files: same shape, differing field subsets, 10,193 printings each. Details per field below and in "Which snapshot has which field".
+- Catalogue snapshots, four older files: same shape, differing field subsets, 10,193 printings each. Counts in this guide say which population they cover: the 10,246-printing raw card list of 2026-10-16, or the 10,193-printing snapshots. The hp, rulesStyled and variantId counts are recomputed from the raw card list by `scripts/glossary/field-guide-counts.ts` in swu-mcp (`pnpm exec tsx scripts/glossary/field-guide-counts.ts`). Details per field below and in "Which snapshot has which field".
 - Price export, `tcgplayer-prices-rectified-import-43.json`: `{ import: {...}, printings: [...] }`. 8,882 `tcg_printings` rows plus the one `price_imports` row.
 - Corrections, `corrections-import-43.json`: array of `tcg_corrections` rows (1,038).
 - Quarantine, `quarantine-import-43.json`: array of `tcg_quarantine` rows (122).
@@ -89,7 +89,7 @@ One record per printing. A card the game treats as "the same card" can have doze
   - **Strategic value**: trade math: who survives an attack.
   - **Interacts with**: `hp`; `Raid X` adds power while attacking; `Grit` adds power per damage; `Overwhelm` sends excess damage to the base (digest 7.5). TCGplayer sometimes lists wrong power; the classifier records the difference as drift (`conform/rules.ts:49`).
 - **`printings[].hp`**
-  - Type: integer or null. Values 0 to 35; null on 2,389 official printings (Events, Upgrades, tokens). 30 on 138 printings, which are Bases (inferred from Base HP; and the data shows `hp` 25 to 35 clustering on Bases).
+  - Type: integer or null. Values 0 to 35. In the 2026-10-16 raw card list (10,246 printings) it is null on 2,393: Events 1,698, Upgrades 667, Token Upgrades 20, Leaders 3, Credit Tokens 3 and Force Tokens 2. It is 30 on 140 printings, all of them Bases.
   - Meaning: hit points (blue box). Units and Bases have HP; a card is defeated when damage reaches HP (digest 1.11, 1.5.5).
   - **Strategic value**: survival and race math: a Base with 30 HP gives a slower clock than one with 25.
   - **Interacts with**: `power` of attackers; `Shielded` and Shield tokens (a Shield prevents one instance of damage, digest 6.3); `Restore X` heals the Base. TCGplayer hp drift is by far the most common (767 of the 863 drifted listings in import 43).
@@ -134,8 +134,8 @@ Each of the following is a Strapi relation. Structure paths are listed once per 
   - **Interacts with**: `foil` and `variantId`; `serialCode` digits 3-4; the price file's `variant`; foil pricing (`price_foil`).
 - **`printings[].variantTypes.data[].attributes.variantId`**
   - Type: string. Example: `"32"`. Same 58 values as `name`, as two digits.
-  - Meaning: the variant type code that also sits in the serial's digits 3-4 (`variant-kind.ts:3-7`): `01` Standard, `02` Hyperspace, `03` Showcase, `06` Standard Prestige, `31` Standard Foil, `32` Hyperspace Foil, `33` Foil Prestige, `34` Serialized Prestige. Other codes are promo tiers. Code `60` is both Weekly Play and Event Exclusive in the live API (`variant-kind.ts:39-40`).
-  - **Strategic value**: lets you spot a printing's finish from the serial alone.
+  - Meaning: the variant type code (`variant-kind.ts:3-7`): `01` Standard, `02` Hyperspace, `03` Showcase, `06` Standard Prestige, `31` Standard Foil, `32` Hyperspace Foil, `33` Foil Prestige, `34` Serialized Prestige. Other codes are promo tiers. In the 2026-10-16 raw card list, 10,176 printings have one variant and 70 have none. For most of them the code sits in the serial's digits 3-4: 9,227 of 10,176. A further 774 carry it in digits 4-5 (the `p` serials), and 175 match neither (for example `0161001a` is SS Judge, code `45`). Code `60` is Weekly Play only; Event Exclusive is `05`. The serial digits 3-4 equal to `60` appear on six different variant names (Weekly Play, SS Participation, PQ Participation, Event Exclusive, Convention Exclusive, GC Top 64), so the serial alone does not name the variant.
+  - **Strategic value**: lets you spot a printing's finish from the serial for about 90% of printings; read `variantId` itself for the rest.
   - **Interacts with**: `serialCode`; the price file's `variant`.
 - **`printings[].variantTypes.data[].attributes.foil`**
   - Type: boolean or null. `false` 4,969; `true` 3,456; `null` 1,716 (all promo-type variants).
@@ -205,7 +205,7 @@ Images: the raw page has image subtrees (`artFront`, `artBack`, `artThumbnail`, 
 ### Rulings and styled text
 
 - **`data[].attributes.rules`**: string or null. Present on 4,441 printings. Official rulings and clarifications for the card as plain text, one paragraph per ruling. Example (Fleet Lieutenant): `Units must be ready in order to attack.` Some are general keyword notes ("Ambush is an ability that triggers at the same time as 'When Played' abilities."). **Strategic value**: settles edge cases in play and in judging. **Interacts with**: `keywords` and `text`.
-- **`data[].attributes.rulesStyled`**: string or null. The same rulings as HTML, with a table whose first column is the ruling date (for example `3/1/2024`). Present on 4,810 printings, so about 370 have a styled ruling with no plain-text copy (inferred). **Interacts with**: `rules`.
+- **`data[].attributes.rulesStyled`**: string or null. The same rulings as HTML, with a table whose first column is the ruling date (for example `3/1/2024`). A string on 4,810 printings in the 2026-10-16 raw card list, of which 380 are empty; the other 4,430 each have a plain-text `rules` copy. Three printings have a plain ruling but no styled one. **Interacts with**: `rules`.
 - **`data[].attributes.textStyled`**: string. The rules text as HTML: `<p>`, `<strong>`, `<i>`, cost icons as `<img>` links and a custom `<sKey>` tag around keywords. Never null; `<p></p>` when the card has no text. **`data[].attributes.deployBoxStyled`**: string or null. The deploy text as HTML (2,360 strings, many empty). **`data[].attributes.epicActionStyled`**: string or null. The Epic Action text as HTML. **Strategic value**: lets a viewer show bold keywords and cost icons. **Interacts with**: `text`, `deployBox`, `epicAction` (each styled field is the HTML form of its plain twin).
 
 ### Identifiers and links
