@@ -113,7 +113,7 @@
       </p>
       <p>
         Every number comes from fixed code run over saved inputs. No AI model runs when you ask a question, and none picks a score. The same
-        data always gives the same answer. All 28 tools only read data; none changes anything.
+        data always gives the same answer. All 45 tools only read data; none changes anything.
       </p>
 
       <h2>Install for Claude Code</h2>
@@ -135,10 +135,10 @@
   }
 }</code></pre>
 
-      <h2>The 28 tools</h2>
+      <h2>The 45 tools</h2>
       <h3>Cards and search</h3>
       <ul class="tools">
-        <li><code>get_card</code>, <code>search_cards</code>, <code>list_facet</code>, <code>cards_by_facet</code></li>
+        <li><code>get_card</code>, <code>search_cards</code>, <code>list_facet</code>, <code>cards_by_facet</code>, <code>get_cards_batch</code>, <code>resolve_card_name</code>, <code>get_printings</code></li>
       </ul>
       <h3>Value</h3>
       <ul class="tools">
@@ -164,18 +164,39 @@
       <ul class="tools">
         <li>
           <code>rules_core</code>, <code>rules_search</code>, <code>get_rule</code>, <code>card_rulings</code>, <code>keyword_rules</code>,
-          <code>rules_version</code>
+          <code>rules_version</code>, <code>search_rulings</code>
         </li>
       </ul>
       <h3>Similarity</h3>
       <ul class="tools">
         <li><code>similar_cards</code>, <code>kin_cards</code>, <code>cluster</code></li>
       </ul>
+      <h3>Sets and legality</h3>
+      <ul class="tools">
+        <li><code>list_sets</code>, <code>format_legality</code></li>
+      </ul>
+      <h3>Decks, collections and trades</h3>
+      <ul class="tools">
+        <li>
+          <code>deck_audit</code>, <code>deck_legality_check</code>, <code>suggest_leader_base</code>, <code>playable_cards</code>,
+          <code>fungible_in_deck</code>, <code>budget_alternatives</code>, <code>price_list</code>, <code>trade_balance</code>,
+          <code>owned_vs_needed</code>, <code>play_value_vs_price</code>, <code>score_vs_play</code>
+        </li>
+      </ul>
+      <p>These take a list of cards you pass in. The server stores nothing and lists any name it cannot match.</p>
       <h3>Provenance</h3>
       <ul class="tools">
         <li><code>data_version</code></li>
       </ul>
-      <p>The <a href="https://github.com/LampaGJ/swu-mcp#tools-28">README</a> gives a one-line description of each tool.</p>
+      <h3>Resources and prompts</h3>
+      <ul class="tools">
+        <li>
+          Resources the assistant can read: <code>swu://rubric</code>, <code>swu://glossary</code>, <code>swu://usage-guide</code> (which tool
+          answers which question), <code>swu://rules/{section}</code> and <code>rules://core-primer</code>.
+        </li>
+        <li>Prompts: <code>rules_question</code> and <code>build_deck_for_leader</code>.</li>
+      </ul>
+      <p>The <a href="https://github.com/LampaGJ/swu-mcp#tools-45">README</a> gives a one-line description of each tool.</p>
 
       <h2>Data version</h2>
       <p>
