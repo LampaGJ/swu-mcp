@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "tableVersion": 4,
+ "tableVersion": 5,
  "note": "Rung 4: curated per-card rules. Each entry is keyed by (cardKey, face, clauseSha256) where clauseSha256 = sha256 of sourceClause, the exact normalized clause the extractor produces. An entry applies only when the grammar leaves that clause unclassified, unless override is true. An entry whose clause no longer exists is stale and fails the run; an entry for a clause the grammar now classifies is redundant and is reported for pruning. PROTOTYPE entries: not yet owner-reviewed.",
  "entries": [
   {
@@ -835,7 +835,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "w": "this unit is an Underworld unit"
+      "w": "this unit is an Underworld unit",
+      "check": "is"
      }
     ],
     "structure": [],
@@ -844,7 +845,7 @@
      "wants:trait-Underworld"
     ]
    },
-   "rationale": "Dengar as Pilot upgrade: replaces the earlier indirect damage with 3 if the unit is Underworld.",
+   "rationale": "Dengar as Pilot upgrade: replaces the earlier indirect damage with 3 if the unit is Underworld. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -1137,7 +1138,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "w": "attached unit is a Transport"
+      "w": "attached unit is a Transport",
+      "check": "attached_is"
      }
     ],
     "structure": [],
@@ -1146,7 +1148,7 @@
     ],
     "wants": []
    },
-   "rationale": "Replaces the earlier 1 damage with 2 if the attached unit is a Transport.",
+   "rationale": "Replaces the earlier 1 damage with 2 if the attached unit is a Transport. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -1178,14 +1180,15 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "w": "attached unit is the Millennium Falcon"
+      "w": "attached unit is the Millennium Falcon",
+      "check": "is"
      }
     ],
     "structure": [],
     "offers": [],
     "wants": []
    },
-   "rationale": "If Han is played on the Millennium Falcon, it deals combat damage before the defender for the attack.",
+   "rationale": "If Han is played on the Millennium Falcon, it deals combat damage before the defender for the attack. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -2295,7 +2298,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "friendly unit has 3 or more damage on it"
+      "what": "friendly unit has 3 or more damage on it",
+      "check": "state"
      }
     ],
     "structure": [],
@@ -2307,7 +2311,7 @@
      "wants:self-damaged"
     ]
    },
-   "rationale": "Replaces the preceding 1-damage by a friendly damaged unit with 2 damage when that unit has 3+ damage; upgrade for damaged units.",
+   "rationale": "Replaces the preceding 1-damage by a friendly damaged unit with 2 damage when that unit has 3+ damage; upgrade for damaged units. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2715,14 +2719,15 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "discarded card is a unit"
+      "what": "discarded card is a unit",
+      "check": "is"
      }
     ],
     "structure": [],
     "offers": [],
     "wants": []
    },
-   "rationale": "If the card discarded from your deck is a unit, you may return it to hand; recursion from deck-discard.",
+   "rationale": "If the card discarded from your deck is a unit, you may return it to hand; recursion from deck-discard. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -3735,14 +3740,15 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "exhausted unit cost <= 3"
+      "what": "exhausted unit cost <= 3",
+      "check": "cost"
      }
     ],
     "structure": [],
     "offers": [],
     "wants": []
    },
-   "rationale": "Conditional on the exhaust succeeding and the enemy unit costing 3 or less: its controller discards a card of their choice from hand. Opponent-choice discard.",
+   "rationale": "Conditional on the exhaust succeeding and the enemy unit costing 3 or less: its controller discards a card of their choice from hand. Opponent-choice discard. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -3823,7 +3829,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "while attacking"
+      "what": "while attacking",
+      "check": "state"
      }
     ],
     "structure": [
@@ -3836,7 +3843,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Optional combat-order change: the defending unit deals combat damage first. If The Stranger (7 HP) survives, he then deals combat damage back with Grit's bonus; if the defender's damage defeats him, he deals none (card ruling). No stat or resource change. Revision (table v3): raised from low; the structure and condition match the clause, and the earlier rationale (this unit avoids damage) was backwards, so it was rewritten from the card ruling.",
+   "rationale": "Optional combat-order change: the defending unit deals combat damage first. If The Stranger (7 HP) survives, he then deals combat damage back with Grit's bonus; if the defender's damage defeats him, he deals none (card ruling). No stat or resource change. Revision (table v3): raised from low; the structure and condition match the clause, and the earlier rationale (this unit avoids damage) was backwards, so it was rewritten from the card ruling. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -3924,7 +3931,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "unit survived"
+      "what": "unit survived",
+      "check": "state"
      },
      {
       "rule": "curated",
@@ -3939,7 +3947,7 @@
     ],
     "wants": []
    },
-   "rationale": "Heals your base by the damage dealt to your own unit if it survived; n equals the damage dealt (up to 5), so varN. Shape fix: scaling.per from clause.",
+   "rationale": "Heals your base by the damage dealt to your own unit if it survived; n equals the damage dealt (up to 5), so varN. Shape fix: scaling.per from clause. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -4651,7 +4659,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "what": "while attacking"
+      "what": "while attacking",
+      "check": "state"
      }
     ],
     "structure": [
@@ -4664,7 +4673,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Conditional first strike: if no other unit attacked this phase, this unit deals damage before the defender, avoiding retaliation when it wins. Rarely active mid-phase.",
+   "rationale": "Conditional first strike: if no other unit attacked this phase, this unit deals damage before the defender, avoiding retaliation when it wins. Rarely active mid-phase. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -5283,7 +5292,8 @@
        "text": "twice that number of cards"
       },
       "for": "cards",
-      "upTo": null
+      "upTo": null,
+      "dest": "unknown"
      }
     ],
     "conditions": [
@@ -5305,7 +5315,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Replacement effect doubling the number of cards you search from your deck; multiplier 2 on whatever number a search effect gives. Shape fix: search.for=cards, upTo=null (no cap). replacement target = you (the searching player).",
+   "rationale": "Replacement effect doubling the number of cards you search from your deck; multiplier 2 on whatever number a search effect gives. Shape fix: search.for=cards, upTo=null (no cap). replacement target = you (the searching player). Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -5484,7 +5494,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "text": "for this attack"
+      "text": "for this attack",
+      "check": "state"
      }
     ],
     "structure": [],
@@ -5493,7 +5504,7 @@
     ],
     "wants": []
    },
-   "rationale": "During the attack this event grants, excess damage past the defender spills onto another unit in the same arena (trample-like). Amount is the variable excess, so n is null. Revision (table v3): target side is any, arena same: 'another unit in the same arena' can be friendly or enemy; side enemy was unsupported.",
+   "rationale": "During the attack this event grants, excess damage past the defender spills onto another unit in the same arena (trample-like). Amount is the variable excess, so n is null. Revision (table v3): target side is any, arena same: 'another unit in the same arena' can be friendly or enemy; side enemy was unsupported. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -5979,7 +5990,8 @@
        "text": "an opponent"
       },
       "for": "an event",
-      "upTo": null
+      "upTo": null,
+      "dest": "hand"
      }
     ],
     "conditions": [
@@ -5994,7 +6006,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "The opponent digs twice as many cards deep as tokens given and draws an event. A drawback that gives the opponent card selection; count varies, so n is null. Shape fix: search.for=an event, upTo=null. scaling.per from clause (twice the tokens distributed).",
+   "rationale": "The opponent digs twice as many cards deep as tokens given and draws an event. A drawback that gives the opponent card selection; count varies, so n is null. Shape fix: search.for=an event, upTo=null. scaling.per from clause (twice the tokens distributed). Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -6070,14 +6082,15 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "text": "for this attack"
+      "text": "for this attack",
+      "check": "state"
      }
     ],
     "structure": [],
     "offers": [],
     "wants": []
    },
-   "rationale": "For this attack the attached unit copies the abilities of the unit discarded earlier in the sequence.",
+   "rationale": "For this attack the attached unit copies the abilities of the unit discarded earlier in the sequence. Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -6157,7 +6170,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "text": "for this attack"
+      "text": "for this attack",
+      "check": "state"
      }
     ],
     "structure": [
@@ -6177,7 +6191,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face).",
+   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face). Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -6220,7 +6234,8 @@
      {
       "rule": "curated",
       "cat": "target_check",
-      "text": "for this attack"
+      "text": "for this attack",
+      "check": "state"
      }
     ],
     "structure": [
@@ -6240,7 +6255,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face).",
+   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face). Revision (table v5): added check/dest for the #11 schema.",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
