@@ -1089,16 +1089,17 @@ export const tradeBalanceShape = {
 
 function side(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], finish: "normal" | "foil") {
   const { lines, unresolved } = resolveList(env, entries, "any");
-  const unpriced = lines.filter((l) => priceOf(env, l.syn.cardKey, finish) === null || cheapestPrice(env, l.syn.cardKey, finish) === null);
+  const priced = lines.map((l) => ({ line: l, market: priceOf(env, l.syn.cardKey, finish), low: cheapestPrice(env, l.syn.cardKey, finish) }));
+  const unpriced = priced.filter((p) => p.market === null || p.low === null);
   const scored = lines.filter((l) => env.scores.get(l.syn.cardKey)?.playCalibrated != null);
   return {
     unresolved,
     summary: {
       cards: sumBy(lines, (l) => l.count),
-      market: r2(sumBy(lines, (l) => (priceOf(env, l.syn.cardKey, finish) ?? 0) * l.count)),
-      low: r2(sumBy(lines, (l) => (cheapestPrice(env, l.syn.cardKey, finish) ?? 0) * l.count)),
+      market: r2(sumBy(priced, (p) => (p.market ?? 0) * p.line.count)),
+      low: r2(sumBy(priced, (p) => (p.low ?? 0) * p.line.count)),
       rubric: r2(sumBy(scored, (l) => (env.scores.get(l.syn.cardKey)?.playCalibrated as number) * l.count)),
-      unpriced: unpriced.map((l) => cardLabel(l.syn)),
+      unpriced: unpriced.map((p) => cardLabel(p.line.syn)),
       unscored: lines.length - scored.length,
     },
   };
