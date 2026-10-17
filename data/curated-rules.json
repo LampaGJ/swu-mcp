@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "tableVersion": 2,
+ "tableVersion": 3,
  "note": "Rung 4: curated per-card rules. Each entry is keyed by (cardKey, face, clauseSha256) where clauseSha256 = sha256 of sourceClause, the exact normalized clause the extractor produces. An entry applies only when the grammar leaves that clause unclassified, unless override is true. An entry whose clause no longer exists is stale and fails the run; an entry for a clause the grammar now classifies is redundant and is reported for pruning. PROTOTYPE entries: not yet owner-reviewed.",
  "entries": [
   {
@@ -24,9 +24,10 @@
      "wants:wide-board"
     ]
    },
-   "rationale": "Deckbuilding rule, not an in-game effect; scores 0 in the effect sum but marks the card as a swarm enabler.",
+   "rationale": "Deckbuilding rule, not an in-game effect; scores 0 in the effect sum but marks the card as a swarm enabler. Revision (table v3): set confidence high after checking the clause (deck_limit 15) against the card text.",
    "reviewedBy": null,
-   "addedIn": "prototype"
+   "addedIn": "prototype",
+   "confidence": "high"
   },
   {
    "id": "cur-0002",
@@ -51,14 +52,13 @@
       }
      }
     ],
-    "offers": [
-     "offers:return-any-to-hand"
-    ],
+    "offers": [],
     "wants": []
    },
-   "rationale": "Removal-like tuck of the unit chosen in the preceding clause; treated like a bounce for pairing because a friendly target can be replayed later.",
+   "rationale": "When Defeated: the chosen non-leader ground unit goes to the top or bottom of its owner's deck, chosen by that owner (a tuck, removal-like). Revision (table v3): dropped offers:return-any-to-hand; a tuck puts the unit in the deck, not in hand, so it is not a bounce and cannot be replayed from hand (verification RC04).",
    "reviewedBy": null,
-   "addedIn": "prototype"
+   "addedIn": "prototype",
+   "confidence": "high"
   },
   {
    "id": "cur-0003",
@@ -121,7 +121,7 @@
     ]
    },
    "rationale": "Deploy-box version: Poe attaches himself as an upgrade to a friendly Vehicle without a Pilot instead of deploying as a unit.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -170,7 +170,7 @@
     ]
    },
    "rationale": "Leader action: flips and attaches Poe as a Pilot upgrade to a friendly Vehicle with no Pilot, so it needs Vehicles and offers an upgrade to attach.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -215,7 +215,7 @@
     "wants": []
    },
    "rationale": "You draw one of the two remaining revealed cards and discard the other, a draw plus a self-mill. Shape fix: mill.whose=your (self-mill of the unchosen revealed card).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -251,7 +251,7 @@
     "wants": []
    },
    "rationale": "An opponent chooses 2 of your revealed cards to go to your discard pile, so this is a self-mill the opponent controls. Shape fix: mill.whose=your (your revealed cards go to your discard).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -309,7 +309,7 @@
     "wants": []
    },
    "rationale": "Take another action this round after this leader action, a tempo gain.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -446,7 +446,7 @@
     ]
    },
    "rationale": "First action phase: puts 3 hand cards on the bottom of the deck to offset the 3 extra starting cards; works best holding a full hand.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -477,7 +477,7 @@
     "wants": []
    },
    "rationale": "Setup rule: draw 3 more cards in the starting hand. Counted as a setup rule, not a mid-game draw, so no offers:draw.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -496,12 +496,10 @@
       "n": 1,
       "target": {
        "side": "friendly",
-       "kind": "unit",
+       "kind": "upgrade",
        "arena": "any",
        "quant": "one",
-       "restrict": [
-        "trait:Pilot"
-       ],
+       "restrict": [],
        "text": "a friendly Pilot unit or upgrade"
       }
      }
@@ -513,8 +511,8 @@
      "wants:upgrades-attached"
     ]
    },
-   "rationale": "When Played: optionally attaches a friendly Pilot or upgrade onto Corvus, so it wants upgrades and Pilots in the deck.",
-   "confidence": "medium",
+   "rationale": "When Played: optionally attaches a friendly Pilot or upgrade onto Corvus, so it wants upgrades and Pilots in the deck. Revision (table v3): target kind is upgrade with no trait restriction; a Pilot unit attached to a unit becomes an upgrade, and the clause also allows any non-Pilot upgrade, so trait:Pilot wrongly excluded those.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -871,7 +869,7 @@
     ]
    },
    "rationale": "After attacking, may move an upgrade from this unit to another eligible friendly Vehicle; only useful with upgrades on it.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -920,7 +918,7 @@
     ]
    },
    "rationale": "If you paid 3 resources, this unit attaches as an upgrade to a Fighter or Transport (even an enemy one), then takes control of it in the next clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -1089,7 +1087,7 @@
     ]
    },
    "rationale": "Dengar as Pilot upgrade: replaces the earlier indirect damage with 3 if the unit is Underworld.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1113,7 +1111,7 @@
     "wants": []
    },
    "rationale": "Rules modifier: you choose how all indirect damage you deal to opponents is assigned. Changes how damage is spread, not the amount.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1160,7 +1158,7 @@
     "wants": []
    },
    "rationale": "Granted ability: unpreventable damage to the attacking Fighter equal to the cost difference of two discarded cards (varN). Shape fix: scaling.per from clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1197,7 +1195,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Constant: every instance of indirect damage you deal to opponents is increased by 1. Modeled as indirect damage n:1 per instance.",
+   "rationale": "Constant: every instance of indirect damage you deal to opponents is increased by 1. Modeled as indirect damage n:1 per instance. Revision (table v3): kept medium: modeled as indirect_damage n=1 so the scorer credits the boost; the card deals no indirect damage itself, and switching to structure-only (like cur-0031) would change scores. Owner decision.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -1257,7 +1255,7 @@
     "wants": []
    },
    "rationale": "Granted ability: attached unit's indirect damage is assigned by you. Rules modifier only.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1504,7 +1502,7 @@
     "wants": []
    },
    "rationale": "May attach to an enemy Vehicle without a Pilot, a downside Pilot upgrade; offers nothing to the friendly attach pool.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -1713,12 +1711,12 @@
       "rule": "curated",
       "cat": "control",
       "what": {
-       "side": "any",
-       "kind": "ref",
+       "side": "self",
+       "kind": "unit",
        "arena": "any",
        "quant": "one",
        "restrict": [],
-       "text": "a:"
+       "text": "a unit of the aspect named in each bullet"
       },
       "n": 1
      }
@@ -1727,8 +1725,8 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Clause is truncated in the source text (ends at \"a:\", likely the rest sits in an icon or list that was lost in normalization); effects cannot be determined without the original card. Shape fix: control.n=1; clause truncated in source.",
-   "confidence": "low",
+   "rationale": "Clause is truncated in the source text (ends at \"a:\", likely the rest sits in an icon or list that was lost in normalization); effects cannot be determined without the original card. Shape fix: control.n=1; clause truncated in source. Revision (table v3): target text was the truncated 'a:'; the clause is the header of four aspect bullets, which are separate clauses the grammar classifies, so this entry only models the control check.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1789,7 +1787,7 @@
     ]
    },
    "rationale": "Deploy option: discard the entire hand (varN: hand size) to reload; feeds discard payoffs and prefers a full hand.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -1849,7 +1847,7 @@
     "wants": []
    },
    "rationale": "On attack: each enemy unit loses the Force trait this phase, turning off Force-trait synergies and restrictions.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -1922,7 +1920,7 @@
     "wants": []
    },
    "rationale": "Sets attached unit printed power and HP to 5 each (set, not add); n=5 is the stated value for both stats. Shape fix: stat_mod sets printed power and HP to 5 (sign=set).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -2117,7 +2115,7 @@
     ]
    },
    "rationale": "Moves up to 3 Force units from discard to the bottom of the deck in random order; deck recycling, feeds the following +4/+4 clause via \"that many\".",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -2175,7 +2173,7 @@
     ]
    },
    "rationale": "Extends the mirror rule to Restore: gains Restore while another friendly unit has it. Restore N is not stated here, so n is null. Shape fix: keywords=Restore. while_other.w from clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -2250,7 +2248,7 @@
     ]
    },
    "rationale": "Extends the preceding Ambush mirror rule to six more keywords: this unit gains each while another friendly unit has it. varN: no magnitudes stated. Shape fix: keywords = the six listed. while_other.w from clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -2288,7 +2286,7 @@
     ]
    },
    "rationale": "Puts one Force unit from discard on the bottom of the deck as the cost of the following \"if you do\" play-a-unit clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -2367,7 +2365,7 @@
      "wants:wide-board"
     ]
    },
-   "rationale": "Doubles Raid on every friendly unit; scales with Raid units present. n is null because the result depends on each unit Raid value. Shape fix: keywords=Raid (doubled).",
+   "rationale": "Doubles Raid on every friendly unit; scales with Raid units present. n is null because the result depends on each unit Raid value. Shape fix: keywords=Raid (doubled). Revision (table v3): kept medium: no effect category doubles a keyword value; grant_keyword Raid on all friendly units is the nearest, but the card grants no new Raid.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2442,12 +2440,10 @@
     "offers": [
      "offers:damage-enemy-unit"
     ],
-    "wants": [
-     "wants:self-damaged"
-    ]
+    "wants": []
    },
-   "rationale": "On a Droid attack, damage dealt equals its remaining HP instead of power; benefits tough undamaged attackers and punishes damage taken. varN: remaining HP.",
-   "confidence": "medium",
+   "rationale": "On a Droid attack, damage dealt equals its remaining HP instead of power; benefits tough undamaged attackers and punishes damage taken. varN: remaining HP. Revision (table v3): removed wants:self-damaged; damage equals REMAINING HP, so the attacker is better undamaged (the rationale already said so).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -2747,7 +2743,7 @@
      "wants:units-entering"
     ]
    },
-   "rationale": "Replacement-style static: rescued friendly units enter play ready rather than exhausted; pairs with capture/rescue effects.",
+   "rationale": "Replacement-style static: rescued friendly units enter play ready rather than exhausted; pairs with capture/rescue effects. Revision (table v3): kept medium: wants:units-entering approximates 'pairs with capture or rescue effects'; no capture-rescue want tag exists.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -2832,7 +2828,7 @@
      "wants:self-damaged"
     ]
    },
-   "rationale": "Drawback: damage dealt to this unit by another card is increased by 1. Modeled as damage n=1 on self (a vulnerability, not an offensive effect).",
+   "rationale": "Drawback: damage dealt to this unit by another card is increased by 1. Modeled as damage n=1 on self (a vulnerability, not an offensive effect). Revision (table v3): kept medium: a drawback modeled as self-damage n=1; wants:self-damaged is a guess since the extra damage is a cost, not a payoff.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
@@ -3055,7 +3051,7 @@
     ]
    },
    "rationale": "Friendly Droid units can be exhausted as payment as if resources; ramp that scales with Droid count. varN.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3132,12 +3128,10 @@
      }
     ],
     "offers": [],
-    "wants": [
-     "wants:self-damaged"
-    ]
+    "wants": []
    },
-   "rationale": "May double this unit power for the attack (n=null: equals current power); the drawback follows in the next clause. Shape fix: power doubled (non-numeric, 'double'); hp unchanged (0); sign=buff.",
-   "confidence": "medium",
+   "rationale": "May double this unit power for the attack (n=null: equals current power); the drawback follows in the next clause. Shape fix: power doubled (non-numeric, 'double'); hp unchanged (0); sign=buff. Revision (table v3): removed wants:self-damaged; doubling power depends on nothing damaged (the cost is the next clause: this unit does not ready next regroup).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3482,7 +3476,7 @@
     "wants": []
    },
    "rationale": "Granted ability: when the attached unit hits, the defending player reveals their hand; information only, n null (whole hand).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3667,7 +3661,7 @@
     "wants": []
    },
    "rationale": "After you defeat an enemy resource, its controller replaces it with the top deck card as a ready resource; net ramp for the opponent, a drawback.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3708,7 +3702,7 @@
     "wants": []
    },
    "rationale": "After discarding 3 cards from your deck, you may put one of them back on top; self-mill with an undo.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3887,7 +3881,7 @@
     "wants": []
    },
    "rationale": "If the free play happened, the opponent resources the top card of their deck: a drawback that ramps the opponent by one. Modeled as ramp with enemy side so the scorer can treat it as a cost.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -3946,7 +3940,7 @@
     "wants": []
    },
    "rationale": "Static rule change: each round has a second regroup phase (draw, resource, ready). Doubles regroup-timed effects and card flow; effect-sum scores 0, structure item marks it.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -4055,7 +4049,7 @@
     "wants": []
    },
    "rationale": "Modal header where the opponent picks which option resolves, so the owner gets the less favorable one. Option effects are parsed separately; this only flips the polarity to opponent-choice.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -4123,8 +4117,8 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Optional combat-order change: the defender deals damage first, letting this unit avoid taking damage if the defender dies or to sequence kills. Mostly a downside lever; no stat or resource change.",
-   "confidence": "low",
+   "rationale": "Optional combat-order change: the defending unit deals combat damage first. If The Stranger (7 HP) survives, he then deals combat damage back with Grit's bonus; if the defender's damage defeats him, he deals none (card ruling). No stat or resource change. Revision (table v3): raised from low; the structure and condition match the clause, and the earlier rationale (this unit avoids damage) was backwards, so it was rewritten from the card ruling.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4260,7 +4254,7 @@
     "wants": []
    },
    "rationale": "The defeated enemy unit goes to its controller's resources instead of staying in the discard; the opponent gains a resource. A drawback attached to the defeat.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4458,7 +4452,7 @@
     "wants": []
    },
    "rationale": "Granted ability sets the printed HP of the unit it hits to 1 for the phase, making the target easy to finish (HP set, not reduced). Duration this phase. Shape fix: printed HP set to 1 (sign=set); power untouched (null).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4539,7 +4533,7 @@
     "wants": []
    },
    "rationale": "Granted ability (when the attached unit is defeated or triggers) gives an opponent Credit tokens equal to the unit's cost; n varies by unit cost. A drawback on the carrier, so the opponent gets currency. Shape fix: token=Credit. scaling.per from clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4869,7 +4863,7 @@
     "wants": []
    },
    "rationale": "Reveal the top card of either deck, then choose which player may play it for free. Next clause lets that player play it; this clause is the setup. Shape fix: self_state.state=survived.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4887,7 +4881,7 @@
       "cat": "create_token",
       "n": null,
       "target": {
-       "side": "ref",
+       "side": "any",
        "kind": "token",
        "arena": "any",
        "quant": "varN",
@@ -4915,8 +4909,8 @@
     ],
     "wants": []
    },
-   "rationale": "If the chosen player played it, a different player gets Credits equal to that card's cost (compensation). n equals the revealed card's cost. Shape fix: token=Credit. scaling.per from clause.",
-   "confidence": "medium",
+   "rationale": "If the chosen player played it, a different player gets Credits equal to that card's cost (compensation). n equals the revealed card's cost. Shape fix: token=Credit. scaling.per from clause. Revision (table v3): recipient side is any: it is 'a different player' than the player you choose, so choosing the opponent gives the credits to you and choosing yourself gives them to the opponent. offers:credit-tokens holds because you pick the player (verification: still-unsure).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -4952,7 +4946,7 @@
     "wants": []
    },
    "rationale": "Conditional first strike: if no other unit attacked this phase, this unit deals damage before the defender, avoiding retaliation when it wins. Rarely active mid-phase.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5143,26 +5137,26 @@
       "cat": "copy_ability",
       "n": null,
       "target": {
-       "side": "self",
+       "side": "friendly",
        "kind": "unit",
        "arena": "any",
        "quant": "varN",
-       "restrict": [],
+       "restrict": [
+        "trait:Spectre"
+       ],
        "text": "friendly Spectre units"
       }
      }
     ],
     "conditions": [],
     "structure": [],
-    "offers": [
-     "offers:units-entering"
-    ],
+    "offers": [],
     "wants": [
-     "wants:when-defeated-cards"
+     "wants:trait-Spectre"
     ]
    },
-   "rationale": "Trigger When Played abilities of any number of friendly Spectre units; n depends on board state.",
-   "confidence": "medium",
+   "rationale": "Trigger When Played abilities of any number of friendly Spectre units; n depends on board state. Revision (table v3): target is friendly units with trait:Spectre (side was self); dropped wants:when-defeated-cards (the clause uses When Played abilities, not When Defeated) and offers:units-entering (no unit enters play).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5212,7 +5206,7 @@
      {
       "rule": "curated",
       "cat": "grant_keyword",
-      "n": 8,
+      "n": null,
       "target": {
        "side": "self",
        "kind": "unit",
@@ -5249,7 +5243,14 @@
       ]
      }
     ],
-    "conditions": [],
+    "conditions": [
+     {
+      "rule": "curated",
+      "cat": "while_other",
+      "what": "the keyword is on an Imperial unit in your discard pile",
+      "w": "the keyword is on an Imperial unit in your discard pile"
+     }
+    ],
     "structure": [
      {
       "rule": "curated",
@@ -5267,10 +5268,13 @@
      }
     ],
     "offers": [],
-    "wants": []
+    "wants": [
+     "wants:cards-in-discard",
+     "wants:trait-Imperial"
+    ]
    },
-   "rationale": "Deployed leader has the listed keywords (a bare keyword list). n is 8 keywords. Shape fix: keywords = the eight listed.",
-   "confidence": "medium",
+   "rationale": "Deploy box: this leader unit gains each listed keyword only if that keyword is on an Imperial unit in your discard pile (card ruling: conditional keywords are not copied; Support is gained without the unit's other abilities). Revision (table v3): keywords are conditional on Imperial units in your discard pile, not unconditional; n is null instead of 8; added the while_other condition and wants for discard-pile Imperial units.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5282,49 +5286,36 @@
    "sourceClause": "You may choose another exhausted friendly unit.",
    "clauseSha256": "e3917f3e8c9dc93de7d0eed94c25d8dd3f149470b5792cc89a8e44c619654844",
    "features": {
-    "effects": [
+    "effects": [],
+    "conditions": [],
+    "structure": [
      {
       "rule": "curated",
-      "cat": "give_token",
-      "n": 1,
+      "cat": "select",
       "target": {
-       "side": "self",
+       "side": "friendly",
        "kind": "unit",
        "arena": "any",
        "quant": "one",
-       "restrict": [],
+       "restrict": [
+        "other",
+        "exhausted"
+       ],
        "text": "another exhausted friendly unit"
-      },
-      "tokens": [
-       [
-        "Advantage",
-        1
-       ]
-      ]
-     }
-    ],
-    "conditions": [
-     {
-      "rule": "curated",
-      "cat": "target_check",
-      "what": "exhausted"
-     }
-    ],
-    "structure": [
+      }
+     },
      {
       "rule": "curated",
       "cat": "optional"
      }
     ],
-    "offers": [
-     "offers:give-experience"
-    ],
+    "offers": [],
     "wants": [
      "wants:exhausted-own"
     ]
    },
-   "rationale": "Deployed leader may repeat the target step on another exhausted friendly unit; the following clause gives another Advantage token. Shape fix: tokens Advantage (per rationale: the following clause gives another Advantage token).",
-   "confidence": "medium",
+   "rationale": "Deployed leader On Attack: the clause only chooses another exhausted friendly unit; the Advantage tokens come from the next clause ('If you do, give an Advantage token...'), which the grammar classifies. Revision (table v3): was a give_token effect plus offers:give-experience, which counted the Advantage token a second time (the next clause already gives it) and mislabelled Advantage as Experience; now a select structure like the same card's action text.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5496,7 +5487,7 @@
     "wants": []
    },
    "rationale": "Optional target selection for a defeat both units trade: you sacrifice a friendly unit to kill an enemy non-leader. The defeat is in the next clause; offers set here because the pair is a sac outlet.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5774,7 +5765,7 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "The attached unit counts as providing its aspect icons when you pay costs, so it helps other cards avoid aspect penalties. Modelled as an aspect-penalty reducer; n is not a number in the text. Shape fix: while_other.w from clause.",
+   "rationale": "The attached unit counts as providing its aspect icons when you pay costs, so it helps other cards avoid aspect penalties. Modelled as an aspect-penalty reducer; n is not a number in the text. Shape fix: while_other.w from clause. Revision (table v3): kept medium: ignore_aspect_penalty is the nearest category; the card makes this unit provide its aspect icons, which only lets other cards avoid aspect penalties.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -5796,11 +5787,13 @@
       "cat": "damage",
       "n": null,
       "target": {
-       "side": "enemy",
+       "side": "any",
        "kind": "unit",
-       "arena": "any",
+       "arena": "same",
        "quant": "one",
-       "restrict": [],
+       "restrict": [
+        "other"
+       ],
        "text": "another unit in the same arena"
       }
      }
@@ -5818,8 +5811,8 @@
     ],
     "wants": []
    },
-   "rationale": "During the attack this event grants, excess damage past the defender spills onto another unit in the same arena (trample-like). Amount is the variable excess, so n is null.",
-   "confidence": "medium",
+   "rationale": "During the attack this event grants, excess damage past the defender spills onto another unit in the same arena (trample-like). Amount is the variable excess, so n is null. Revision (table v3): target side is any, arena same: 'another unit in the same arena' can be friendly or enemy; side enemy was unsupported.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5903,7 +5896,7 @@
     "wants": []
    },
    "rationale": "Optional divided damage equal to the cost of the unit referred to earlier, split among any units. Amount varies with that cost. Shape fix: scaling.per from clause.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -5959,7 +5952,7 @@
      "wants:damage-friendly"
     ]
    },
-   "rationale": "Replacement effect that doubles damage the attached unit takes; a liability on a friendly unit, a damage amplifier on an enemy unit. The effect list stays damage with n null since the extra damage is conditional. Shape fix: replacement target = attached unit.",
+   "rationale": "Replacement effect that doubles damage the attached unit takes; a liability on a friendly unit, a damage amplifier on an enemy unit. The effect list stays damage with n null since the extra damage is conditional. Shape fix: replacement target = attached unit. Revision (table v3): kept medium: the upgrade can attach to either side; the entry assumes the carrier is friendly (offers:damage-friendly-unit), while the card is mostly used on enemy units to double damage.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -6002,7 +5995,7 @@
     "wants": []
    },
    "rationale": "Granted ability on the attacking unit: if it hit the enemy base with combat damage, the defending opponent discards a card.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6082,12 +6075,10 @@
     ],
     "structure": [],
     "offers": [],
-    "wants": [
-     "wants:units-entering"
-    ]
+    "wants": []
    },
-   "rationale": "Distributes Advantage tokens equal to this unit's power among friendly units. Count varies with power, so n is null. Shape fix: tokens Advantage, count = this unit's power (varN). scaling.per from clause.",
-   "confidence": "medium",
+   "rationale": "Distributes Advantage tokens equal to this unit's power among friendly units. Count varies with power, so n is null. Shape fix: tokens Advantage, count = this unit's power (varN). scaling.per from clause. Revision (table v3): removed wants:units-entering; the clause has no 'when you play a unit' trigger, it distributes tokens among units already in play.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6099,23 +6090,7 @@
    "sourceClause": "Damage dealt by friendly Underworld cards is unpreventable.",
    "clauseSha256": "cf66b04ed2533ef2842623bf9732367beb6376fe49a57a0a83821520e3f7d30f",
    "features": {
-    "effects": [
-     {
-      "rule": "curated",
-      "cat": "prevent_damage",
-      "n": null,
-      "target": {
-       "side": "friendly",
-       "kind": "card",
-       "arena": "any",
-       "quant": "any",
-       "restrict": [
-        "trait:Underworld"
-       ],
-       "text": "friendly Underworld cards"
-      }
-     }
-    ],
+    "effects": [],
     "conditions": [],
     "structure": [
      {
@@ -6128,8 +6103,8 @@
      "wants:trait-Underworld"
     ]
    },
-   "rationale": "Static: damage dealt by friendly Underworld cards cannot be prevented, which counters shields-like prevention. Pairs with Underworld cards. Not a prevention for you, the reverse.",
-   "confidence": "medium",
+   "rationale": "Static: damage dealt by friendly Underworld cards cannot be prevented, which counters shields-like prevention. Pairs with Underworld cards. Not a prevention for you, the reverse. Revision (table v3): removed the prevent_damage effect; the clause makes damage unpreventable (structure damage_unpreventable already says so), it does not prevent any (verification RC19).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -6338,7 +6313,7 @@
     "wants": []
    },
    "rationale": "The opponent digs twice as many cards deep as tokens given and draws an event. A drawback that gives the opponent card selection; count varies, so n is null. Shape fix: search.for=an event, upTo=null. scaling.per from clause (twice the tokens distributed).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6421,7 +6396,7 @@
     "wants": []
    },
    "rationale": "For this attack the attached unit copies the abilities of the unit discarded earlier in the sequence.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6509,13 +6484,19 @@
       "cat": "swap_keyword",
       "from": "Raid",
       "to": "Restore"
+     },
+     {
+      "rule": "curated",
+      "cat": "swap_keyword",
+      "from": "Restore",
+      "to": "Raid"
      }
     ],
     "offers": [],
     "wants": []
    },
-   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap).",
-   "confidence": "medium",
+   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -6566,13 +6547,19 @@
       "cat": "swap_keyword",
       "from": "Raid",
       "to": "Restore"
+     },
+     {
+      "rule": "curated",
+      "cat": "swap_keyword",
+      "from": "Restore",
+      "to": "Raid"
      }
     ],
     "offers": [],
     "wants": []
    },
-   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap).",
-   "confidence": "medium",
+   "rationale": "Swaps Raid for Restore (or Restore for Raid) on the attacking unit for this attack; no numbers stated. Shape fix: keywords = Restore and Raid (swap). Revision (table v3): swap_keyword now lists both directions (Raid to Restore and Restore to Raid) because the clause says 'or vice versa' (verification RC19; cur-0167 has the same clause on the other face).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -6743,7 +6730,7 @@
     "wants": []
    },
    "rationale": "Optional variable payment of resources that feeds the next clause (damage per 3 resources paid). Amount chosen at play time.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6959,7 +6946,7 @@
     "wants": []
    },
    "rationale": "Copies the When Played abilities of the units put on the deck bottom as additional cost, for this phase; the number of units is variable (up to 2).",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -6983,7 +6970,7 @@
     "wants": []
    },
    "rationale": "Moves a space unit to the ground arena. No damage or removal, a repositioning step that exposes it to ground interaction.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -7083,7 +7070,7 @@
     ]
    },
    "rationale": "Selects a token upgrade on another unit so the next clause can copy it.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
    "newVocab": [
@@ -7111,12 +7098,7 @@
        "restrict": [],
        "text": "that unit"
       },
-      "tokens": [
-       [
-        "Experience",
-        1
-       ]
-      ]
+      "tokens": []
      }
     ],
     "conditions": [
@@ -7126,15 +7108,13 @@
      }
     ],
     "structure": [],
-    "offers": [
-     "offers:give-experience"
-    ],
+    "offers": [],
     "wants": [
      "wants:tokens"
     ]
    },
-   "rationale": "Gives a second copy of the chosen token upgrade to the target unit. Shape fix: tokens Experience x1: 'those tokens' type is not in this clause; Experience matches the existing offers tag.",
-   "confidence": "medium",
+   "rationale": "Gives a second copy of the chosen token upgrade to the target unit. Shape fix: tokens Experience x1: 'those tokens' type is not in this clause; Experience matches the existing offers tag. Revision (table v3): emptied the guessed Experience token list and removed offers:give-experience; the token type is whatever token upgrade was chosen (Experience or Shield), the clause does not name it.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -7193,7 +7173,7 @@
     "effects": [
      {
       "rule": "curated",
-      "cat": "remove_keyword",
+      "cat": "remove_trait",
       "n": null,
       "target": {
        "side": "enemy",
@@ -7220,8 +7200,8 @@
     "offers": [],
     "wants": []
    },
-   "rationale": "Enemy cards lose the named trait this phase, including cards outside play, which can turn off trait synergies.",
-   "confidence": "medium",
+   "rationale": "Enemy cards lose the named trait this phase, including cards outside play, which can turn off trait synergies. Revision (table v3): effect cat is remove_trait (the card removes a named trait, not a keyword); remove_keyword would feed keyword-removal counts.",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -7273,8 +7253,8 @@
      "wants:wide-board"
     ]
    },
-   "rationale": "While being played, you may choose any number of friendly units, as a setup step for the effect that follows or precedes. Count depends on your board.",
-   "confidence": "low",
+   "rationale": "While being played, you may choose any number of friendly units, as a setup step for the effect that follows or precedes. Count depends on your board. Revision (table v3): raised from low; the clause is a faithful choose step and wants:wide-board fits (each chosen friendly unit lowers the cost by 1).",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -7310,11 +7290,9 @@
      }
     ],
     "offers": [],
-    "wants": [
-     "wants:trait-"
-    ]
+    "wants": []
    },
-   "rationale": "This unit gains every trait on friendly leaders except Force, even while she is out of play, so she can satisfy trait payoffs. Shape fix: keywords=[]: the clause grants traits, not keywords (no trait effect cat exists).",
+   "rationale": "This unit gains every trait on friendly leaders except Force, even while she is out of play, so she can satisfy trait payoffs. Shape fix: keywords=[]: the clause grants traits, not keywords (no trait effect cat exists). Revision (table v3): removed the malformed tag wants:trait- (empty trait name matches nothing); kept medium: no effect category grants traits (the closed list is in src/schemas/card-features.ts:85), so it is modeled by structure gains_traits plus an empty grant_keyword.",
    "confidence": "medium",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16",
@@ -7544,7 +7522,7 @@
     "wants": []
    },
    "rationale": "Header of an opponent-chosen modal. The options are separate clauses. Shape fix: control n=1, what = an Endor base.",
-   "confidence": "medium",
+   "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
   },
@@ -7615,12 +7593,10 @@
     ],
     "conditions": [],
     "structure": [],
-    "offers": [
-     "offers:return-any-to-hand"
-    ],
+    "offers": [],
     "wants": []
    },
-   "rationale": "Same tuck as Qui-Gon Jinn: the chosen non-leader unit goes to top or bottom of its owner's deck, chosen by that owner.",
+   "rationale": "The chosen non-leader unit goes to the top or bottom of its owner's deck, chosen by that owner (a tuck, removal-like). Revision (table v3): dropped offers:return-any-to-hand; a tuck puts the unit in the deck, not in hand, so it is not a bounce and cannot be replayed from hand (verification RC04).",
    "confidence": "high",
    "reviewedBy": null,
    "addedIn": "curation-2026-10-16"
