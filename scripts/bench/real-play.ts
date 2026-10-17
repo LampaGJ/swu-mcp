@@ -5,11 +5,13 @@
  * engine simulations. Model judges say whether a pairing reads right; this says whether players use it.
  * @tacticalObjective Deterministic and seeded: loads the run's pairs, trios and fungible classes, the decklist,
  * human-game and simulation extracts, measures every pair with scripts/bench/measures.ts, and writes
- * <run>/verify/real-play.json plus the aggregate summary docs/verification/real-play-<run date>.md. Pairs whose
+ * <run>/verify/real-play.json, the local full report <run>/verify/real-play-full.md (human games included,
+ * git-ignored) and the public summary docs/verification/real-play-<run date>.md (no human-game figures,
+ * docs/decisions.md D22). Pairs whose
  * cards were not released (or not seen in use) by a source's capture date are reported as not observable there.
  *
  * Usage: pnpm bench:real-play [--run <dir>] [--originals <dir>] [--games <file>] [--decks <file>] [--sims <file>]
- *                             [--fixture <file>] [--json-out <file>] [--md-out <file>] [--iterations <n>]
+ *                             [--fixture <file>] [--json-out <file>] [--md-out <file>] [--full-md-out <file>] [--iterations <n>]
  */
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -40,7 +42,7 @@ import {
   type Lift,
   type Unit,
 } from "./measures.js";
-import { renderMarkdown } from "./real-play-md.js";
+import { renderFullMarkdown, renderPublicMarkdown } from "./real-play-md.js";
 import { bootstrapCI, clusterBootstrapMean, mannWhitney, mean, median, type CI, type ClusterCI } from "./stats.js";
 
 const SEED = "real-play-v1";
@@ -239,6 +241,7 @@ async function main(): Promise<void> {
       fixture: { type: "string" },
       "json-out": { type: "string" },
       "md-out": { type: "string" },
+      "full-md-out": { type: "string" },
       iterations: { type: "string" },
     },
   });
@@ -253,6 +256,7 @@ async function main(): Promise<void> {
   const fixtureFile = path.resolve(values.fixture ?? path.join(REPO_ROOT, "data/fixtures/pairs-v1.json"));
   const jsonOut = path.resolve(values["json-out"] ?? path.join(runDir, "verify/real-play.json"));
   const mdOut = path.resolve(values["md-out"] ?? path.join(REPO_ROOT, `docs/verification/real-play-${runDate}.md`));
+  const fullMdOut = path.resolve(values["full-md-out"] ?? path.join(runDir, "verify/real-play-full.md"));
   const iterations = Number(values.iterations ?? "1000");
 
   const p = progress("bench-real-play", { total: 12, everyMs: 5000 });
@@ -852,9 +856,11 @@ async function main(): Promise<void> {
   mkdirSync(path.dirname(jsonOut), { recursive: true });
   writeFileSync(jsonOut, `${JSON.stringify(report, null, 1)}\n`);
   mkdirSync(path.dirname(mdOut), { recursive: true });
-  writeFileSync(mdOut, renderMarkdown(report));
-  p.done({ jsonOut, mdOut });
-  console.log(JSON.stringify({ jsonOut, mdOut }));
+  writeFileSync(mdOut, renderPublicMarkdown(report));
+  mkdirSync(path.dirname(fullMdOut), { recursive: true });
+  writeFileSync(fullMdOut, renderFullMarkdown(report));
+  p.done({ jsonOut, mdOut, fullMdOut });
+  console.log(JSON.stringify({ jsonOut, mdOut, fullMdOut }));
 }
 
 function seededUnit(seed: string): number {
