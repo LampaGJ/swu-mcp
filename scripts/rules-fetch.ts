@@ -128,6 +128,7 @@ async function main(): Promise<void> {
     throw new Error(`${stored} exists with a different sha256; a new CR needs a new version directory, not an overwrite`);
   }
   renameSync(staging, stored);
+  // D2 exception: acquisition timestamp, captured once into fetch.json and reused while the PDF sha matches; build:data always passes --date (scripts/build-data.ts:131).
   const today = new Date().toISOString().slice(0, 10);
   const previous = existsSync(recordPath) ? fetchRecordSchema.parse(JSON.parse(readFileSync(recordPath, "utf8"))) : null;
   const fetchRecord =
