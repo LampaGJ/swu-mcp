@@ -94,3 +94,5 @@ This is the owner's standing intent for swu-mcp, one entry per decision, with th
 **D33. knip is adopted** (#51) to list unused exports; de-exporting follows from its baseline (#52).
 
 **D34. Input roots keep the /Volumes paths as defaults** (#35). Each root is configurable by flag or SWU_* variable; the current /Volumes paths stay as the documented defaults.
+
+**D35. Premier-legality rulings** (#44, owner review 2026-10-18). R1: a Weekly Play set inherits a Premier-legal parent (its cards read legal). R2: a Weekly Play set with a rotated parent reads rotated (fails deck legality and drops out of suggestions). R3: only explicit wording counts — "Premier legal" means legal; "Premier rotated" and "non-Premier legal" both mean not Premier-legal; anything else reads unverified. "non-Premier legal" must be matched before "Premier legal", which it contains. R4: the kind of set decides first — promo-kind sets are judged card by card, Weekly Play sets follow their parent.
