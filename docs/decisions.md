@@ -82,3 +82,15 @@ This is the owner's standing intent for swu-mcp, one entry per decision, with th
 **D28. Frameworks over custom code** (owner standing rule). Use Zod, MiniSearch, the MCP SDK, the TOON library, esbuild, Vitest and wrangler. Any hand-rolled concern must be a documented exception.
 
 **D29. Long scripts emit pollable progress** (owner standing rule). Use `scripts/lib/progress.mjs`, writing to `reports/.progress/<job>.json`.
+
+## Rulings on the red-team follow-ups (2026-10-17)
+
+**D30. Misspelled tool arguments are fuzzy-matched** (#29). An unknown argument name is matched to the closest declared parameter (for example `subtitel` to `subtitle`), applied, and reported in the result as a correction. A key with no close match is rejected with InvalidParams naming the key and the nearest valid names. Silent dropping (today's SDK behaviour) ends.
+
+**D31. Set codes are classified from the official expansion list** (#38). The pinned card-list pages carry each expansion's code and name (for example IBH = Intro Battle: Hoth, J25 = 2025 Judge Program, C25 = 2025 Convention Exclusive). The scorer's set guard classifies every code through that list (main set, Weekly Play, promo, starter, convention, judge, organised play) and fails loudly only on a code the official list does not know.
+
+**D32. The rubric probe scripts stay** (#39). The five scripts/rubric probes are kept and run under tsx against the promoted OLS module.
+
+**D33. knip is adopted** (#51) to list unused exports; de-exporting follows from its baseline (#52).
+
+**D34. Input roots keep the /Volumes paths as defaults** (#35). Each root is configurable by flag or SWU_* variable; the current /Volumes paths stay as the documented defaults.
