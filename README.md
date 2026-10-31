@@ -160,7 +160,7 @@ One command rebuilds every data product from mault's originals:
 It runs these steps in order and stops at the first failure:
 
 - `export:package` the raw card-list pages and price files to `llm/` (cards, facet indexes, name index), `docs/` and `replay.json`. It verifies every page against the manifest hashes first.
-- `card-features` parses every card's text into triggers, effects, offers and wants (`features/`).
+- `card-features` parses every card's text into triggers, effects, offers and wants (`features/`), and adds each base's printed location to its traits from the pinned capture in `data/pinned/base-locations/` (`pnpm tsx scripts/pinned/capture-base-locations.ts --engine <forceteki clone>` makes it; the official API ships bases with empty traits).
 - `score` the deterministic rubric scores (`scores/`).
 - `synergy` pairs, trios and fungibility classes (`synergy/`).
 - `market` prices and play statistics (`market/`).
@@ -195,6 +195,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
 - `total` is comparable only within a card type. `playCalibrated` is rank-meaningful only and is fitted to the same play data it is compared with, so a gap between score and play is partly circular.
 - The Comprehensive Rules version check is manual: run `pnpm rules:check` (exit 0 current, 10 newer available, 2 error). Nothing schedules it.
 - The scope is the logical cards with a printing in Jump to Lightspeed or a later set, which matches Premier legality.
+- Base locks come from the location printed on each base, pinned from the forceteki engine's card data (decision D59). Every one of the 69 bases in the card table has a pinned location; no base is without one. A lock is read only from a card's own clause text: a lock in a leader or base ability is not flagged, and the cluster gaps of `deck_audit` do not look at locks. An aspect-unit lock counts the leader's, the base's and the deck's aspects as supplying a unit, although a base is not a unit.
 
 ## Commands
 

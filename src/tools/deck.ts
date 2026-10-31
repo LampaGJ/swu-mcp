@@ -10,6 +10,7 @@ import { countAtOrBelow } from "../scorer/rank.js";
 import type { ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
+import { clauseLock, isLocked, lockFields, lockSupply, type ClauseLock, type LockSupply } from "../synergy/clause-lock.js";
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
 import { edgeOrder } from "../synergy/graph.js";
@@ -501,13 +502,17 @@ function edgesInto(ctx: SynergyContext): Map<string, PairEdge[]> {
 
 const NAMED_FEEDERS = 3;
 
+/** Decision D59 (#147, #150): the lock fields every deck tool prints. */
+export const LOCK_NOTE =
+  "baseLocked: a clause of the card works only under a base of that location (Origin Tree is Kashyyyk, Jundland Wastes Tatooine; the location is pinned from the engine card data) and this base is another; needsUnitAspect: a clause of the card works only while you control a unit of that aspect (\"A or B\" = either) and the leader, base and deck units supply none. A locked card is ranked after the unlocked ones and is not counted as covering a threat. Only the card's own clause text is read: a card whose lock sits in a leader or base ability is not flagged.";
+
 /**
  * The best few cards offering what an orphan wants; "Title (cost)", with ", +N" for an aspect penalty. Without the
  * leader's lists, penalty-free for this leader and base first. With them (#140): cards the lists play at
  * LEADER_INCLUSION_FLOOR or more first, most played first, then aspect penalty, then pair edge; an unplayed card is
  * marked "unplayed" and a played one carries its inclusion.
  */
-function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: ReadonlySet<string>, supplied: readonly string[], data: LeaderData | null): string {
+function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: ReadonlySet<string>, supplied: readonly string[], data: LeaderData | null, locks: LockSupply): string {
   const inclusionOf = (cardKey: string): number => data?.byCard.get(cardKey)?.inclusion ?? 0;
   const playedIn = (cardKey: string): boolean => inclusionOf(cardKey) >= LEADER_INCLUSION_FLOOR;
   return feeders
@@ -516,20 +521,24 @@ function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: Readon
       const row = env.store.byKey.get(edge.a);
       if (syn === undefined || row === undefined || inDeck.has(edge.a)) return [];
       if (!MAIN_TYPES.has(syn.type) || cardScope(env.store, row) === "rotated") return [];
-      return [{ edge, syn, penalty: singlePenalty(syn, supplied) }];
+      const lock = clauseLock(syn, locks);
+      return [{ edge, syn, penalty: singlePenalty(syn, supplied), lock, locked: isLocked(lock) }];
     })
+    // D59: a feeder whose clause this leader, base and deck cannot meet follows the feeders that can.
     .sort((x, y) =>
-      data === null
+      Number(x.locked) - Number(y.locked) ||
+      (data === null
         ? x.penalty - y.penalty || edgeOrder(x.edge, y.edge)
         : Number(playedIn(y.edge.a)) - Number(playedIn(x.edge.a)) ||
           (playedIn(x.edge.a) ? inclusionOf(y.edge.a) - inclusionOf(x.edge.a) : 0) ||
           x.penalty - y.penalty ||
-          edgeOrder(x.edge, y.edge),
+          edgeOrder(x.edge, y.edge)),
     )
     .slice(0, NAMED_FEEDERS)
-    .map(({ syn, penalty }) => {
+    .map(({ syn, penalty, lock }) => {
       const mark = data === null ? "" : playedIn(syn.cardKey) ? `, ${Math.round(inclusionOf(syn.cardKey) * 100)}%` : ", unplayed";
-      return `${cardLabel(syn)} (${syn.structured.cost ?? "-"}${penalty > 0 ? `, +${penalty}` : ""}${mark})`;
+      const locked = Object.entries(lockFields(lock)).map(([k, v]) => `, ${k}: ${v}`).join("");
+      return `${cardLabel(syn)} (${syn.structured.cost ?? "-"}${penalty > 0 ? `, +${penalty}` : ""}${mark}${locked})`;
     })
     .join("; ");
 }
@@ -586,6 +595,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const { lines, unresolved, copies } = resolveList(env, args.decklist, "main");
   if (lines.length === 0) return noCards(unresolved);
   const supplied = suppliedBy(pair);
+  const locks = lockSupply(pair.leader.syn, pair.base.syn, lines.map((l) => l.syn));
 
   const byType = new Map<string, number>();
   for (const l of lines) byType.set(l.row.type, (byType.get(l.row.type) ?? 0) + l.count);
@@ -653,7 +663,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
         cardKey: l.syn.cardKey,
         wants: specific.slice(0, 4).join(", "),
         feedersInCardPool: feeders.length,
-        feeders: namedFeeders(env, feeders, inDeck, supplied, leaderData),
+        feeders: namedFeeders(env, feeders, inDeck, supplied, leaderData, locks),
       },
     ];
   });
@@ -668,7 +678,11 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const leaderComparison = leaderComparisonOf(env, lines, leaderData);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);
   const sideboardEntries = sideboardInput.parse(input).sideboard;
-  const sideboard = sideboardEntries === undefined ? undefined : sideboardRows(env, sideboardEntries, supplied, leaderData);
+  const sideboard = sideboardEntries === undefined ? undefined : sideboardRows(env, sideboardEntries, supplied, leaderData, locks);
+  const lockedCards = lines.flatMap((l) => {
+    const lock = clauseLock(l.syn, locks);
+    return isLocked(lock) ? [{ card: cardLabel(l.syn), cardKey: l.syn.cardKey, count: l.count, ...lockFields(lock) }] : [];
+  });
 
   return ok({
     dataVersion: env.dataVersion,
@@ -698,6 +712,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
       uncovered: cover.uncovered,
     },
     leaderComparison,
+    lockedCards: { note: LOCK_NOTE, cards: lockedCards },
     orphanWants,
     genericWants,
     clusterGaps,
@@ -706,7 +721,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
 }
 
 /** The sideboard listed beside the 50, never merged into it (#143): one row per card with the figures a swap decision reads. */
-function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], supplied: readonly string[], data: LeaderData | null) {
+function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], supplied: readonly string[], data: LeaderData | null, locks: LockSupply) {
   const { lines, unresolved, copies } = resolveList(env, entries, "main");
   return {
     note: "the sideboard is not part of the deck counts above; penalty is per copy under this leader and base; leaderInclusion is the share of the leader's decklists that play the card, null = never in the leader's top cards",
@@ -721,6 +736,7 @@ function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSc
       scoreTotal: env.scores.get(l.syn.cardKey)?.total ?? null,
       playCalibrated: env.scores.get(l.syn.cardKey)?.playCalibrated ?? null,
       leaderInclusion: data === null ? null : (data.byCard.get(l.syn.cardKey)?.inclusion ?? null),
+      ...lockFields(clauseLock(l.syn, locks)),
     })),
     unresolved,
   };
@@ -1174,6 +1190,9 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   if (typeof pair === "string") return fail(pair);
   const partial = args.decklist === undefined ? { lines: [], unresolved: [], copies: 0 } : resolveList(env, args.decklist, "main");
   const supplied = suppliedBy(pair);
+  const locks = lockSupply(pair.leader.syn, pair.base.syn, partial.lines.map((l) => l.syn));
+  const lockOf = new Map<string, ClauseLock>();
+  const lockedRank = (cardKey: string | null): number => Number(cardKey !== null && isLocked(lockOf.get(cardKey) ?? { baseLocked: [], needsUnitAspect: [] }));
   const held = new Map(partial.lines.map((l) => [l.syn.cardKey, l.count]));
   const heldCosts = new Set(partial.lines.map((l) => l.syn.structured.cost));
   const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
@@ -1191,6 +1210,8 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     if (args.tag !== undefined && ![...syn.tags.offers, ...syn.tags.wants].some((t) => t.tag === args.tag)) return [];
     const penalty = singlePenalty(syn, supplied);
     if (penalty > args.maxPenalty) return [];
+    const lock = clauseLock(syn, locks);
+    lockOf.set(syn.cardKey, lock);
     return [
       {
         cardKey: syn.cardKey,
@@ -1203,6 +1224,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
         ...(leaderData === null ? {} : { leaderInclusion: inclusionOf(syn.cardKey) }),
         price: priceOf(env, syn.cardKey),
         remainingCopies: remaining,
+        ...lockFields(lock),
       },
     ];
   });
@@ -1222,6 +1244,8 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   played.sort(
     (a, b) =>
       a.cost - b.cost ||
+      // D59: within a cost a card whose clause this leader, base and deck cannot meet follows the cards that can be played as printed.
+      lockedRank(a.cardKey) - lockedRank(b.cardKey) ||
       (rankedBy === "leader" ? numberOr(inclusionOf(b.cardKey), -1) - numberOr(inclusionOf(a.cardKey), -1) : 0) ||
       numberOr(b.playCalibrated, -Infinity) - numberOr(a.playCalibrated, -Infinity) ||
       a.penalty - b.penalty ||
@@ -1309,7 +1333,10 @@ function noPlayedRow(cost: number, thin: boolean) {
   };
 }
 
-function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string {
+const playableNote = (entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string =>
+  `${playableRankNote(entry, rankedBy, includeUnplayed)} ${LOCK_NOTE}`;
+
+function playableRankNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string {
   const score = "play-calibrated score (fitted to Premier inclusion; rank-meaningful only)";
   if (entry === null) return `ranked within each cost by ${score}. Not leader-specific: this package holds no leader-cards data for this leader. Rotated cards are left out.`;
   const capped = entry.cards.length >= LEADER_CARDS_MAX ? ` or below the ${LEADER_CARDS_MAX}-card cap of the leader index` : "";
@@ -1924,7 +1951,7 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones.",
     deckAuditShape,
     deckAudit,
   ),
@@ -1942,7 +1969,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost.",
     playableCardsShape,
     playableCards,
   ),

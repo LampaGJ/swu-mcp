@@ -1002,3 +1002,102 @@ describe("leader_cards", () => {
     expect(leaderCards(leaderEnv, { leader: "LC" }).content[0].text.toLowerCase()).not.toContain("karabast");
   });
 });
+
+describe("locks are honoured in playable_cards, meta_answers and deck_audit (#147, #150, D59)", () => {
+  const WORSE = COUNTER_CARDS.find((c) => (c as { cardKey: string }).cardKey === "05010264");
+  const clone = (cardKey: string, title: string, clause: string): Record<string, unknown> =>
+    JSON.parse(JSON.stringify(WORSE).replaceAll("Defeat a non-leader unit.", clause).replace("05010264", cardKey).replace("It's Worse", title));
+  const LOCKED_BASE = clone("LK1", "Tatooine Defeater", "If you control a Tatooine base, defeat a non-leader unit.");
+  const LOCKED_ASPECT = clone("LK2", "Aggression Defeater", "Aggression unit, defeat a non-leader unit.");
+  const OPEN = clone("LK3", "Open Defeater", "Defeat a non-leader unit.");
+  const TATOOINE_BASE = mk("TB", "Jundland Wastes", { type: "Base", icons: ["Command"], cost: null, traits: ["Tatooine"] });
+  const KASHYYYK_BASE = mk("KB", "Origin Tree", { type: "Base", icons: ["Command"], cost: null, traits: ["Kashyyyk"] });
+  const AGGRO_BASE = mk("AB2", "Aggro Base", { type: "Base", aspects: ["Aggression"], icons: ["Aggression"], cost: null });
+  const AGGRESSION_UNIT = mk("AU", "Aggression Unit", { aspects: ["Aggression"], cost: 2 });
+
+  const build = () => {
+    const all = [...features, featureRecord(TATOOINE_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(KASHYYYK_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(AGGRESSION_UNIT, { power: 2, hp: 2, arenas: ["Ground"] }), featureRecord(AGGRO_BASE, { power: null, hp: 25, arenas: [] }), LOCKED_BASE, LOCKED_ASPECT, OPEN];
+    const syn = synergyCardsSchema.parse(all);
+    const rowsOf: CardRow[] = syn.map((s) => ({
+      cardKey: s.cardKey, title: s.title, subtitle: s.subtitle, type: s.type, cost: s.structured.cost, power: null, hp: null,
+      aspects: s.structured.aspectIcons.join("|") || null, traits: null, keywords: null, arenas: null, text: null, sets: "SEC",
+    }));
+    const denv: DeckEnv = {
+      ...deckEnv,
+      store: { ...store, cards: rowsOf, byKey: new Map(rowsOf.map((r) => [r.cardKey, r])) },
+      ctx: createSynergyContext(syn, COMMITTED_TABLE),
+    };
+    return { denv, menv: createMetaEnv(denv, meta, winrates, loadCounterTable(), all) };
+  };
+  const { denv, menv } = build();
+  const answer = (out: any, key: string) => [...pageOf(out), ...out.lockedAnswers].find((a: { cardKey: string }) => a.cardKey === key);
+  const run = (base: string, decklist: { card: string; count: number }[] = []) =>
+    body(metaAnswers(menv, { leader: "OL", base, ...(decklist.length === 0 ? {} : { decklist }), maxPenalty: 4, limit: 60, perThreat: 60, minPerThreat: 0 }));
+
+  it("meta_answers: a base-locked offer answers nothing under another base, is named, and is listed after the open answers", () => {
+    const out = run("OB");
+    expect(answer(out, "LK3")).toMatchObject({ coverage: 1 });
+    expect(answer(out, "LK1")).toMatchObject({ baseLocked: "Tatooine", lockedOut: true, coverage: 0, threatsAnswered: 0 });
+    expect(answer(out, "LK1").answers).toContainEqual(expect.objectContaining({ threat: "key-units", evidence: "text: If you control a Tatooine base, defeat a non-leader unit." }));
+    // It takes no slot among the additions: it is listed apart, after them.
+    expect(out.additions.map((x: { cardKey: string }) => x.cardKey)).not.toContain("LK1");
+    expect(out.lockedAnswers.map((x: { cardKey: string }) => x.cardKey)).toContain("LK1");
+    expect(out.lockedAnswers.every((x: { lockedOut?: boolean }) => x.lockedOut === true)).toBe(true);
+    const open = out.threatsCovered.match(/key-units (\d+)/)[1];
+    const pageWithout = pageOf(out).filter((a: { answers: { threat: string }[] }) => a.answers.some((x) => x.threat === "key-units")).length;
+    expect(Number(open)).toBe(pageWithout);
+  });
+
+  it("meta_answers: a base of the named location clears the lock and the offer covers the threat again", () => {
+    const out = run("TB");
+    expect(answer(out, "LK1")).toMatchObject({ coverage: 1 });
+    expect(answer(out, "LK1")).not.toHaveProperty("baseLocked");
+    expect(answer(out, "LK1")).not.toHaveProperty("lockedOut");
+    expect(answer(run("KB"), "LK1")).toMatchObject({ baseLocked: "Tatooine", lockedOut: true });
+  });
+
+  it("meta_answers: a locked card already in the decklist stays among the staples with its lock named and covers nothing", () => {
+    const out = run("OB", [{ card: "LK1", count: 1 }]);
+    expect(out.staples.find((x: { cardKey: string }) => x.cardKey === "LK1")).toMatchObject({ inDeck: 1, baseLocked: "Tatooine", lockedOut: true, coverage: 0 });
+    expect(out.lockedAnswers.map((x: { cardKey: string }) => x.cardKey)).not.toContain("LK1");
+  });
+
+  it("meta_answers: an aspect-unit clause is locked until the leader or a deck unit supplies that aspect; a base is no unit", () => {
+    expect(answer(run("OB"), "LK2")).toMatchObject({ needsUnitAspect: "Aggression", lockedOut: true, coverage: 0 });
+    const supplied = run("OB", [{ card: "AU", count: 1 }]);
+    expect(answer(supplied, "LK2")).toMatchObject({ coverage: 1 });
+    expect(answer(supplied, "LK2")).not.toHaveProperty("needsUnitAspect");
+    expect(answer(run("AB2"), "LK2")).toMatchObject({ needsUnitAspect: "Aggression", lockedOut: true, coverage: 0 });
+  });
+
+  it("playable_cards: a locked card keeps its place in the list but follows the open cards of its cost, with the lock named", () => {
+    const out = body(playableCards(denv, { leader: "OL", base: "OB", costs: [7], maxPenalty: 4, perCost: 20, limit: 50, rankBy: "score" }));
+    const keys = out.cards.map((c: { cardKey: string }) => c.cardKey);
+    expect(keys.indexOf("LK3")).toBeGreaterThanOrEqual(0);
+    expect(keys.indexOf("LK1")).toBeGreaterThan(keys.indexOf("LK3"));
+    expect(keys.indexOf("LK2")).toBeGreaterThan(keys.indexOf("LK3"));
+    expect(out.cards.find((c: { cardKey: string }) => c.cardKey === "LK1")).toMatchObject({ baseLocked: "Tatooine" });
+    expect(out.cards.find((c: { cardKey: string }) => c.cardKey === "LK2")).toMatchObject({ needsUnitAspect: "Aggression" });
+    expect(out.cards.find((c: { cardKey: string }) => c.cardKey === "LK3")).not.toHaveProperty("baseLocked");
+    expect(out.note).toContain("baseLocked");
+    const under = body(playableCards(denv, { leader: "OL", base: "TB", costs: [7], maxPenalty: 4, perCost: 20, limit: 50, rankBy: "score" }));
+    expect(under.cards.find((c: { cardKey: string }) => c.cardKey === "LK1")).not.toHaveProperty("baseLocked");
+  });
+
+  it("playable_cards: a unit in the partial decklist supplies the aspect", () => {
+    const out = body(playableCards(denv, { leader: "OL", base: "OB", costs: [7], maxPenalty: 4, perCost: 20, limit: 50, rankBy: "score", decklist: [{ card: "AU", count: 1 }] }));
+    expect(out.cards.find((c: { cardKey: string }) => c.cardKey === "LK2")).not.toHaveProperty("needsUnitAspect");
+  });
+
+  it("deck_audit: lists the deck cards whose clause the leader, base and deck cannot meet", () => {
+    const decklist = [{ card: "LK1", count: 2 }, { card: "LK2", count: 1 }, { card: "LK3", count: 3 }];
+    const out = body(deckAudit(denv, { leader: "OL", base: "OB", decklist }));
+    expect(out.lockedCards.cards).toEqual([
+      { card: "Tatooine Defeater", cardKey: "LK1", count: 2, baseLocked: "Tatooine" },
+      { card: "Aggression Defeater", cardKey: "LK2", count: 1, needsUnitAspect: "Aggression" },
+    ]);
+    expect(out.lockedCards.note).toContain("needsUnitAspect");
+    const met = body(deckAudit(denv, { leader: "OL", base: "TB", decklist: [...decklist, { card: "AU", count: 1 }] }));
+    expect(met.lockedCards.cards).toEqual([]);
+  });
+});
