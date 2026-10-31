@@ -204,20 +204,20 @@ describe.skipIf(!hasData)("meta_answers ranks a thin or negative addition after 
   const answers = (extra: object = {}): Record<string, any> =>
     body(META_TOOLS.meta_answers.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, decklist: DECKLIST, limit: 60, archetypes: 6, ...extra }));
 
-  it("lists The Legacy Run (negative, 5 decks) after every unlocked addition whose class is ok", () => {
-    const additions = answers().additions as Record<string, any>[];
-    const at = additions.findIndex((r) => r.cardKey === LEGACY_RUN);
-    expect(at).toBeGreaterThanOrEqual(0);
-    expect(additions[at].evidenceClass).toBe("negative");
-    // A partly locked answer (D65) stays behind every unlocked one, a negative included; a row rescued from under the inclusion floor is appended last.
-    const open = (x: Record<string, any>): boolean => x.baseLocked === undefined && x.needsUnitAspect === undefined && x.nameLocked === undefined && x.needsForce === undefined && x.needsTrait === undefined;
-    for (const r of additions.filter((x) => x.evidenceClass === "ok" && open(x) && x.hiddenByFloor === undefined)) expect(additions.indexOf(r), r.title).toBeLessThan(at);
+  // D85 (#167) flips D75's placement: a negative addition takes no addition slot and is listed apart under negativeAdditions.
+  it("lists The Legacy Run (negative, 5 decks) under negativeAdditions, never among the additions", () => {
+    const out = answers();
+    expect((out.additions as Record<string, any>[]).map((r) => r.cardKey)).not.toContain(LEGACY_RUN);
+    const negative = out.negativeAdditions as Record<string, any>[];
+    const legacy = negative.find((r) => r.cardKey === LEGACY_RUN) as Record<string, any>;
+    expect(legacy).toBeDefined();
+    expect(legacy.evidenceClass).toBe("negative");
   });
 
   it("no longer leads the additions on the default page, and the note states the rule", () => {
     const a = answers({ limit: 10 });
     expect(a.additions[0].cardKey).not.toBe(LEGACY_RUN);
-    expect(a.note).toContain("is listed after every addition whose class is ok");
+    expect(a.note).toContain("takes no addition slot and is listed apart under negativeAdditions");
   });
 });
 

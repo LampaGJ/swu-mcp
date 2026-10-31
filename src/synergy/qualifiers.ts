@@ -54,6 +54,8 @@ export interface Subject {
   many?: boolean;
   /** The want counts the aspect icons or units of this aspect ("for each Heroism aspect icon among friendly units", D66). */
   countsAspect?: string;
+  /** D85 (#167): the effect reaches only a unit that is already damaged ("deal 2 damage to a damaged unit", TIE Dagger Vanguard). */
+  damagedOnly?: boolean;
 }
 
 /** What an upgrade or Pilot may attach to: the printed "Attach to ..." line, or a Vehicle for Piloting (CR: "attach to a friendly Vehicle unit"). */
@@ -100,6 +102,8 @@ export interface TagQualifier {
   spendsSelf?: boolean;
   /** D83: the offer happens in the regroup phase ("When the regroup phase starts", "At the start of the next regroup phase"). */
   regroup?: boolean;
+  /** D85 (#167): the offer is a mode an opponent picks ("An opponent chooses one:", Watto), so the card's controller cannot count on it. */
+  opponentChooses?: boolean;
 }
 
 interface TargetLite {
@@ -217,6 +221,9 @@ const UNIT_OPPONENT_CONTROLS = /\bunits? (?:that )?(?:an |that )?opponent contro
 /** "While you control a Force unit or a Force upgrade" (Padawan Starfighter): the trait the wanted upgrade must carry. */
 const TRAIT_UPGRADE = /\b(?:an?|another) ([A-Z][\p{L}'\u2019-]*) upgrade\b/u;
 const UPGRADE_TOKEN = /\b(?:experience|shield|credit|advantage|weakness|force)\b/i;
+const DAMAGED_TARGET = /(?<!un)\bdamaged units?\b/i;
+/** D85 (#167): a want gated on the card being damaged at all ("can't attack unless it's damaged", "While this unit is damaged"), not one that counts damage (Grit). */
+const DAMAGED_GATE = /\b(?:unless|while|if) (?:it['’]?s|it is|this unit is|he['’]?s|she['’]?s|he is|she is) damaged\b/i;
 
 /** The head noun of a target phrase ("a unit that costs 3 resources" is a unit), because the parsed kind follows the first noun it sees. */
 function headKind(text: string, parsed: string | undefined): Kind | undefined {
@@ -272,6 +279,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     aspect,
     ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
     ...(t.quant === "any_number" || t.quant === "all" ? { many: true } : {}),
+    ...(DAMAGED_TARGET.test(text) ? { damagedOnly: true } : {}),
   };
 }
 
@@ -423,6 +431,11 @@ const SPENDS_SELF = /\b(?:defeat|discard) this (?:upgrade|unit|card)\b|\breturn 
 const spendsSelf = (ability: AbilityNode): boolean => clausesOf(ability).some((c) => SPENDS_SELF.test(c.text) && !/\binstead\b/i.test(c.text));
 
 const REGROUP = /\bregroup phase\b/i;
+/** D85 (#167): the clause sits in a mode list the opponent picks from (curated structure "opponent_modal", chooser "opponent"). */
+const opponentPicks = (ability: AbilityNode, clause: ClauseLite | undefined): boolean =>
+  clause !== undefined &&
+  (ability.options ?? []).some((o) => o.clauses.includes(clause)) &&
+  (ability.clauses ?? []).some((c) => (c.structure ?? []).some((s) => (s as { chooser?: string }).chooser === "opponent"));
 
 const scopeOf = (text: string): TagQualifier["scope"] =>
   /\bwhile attacking\b/i.test(text) ? "attacking" : /\bwhile defending\b/i.test(text) ? "defending" : undefined;
@@ -498,6 +511,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     ...(delivers === undefined ? {} : { delivers }),
     ...(side === "wants" && spendsSelf(ability) ? { spendsSelf: true } : {}),
     ...(side === "offers" && REGROUP.test(`${triggerText} ${text}`) ? { regroup: true } : {}),
+    ...(side === "offers" && opponentPicks(ability, clause) ? { opponentChooses: true } : {}),
   };
 }
 
@@ -721,6 +735,10 @@ export function conflictBetween(
   const upgradeTrait = wantTag === "wants:upgrades-attached" ? TRAIT_UPGRADE.exec(want.text)?.[1] : undefined;
   if (upgradeTrait !== undefined && (offerTag.startsWith("offers:give-") || (offerTag === "offers:upgrade-to-attach" && !a.structured.traits.includes(upgradeTrait)))) {
     return `the want needs a ${upgradeTrait} upgrade, the offer does not supply one`;
+  }
+  // D85 (#167): damage that only a damaged unit can take never makes an undamaged card damaged (TIE Dagger Vanguard cannot switch on Oggdo Bogdo).
+  if (offer.subject.damagedOnly === true && wantTag === "wants:self-damaged" && DAMAGED_GATE.test(want.text)) {
+    return "the offer reaches only a unit that is already damaged, the want needs the card to become damaged";
   }
   if (want.forAttackOnly && (offerTag === "offers:ready-unit" || offerTag === "offers:extra-attack")) {
     return "the wanted ability lasts for one attack only and does not carry through a ready";

@@ -209,6 +209,9 @@ const OFFER_JOBS = [
   { name: "ready", job: "readies a unit", tags: ["offers:ready-unit"] },
   { name: "draw", job: "draws a card", tags: ["offers:draw"] },
   { name: "removal", job: "removes a unit", tags: ["offers:defeat-any-unit", "offers:defeat-enemy-unit", "offers:damage-any-unit", "offers:damage-enemy-unit", "offers:bounce-enemy"] },
+  // D85 (#167): a unit that makes token units or holds Sentinel (Koska Reeves does both) keeps that job, so a swap must too.
+  { name: "token", job: "creates a token unit", tags: ["offers:create-token-units"] },
+  { name: "sentinel", job: "holds Sentinel", tags: ["offers:has-keyword-sentinel"] },
 ] as const;
 const capital = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 

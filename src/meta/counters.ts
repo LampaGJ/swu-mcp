@@ -43,7 +43,12 @@ const targetSchema = z.looseObject({
   text: z.string().optional(),
 });
 const effectSchema = z.looseObject({ cat: z.string(), n: z.unknown().optional(), target: targetSchema.optional() });
-const clauseSchema = z.looseObject({ text: z.string(), effects: z.array(effectSchema) });
+const clauseSchema = z.looseObject({
+  text: z.string(),
+  effects: z.array(effectSchema),
+  curatedId: z.string().optional(),
+  structure: z.array(z.looseObject({ cat: z.string().optional(), what: z.unknown().optional() })).optional(),
+});
 interface AbilityNode {
   kind: string;
   clauses?: z.infer<typeof clauseSchema>[];
@@ -117,10 +122,41 @@ const specOf = (e: z.infer<typeof effectSchema>): EffectSpec => ({
 });
 
 const RESOURCE_HITS = new Set(["exhaust_resource", "defeat", "bounce", "exhaust"]);
+const SELECTED_SIDE = /^(?:an? )?(friendly|enemy)\b/i;
+
+/**
+ * D85 (#167): a curated clause that only selects targets ("You may choose a friendly unit and an enemy non-leader unit", Chimaera,
+ * A Frightening Reality) carries the offer, and the next clause acts on "those units". The act's effects are given one target per
+ * selected phrase (side, non-leader, the phrase as its words), so the curated offer's removal is read like any other clause's.
+ */
+function selectedTargetEffects(face: string, nodes: readonly AbilityNode[], into: Map<string, EffectSpec[]>, quotes: Map<string, string>): void {
+  for (const n of nodes) {
+    if (n.kind !== "ability") continue;
+    const clauses = n.clauses ?? [];
+    clauses.forEach((clause, i) => {
+      const what = (clause.structure ?? []).find((s) => s.cat === "select_targets")?.what;
+      const next = clauses[i + 1];
+      if (clause.curatedId === undefined || typeof what !== "string" || next === undefined) return;
+      const acts = next.effects.filter((e) => REMOVAL.has(e.cat));
+      const phrases = what.split(/\s+and\s+/).map((p) => p.trim());
+      const specs = acts.flatMap((e) =>
+        phrases.map((phrase) => {
+          const side = SELECTED_SIDE.exec(phrase)?.[1]?.toLowerCase() ?? "any";
+          return { ...specOf(e), side, restrict: /\bnon-leader\b/i.test(phrase) ? ["non_leader"] : [], text: phrase };
+        }),
+      );
+      if (specs.length === 0) return;
+      into.set(`curated ${clause.curatedId}`, specs);
+      quotes.set(`curated ${clause.curatedId}`, `${face}: ${next.text}`);
+    });
+    for (const g of n.grantedAbilities ?? []) selectedTargetEffects(face, g.abilities, into, quotes);
+  }
+}
 
 /** Every answer offer of a card: its offers: tags with the effects of the clause behind each, plus pseudo-tags. */
 export function answerOffers(card: CounterCard): AnswerOffer[] {
   const byWhy = new Map<string, EffectSpec[]>();
+  const quotes = new Map<string, string>();
   const resource: { why: string; effects: EffectSpec[] }[] = [];
   for (const [face, nodes] of Object.entries(card.faces)) {
     walkClauses(nodes, (clause) => {
@@ -135,10 +171,11 @@ export function answerOffers(card: CounterCard): AnswerOffer[] {
       );
       if (hits.length > 0) resource.push({ why, effects: hits });
     });
+    selectedTargetEffects(face, nodes, byWhy, quotes);
   }
   const out: AnswerOffer[] = card.tags.offers
     .filter((t) => !t.tag.startsWith("offers:is-trait-"))
-    .map((t) => ({ tag: t.tag, why: t.why, effects: byWhy.get(t.why) ?? [] }));
+    .map((t) => ({ tag: t.tag, why: quotes.get(t.why) ?? t.why, effects: byWhy.get(t.why) ?? [] }));
   for (const k of [...new Set(card.keywords.filter((k) => !k.granted).map((k) => k.keyword))].sort(compareCodePoints)) {
     out.push({ tag: `keyword:${k}`, why: `printed keyword ${k}`, effects: [] });
   }

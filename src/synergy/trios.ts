@@ -76,8 +76,13 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const rows = linkRows(e);
     return rows.length > 0 && rows.every((r) => r.offer === "offers:defeat-any-unit" && OWN_DEFEAT_WANTS.has(r.want) && graph.qualifier(e.a, "offers", r.offer)?.subject.many !== true);
   };
+  /** D85 (#167): a mode the opponent picks ("An opponent chooses one:", Watto) is not the controller's to count on, so it never makes a trio link. */
+  const opponentPicked = (e: PairEdge): boolean => {
+    const rows = linkRows(e);
+    return rows.length > 0 && rows.every((r) => graph.qualifier(e.a, "offers", r.offer)?.opponentChooses === true);
+  };
   const trioEdges = [...graph.edges, ...graph.conditional].filter(
-    (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type) && !aimedRemoval(e),
+    (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type) && !aimedRemoval(e) && !opponentPicked(e),
   );
   const outAdj = new Map<string, PairEdge[]>();
   const inAdj = new Map<string, PairEdge[]>();

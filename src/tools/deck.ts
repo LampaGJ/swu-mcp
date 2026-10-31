@@ -16,9 +16,9 @@ import { baseEnabledOf, clauseTextsOf, enabledFields } from "../synergy/locks.js
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
 import { readPenaltyRemovers, type RemovalCard } from "./penalty-removal.js";
-import { edgeOrder } from "../synergy/graph.js";
+import { edgeOrder, mechanicalRows } from "../synergy/graph.js";
 import { hostAdmits } from "../synergy/qualifiers.js";
-import { leaderEngineOf, roleKeepOf, suppliedKeywords } from "../synergy/leader-engine.js";
+import { engineHitOf, leaderActionOf, leaderEngineOf, roleKeepOf, suppliedKeywords } from "../synergy/leader-engine.js";
 import { cardLabel } from "../synergy/order.js";
 import type { PairEdge, SynergyCard } from "../synergy/schema.js";
 import type { ToolResult } from "../tools.js";
@@ -512,6 +512,8 @@ const CURVE_GLUT_SHARE = 0.4;
 const CURVE_THIN_SHARE = 0.1;
 const CURVE_THIN_COSTS = [2, 3, 4, 5, 6] as const;
 const GLUT_FILLS_PER_COST = 3;
+/** D85 (#167), coordinator ruling 2026-10-31: how much the leader's play share weighs in a curve fill's fillRank. */
+const FILL_SHARE_WEIGHT = 3;
 const costBucket = (cost: number | null): string => (cost === null ? "-" : cost >= 7 ? "7+" : String(cost));
 
 const intoIndex = new WeakMap<SynergyContext, Map<string, PairEdge[]>>();
@@ -755,36 +757,93 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
     const held = (cost: number): number => curve.find((b) => b.cost === String(cost))?.cards ?? 0;
     const thinCosts = CURVE_THIN_COSTS.filter((c) => String(c) !== glut.cost && held(c) / costedCards < CURVE_THIN_SHARE);
     const inclusion = (k: string): number | null => leaderData?.byCard.get(k)?.inclusion ?? null;
+    // D85 (#167): a fill's deck links are the deck cards and the leader it shares a mechanical pair edge with, plus the leader's own engine
+    // when it reads the fill (Commander Gree: The Warrior gives him an Ambush attack, and his Raid 4 pays it off).
+    const leaderKey = pair.leader.syn.cardKey;
+    const linkKeys = new Set([...inDeck, leaderKey]);
+    const neighbours = new Map<string, Set<string>>();
+    for (const e of env.ctx.graph.edges) {
+      if (mechanicalRows(e).length === 0) continue;
+      for (const [from, to] of [[e.a, e.b], [e.b, e.a]]) {
+        if (!linkKeys.has(to)) continue;
+        const set = neighbours.get(from) ?? new Set<string>();
+        set.add(to);
+        neighbours.set(from, set);
+      }
+    }
+    const engine = leaderEngineOf(pair.leader.syn);
+    const action = leaderActionOf(pair.leader.syn);
+    const engineReads = (syn: SynergyCard): boolean => {
+      const kind = engineHitOf(engine, syn, action)?.kind;
+      return kind !== undefined && kind !== "plays";
+    };
+    const deckLinksOf = (syn: SynergyCard): number => {
+      const linked = neighbours.get(syn.cardKey) ?? new Set<string>();
+      return linked.size + (engineReads(syn) && !linked.has(leaderKey) ? 1 : 0);
+    };
+    // Coordinator ruling 2026-10-31: (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor), so a card in more than half the
+    // leader's lists outranks an unplayed card with many deck links; without leader data, 1 + deckLinks.
+    const fillRankOf = (syn: SynergyCard, links: number): number => {
+      const share = inclusion(syn.cardKey);
+      const factor = leaderData === null ? 1 : 0.5 + FILL_SHARE_WEIGHT * (share !== null && share >= LEADER_INCLUSION_FLOOR ? share : 0);
+      return Math.round((1 + links) * factor * 1000) / 1000;
+    };
     const fills = thinCosts.flatMap((cost) =>
       env.ctx.cards
         .filter((syn) => {
           const row = env.store.byKey.get(syn.cardKey);
           return row !== undefined && syn.structured.cost === cost && MAIN_TYPES.has(syn.type) && !inDeck.has(syn.cardKey) && cardScope(env.store, row) !== "rotated" && singlePenalty(syn, supplied) === 0 && !isLocked(clauseLock(syn, locks));
         })
+        .map((syn) => ({ syn, links: deckLinksOf(syn), rank: fillRankOf(syn, deckLinksOf(syn)) }))
         .sort(
           (a, b) =>
-            numberOr(inclusion(b.cardKey), -1) - numberOr(inclusion(a.cardKey), -1) ||
-            numberOr(env.scores.get(b.cardKey)?.playCalibrated, -Infinity) - numberOr(env.scores.get(a.cardKey)?.playCalibrated, -Infinity) ||
-            compareCodePoints(a.cardKey, b.cardKey),
+            b.rank - a.rank ||
+            numberOr(inclusion(b.syn.cardKey), -1) - numberOr(inclusion(a.syn.cardKey), -1) ||
+            numberOr(env.scores.get(b.syn.cardKey)?.playCalibrated, -Infinity) - numberOr(env.scores.get(a.syn.cardKey)?.playCalibrated, -Infinity) ||
+            compareCodePoints(a.syn.cardKey, b.syn.cardKey),
         )
         .slice(0, GLUT_FILLS_PER_COST)
-        .map((syn) => ({
+        .map(({ syn, links, rank }) => ({
           cardKey: syn.cardKey,
           title: cardLabel(syn),
           type: syn.type,
           cost,
           aspects: aspectGroup(syn),
           penalty: 0,
+          deckLinks: links,
+          fillRank: rank,
           ...(leaderData === null ? {} : { leaderInclusion: inclusion(syn.cardKey) }),
           playCalibrated: env.scores.get(syn.cardKey)?.playCalibrated ?? null,
         })),
     );
+    // D85 (#167): a leader whose Action plays a unit of limited power for an extra resource (The Warrior: 1 plus the unit's cost) turns a
+    // cluster of such units into its own band, one resource higher; when they are most of the glut, the audit says so.
+    const cap = engine?.playsUnitMaxPower ?? null;
+    const extraCost = Number(/^Action \[(\d+) resources?/i.exec(action ?? "")?.[1] ?? Number.NaN);
+    const glutCost = Number(glut.cost);
+    const playable =
+      cap === null || action === null || !Number.isInteger(glutCost)
+        ? 0
+        : sumBy(
+            lines.filter((l) => l.syn.structured.cost === glutCost && l.syn.type === "Unit" && typeof l.syn.structured.power === "number" && l.syn.structured.power <= cap),
+            (l) => l.count,
+          );
+    const leaderAction =
+      playable * 2 < glut.cards || !Number.isInteger(extraCost)
+        ? undefined
+        : {
+            action,
+            extraCost,
+            playable,
+            note: `${playable} of the ${glut.cards} cost-${glut.cost} cards are units with ${cap} or less power, which ${cardLabel(pair.leader.syn)}'s Action plays for ${extraCost} more resource, so through it they are ${glutCost + extraCost} resources each: the cluster sits in the Action's band, and the curve reads one higher when the Action plays them (D85).`,
+          };
     return {
       cost: glut.cost,
       cards: glut.cards,
       share: r2(glut.cards / costedCards),
       thinCosts,
-      note: `${glut.cards} of ${costedCards} costed cards cost ${glut.cost}, more than ${CURVE_GLUT_SHARE * 100}%; the costs from 2 to 6 that hold under ${CURVE_THIN_SHARE * 100}% are thin, and fills lists up to ${GLUT_FILLS_PER_COST} cards per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, the ones this leader's lists play most first, then by play-calibrated score (D84).`,
+      ...(leaderAction === undefined ? {} : { leaderAction }),
+      note: `${glut.cards} of ${costedCards} costed cards cost ${glut.cost}, more than ${CURVE_GLUT_SHARE * 100}%; the costs from 2 to 6 that hold under ${CURVE_THIN_SHARE * 100}% are thin, and fills lists up to ${GLUT_FILLS_PER_COST} cards per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, ranked by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor; 1 without leader data), where deckLinks counts the deck cards and the leader sharing a mechanical pair edge with the fill, the leader's engine counted, then by play-calibrated score (D84, D85).`,
       fills,
     };
   })();
@@ -1635,6 +1694,8 @@ export const budgetAlternativesShape = {
 const OPPONENT_GAIN = /\b(?:each|an|that|the) opponent (?:may )?(?:ready|readies|draws?|creates?|gains?|puts?|resources?|takes?)\b|\bthey (?:may )?(?:draw|create|resource)s?\b/i;
 /** "Its controller resources it": the controller of the unit an enemy-only effect took. */
 const CONTROLLER_GAIN = /\bits controller (?:may )?(?:resources?|draws?|creates?|gains?|puts?)\b/i;
+/** D85 (#167): "Choose an opponent. For this phase, they may play this unit from its owner's discard pile for free" (Stolen AT-Hauler). */
+const OPPONENT_REPLAYS = /\bthey may play this (?:unit|card|upgrade)\b/i;
 
 /**
  * D83 (#165): the clause by which a card gives the opponent a resource, a card or a token (Display Piece: "Defeat an enemy
@@ -1644,7 +1705,7 @@ export function drawbackOf(syn: SynergyCard): string | null {
   const texts = clauseTextsOf(syn);
   const enemyOnly = texts.some((t) => /\benemy\b/i.test(t));
   const opponent = texts.some((t) => /\bopponent\b/i.test(t));
-  return texts.find((t) => (opponent && OPPONENT_GAIN.test(t)) || (enemyOnly && CONTROLLER_GAIN.test(t)) || OWN_BASE_DAMAGE.test(t)) ?? null;
+  return texts.find((t) => (opponent && (OPPONENT_GAIN.test(t) || OPPONENT_REPLAYS.test(t))) || (enemyOnly && CONTROLLER_GAIN.test(t)) || OWN_BASE_DAMAGE.test(t)) ?? null;
 }
 
 /** D84 (#166): "Deal 5 damage to your base" (Boba Fett's Rancor): the card damages its own side's base. */
@@ -1653,9 +1714,43 @@ const OWN_BASE_DAMAGE = /\bdeal (?:\d+|X) damage to your base\b/i;
 const REMOVAL_CAP = /\b(?:costs? (?:\d+|X) or less|(?:\d+|X) or less (?:power|remaining HP|HP))\b/i;
 const REMOVES = /\b(?:defeat|deal \d+ damage|return)\b/i;
 
-/** The clause in which a removal swap caps what it removes (cost, power or HP), or null when it reaches any unit. */
+/** D85 (#167): "deal 2 damage to another unique unit": the damage and the target words before "unit". */
+const DAMAGE_TO_UNIT = /\b(\d+|X) damage (?:divided as you choose )?(?:to|among) (?:a |an |another |each |any number of |up to \d+ )?((?:[\w'’-]+ )*?)units?\b/i;
+const DAMAGE_TARGET_LIMITS: readonly [RegExp, string][] = [
+  [/(?<!non-)\bunique\b/, "unique units only"],
+  [/\bnon-unique\b/, "non-unique units only"],
+  [/\bground\b/, "ground units only"],
+  [/\bspace\b/, "space units only"],
+  [/\bnon-leader\b/, "non-leader units only"],
+  [/\b(?<!un)damaged\b/, "damaged units only"],
+  [/\bexhausted\b/, "exhausted units only"],
+];
+
+/** "2 damage, unique units only": a damage clause's amount and the target restriction it prints, or null when it names no amount. */
+function damageLimit(text: string): string | null {
+  for (const part of text.split(/,| and /)) {
+    const hit = DAMAGE_TO_UNIT.exec(part);
+    if (hit === null) continue;
+    const words = hit[2].toLowerCase();
+    return [`${hit[1]} damage`, ...DAMAGE_TARGET_LIMITS.filter(([re]) => re.test(words)).map(([, label]) => label)].join(", ");
+  }
+  return null;
+}
+
+/**
+ * The clause in which a removal swap caps what it removes (cost, power or HP), or null when it reaches any unit.
+ * D85 (#167): damage removal is capped by its amount, so a damage clause prints the amount and target restriction before the
+ * quote ("2 damage, unique units only: You may deal 2 damage to another unique unit.").
+ */
 export function removalLimitOf(syn: SynergyCard): string | null {
-  return clauseTextsOf(syn).find((t) => REMOVAL_CAP.test(t) && REMOVES.test(t)) ?? null;
+  const texts = clauseTextsOf(syn);
+  const capped = texts.find((t) => REMOVAL_CAP.test(t) && REMOVES.test(t));
+  if (capped !== undefined) return capped;
+  for (const t of texts) {
+    const limit = /\bdamage\b/i.test(t) && /\bunits?\b/i.test(t) ? damageLimit(t) : null;
+    if (limit !== null) return `${limit}: ${t}`;
+  }
+  return null;
 }
 
 type NoAlternativeReason = "no cheaper same-slot card" | `no cheaper same-slot card that ${string}` | `no card ${string}`;
@@ -2257,7 +2352,7 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier (D82): the first one played pays its penalty and later ones pay effectivePenaltyEach while the Darksaber stays on it (sequenced: true), and aspect.sequence gives the best-case and worst-case totals of those cards (D83). A cost holding more than 40% of the costed cards is named under curveGlut with the thin costs (2 to 6, under 10% each) and up to 3 fills per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, most played by this leader's lists first (D84).",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier (D82): the first one played pays its penalty and later ones pay effectivePenaltyEach while the Darksaber stays on it (sequenced: true), and aspect.sequence gives the best-case and worst-case totals of those cards (D83). A cost holding more than 40% of the costed cards is named under curveGlut with the thin costs (2 to 6, under 10% each) and up to 3 fills per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, most played by this leader's lists first (D84). The fills rank by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor), where deckLinks counts the deck cards and the leader sharing a mechanical pair edge with the fill, the leader's engine counted; when the leader's Action plays a unit of limited power for extra resources (The Warrior: 1 plus the unit's cost) and such units are at least half of the glut, curveGlut.leaderAction says the cluster sits in the Action's band (D85).",
     deckAuditShape,
     deckAudit,
   ),
@@ -2287,7 +2382,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, the role no card in the cost band fills when band cards exist (D83), or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82). A substitute that gives the opponent a resource, a card or a token carries drawback, the clause quoted (Display Piece: \"Its controller resources it from its owner's discard pile.\") (D83); so does one that damages your own base (Boba Fett's Rancor: \"Deal 5 damage to your base.\"). An event that removes a unit keeps that job like a unit (job, keepsRole), and a removal swap whose clause caps what it removes by cost, power or HP carries limit, the clause quoted (The Tree Remembers: \"If it costs 3 or less, defeat it.\") (D84).",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, the role no card in the cost band fills when band cards exist (D83), or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82). A substitute that gives the opponent a resource, a card or a token carries drawback, the clause quoted (Display Piece: \"Its controller resources it from its owner's discard pile.\") (D83); so does one that damages your own base (Boba Fett's Rancor: \"Deal 5 damage to your base.\"). An event that removes a unit keeps that job like a unit (job, keepsRole), and a removal swap whose clause caps what it removes by cost, power or HP carries limit, the clause quoted (The Tree Remembers: \"If it costs 3 or less, defeat it.\") (D84); a damage removal swap's limit names the damage and the target restriction before the clause (\"2 damage, unique units only: ...\"), a unit that creates token units or holds Sentinel keeps that job, and a swap that lets the opponent play it from the discard (Stolen AT-Hauler) carries drawback (D85).",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

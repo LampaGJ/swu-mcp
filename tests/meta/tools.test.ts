@@ -305,10 +305,14 @@ describe("meta_answers ordering", () => {
     };
   };
 
-  it("puts an answer with a clearly worse deck record after an unmeasured one of the same coverage, whatever its cost", () => {
-    const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 10, losses: 30, draws: 0 }]));
-    expect(got.keys).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
-    expect(got.classes).toEqual({ [IT_IS_WORSE]: "unmeasured", [CHARGED]: "negative", [FREIGHTER]: "unmeasured", [PROFUNDITY]: "unmeasured" });
+  // D85 (#167): a negative addition takes no page slot; it is listed apart under negativeAdditions.
+  it("takes an answer with a clearly worse deck record off the page and lists it under negativeAdditions, whatever its cost", () => {
+    const e = withCards([{ cardKey: CHARGED, decks: 20, wins: 10, losses: 30, draws: 0 }]);
+    const got = order(e);
+    expect(got.keys).toEqual([IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(got.classes).toEqual({ [IT_IS_WORSE]: "unmeasured", [FREIGHTER]: "unmeasured", [PROFUNDITY]: "unmeasured" });
+    const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+    expect((out.negativeAdditions as { cardKey: string; evidenceClass: string }[]).map((a) => [a.cardKey, a.evidenceClass])).toEqual([[CHARGED, "negative"]]);
     expect(got.note).toContain("evidenceClass");
     expect(got.note).toContain("-0.05");
     expect(got.note).toContain("association, not effect");
@@ -351,18 +355,20 @@ describe("meta_answers ordering", () => {
     // 5 decks with the card, 15 decisive matches, win rate 0.2 against about 0.5 without it.
     const e = withCards([{ cardKey: CHARGED, decks: 5, wins: 3, losses: 12, draws: 0 }]);
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
-    const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    // D85 (#167): the negative row leaves the page for negativeAdditions, its evidence unchanged.
+    const charged = (out.negativeAdditions as { cardKey: string }[]).find((a) => a.cardKey === CHARGED) as any;
     expect(charged.evidenceClass).toBe("negative");
     expect(charged.deckEvidence.withCard.decks).toBe(5);
     expect(charged.deckEvidence.thin).toBe("(thin: 5 decks with the card)");
     expect(charged.deckEvidence.unmeasured).toBeUndefined();
-    expect(pageOf(out).map((a: { cardKey: string }) => a.cardKey)).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
+    expect(pageOf(out).map((a: { cardKey: string }) => a.cardKey)).toEqual([IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
   });
 
   it("keeps the class when both sides have 10 decks and minN decisive matches", () => {
     const e = withCards([{ cardKey: CHARGED, decks: 90, wins: 100, losses: 400, draws: 0 }]);
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
-    const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    // D85 (#167): a negative addition is listed under negativeAdditions.
+    const charged = (out.negativeAdditions as { cardKey: string }[]).find((a) => a.cardKey === CHARGED) as any;
     expect(charged.evidenceClass).toBe("negative");
     expect(charged.deckEvidence.unmeasured).toBeUndefined();
     expect(charged.deckEvidence.thin).toBeUndefined();
