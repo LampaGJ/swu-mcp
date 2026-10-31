@@ -21,7 +21,7 @@ A win share from any rung is bot play, the last tier under D21. It is labelled w
 
 No rung's win shares reach a tool until that rung passes four gates: replay, health, ladder and external calibration against tournament matchups.
 
-Input status: the engine spike report `docs/research/forceteki-simulation.md` had not landed when this was written. The design targets the generic shape: at each decision point the engine yields a list of legal actions with structured fields (action kind, card, targets) and asks for one. Engine-specific claims cite forceteki source and the uncommitted spike driver `scripts/sims/play-game.mjs` in this worktree. The spike was still editing those files while this was written, so each citation into `scripts/sims/` names its symbol as well as the line; re-anchor on the symbol when the spike commits. Re-check them against the spike report when it lands.
+Input status: the engine spike report `docs/research/forceteki-simulation.md` had not landed when this was written. The design targets the generic shape: at each decision point the engine yields a list of legal actions with structured fields (action kind, card, targets) and asks for one. Engine-specific claims cite forceteki source and the spike driver `scripts/sims/play-game.mjs` at 8a9fb48. The typed driver replaced the spike in 35ddbd0, so every spike citation is pinned to that commit, the last one that held those files, and names its symbol; where the typed driver now implements a proposal, a second citation names the current line. Re-check them against the spike report when it lands.
 
 ## Sources and citation base
 
@@ -44,25 +44,25 @@ Both seats always run the same rung when a deck is being tested. An asymmetric p
 
 ### Determinism hazards shared by every rung
 
-- **Unseeded engine RNG before `setRandomSeed`.** The game constructs `new Randomness()` with no seed (`forceteki/server/game/core/Game.ts:454`), and seedrandom with no seed seeds itself from entropy. Any draw before `setRandomSeed` (`Game.ts:785-786`) cannot be replayed. The spike seeds before `selectDeck` (`scripts/sims/play-game.mjs:189-191`, `startGame`). A replay test must assert that order.
+- **Unseeded engine RNG before `setRandomSeed`.** The game constructs `new Randomness()` with no seed (`forceteki/server/game/core/Game.ts:454`), and seedrandom with no seed seeds itself from entropy. Any draw before `setRandomSeed` (`Game.ts:785-786`) cannot be replayed. The spike seeds before `selectDeck` (`scripts/sims/play-game.mjs:240-242` at 8a9fb48, `startGame`; now `src/sims/engine.ts:273-276`, with a guard that throws on a draw before the seed at `src/sims/engine.ts:265-272`). A replay test must assert that order.
 - **Prompt uuids are random.** `UiPrompt` takes `uuid()` from uuid v1 (`forceteki/server/game/core/gameSteps/prompts/UiPrompt.ts:1`, `:12`), so a prompt uuid differs between runs. Never log, hash or sort by a prompt uuid.
 - **Card object ids are a counter.** Game object uuids are `<name>_<n>` from a counter (`forceteki/server/game/core/snapshot/GameStateManager.ts:87-89`), so they are deterministic for one engine version. They still change across engine versions, so the record logs `cardKey`, zone and ordinal instead.
-- **Clocks.** The spike passes a scheduler whose `now()` returns 0 (`scripts/sims/play-game.mjs:35-40`, `scheduler`). Policy code obeys the project ban on `Date.now()`, `Math.random()` and locale-sensitive sorts (CLAUDE.md:67). The match header carries no wall-clock timestamp, because one would break byte-identical replay; the date comes from the run directory.
+- **Clocks.** The spike passes a scheduler whose `now()` returns 0 (`scripts/sims/play-game.mjs:86-91` at 8a9fb48, `scheduler`; now `src/sims/engine.ts:217-222`). Policy code obeys the project ban on `Date.now()`, `Math.random()` and locale-sensitive sorts (CLAUDE.md:67). The match header carries no wall-clock timestamp, because one would break byte-identical replay; the date comes from the run directory.
 - **Card identity.** The engine names cards by its own slug; swu-mcp keys by `cardKey`. The mapping goes through `engineSlug` (`scripts/bench/card-map.ts:110`). An unmapped card is logged with its engine id and `cardKey: null`, and the gap rate is reported.
 - **Float ties.** Every score comparison breaks ties by the canonical descriptor, never by float noise. Sums iterate in sorted `cardKey` order.
 - **Pins.** The header records the engine commit, card-data version and the sha256 of every table a rung reads.
 
 ### Rung 0: random legal action (the null policy)
 
-**What it decides.** Nothing. It picks uniformly among the canonical legal actions. On a multi-select prompt the spike takes Done half the time (`scripts/sims/play-game.mjs:119-123`, `randomPolicy`).
+**What it decides.** Nothing. It picks uniformly among the canonical legal actions. On a multi-select prompt the spike takes Done half the time (`scripts/sims/play-game.mjs:170-174` at 8a9fb48, `randomPolicy`; now `src/sims/policy.ts:48-60`, `rung0`, with the probability at `src/sims/policy.ts:46`).
 
 **Why it exists.** Rung 0 is the baseline for every claim. "Rung r beats rung 0" is the minimum bar for any rung. A deck's win share under rung 0 measures raw card efficiency under incoherent piloting.
 
 **What it cannot decide.** Anything strategic. Random games also run long, and the bias is systematic: cheap efficient units gain and decks that need a line lose.
 
-**Cost per decision.** One draw, about 1 µs (estimate). Engine stepping dominates the game cost. Games per second is the spike's measurement (`scripts/sims/run-batch.mjs:49` prints `gamesPerSecond`).
+**Cost per decision.** One draw, about 1 µs (estimate). Engine stepping dominates the game cost. Games per second is the spike's measurement (`scripts/sims/run-batch.mjs:53` at 8a9fb48 prints `gamesPerSecond`; now `scripts/sims/run-batch.ts:107`).
 
-**Determinism hazard and fix.** The spike draws both seats' choices from one stream seeded `bot:${seed}` (`scripts/sims/play-game.mjs:285`, `playGame`). With one shared stream, seat 1's choices shift seat 2's later draws, and branching needs a stream cursor. Proposal: counter-based decision randomness. Draw j at decision k for seat s is `u = seededRandom("bot|" + seed + "|" + s + "|" + k + "|" + j)()`, reusing the existing sha256-to-mulberry32 helper (`scripts/bench/stats.ts:13-15`). It is stateless, so replay and branching need only the header seed and k.
+**Determinism hazard and fix.** The spike draws both seats' choices from one stream seeded `bot:${seed}` (`scripts/sims/play-game.mjs:336` at 8a9fb48, `playGame`). With one shared stream, seat 1's choices shift seat 2's later draws, and branching needs a stream cursor. Proposal: counter-based decision randomness. Draw j at decision k for seat s is `u = seededRandom("bot|" + seed + "|" + s + "|" + k + "|" + j)()`, reusing the existing sha256-to-mulberry32 helper (`scripts/bench/stats.ts:13-15`). It is stateless, so replay and branching need only the header seed and k. The typed driver implements this scheme (`src/sims/rng.ts:11` names it, `src/sims/rng.ts:15` draws).
 
 ### Rung 1: fixed priority rules
 
@@ -110,7 +110,7 @@ Both seats always run the same rung when a deck is being tested. An asymmetric p
 
 **Circularity trap.** Rung-2 sims cannot validate pairing edges by co-occurrence, because the bot made the cards co-occur. The only valid test is an ablation: mask the edge and re-run the same seeds.
 
-**Cost per decision.** About 20 actions times about 15 partners times 2 directions gives about 600 lookups into `edgeByKey`, keyed `a>b` (`src/synergy/graph.ts:31`, `:162`). That is about 50 µs (estimate). The spike's greedy policy exists to time exactly this cost with synthetic weights (`scripts/sims/play-game.mjs:129-163`, `makeGreedyPolicy`).
+**Cost per decision.** About 20 actions times about 15 partners times 2 directions gives about 600 lookups into `edgeByKey`, keyed `a>b` (`src/synergy/graph.ts:31`, `:162`). That is about 50 µs (estimate). The spike's greedy policy exists to time exactly this cost with synthetic weights (`scripts/sims/play-game.mjs:180-214` at 8a9fb48, `makeGreedyPolicy`).
 
 **Determinism hazard and fix.** Partners are summed in sorted `cardKey` order. The header pins the hashes of `pairs.toon` (via `synergy/replay.json`), `pair-precision.json` and `leader-cards.json`, with μ and λ in the policy params hash.
 
@@ -133,7 +133,7 @@ The starting weights are all 1 except `w_base` at 1.5 (estimate). They are tuned
 
 **Hidden information.** The engine state holds the opponent's hand and both deck orders. V reads only public facts plus our own hand: the opponent's hand is a count, and decks are counts. A trial that draws a card must not score the drawn card's identity. One-ply on the true state still leaks some random outcomes, for example a revealed top card. Rung 3 accepts that leak, and its results say so. Determinization (sampling hidden zones from the opponent's archetype, as in information-set MCTS) is deferred.
 
-**Snapshots.** A forceteki snapshot holds the v8-serialised game state and the RNG state (`forceteki/server/game/core/snapshot/SnapshotFactory.ts:155-157`). Rollback restores that RNG state through `Randomness.restore` (`forceteki/server/game/core/Randomness.ts:27-29`). Manual snapshots exist (`SnapshotManager.ts:143-144`, `:214`, `:352`). Snapshots are off when undo is disabled: `takeSnapshot` returns -1 in that mode (`SnapshotManager.ts:134-136`). The spike disables undo by default (`scripts/sims/play-game.mjs:185`, `startGame`). So rung 3 needs undo mode on, and section 4's replay gate must show that undo mode does not change rung 0 to 2 traces.
+**Snapshots.** A forceteki snapshot holds the v8-serialised game state and the RNG state (`forceteki/server/game/core/snapshot/SnapshotFactory.ts:155-157`). Rollback restores that RNG state through `Randomness.restore` (`forceteki/server/game/core/Randomness.ts:27-29`). Manual snapshots exist (`SnapshotManager.ts:143-144`, `:214`, `:352`). Snapshots are off when undo is disabled: `takeSnapshot` returns -1 in that mode (`SnapshotManager.ts:134-136`). The spike disables undo by default (`scripts/sims/play-game.mjs:223` and `:236` at 8a9fb48, `startGame`; now `src/sims/engine.ts:253` and `scripts/sims/run-batch.ts:38`, where `--undo` defaults to false). So rung 3 needs undo mode on, and section 4's replay gate must show that undo mode does not change rung 0 to 2 traces (now `scripts/sims/replay-gate.ts:87-91`).
 
 **Test oracle.** Replay from the seed and the decision prefix always works, but it costs O(k) per trial, which is too slow for play. It serves as the oracle for snapshot fidelity: trial, rollback and continue must give the same trace hash as replaying the prefix and continuing.
 
@@ -145,7 +145,7 @@ The starting weights are all 1 except `w_base` at 1.5 (estimate). They are tuned
 
 - 1 to 10 ms per trial, so 5 to 50 ms per main decision.
 - 50 to 100 main decisions per seat per game, so 0.25 to 5 s per game per rung-3 seat.
-- 100 games take 25 s to 8 min on one thread, divided by the worker count (`scripts/sims/run-batch.mjs:32-44` spreads seeds over `worker_threads`).
+- 100 games take 25 s to 8 min on one thread, divided by the worker count (`scripts/sims/run-batch.mjs:33-48` at 8a9fb48 spreads seeds over `worker_threads`; now `src/sims/pool.ts:49`, with workers claiming seeds from a shared counter at `src/sims/worker.ts:26-29`).
 
 **Determinism hazards and fixes.**
 
@@ -218,7 +218,7 @@ All objects are `z.strictObject`. Integers use `z.int()`. Maps use two-arg `z.re
 - `matchId`: sha256 hex of the canonical JSON of {seed, decks, policies, engine}.
 - `seed: z.string().min(1)`
 - `engine: z.strictObject({ repo, commit, cardDataVersion, undoMode })`
-- `rng: z.strictObject({ engineSeed, botScheme: z.literal("sha256-counter-v1") })`. `engineSeed` is `"engine:" + seed`, as the spike does (`scripts/sims/play-game.mjs:189`).
+- `rng: z.strictObject({ engineSeed, botScheme: z.literal("sha256-counter-v1") })`. `engineSeed` is `"engine:" + seed`, as the spike does (`scripts/sims/play-game.mjs:240` at 8a9fb48; now `src/sims/schemas.ts:73`, with the `engine:<seed>` check at `src/sims/schemas.ts:88`).
 - `decks`: a two-element tuple, each `{ seat: z.literal([1, 2]), leader: cardKey, base: cardKey, cards: z.array(z.strictObject({ cardKey, count: z.int().positive() })), deckSha256, source }`. `source` names the tournament list, archetype id and sampling draw for an opponent.
 - `policies`: a two-element tuple, each `{ rung: z.int().min(0).max(4), policyId, policyVersion, paramsSha256, inputs: z.record(z.string(), sha256Hex) }`. `inputs` maps scores, pairs, pairPrecision, leaderCards, counters and evaluator to their hashes. A rung-5 hash can never appear here.
 - `branch: z.strictObject({ parentMatchId, atK: z.int().nonnegative(), alternative: descriptor }).nullable()`
@@ -233,14 +233,14 @@ All objects are `z.strictObject`. Integers use `z.int()`. Maps use two-arg `z.re
 - `promptKind: z.enum(["mulligan", "resource", "mainAction", "target", "choice", "number", "distribute", "multiSelect"])`
 - `legalActions`: an array of `{ i: z.int().nonnegative(), kind, cardKey: z.string().nullable(), engineCardId, zone, ordinal: z.int().nonnegative(), targets: z.array(z.strictObject({ cardKey, owner: z.literal([1, 2]), zone, ordinal })), descriptor, label }`. `kind` is one of play, attack, resource, deployLeader, ability, takeInitiative, pass, target, choose, number, distribute, mulligan, done. The array is sorted by descriptor; `label` is the engine text, kept for debugging only.
 - `chosen: z.strictObject({ i, descriptor })`. The descriptor is stored redundantly, so a record whose index and descriptor disagree fails to parse.
-- `rngCursor: z.strictObject({ engineDraws: z.int().nonnegative(), engineStateSha: z.string().length(16), botDraws: z.int().nonnegative() })`. `engineDraws` comes from a counting wrapper around `game.randomGenerator.next` in our adapter, never an engine edit. `engineStateSha` hashes the full seedrandom state, which is stronger than the spike's six-field fingerprint (`scripts/sims/play-game.mjs:167-170`, `rngFingerprint`).
+- `rngCursor: z.strictObject({ engineDraws: z.int().nonnegative(), engineStateSha: z.string().length(16), botDraws: z.int().nonnegative() })`. `engineDraws` comes from a counting wrapper around `game.randomGenerator.next` in our adapter, never an engine edit (now `src/sims/engine.ts:265-272`). `engineStateSha` hashes the full seedrandom state, which is stronger than the spike's six-field fingerprint (`scripts/sims/play-game.mjs:218-221` at 8a9fb48, `rngFingerprint`; now `src/sims/engine.ts:286-289`, `engineStateSha`, assembled into the cursor at `src/sims/engine.ts:292` and typed at `src/sims/schemas.ts:121-126`).
 - `evaluator: z.strictObject({ rung, version, sha256: z.string().nullable() })`
 - `utilities: z.array(z.number()).nullable()`, one per legal action. It is written in trace mode, so an annotator can see why the bot chose as it did.
 - `fallback: z.string().nullable()`
 
 **Footer.**
 
-- `result: { winner: z.literal([1, 2]).nullable(), endCondition: z.enum(["base_destroyed", "draw", "timeout", "stuck", "error"]), rounds, decisions }`. These are the end conditions the spike already emits (`scripts/sims/play-game.mjs:207`, `:218`, `:251`, `:257`, `:269`, `Session`).
+- `result: { winner: z.literal([1, 2]).nullable(), endCondition: z.enum(["base_destroyed", "draw", "timeout", "stuck", "error"]), rounds, decisions }`. These are the end conditions the spike already emits (`scripts/sims/play-game.mjs:258`, `:269`, `:302`, `:308` and `:320` at 8a9fb48, `Session`; now the enum at `src/sims/schemas.ts:94` and the assignments at `src/sims/session.ts:103` (stuck), `:115` (base_destroyed or draw), `:119` (timeout) and `:136` (error)).
 - `traceSha256`: sha256 over the chosen descriptors in order.
 
 **Bulk mode.** Full records cost an estimated 2 KB per decision, so a few hundred KB per game. Bulk runs therefore log `legalActionsSha256` and `chosen.descriptor` only. Full records are written on request and for any match that will be branched. Generated logs live under `data/runs/<date>/sims/`, which is git-ignored. Only small fixtures are pinned under `data/pinned/`.
@@ -334,7 +334,7 @@ Re-using a tuning seed in evaluation voids the result.
 
 A rung's win shares reach `simulate_matchup` only when a pinned gate record for that rung, engine commit and input hashes shows all four gates passing. Otherwise the tool returns `isError` with a plain sentence naming the failed gate (D9). The tool always serves the highest rung that passed.
 
-1. **Replay gate.** 50 matches spread over the panel replay to identical `traceSha256`. Results from worker threads equal single-thread results; the spike's batch runner claims this property (`scripts/sims/run-batch.mjs:2-5`). Rung 0 to 2 traces are identical with undo mode on and off. For rung 3 and up, snapshot rollback agrees with the replay oracle on every trial in a 20-match sample.
+1. **Replay gate.** 50 matches spread over the panel replay to identical `traceSha256`. Results from worker threads equal single-thread results; the spike's batch runner claims this property (`scripts/sims/run-batch.mjs:3-4` at 8a9fb48). The typed driver checks it in `scripts/sims/replay-gate.ts:84-85` (cold and warm pools equal one thread) and `:87-91` (undo on equals undo off), and replays each record at `:59-62` through `replayMatch` (`src/sims/match.ts:158`). Rung 0 to 2 traces are identical with undo mode on and off. For rung 3 and up, snapshot rollback agrees with the replay oracle on every trial in a 20-match sample.
 2. **Health gate.** The non-decisive share is at most 2% (estimate), and the rung's fallback share is at most 5% of its decisions (estimate). Above that, the rung is mostly its fallback.
 3. **Ladder gate.** The rung beats rung 0, and beats its predecessor, under section 4's pass rule.
 4. **External calibration gate.** This compares tiers; it never pools them. Over the top archetype pairs that have tournament evidence in `data/runs/<date>/meta/winrates.json` (swumetastats matchups per leader and base aspects, `minN` 10), two checks run:

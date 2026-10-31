@@ -101,7 +101,7 @@ Why: the owner's premise is that with enough iterations at each decision branch 
 - The record per decision carries: seed, k, phase, actor, the encoded state, legalActions with per-action mean value and n, the chosen action in the source game, and rngCursor.
 - A 10,000-decision sample is produced and its wall time and games-per-second reported.
 
-**Touches**: scripts/sims/sample-branches.ts, scripts/sims/play-game.mjs (branch probe), data/originals/sims/branches/
+**Touches**: scripts/sims/sample-branches.ts, scripts/sims/branch-probe.ts (branch probe), src/sims/search-leaf.ts, data/originals/sims/branches/
 
 **Open gaps**: the restore mismatch seen at one of three probe points (docs/research/forceteki-simulation.md) must be root-caused or worked around by treating the restored state as the branch root; depends on #110 and #113 landing.
 
@@ -128,7 +128,7 @@ Why: the owner's premise is that with enough iterations at each decision branch 
 - Measured: games per second on 16 workers with the evaluator versus rung 2, p50 ms per decision; the gate is at least 15 games per second or a documented batch-only mode.
 - Per-seed traces stay identical across worker counts with the evaluator on.
 
-**Touches**: scripts/sims/play-game.mjs, scripts/sims/run-batch.mjs, scripts/sims/evaluator.ts
+**Touches**: scripts/sims/run-batch.ts, src/sims/policy.ts, src/sims/session.ts, scripts/sims/evaluator.ts
 
 **Open gaps**: the optimizer's report on the batch runner (in progress on 2026-10-30) decides worker count and memory settings.
 
@@ -141,7 +141,7 @@ Why: the owner's premise is that with enough iterations at each decision branch 
 - Snapshot cost per decision is measured (the spike measured 3 to 6 ms per rollback) and the games-per-second cost of each rung reported.
 - A seeded match replays byte for byte under rung 3 and 4.
 
-**Touches**: scripts/sims/play-game.mjs, scripts/sims/policy/
+**Touches**: src/sims/policy.ts, src/sims/session.ts, src/sims/search-leaf.ts, scripts/sims/run-batch.ts
 
 **Open gaps**: undo must be enabled for snapshots; the ladder doc notes takeSnapshot returns -1 with undo off, and that undo mode must not change rung 0 to 2 traces.
 
@@ -179,7 +179,7 @@ Why: the owner's premise is that with enough iterations at each decision branch 
 - docs/research/sim-compute-plan.md with measured games per second per worker count, peak RSS, training throughput per framework, and the hours for the first iteration; every number from a command listed in the doc.
 - The batch runner's chosen settings are committed with the measured reason.
 
-**Touches**: docs/research/sim-compute-plan.md, scripts/sims/run-batch.mjs
+**Touches**: docs/research/sim-compute-plan.md, scripts/sims/run-batch.ts
 
 **Open gaps**: the optimizer's report (tmp/sims-opt/REPORT.md) is the input.
 

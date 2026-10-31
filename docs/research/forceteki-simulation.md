@@ -4,14 +4,14 @@ status: draft
 review_by: 2026-12-31
 question: Can swu-mcp run forceteki itself to produce deterministic bot-vs-bot game records and a decklist battle-test tool?
 as_of: 2026-10-30
-related: [../decisions.md, ../../scripts/sims/play-game.mjs, ../../scripts/sims/run-batch.mjs, ../../scripts/sims/branch-probe.mjs]
+related: [../decisions.md, ../../scripts/sims/play.ts, ../../scripts/sims/run-batch.ts, ../../scripts/sims/branch-probe.ts, ../../scripts/sims/replay.ts]
 ---
 
 # Running forceteki inside swu-mcp
 
 ## TL;DR
 
-Yes, it is feasible. forceteki (the open-source Karabast rules engine, MIT) built on this machine in 11 s, passed the unit specs I ran, and played all 600 games I ran on three real tournament lists (three pairs, 100 games each, two policies) with no error once my driver's own indirect-damage mistake was fixed, using a driver I wrote (about 320 lines) (`scripts/sims/play-game.mjs`) that answers the engine's prompts in process, with no client, lobby or server. Games are seedable and byte-replayable: the same seed gave the same decision trace in separate processes and under 1, 4, 8, 12 and 16 worker threads. Speed is 3.8 games per second on one thread and 15 to 36 games per second on 16 worker threads (100 games in 2.8 to 6.7 s), so a 10 to 30 s interactive budget holds for about 100 games of one matchup and for roughly 600 games (six archetypes at 100 each) on this machine only.
+Yes, it is feasible. forceteki (the open-source Karabast rules engine, MIT) built on this machine in 11 s, passed the unit specs I ran, and played all 600 games I ran on three real tournament lists (three pairs, 100 games each, two policies) with no error once my driver's own indirect-damage mistake was fixed, using a driver I wrote (about 320 lines) (`scripts/sims/play-game.mjs` at 8a9fb48) that answers the engine's prompts in process, with no client, lobby or server. Games are seedable and byte-replayable: the same seed gave the same decision trace in separate processes and under 1, 4, 8, 12 and 16 worker threads. Speed is 3.8 games per second on one thread and 15 to 36 games per second on 16 worker threads (100 games in 2.8 to 6.7 s), so a 10 to 30 s interactive budget holds for about 100 games of one matchup and for roughly 600 games (six archetypes at 100 each) on this machine only.
 
 The weak point is the player, not the engine. forceteki ships no bot. A uniformly random bot passes about as often as it plays, and a 10-line "prefer playing and attacking over passing" policy beat it in 91% and 93% of 200 mirror games per seat. A win share from random bots measures tempo, not deck strength, so the deck-testing tool needs a scored policy built from swu-mcp's own tables, and its output must be labelled bot play (D21 puts bot simulations in the last tier).
 
@@ -48,10 +48,13 @@ Files, all in the swu-mcp worktree (`/Volumes/Local Files/Projects/swu-mcp/.clau
 - `run-batch.mjs`: splits a seed range across `worker_threads`.
 - `branch-probe.mjs`: snapshot and branch experiment.
 
+Those three files are the spike's driver. Commit 35ddbd0 replaced them with the typed driver in `src/sims/` and `scripts/sims/`; the commands below are the current ones (scripts in `package.json:47-49` and `:51`, flags from the `parseArgs` calls and defaults in `scripts/sims/play.ts:13`, `scripts/sims/run-batch.ts:25-42`, `scripts/sims/replay.ts:19`, `scripts/sims/branch-probe.ts:20-22`). Every command also takes the context flags `--forceteki <dir>`, `--run <dir>`, `--originals <dir>` and `--no-memo` (`scripts/sims/context.ts:20-25`).
+
 Commands:
-- One matchup, N games: `node scripts/sims/play-game.mjs --deck1 <swudb.json> --deck2 <swudb.json> --games 100 --seed 1 [--policy1 random|greedy] [--policy2 random|greedy] [--trace]`
-- Parallel: `node scripts/sims/run-batch.mjs --deck1 ... --deck2 ... --games 100 --seed 1 --workers 16`
-- Branch: `NODE_ENV=test node scripts/sims/branch-probe.mjs --deck1 ... --deck2 ... --seed 100 --at 150 --branches 30` (`NODE_ENV=test` silences the engine's rollback logging).
+- One matchup, N games, in this thread with full decision records: `pnpm sims:play --deck1 <swudb.json> --deck2 <swudb.json> [--games N] [--seed S] [--out <records.jsonl>] [--trace]` (one game by default)
+- Parallel batch: `pnpm sims:batch --deck1 <swudb.json> --deck2 <swudb.json> [--games N] [--seed S] [--workers auto|N|0] [--policy1 rung0] [--policy2 rung0] [--record compact|full] [--out <records.jsonl>] [--undo] [--max-decisions N] [--quiet] [--trace]` (100 games, seed 1 and `--workers auto` by default)
+- Replay recorded matches: `pnpm sims:replay --records <records.jsonl> [--index N]`
+- Branch: `pnpm sims:branch-probe --deck1 <swudb.json> --deck2 <swudb.json> [--seed S] [--at K] [--branches N]` (seed 100, decision 150 and 20 branches by default; the engine is always run with `NODE_ENV=test`, `src/sims/engine.ts:124`)
 
 How it works: it builds `new Deck(decklist, cardDataGetter)` for each seat (`server/utils/deck/Deck.ts:37-39` takes the leader, base and cards by set code), constructs `new Game(config, { router })` with a no-op scheduler and `UndoMode.Disabled`, calls `game.setRandomSeed(...)`, `game.selectDeck(...)`, `game.initialiseTokens(...)` and `await game.initialiseAsync()`, then loops: read the seat's prompt, pick an answer, call the matching `Game` method, call `game.continue()`, until `game.isEnded` (`server/game/core/Game.ts:254`). It follows the same recipe as the engine's own test harness (`test/helpers/GameFlowWrapper.js:41`, `test/helpers/GameStateBuilder.js`).
 
