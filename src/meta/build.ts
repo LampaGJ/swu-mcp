@@ -3,11 +3,13 @@ import { compareCodePoints, sha256Hex, canonicalJson } from "../swu/canonical.js
 import { clusterDecks, type ClusterDeck, type ClusterOptions } from "./cluster.js";
 import {
   LEADER_CARDS_MAX,
+  LEADER_SPLIT_MIN_DECKS,
   leaderCardsFileSchema,
   metaFileSchema,
   type Archetype,
   type KeyUnit,
   type LeaderCardsFile,
+  type LeaderSplit,
   type MetaFile,
   type Population,
   type ThreatProfile,
@@ -487,29 +489,49 @@ export function buildLeaderCards(
     const members = (population === "tournament" ? tournament : pop.decks.filter((d) => d.leader === leaderKey))
       .slice()
       .sort((a, b) => compareCodePoints(a.key, b.key));
-    const weighted = members.map((deck) => ({ deck, weight: weights.get(deck.key) ?? 1 }));
-    const { copies, inclusion, total } = meanCopies(weighted);
-    const cards = [...inclusion]
-      .filter(([card]) => facts.has(card))
-      .map(([card, inc]) => {
-        const f = facts.get(card) as CardFact;
-        const included = r4(inc);
-        const baselineInclusion = r4(pop.baseline(f));
-        return {
-          cardKey: card,
-          title: f.title,
-          inclusion: included,
-          meanCopies: r2(copies.get(card) ?? 0),
-          baselineInclusion,
-          lift: r4(included - baselineInclusion),
-        };
-      })
-      .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.cardKey, b.cardKey))
-      .slice(0, LEADER_CARDS_MAX);
+    const rowsOf = (group: readonly MetaDeck[]) => {
+      const weighted = group.map((deck) => ({ deck, weight: weights.get(deck.key) ?? 1 }));
+      const { copies, inclusion, total } = meanCopies(weighted);
+      const cards = [...inclusion]
+        .filter(([card]) => facts.has(card))
+        .map(([card, inc]) => {
+          const f = facts.get(card) as CardFact;
+          const included = r4(inc);
+          const baselineInclusion = r4(pop.baseline(f));
+          return {
+            cardKey: card,
+            title: f.title,
+            inclusion: included,
+            meanCopies: r2(copies.get(card) ?? 0),
+            baselineInclusion,
+            lift: r4(included - baselineInclusion),
+          };
+        })
+        .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.cardKey, b.cardKey))
+        .slice(0, LEADER_CARDS_MAX);
+      return { cards, total };
+    };
+    const { cards, total } = rowsOf(members);
     const baseCounts = new Map<string, number>();
     for (const d of members) baseCounts.set(d.base, (baseCounts.get(d.base) ?? 0) + 1);
-    const top = [...baseCounts].sort((a, b) => b[1] - a[1] || compareCodePoints(a[0], b[0]))[0];
+    const ranked = [...baseCounts].sort((a, b) => b[1] - a[1] || compareCodePoints(a[0], b[0]));
+    const top = ranked[0];
     const leader = facts.get(leaderKey);
+    const aspectsOf = (baseKey: string): string[] => facts.get(baseKey)?.aspectIcons ?? [];
+    const baseDecks = ranked.map(([baseKey, decks]) => ({ cardKey: baseKey, title: facts.get(baseKey)?.title ?? baseKey, aspects: aspectsOf(baseKey), decks }));
+    // #148: a split is emitted only at the decks floor, and an aspect split only when it spans more than one base (else it repeats the base split).
+    const splits: LeaderSplit[] = [];
+    const addSplit = (kind: "base" | "aspect", key: string, label: string, group: readonly MetaDeck[]): void => {
+      if (group.length < LEADER_SPLIT_MIN_DECKS || group.length === members.length) return;
+      const { cards: splitCards, total: splitTotal } = rowsOf(group);
+      splits.push({ kind, key, label, decks: group.length, weight: r2(splitTotal), cards: splitCards });
+    };
+    for (const b of baseDecks) addSplit("base", b.cardKey, b.title, members.filter((d) => d.base === b.cardKey));
+    const aspectKey = (aspects: readonly string[]): string => [...aspects].sort(compareCodePoints).join("+");
+    for (const key of [...new Set(baseDecks.map((b) => aspectKey(b.aspects)))].sort(compareCodePoints)) {
+      const bases = baseDecks.filter((b) => aspectKey(b.aspects) === key);
+      if (key !== "" && bases.length > 1) addSplit("aspect", key, key, members.filter((d) => bases.some((b) => b.cardKey === d.base)));
+    }
     return {
       leader: { cardKey: leaderKey, title: leader?.title ?? leaderKey, aspects: leader?.aspectIcons ?? [] },
       population,
@@ -519,6 +541,8 @@ export function buildLeaderCards(
       window: { from: window.from, to: window.to },
       topBase: top === undefined ? null : { cardKey: top[0], title: facts.get(top[0])?.title ?? top[0], decks: top[1] },
       cards,
+      baseDecks,
+      splits,
     };
   });
   return leaderCardsFileSchema.parse({

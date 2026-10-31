@@ -1101,3 +1101,51 @@ describe("locks are honoured in playable_cards, meta_answers and deck_audit (#14
     expect(met.lockedCards.cards).toEqual([]);
   });
 });
+
+describe("leader lists by base (D60, #148)", () => {
+  // OL (Vigilance, Heroism) has 11 community lists on the Aggression base and 10 on the Command base. Profundity
+  // carries an Aggression icon: penalty-free under the Aggression base, +2 under any other.
+  const PROFUNDITY = "04010154";
+  const IT_IS_WORSE = "05010264";
+  const lists = [
+    ...Array.from({ length: 11 }, (_, i) => deck(`ag${i}`, { leader: "OL", base: "AB", cards: [[PROFUNDITY, 3], [IT_IS_WORSE, 1]], population: "community", source: "swudb", event: null, placement: null })),
+    ...Array.from({ length: 10 }, (_, i) => deck(`cm${i}`, { leader: "OL", base: "OB", cards: [[IT_IS_WORSE, 2]], population: "community", source: "swudb", event: null, placement: null })),
+    ...Array.from({ length: 3 }, (_, i) => deck(`cx${i}`, { leader: "OL", base: "EB", cards: [[PROFUNDITY, 1]], population: "community", source: "swudb", event: null, placement: null })),
+  ];
+  const file = buildLeaderCards(lists, facts);
+  const split = createMetaEnv({ ...deckEnv, leaderCards: indexLeaderCards(file) }, meta, winrates, loadCounterTable(), features);
+
+  it("leader_cards with a base reports that base's lists, labelled, and marks a penalised staple instead of hiding it", () => {
+    const own = body(leaderCards(split, { leader: "OL", base: "OB", minInclusion: 0 }));
+    expect(own).toMatchObject({ decks: 10, base: "Our Base", listsOfLeader: 24 });
+    expect(own.populationNote).toBe("10 Our Base lists of 24 community Our Leader, Defender lists");
+    expect(own.cards.map((c: { cardKey: string }) => c.cardKey)).toEqual([IT_IS_WORSE]);
+    const aggro = body(leaderCards(split, { leader: "OL", base: "AB", minInclusion: 0 }));
+    expect(aggro).toMatchObject({ decks: 11, base: "Aggression Base" });
+    expect(aggro.cards.every((c: { penalty?: number }) => c.penalty === undefined)).toBe(true);
+  });
+
+  it("falls back to every list under the 10-deck floor, names the counts and the dominant base, and still shows each row's penalty", () => {
+    const out = body(leaderCards(split, { leader: "OL", base: "EB", minInclusion: 0 }));
+    expect(out.decks).toBe(24);
+    expect(out.populationNote).toBe("3 Enemy Base lists is under the 10-deck floor; using all 24 Our Leader, Defender lists, 11 of which run Aggression Base (Aggression)");
+    const freighter = out.cards.find((c: { cardKey: string }) => c.cardKey === PROFUNDITY);
+    expect(freighter).toMatchObject({ penalty: 2, penalised: true });
+    expect(out.note).toContain("penalty");
+  });
+
+  it("leaves leader_cards without a base exactly as before", () => {
+    const out = body(leaderCards(split, { leader: "OL", minInclusion: 0 }));
+    expect(out.decks).toBe(24);
+    expect(out).not.toHaveProperty("populationNote");
+    expect(out.cards.every((c: object) => !("penalty" in c))).toBe(true);
+  });
+
+  it("meta_answers weights by the base's lists and names them in leaderSource", () => {
+    const out = body(metaAnswers(split, { leader: "OL", base: "OB", maxPenalty: 4, limit: 60, perThreat: 60, includeUnplayed: true }));
+    expect(out.leaderSource).toMatchObject({ population: "community", decks: 10, base: "Our Base" });
+    const byKey = Object.fromEntries([...out.staples, ...out.additions].map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion]));
+    expect(byKey[IT_IS_WORSE]).toBe(1);
+    expect(byKey[PROFUNDITY] ?? null).toBeNull();
+  });
+});

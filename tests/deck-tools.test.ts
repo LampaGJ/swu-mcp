@@ -1552,3 +1552,124 @@ describe("deck_audit, keyword clusters and wide-board wants (#152)", () => {
     });
   });
 });
+
+describe("leader lists by the given base (D60, #148)", () => {
+  // L1 (Aggression, Villainy) has 20 community lists: 12 on Vigilance Base, 8 on Command Base. All lists play Grit Brute
+  // (Aggression, free for L1) heavily; the Vigilance lists play Pinger Blue (Vigilance) and the Command lists play
+  // Pinger Green (Command). Under the Command base, Pinger Blue pays +2; under the Vigilance base, Pinger Green does.
+  const row = (cardKey: string, inclusion: number, meanCopies = 2) => ({ cardKey, title: cardKey, inclusion, meanCopies, baselineInclusion: 0.1, lift: inclusion - 0.1 });
+  const splitFile = (): LeaderCardsFile => {
+    const file = leaderCardsFile({ L1: [] });
+    const entry = file.leaders[0];
+    entry.population = "community";
+    entry.fallback = true;
+    entry.decks = 20;
+    entry.cards = [row("W1", 0.9), row("P3", 0.65), row("P2", 0.55), row("F01", 0.5)];
+    entry.baseDecks = [
+      { cardKey: "BV", title: "Vigilance Base", aspects: ["Vigilance"], decks: 12 },
+      { cardKey: "BC", title: "Command Base", aspects: ["Command"], decks: 8 },
+    ];
+    entry.splits = [{ kind: "base", key: "BV", label: "Vigilance Base", decks: 12, weight: 12, cards: [row("W1", 0.95), row("P3", 1), row("F01", 0.5)] }];
+    return file;
+  };
+  const splitEnv: DeckEnv = { ...env, leaderCards: indexLeaderCards(splitFile()) };
+  const audit = (base: string) => body(deckAudit(splitEnv, { decklist: lines(["F02", 3]), leader: "L1", base }));
+  const staples = (out: Record<string, any>) => out.leaderComparison.missingStaples as { cardKey: string; inclusion: number; penalty?: number; penalised?: boolean }[];
+
+  it("deck_audit takes the staples from the lists with the given base and labels them", () => {
+    const out = audit("BV");
+    expect(out.leaderComparison).toMatchObject({ population: "community", decks: 12, base: "Vigilance Base", listsOfLeader: 20 });
+    expect(out.leaderComparison.populationNote).toBe("12 Vigilance Base lists of 20 community L1 lists");
+    expect(staples(out).map((r) => [r.cardKey, r.inclusion])).toEqual([["P3", 1], ["W1", 0.95], ["F01", 0.5]]);
+    expect(staples(out).every((r) => r.penalty === undefined)).toBe(true);
+  });
+
+  it("deck_audit under a base with too few lists uses all of them, says so in one line, and marks each penalised staple instead of hiding it", () => {
+    const out = audit("BC");
+    expect(out.leaderComparison.decks).toBe(20);
+    expect(out.leaderComparison.populationNote).toBe("8 Command Base lists is under the 10-deck floor; using all 20 L1 lists, 12 of which run Vigilance Base (Vigilance)");
+    const byKey = Object.fromEntries(staples(out).map((r) => [r.cardKey, r]));
+    expect(byKey.P3).toMatchObject({ penalty: 2, penalised: true });
+    expect(byKey.W1.penalty).toBeUndefined();
+    expect(byKey.P2.penalty).toBeUndefined();
+    expect(out.leaderComparison.note).toContain("penalised: true");
+  });
+
+  it("playable_cards ranks by the given base's lists, labels them, and lists a penalised staple apart with its penalty", () => {
+    const own = body(playableCards(splitEnv, { leader: "L1", base: "BV", costs: [3], perCost: 5 }));
+    expect(own.leaderSource).toMatchObject({ decks: 12, base: "Vigilance Base" });
+    expect(own.cards.map((c: { cardKey: string }) => c.cardKey)).toEqual(["P3", "W1"]);
+    const fallback = body(playableCards(splitEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5 }));
+    expect(fallback.leaderSource.populationNote).toContain("under the 10-deck floor");
+    expect(fallback.cards.map((c: { cardKey: string }) => c.cardKey)).toEqual(["W1", "P2"]);
+    expect(fallback.penalisedStaples).toEqual([
+      expect.objectContaining({ cardKey: "P3", penalty: 2, leaderInclusion: 0.65 }),
+    ]);
+    const lenient = body(playableCards(splitEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, maxPenalty: 2 }));
+    expect(lenient.penalisedStaples).toBeUndefined();
+    expect(lenient.cards.find((c: { cardKey: string }) => c.cardKey === "P3")).toMatchObject({ penalty: 2, penalised: true });
+  });
+
+  it("budget_alternatives weights by the base's lists and names them", () => {
+    const out = body(budgetAlternatives(splitEnv, { decklist: lines(["P1", 3]), leader: "L1", base: "BV", maxPrice: 0.9 }));
+    expect(out.note).toContain("12 decks");
+    expect(out.note).toContain("12 Vigilance Base lists of 20 community L1 lists");
+  });
+});
+
+describe("budget_alternatives: named candidates and the card's job (D60, #149)", () => {
+  // Leader Readier readies a non-unit leader, as Darth Traya does. Unit Readier also offers ready-unit but readies a
+  // unit. The faces are patched onto the parsed cards because the fixture builder writes tags only.
+  const readyFaces = (target: string) => ({
+    text: [
+      {
+        kind: "ability",
+        triggers: [],
+        clauses: [{ text: `You may ready a ${target}.`, effects: [{ rule: "ready", target: { kind: target === "non-unit leader" ? "leader" : "unit" } }], conditions: [] }],
+        options: [],
+        grantedAbilities: [],
+      },
+    ],
+  });
+  const specs: Spec[] = [
+    ...SPECS,
+    { key: "RL1", title: "Leader Readier", cost: 3, icons: ["Command"], offers: ["offers:ready-unit"], price: { normal: 2 } },
+    { key: "RL2", title: "Cheap Leader Readier", cost: 3, icons: ["Command"], offers: ["offers:ready-unit"], price: { normal: 0.5 } },
+    { key: "RU1", title: "Cheap Unit Readier", cost: 3, icons: ["Command"], offers: ["offers:ready-unit"], price: { normal: 0.1 } },
+    { key: "PX", title: "Far Pinger", cost: 6, icons: ["Aggression"], offers: ["offers:damage-friendly-unit"], price: { normal: 0.1 } },
+  ];
+  const jobEnv = buildEnv(specs);
+  for (const [key, target] of [["RL1", "non-unit leader"], ["RL2", "non-unit leader"], ["RU1", "unit"]] as const) {
+    (jobEnv.ctx.graph.byKey.get(key) as { faces: unknown }).faces = readyFaces(target);
+  }
+  const run = (extra: object) => body(budgetAlternatives(jobEnv, { decklist: lines(["RL1", 3]), leader: "L1", base: "BC", ...extra }));
+
+  it("offers only cards that ready a leader for a card that readies a leader, and names its job", () => {
+    const out = run({});
+    const slot = out.slots.find((s: { cardKey: string }) => s.cardKey === "RL1");
+    expect(slot.alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["RL2"]);
+    expect(slot.alternatives[0].keepsRole).toBe("ready-leader");
+    expect(slot.job).toContain("readies a leader");
+  });
+
+  it("says no card keeps the job when none does", () => {
+    const out = body(budgetAlternatives(jobEnv, { decklist: lines(["RL1", 3], ["RL2", 1]), leader: "L1", base: "BC" }));
+    expect(out.slots.map((s: { cardKey: string }) => s.cardKey)).toEqual([]);
+    expect(out.noAlternative).toEqual(expect.arrayContaining([expect.objectContaining({ card: "Leader Readier", reason: "no card readies a leader" })]));
+  });
+
+  it("lists a named candidate outside the cost band with outsideBand true, its price, saving, score and penalty", () => {
+    const out = body(budgetAlternatives(jobEnv, { decklist: lines(["P1", 3]), leader: "L1", base: "BC", candidates: ["PX", "Nobody Home"] }));
+    const px = out.candidates.find((c: { cardKey: string }) => c.cardKey === "PX");
+    expect(px).toMatchObject({ title: "Far Pinger", cost: 6, price: 0.1, penalty: 0 });
+    expect(px.forSlots).toEqual([expect.objectContaining({ cardKey: "P1", outsideBand: true, saved: 0.9 })]);
+    expect(out.unresolvedCandidates).toEqual([expect.objectContaining({ card: "Nobody Home" })]);
+    expect(out.slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).not.toContain("PX");
+  });
+
+  it("is unchanged without candidates", () => {
+    const out = body(budgetAlternatives(jobEnv, { decklist: lines(["P1", 3]), leader: "L1", base: "BC" }));
+    expect(out).not.toHaveProperty("candidates");
+    expect(out.slots[0]).not.toHaveProperty("job");
+  });
+});

@@ -144,6 +144,23 @@ export type LeaderCardRow = z.infer<typeof leaderCardRow>;
 
 const window2 = z.strictObject({ from: z.iso.date(), to: z.iso.date() });
 
+/** Fewest lists a per-base or per-aspect split of a leader's population needs to be emitted and used (the D45 decks floor, #148). */
+export const LEADER_SPLIT_MIN_DECKS = 10;
+
+const leaderBaseCount = z.strictObject({ cardKey: z.string(), title: z.string(), aspects: z.array(z.string()), decks: z.number().int() });
+export type LeaderBaseCount = z.infer<typeof leaderBaseCount>;
+
+/** The leader's cards over only the lists with one base (kind base, key the base cardKey) or one base aspect set (kind aspect, key "Command" or "Aggression+Heroism"). */
+const leaderSplit = z.strictObject({
+  kind: z.enum(["base", "aspect"]),
+  key: z.string(),
+  label: z.string(),
+  decks: z.number().int(),
+  weight: z.number(),
+  cards: z.array(leaderCardRow).max(LEADER_CARDS_MAX),
+});
+export type LeaderSplit = z.infer<typeof leaderSplit>;
+
 const leaderCardsEntry = z.strictObject({
   leader: z.strictObject({ cardKey: z.string(), title: z.string(), aspects: z.array(z.string()) }),
   population: z.enum(POPULATIONS),
@@ -154,6 +171,10 @@ const leaderCardsEntry = z.strictObject({
   window: window2,
   topBase: z.strictObject({ cardKey: z.string(), title: z.string(), decks: z.number().int() }).nullable(),
   cards: z.array(leaderCardRow).max(LEADER_CARDS_MAX),
+  /** Lists per base, most-played first; absent in a package built before #148. */
+  baseDecks: z.array(leaderBaseCount).optional(),
+  /** Per-base and per-base-aspect card rows for groups of at least LEADER_SPLIT_MIN_DECKS lists; absent in a package built before #148. */
+  splits: z.array(leaderSplit).optional(),
 });
 export type LeaderCardsEntry = z.infer<typeof leaderCardsEntry>;
 

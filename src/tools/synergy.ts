@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { packageDirOf, type CardStore } from "../data.js";
+import { selectLeaderPopulation, type LeaderSelection } from "../meta/leader-split.js";
 import type { LeaderCardsEntry, LeaderCardRow } from "../meta/schema.js";
 import { CANDIDATE_STATUS, clip, evidenceOf, sourcedEvidenceOf, tagEvidence } from "../synergy/evidence.js";
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
+import { engineHitOf, leaderEngineOf, roleKeepOf, suppliedKeywords, type EngineHit, type LeaderEngine } from "../synergy/leader-engine.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
 import {
   aspectGroup,
@@ -23,7 +25,8 @@ import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { DEFAULT_TRIO_KEEP, TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
 import { ok, fail } from "./common.js";
-import { inPremierPool, LEADER_INCLUSION_FLOOR, leaderSourceText } from "./deck.js";
+import { decklistField } from "./decklist-field.js";
+import { inPremierPool, resolveRef, LEADER_INCLUSION_FLOOR, LEADER_STAPLE_INCLUSION, leaderSourceText, selectionFields, singlePenalty } from "./deck.js";
 import { valueData } from "./value.js";
 
 /**
@@ -105,6 +108,18 @@ export const fungibleSubstitutesShape = {
     .describe(
       "The deck's leader, by cardKey or exact title. Each substitute carries leaderInclusion (null when the leader's tournament decklists do not play it) and, inside an aspect group, substitutes the leader's decks play sort first. Without it they sort by play-calibrated score",
     ),
+  base: baseArg,
+  candidates: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(20)
+    .optional()
+    .describe(
+      "Cards to weigh whatever the cost band: cardKeys or SET_NNN ids (like the deck tools). Each is always evaluated and listed under candidates with its score and the aspect penalty it pays under the leader and base (or preferAspects), outsideBand: true when no role lists it among the substitutes",
+    ),
+  decklist: decklistField
+    .optional()
+    .describe("The deck as {card, count}: cards already in it are left out of the substitutes, and the keywords its cards print count as the deck's supply when the card's job is judged"),
   evidence: evidenceFlag,
 };
 
@@ -191,6 +206,8 @@ function resolve(ctx: SynergyContext, keys: readonly string[]): SynergyCard[] | 
 interface LeaderWeight {
   card: SynergyCard;
   data: { entry: LeaderCardsEntry; byCard: ReadonlyMap<string, LeaderCardRow> } | null;
+  /** How the leader's lists were narrowed to the deck's base (D60); absent when no base or aspect set was given. */
+  selection?: LeaderSelection;
 }
 
 function resolveLeader(ctx: SynergyContext, ref: string): LeaderWeight | string {
@@ -227,7 +244,7 @@ interface Picked {
  */
 function leaderAndBase(
   ctx: SynergyContext,
-  args: { leader?: string; base?: string; weighting: (typeof WEIGHTINGS)[number] },
+  args: { leader?: string; base?: string; weighting: (typeof WEIGHTINGS)[number]; aspects?: readonly string[]; baseAspects?: readonly string[] },
   subject?: SynergyCard,
 ): Picked | string {
   const leaderDefaulted = args.leader === undefined && args.weighting === "leader" && subject?.type === "Leader";
@@ -238,12 +255,43 @@ function leaderAndBase(
   const flags = leaderDefaulted ? { leaderDefaulted } : {};
   if (args.base !== undefined) {
     const base = resolveBase(ctx, args.base);
-    return typeof base === "string" ? base : { leader, base, ...flags };
+    if (typeof base === "string") return base;
+    return { leader: narrowed(leader, { base: { cardKey: base.cardKey, title: cardLabel(base), aspects: base.structured.aspectIcons } }), base, ...flags };
+  }
+  // D60: a supplied aspect set is the deck's colours; the leader's most-played base never replaces it, and its extra icon names the base's aspect.
+  if (args.aspects !== undefined || args.baseAspects !== undefined) {
+    const given = args.baseAspects ?? withoutOnce(args.aspects ?? [], leader.card.structured.aspectIcons);
+    return { leader: given.length === 1 ? narrowed(leader, { baseAspects: given }) : leader, ...flags };
   }
   const top = leaderDefaulted ? leader.data?.entry.topBase : null;
   const topBase = top == null ? undefined : ctx.cards.find((c) => c.type === "Base" && c.cardKey === top.cardKey);
   return topBase === undefined ? { leader, ...flags } : { leader, base: topBase, baseDefaulted: true, ...flags };
 }
+
+/** The leader's lists narrowed to the given base or base aspect (D60); the weight keeps its shape. */
+/** The leader block already names the base in its own `base` object, so the selection's `base` label is dropped there. */
+const omitBase = (fields: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(fields).filter(([key]) => key !== "base"));
+
+function narrowed(leader: LeaderWeight, query: Parameters<typeof selectLeaderPopulation>[1]): LeaderWeight {
+  if (leader.data === null) return leader;
+  const picked = selectLeaderPopulation(leader.data, query);
+  return { ...leader, data: picked, selection: picked.selection };
+}
+
+/** The aspects left after one copy of each leader icon is taken out: with the leader's icons that is the base's aspect. */
+function withoutOnce(aspects: readonly string[], leaderIcons: readonly string[]): string[] {
+  const rest = [...aspects];
+  for (const icon of leaderIcons) {
+    const at = rest.indexOf(icon);
+    if (at >= 0) rest.splice(at, 1);
+  }
+  return rest;
+}
+
+/** The link strength of a leader-engine row: the leader's own clause is exact text, so it takes a strong mechanical link's score (D60). */
+const ENGINE_LINK_SCORE = 1.5;
+/** A partner that meets the leader's clause ranks as one the leader's lists play at the staple share (D60), unless they play it more. */
+const engineFactor = (): number => 0.5 + LEADER_STAPLE_INCLUSION;
 
 const NO_BASE_NOTE = "base not given: penalties measured against the leader's icons only";
 
@@ -298,7 +346,8 @@ function leaderBlock(
     population: entry.population,
     decks: entry.decks,
     window: `${entry.window.from}..${entry.window.to}`,
-    note: `leaderInclusion = placement-weighted share of this leader's decklists that play the card (${leaderSourceText(entry)}); null = unplayed in them; under ${LEADER_INCLUSION_FLOOR * 100}% counts as unplayed in the rank. ${how}.`,
+    ...(w.selection === undefined ? {} : omitBase(selectionFields(w.selection))),
+    note: `leaderInclusion = placement-weighted share of this leader's decklists that play the card (${leaderSourceText(entry, w.selection)}); null = unplayed in them; under ${LEADER_INCLUSION_FLOOR * 100}% counts as unplayed in the rank. ${how}.`,
   };
 }
 
@@ -347,18 +396,44 @@ function substituteOrder(
     cmp(a.cardKey, b.cardKey);
 }
 
+/** What the registered tool resolves from names before the handler runs: the deck's cards and the named candidates. */
+export interface FungibleResolved {
+  deckKeys: ReadonlySet<string>;
+  deckCards: readonly SynergyCard[];
+  /** The named candidates as cardKeys; when absent the input's candidates are read as cardKeys. */
+  candidates?: readonly string[];
+  unresolvedCandidates?: readonly { card: string; reason: string; detail: string }[];
+}
+
 export function fungibleSubstitutes(
   ctx: SynergyContext,
   input: unknown,
   scores: ReadonlyMap<string, { playCalibrated: number | null }> = new Map(),
   inPool?: (cardKey: string) => boolean,
+  resolved: FungibleResolved = { deckKeys: new Set(), deckCards: [] },
 ): ToolResult {
   const args = z.object(fungibleSubstitutesShape).parse(input);
-  const resolved = resolve(ctx, [args.cardKey]);
-  if (typeof resolved === "string") return fail(resolved);
-  const slot = resolved[0];
+  const cards = resolve(ctx, [args.cardKey]);
+  if (typeof cards === "string") return fail(cards);
+  const slot = cards[0];
   const leader = args.leader === undefined ? undefined : resolveLeader(ctx, args.leader);
   if (typeof leader === "string") return fail(leader);
+  if (args.base !== undefined && leader === undefined) return fail("base needs a leader: give leader too, because the base only adds its icons to the leader's");
+  const base = args.base === undefined ? undefined : resolveBase(ctx, args.base);
+  if (typeof base === "string") return fail(base);
+  const named = resolved.candidates ?? args.candidates ?? [];
+  const unresolvedCandidates = [
+    ...(resolved.unresolvedCandidates ?? []),
+    ...(resolved.candidates === undefined ? named.filter((k) => !ctx.graph.byKey.has(k)).map((k) => ({ card: k, reason: "unknown", detail: "no card with this cardKey in the feature file" })) : []),
+  ];
+  const candidateKeys = [...new Set(named.filter((k) => ctx.graph.byKey.has(k)))];
+  const supplied: readonly string[] | undefined =
+    leader !== undefined && base !== undefined ? [...leader.card.structured.aspectIcons, ...base.structured.aspectIcons] : args.preferAspects;
+  const showPenalty = supplied !== undefined && (base !== undefined || candidateKeys.length > 0);
+  const penaltyOf = (c: SynergyCard): number | undefined => (showPenalty ? singlePenalty(c, supplied as readonly string[]) : undefined);
+  const inDeck = resolved.deckKeys;
+  const engine = leader === undefined ? null : leaderEngineOf(leader.card);
+  const roleKeep = roleKeepOf(slot, suppliedKeywords(engine, resolved.deckCards));
   const tags =
     args.tag !== undefined
       ? [args.tag]
@@ -366,16 +441,20 @@ export function fungibleSubstitutes(
           ...new Set(
             (ctx.fungibility.rolesByCard.get(slot.cardKey) ?? []).map((id) => (ctx.fungibility.classById.get(id) as { tag: string }).tag),
           ),
-        ];
+        ].filter((tag) => roleKeep === null || roleKeep.tags.has(tag));
   if (tags.length === 0)
     return ok({ status: CANDIDATE_STATUS, card: brief(slot), roles: [], note: "the card carries no offers/wants role (trait tags are not roles)" });
+  const keep = (cardKey: string): boolean =>
+    (inPool === undefined || inPool(cardKey)) &&
+    !inDeck.has(cardKey) &&
+    (roleKeep === null || roleKeep.keptBy(ctx.graph.byKey.get(cardKey) as SynergyCard).length > 0);
   const options: SubstituteOptions = {
-    preferAspects: args.preferAspects,
+    preferAspects: args.preferAspects ?? (base === undefined ? undefined : supplied),
     crossAspectOnly: args.crossAspectOnly,
     maxCost: args.maxCost,
     perGroup: args.limit,
     order: substituteOrder(leader, scores),
-    keep: inPool,
+    keep: inPool === undefined && inDeck.size === 0 && roleKeep === null ? undefined : keep,
   };
   const roles = tags.flatMap((tag) => {
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
@@ -385,8 +464,16 @@ export function fungibleSubstitutes(
     const groups = widenedResult?.groups ?? exact;
     const withText = (c: SubstituteGroup["cards"][number]) => {
       const widenedMark = widenedResult === null ? c : { ...c, match: "widened" };
-      const marked = leader === undefined ? widenedMark : { ...widenedMark, leaderInclusion: inclusionOf(leader, c.cardKey) };
-      return args.evidence ? { ...marked, text: roleText(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : marked;
+      const syn = ctx.graph.byKey.get(c.cardKey) as SynergyCard;
+      const penalty = penaltyOf(syn);
+      const kept = roleKeep === null ? [] : roleKeep.keptBy(syn);
+      const marked = {
+        ...widenedMark,
+        ...(leader === undefined ? {} : { leaderInclusion: inclusionOf(leader, c.cardKey) }),
+        ...(penalty === undefined ? {} : { penalty }),
+        ...(roleKeep === null ? {} : { keepsRole: kept.join(", ") }),
+      };
+      return args.evidence ? { ...marked, text: roleText(syn, tag) } : marked;
     };
     return [
       {
@@ -406,7 +493,47 @@ export function fungibleSubstitutes(
     ];
   });
   if (roles.length === 0) return fail(`${slot.cardKey} has no role for tag ${args.tag}`);
-  return ok({ status: CANDIDATE_STATUS, card: brief(slot), ...(leader === undefined ? {} : { leader: leaderBlock(leader, "substitute") }), roles });
+  const listedKeys = new Set(roles.flatMap((r) => r.substitutes.flatMap((g) => g.cards.map((c) => c.cardKey))));
+  const candidates = candidateKeys.map((key) => {
+    const syn = ctx.graph.byKey.get(key) as SynergyCard;
+    const penalty = penaltyOf(syn);
+    const carried = new Set([...syn.tags.offers, ...syn.tags.wants].map((t) => t.tag));
+    const shares = tags.filter((tag) => carried.has(tag));
+    return {
+      cardKey: key,
+      title: cardLabel(syn),
+      type: syn.type,
+      cost: syn.structured.cost,
+      aspects: aspectGroup(syn),
+      ...(penalty === undefined ? {} : { penalty }),
+      playCalibrated: scores.get(key)?.playCalibrated ?? null,
+      ...(leader === undefined ? {} : { leaderInclusion: inclusionOf(leader, key) }),
+      outsideBand: !listedKeys.has(key),
+      sharesRoles: shares.join(", ") || "none",
+      ...(roleKeep === null ? {} : { keepsRole: roleKeep.keptBy(syn).join(", ") || "none" }),
+      ...(inDeck.has(key) ? { inDeck: true } : {}),
+      ...(inPool === undefined ? {} : { premierPool: inPool(key) }),
+    };
+  });
+  const slotPenalty = penaltyOf(slot);
+  return ok({
+    status: CANDIDATE_STATUS,
+    card: { ...brief(slot), ...(slotPenalty === undefined ? {} : { penalty: slotPenalty }) },
+    ...(leader === undefined ? {} : { leader: leaderBlock(leader, "substitute", base) }),
+    ...(showPenalty ? { suppliedIcons: (supplied as readonly string[]).join("+") || "none" } : {}),
+    ...(roleKeep === null
+      ? {}
+      : {
+          roleKept: {
+            families: roleKeep.families,
+            note: roleKeep.note,
+            ...(listedKeys.size === 0 ? { none: `no card in the pool ${roleKeep.jobs.join(" or ")}` } : {}),
+          },
+        }),
+    ...(candidates.length === 0 ? {} : { candidates }),
+    ...(unresolvedCandidates.length === 0 ? {} : { unresolvedCandidates }),
+    roles,
+  });
 }
 
 /** The link e with `from` swapped for `to`, when the graph holds it through one of e's own rows; a conditional link needs one of `others` to supply its traits. */
@@ -489,6 +616,8 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
   const ownIcons = card.type === "Leader" ? card.structured.aspectIcons : undefined;
   const aspects = args.aspects ?? (leader === undefined ? ownIcons : [...leader.card.structured.aspectIcons, ...(base?.structured.aspectIcons ?? [])]);
   const weight = args.weighting === "leader" && leader?.data != null ? leader : undefined;
+  // D60 (#149): the leader's own clause is a want source for the deck, so partners that meet it rank with the leader factor.
+  const engine = weight === undefined ? null : leaderEngineOf(weight.card);
   const touching = ctx.graph.edges.filter((e) => {
     const partner = e.a === card.cardKey ? e.b : e.b === card.cardKey ? e.a : undefined;
     if (partner === undefined) return false;
@@ -499,20 +628,46 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
     const cost = partnerCard.structured.cost;
     return args.maxCost === undefined || (cost !== null && cost <= args.maxCost);
   });
-  const ranked = (edges: readonly PairEdge[], mode: TraitsMode) => {
-    const rows = edges.map((e: PairEdge) => {
-      const partner = ctx.graph.byKey.get(e.a === card.cardKey ? e.b : e.a) as SynergyCard;
+  const engineReason = (hit: EngineHit): string =>
+    `Leader engine: ${cardLabel((weight as LeaderWeight).card)}'s own clause "${(engine as LeaderEngine).clause}" meets this card: ${hit.how}${hit.partnerText === null ? "" : ` ("${hit.partnerText}")`}.`;
+  const ranked = (edges: readonly (PairEdge | null)[], mode: TraitsMode, engineOnly: readonly SynergyCard[] = []) => {
+    const rows = [...edges, ...engineOnly.map(() => null)].map((e, i) => {
+      const partner = e === null ? engineOnly[i - edges.length] : (ctx.graph.byKey.get(e.a === card.cardKey ? e.b : e.a) as SynergyCard);
       const cover = penaltyFor(ctx, [card, partner], aspects);
-      const score = edgeScore(e, mode);
+      const score = e === null ? ENGINE_LINK_SCORE : edgeScore(e, mode);
       const unweighted = aspects === undefined ? score : Math.round((score / (1 + cover.penalty / 2)) * 1000) / 1000;
-      const rank = weight === undefined ? unweighted : r3(unweighted * leaderFactor(weight, partner.cardKey));
+      const hit = engine === null ? null : engineHitOf(engine, partner);
+      const factor = weight === undefined ? 1 : hit === null ? leaderFactor(weight, partner.cardKey) : Math.max(leaderFactor(weight, partner.cardKey), engineFactor());
+      const rank = weight === undefined ? unweighted : r3(unweighted * factor);
       const lock = baseLockOfAll([partner], base);
-      return { e, partner, cover, score, rank, lock };
+      return { e, partner, cover, score, rank, lock, hit };
     });
-    return rows.sort((x, y) => Number(x.lock.unmet) - Number(y.lock.unmet) || y.rank - x.rank || edgeOrder(x.e, y.e));
+    return rows.sort((x, y) => Number(x.lock.unmet) - Number(y.lock.unmet) || y.rank - x.rank || (x.e !== null && y.e !== null ? edgeOrder(x.e, y.e) : cmp(x.partner.cardKey, y.partner.cardKey)));
   };
   const linkRowsOf = (e: PairEdge, mode: TraitsMode) => (mode === "exclude" ? mechanicalRows(e) : e.rows);
-  const row = ({ e, partner, cover, score, rank, lock }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
+  const linkOf = (r: ReturnType<typeof ranked>[number], mode: TraitsMode): string =>
+    r.e === null ? `leader-engine: ${(r.hit as EngineHit).keyword ?? "play"}` : linkRowsOf(r.e, mode).map((x) => `${x.offer} -> ${x.want}`).join("; ");
+  const row = ({ e, partner, cover, score, rank, lock, hit }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
+    if (e === null) {
+      const found = hit as EngineHit;
+      const out: Record<string, unknown> = {
+        ...brief(partner),
+        status: CANDIDATE_STATUS,
+        partnerIs: "payoff",
+        linkKind: "leader-engine",
+        link: `leader:grant-${(found.keyword ?? "").toLowerCase()} -> wants:friendly-unit-with-${(found.keyword ?? "").toLowerCase()}`,
+        reason: engineReason(found),
+        score,
+        aspectPair: cover.aspectPair,
+        penalty: cover.penalty,
+        rank,
+        leaderInclusion: inclusionOf(weight as LeaderWeight, partner.cardKey),
+        ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
+      };
+      if (args.evidence) out.evidence = [{ offer: `text: ${(engine as LeaderEngine).clause}`, want: found.partnerText }];
+      if (args.withAlternatives) out.alternatives = [];
+      return out;
+    }
     const linkRows = linkRowsOf(e, mode);
     const out: Record<string, unknown> = {
       ...brief(partner),
@@ -520,7 +675,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
       partnerIs: e.a === card.cardKey ? "payoff" : "enabler",
       linkKind: e.linkKind,
       link: linkRows.map((r) => `${r.offer} -> ${r.want}`).join("; "),
-      reason: reasonOfHit(ctx.graph, e, primaryRows(e)[0]),
+      reason: `${reasonOfHit(ctx.graph, e, primaryRows(e)[0])}${hit === null ? "" : ` ${engineReason(hit)}`}`,
       score,
       aspectPair: cover.aspectPair,
       penalty: cover.penalty,
@@ -531,20 +686,26 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
     if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey, linkRows);
     return out;
   };
-  const rows = ranked(
-    touching.filter((e) => args.traits === "include" || !e.traitOnly),
-    args.traits,
-  );
-  const { ordered, deferred } = deferRepeatedLinks(
-    rows,
-    (r) => linkRowsOf(r.e, args.traits).map((x) => `${x.offer} -> ${x.want}`).join("; "),
-    args.perLink,
-  );
-  const tribal = args.traits === "bonus" ? ranked(touching.filter((e) => e.traitOnly), "bonus") : [];
+  // A partner the leader's clause pays off but the graph does not link to the leader is added as a leader-engine row, for a leader subject only.
+  const mainEdges = touching.filter((e) => args.traits === "include" || !e.traitOnly);
+  const edgePartners = new Set(mainEdges.map((e) => (e.a === card.cardKey ? e.b : e.a)));
+  const engineOnly =
+    engine === null || weight === undefined || card.cardKey !== weight.card.cardKey || args.direction === "enablers"
+      ? []
+      : ctx.cards.filter((c) => {
+          if (edgePartners.has(c.cardKey) || c.cardKey === card.cardKey) return false;
+          if (!args.includeLeaders && !DECK_CARD_TYPES.has(c.type)) return false;
+          if (args.maxCost !== undefined && (c.structured.cost === null || c.structured.cost > args.maxCost)) return false;
+          return engineHitOf(engine, c)?.kind === "pays-off";
+        });
+  const engineKeys = new Set(engineOnly.map((c) => c.cardKey));
+  const rows = ranked(mainEdges, args.traits, engineOnly);
+  const { ordered, deferred } = deferRepeatedLinks(rows, (r) => linkOf(r, args.traits), args.perLink);
+  const tribal = args.traits === "bonus" ? ranked(touching.filter((e) => e.traitOnly && !engineKeys.has(e.a === card.cardKey ? e.b : e.a)), "bonus") : [];
   const shown = ordered.slice(0, args.limit).map((r) => {
     const { e, partner } = r;
     const out = row(r, args.traits);
-    if (args.withAlternatives) {
+    if (e !== null && args.withAlternatives) {
       const tags = slotRoles([partner.cardKey], [e])[0];
       const common = commonMembers(ctx.fungibility, partner.cardKey, [...tags.offers, ...tags.wants]);
       out.alternatives = groupText(
@@ -561,7 +722,9 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
   });
   return ok({
     card: brief(card),
-    ...(leader === undefined ? {} : { leader: leaderBlock(leader, "partner", base, args.aspects === undefined, { ...picked, weighted: args.weighting === "leader" }) }),
+    ...(leader === undefined
+      ? {}
+      : { leader: { ...leaderBlock(leader, "partner", base, args.aspects === undefined, { ...picked, weighted: args.weighting === "leader" }), ...(engine === null ? {} : { engine: { clause: engine.clause, playsUnitMaxPower: engine.playsUnitMaxPower, grantsKeywords: engine.grantsKeywords.join(", ") } }) } }),
     source: args.source,
     traits: args.traits,
     partnerFilter: partnerFilterNote(args.includeLeaders),
@@ -594,7 +757,7 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
     if (typeof resolved === "string") return fail(resolved);
     subject = resolved[0];
   }
-  const picked = leaderAndBase(ctx, args, subject);
+  const picked = leaderAndBase(ctx, { ...args, aspects: undefined }, subject);
   if (typeof picked === "string") return fail(picked);
   const { leader, base } = picked;
   const weight = args.weighting === "leader" && leader?.data != null ? leader : undefined;
@@ -830,18 +993,38 @@ function withContext(store: CardStore, run: (ctx: SynergyContext) => ToolResult)
   }
 }
 
+/** Names to cards at the tool boundary (D55, #143): candidates and decklist lines are cardKeys, SET_NNN ids or exact titles. */
+function resolveNames(store: CardStore, ctx: SynergyContext, input: unknown): FungibleResolved {
+  const names = z.looseObject({ candidates: fungibleSubstitutesShape.candidates, decklist: fungibleSubstitutesShape.decklist }).parse(input);
+  const candidates: string[] = [];
+  const unresolvedCandidates: { card: string; reason: string; detail: string }[] = [];
+  for (const ref of names.candidates ?? []) {
+    const hit = resolveRef(store, ref, "main");
+    if (hit.ok) candidates.push(hit.row.cardKey);
+    else unresolvedCandidates.push({ card: ref, reason: hit.reason, detail: hit.detail });
+  }
+  const deckCards: SynergyCard[] = [];
+  for (const line of names.decklist ?? []) {
+    const hit = resolveRef(store, line.card, "main");
+    const syn = hit.ok ? ctx.graph.byKey.get(hit.row.cardKey) : undefined;
+    if (syn !== undefined) deckCards.push(syn);
+  }
+  return { deckKeys: new Set(deckCards.map((c) => c.cardKey)), deckCards, candidates, unresolvedCandidates };
+}
+
 export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Substitutes are Premier-pool cards only (a Premier-legal printing). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Substitutes are Premier-pool cards only (a Premier-legal printing). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off). Give decklist to leave out cards already in the deck. Give candidates (cardKeys or SET_NNN ids) to weigh named cards whatever the cost band: each is listed under candidates with its score, the aspect penalty it pays and outsideBand: true when no role lists it; give base with leader (or preferAspects) and the card's own penalty and each substitute's penalty are shown. A card whose job the deck needs (readying a leader; giving a keyword the leader or the deck supplies, such as Ambush or Raid) keeps that job: only roles in that family are listed, each substitute names the family it keeps in keepsRole, and roleKept.none says so when no card in the pool does it.",
     shape: fungibleSubstitutesShape,
-    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store), inPremierPool(store))),
+    handler: (store: CardStore, input: unknown): ToolResult =>
+      withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store), inPremierPool(store), resolveNames(store, ctx, input))),
   },
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect (only Premier-pool cards that still link with the card through the same row) and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base is given; the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect (only Premier-pool cards that still link with the card through the same row) and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base or aspects is given (a supplied aspect set is never replaced by the leader's top base); the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. With a leader (D60), the leader's own clause is a want source: when it plays a unit of limited power or gives a keyword (The Warrior: a unit with 3 or less power, with Ambush), partners that meet it rank at least as if the leader's decks played them 60% of the time and the reason quotes the leader clause; for a leader subject, a card whose text keys on a friendly unit with the granted keyword (Boba Fett, Family Found) is listed as a leader-engine row. Given a base, or aspects that add one base icon, the leader's decklists are narrowed to the lists with that base when at least 10 remain, else all are used and the leader block says so (populationNote). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input, inPremierPool(store))),
   },

@@ -25,6 +25,7 @@ import {
   type MetaFile,
   type WinRatesFile,
 } from "../meta/schema.js";
+import { selectLeaderPopulation } from "../meta/leader-split.js";
 import { wilson } from "../meta/stats.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { isLocked, lockFields, lockSupply, mergeLocks, offerLock, type ClauseLock } from "../synergy/clause-lock.js";
@@ -39,12 +40,14 @@ import {
   LEADER_INCLUSION_FLOOR,
   LOCK_NOTE,
   leaderCardsOf,
+  leaderDataFor,
   leaderField,
   leaderSourceText,
   MAIN_TYPES,
   resolveList,
   resolvePair,
   resolveRef,
+  selectionFields,
   singlePenalty,
   suppliedBy,
   type DeckEnv,
@@ -642,7 +645,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
   const targets = archetypesIn(env, population).slice(0, args.archetypes);
   const threatsOf = new Map(targets.map((a) => [a.id, new Set(detectThreats(a.profile, env.table).map((t) => t.threat.id))]));
   const consideredShare = targets.reduce((s, a) => s + a.share, 0);
-  const leaderData = leaderDataOf(env.deck, pair.leader.row.cardKey);
+  const leaderData = leaderDataFor(env.deck, pair);
   const unitBasis =
     mainEntries.length > 0
       ? { units: partial.lines.reduce((n, l) => n + (l.syn.type === "Unit" ? l.count : 0), 0), from: "the decklist" }
@@ -855,6 +858,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
             fallback: leaderData.entry.fallback,
             decks: leaderData.entry.decks,
             window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}`,
+            ...selectionFields(leaderData.selection),
           },
     threatsCovered,
     symmetricSweeps: {
@@ -865,7 +869,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     staples: staples.map(rowOf),
     additions: additions.map(rowOf),
     lockedAnswers: lockedList.slice(0, args.limit).map(rowOf),
-    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
+    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry, leaderData.selection)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
   });
 }
 
@@ -883,6 +887,11 @@ export const leaderCardsShape = {
     .default("inclusion")
     .describe("inclusion (default): raw popularity in the leader's decks; lift: inclusion minus the card's inclusion in decks that could play it"),
   minInclusion: z.number().min(0).max(1).default(0.1).describe("Leave out cards played in a smaller share of the leader's decks"),
+  base: baseField
+    .optional()
+    .describe(
+      "The deck's base: narrows the leader's lists to those with this base (or its aspect) when at least 10 remain, else uses all of them and says so; each card then carries the aspect penalty it pays under this leader and base (penalty, penalised: true)",
+    ),
 };
 
 export function leaderCards(env: MetaEnv, input: unknown): ToolResult {
@@ -891,18 +900,29 @@ export function leaderCards(env: MetaEnv, input: unknown): ToolResult {
   if (index === null) return fail('no meta/leader-cards.json in this data package; it predates the leader index (run "pnpm meta" or "pnpm build:data")');
   const leader = resolveRef(env.deck.store, args.leader, "leader");
   if (!leader.ok) return fail(`leader "${args.leader}": ${leader.reason}, ${leader.detail}`);
-  const hit = index.get(leader.row.cardKey);
-  if (hit === undefined) return fail(`no tournament or community decklist with leader ${cardLabel(leader.row)} in ${env.meta.window.from}..${env.meta.window.to}`);
+  const found = index.get(leader.row.cardKey);
+  if (found === undefined) return fail(`no tournament or community decklist with leader ${cardLabel(leader.row)} in ${env.meta.window.from}..${env.meta.window.to}`);
+  const pair = args.base === undefined ? undefined : resolvePair(env.deck, args.leader, args.base);
+  if (typeof pair === "string") return fail(pair);
+  const hit = pair === undefined ? { ...found, selection: selectLeaderPopulation(found, {}).selection } : (leaderDataFor(env.deck, pair) as NonNullable<ReturnType<typeof leaderDataFor>>);
   const { entry } = hit;
+  const supplied = pair === undefined ? undefined : suppliedBy(pair);
+  const withPenalty = <T extends { cardKey: string }>(row: T): T | (T & { penalty: number; penalised: true }) => {
+    const syn = supplied === undefined ? undefined : env.deck.ctx.graph.byKey.get(row.cardKey);
+    const penalty = syn === undefined || supplied === undefined ? 0 : singlePenalty(syn, supplied);
+    return penalty > 0 ? { ...row, penalty, penalised: true } : row;
+  };
   const kept = entry.cards.filter((c) => c.inclusion >= args.minInclusion);
   const sorted =
     args.sortBy === "lift"
       ? kept.slice().sort((a, b) => b.lift - a.lift || b.inclusion - a.inclusion || compareCodePoints(a.cardKey, b.cardKey))
       : kept;
-  const shown = sorted.slice(0, args.limit);
+  const shown = sorted.slice(0, args.limit).map(withPenalty);
   return ok({
     dataVersion: env.deck.dataVersion,
     leader: { cardKey: leader.row.cardKey, title: cardLabel(leader.row) },
+    ...(pair === undefined ? {} : { givenBase: { cardKey: pair.base.row.cardKey, title: cardLabel(pair.base.row) } }),
+    ...(pair === undefined ? {} : selectionFields(hit.selection)),
     population: entry.population,
     fallback: entry.fallback,
     window: `${entry.window.from}..${entry.window.to}`,
@@ -913,7 +933,7 @@ export function leaderCards(env: MetaEnv, input: unknown): ToolResult {
     matched: kept.length,
     shown: shown.length,
     cards: shown,
-    note: `Counts over this leader's decklists (${leaderSourceText(entry)}), every deck of the leader in the window, all its archetypes. inclusion = placement-weighted share of the leader's decks that play the card; meanCopies = placement-weighted copies per deck; baselineInclusion = the same share across every ${entry.population} deck in the window whose leader and base icons cover the card's aspects (decks that could play it without a penalty); lift = inclusion - baselineInclusion. Weighting: ${env.meta.method.weighting}. Small deck counts are noisy; at most ${LEADER_CARDS_MAX} cards per leader are kept.`,
+    note: `Counts over this leader's decklists (${leaderSourceText(entry, hit.selection)}), ${hit.selection.scope === "all" ? "every deck of the leader in the window, all its archetypes" : "only the lists with the given base"}.${pair === undefined ? "" : " penalty and penalised: true mark a card that pays an aspect penalty under this leader and base; a row without them pays none."} inclusion = placement-weighted share of the leader's decks that play the card; meanCopies = placement-weighted copies per deck; baselineInclusion = the same share across every ${entry.population} deck in the window whose leader and base icons cover the card's aspects (decks that could play it without a penalty); lift = inclusion - baselineInclusion. Weighting: ${env.meta.method.weighting}. Small deck counts are noisy; at most ${LEADER_CARDS_MAX} cards per leader are kept.`,
   });
 }
 
@@ -951,13 +971,13 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers.",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and leaderSource.populationNote names the counts and the dominant base.",
     metaAnswersShape,
     metaAnswers,
   ),
   leader_cards: tool(
     "Leader cards",
-    "The cards a leader's recent decklists actually play: for every card in the leader's decks in the meta window (tournament decklists, or community lists only when the leader has no tournament deck, and the output says so), the placement-weighted inclusion, mean copies, baseline inclusion among decks whose aspects could play it, and lift over that baseline. Names the population, window and deck count; status: fact. sortBy inclusion (raw popularity) or lift.",
+    "The cards a leader's recent decklists actually play: for every card in the leader's decks in the meta window (tournament decklists, or community lists only when the leader has no tournament deck, and the output says so), the placement-weighted inclusion, mean copies, baseline inclusion among decks whose aspects could play it, and lift over that baseline. Names the population, window and deck count; status: fact. sortBy inclusion (raw popularity) or lift. Give base (a Base card) to see only the lists with that base, or all the leader's lists with one line naming the counts and the dominant base when fewer than 10 run it (D60); each card then carries penalty and penalised: true when it pays an aspect penalty under this leader and base.",
     leaderCardsShape,
     leaderCards,
   ),

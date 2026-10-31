@@ -1,0 +1,1596 @@
+{
+ "source": "2026-10-31/features/features.json; copied verbatim, filtered by cardKey",
+ "cards": [
+  {
+   "cardKey": "05010105",
+   "title": "Oppo Rancisis",
+   "subtitle": "Ancient Councilor",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 3,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Command"
+    ],
+    "traits": [
+     "Force",
+     "Jedi",
+     "Republic"
+    ],
+    "keywordsField": [
+     "Ambush",
+     "Grit",
+     "Hidden",
+     "Overwhelm",
+     "Raid",
+     "Restore",
+     "Saboteur",
+     "Sentinel",
+     "Shielded"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [
+     "Ambush",
+     "Grit",
+     "Hidden",
+     "Overwhelm",
+     "Raid",
+     "Restore",
+     "Saboteur",
+     "Sentinel",
+     "Shielded"
+    ],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "while_other": 2
+    },
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "constant": 6
+      },
+      "byTarget": {
+       "friendly_unit": 2,
+       "self_unit": 4
+      },
+      "count": 6,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 2
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "This unit gains Ambush while another friendly unit has Ambush.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Ambush"
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         },
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Ambush"
+           }
+          ],
+          "target": {
+           "side": "friendly",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "other"
+           ],
+           "text": "another friendly unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "while"
+        ]
+       },
+       {
+        "path": "text.p0s1",
+        "text": "The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "grant_keyword",
+          "n": null,
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          },
+          "keywords": [
+           {
+            "keyword": "Grit"
+           },
+           {
+            "keyword": "Hidden"
+           },
+           {
+            "keyword": "Overwhelm"
+           },
+           {
+            "keyword": "Saboteur"
+           },
+           {
+            "keyword": "Sentinel"
+           },
+           {
+            "keyword": "Shielded"
+           }
+          ]
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "curated",
+          "cat": "while_other",
+          "what": "another friendly unit has the keyword",
+          "w": "another friendly unit has the keyword"
+         }
+        ],
+        "structure": [
+         {
+          "rule": "curated",
+          "cat": "keyword_list",
+          "keywords": [
+           "Grit",
+           "Hidden",
+           "Overwhelm",
+           "Saboteur",
+           "Sentinel",
+           "Shielded"
+          ]
+         }
+        ],
+        "modifiers": [],
+        "residue": [],
+        "curatedId": "cur-0060",
+        "wants": [],
+        "offers": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "This unit gains Raid 2 while another friendly unit has Raid.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Raid",
+            "n": 2
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         },
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Raid"
+           }
+          ],
+          "target": {
+           "side": "friendly",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [
+            "other"
+           ],
+           "text": "another friendly unit"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [],
+        "residue": [
+         "while"
+        ]
+       },
+       {
+        "path": "text.p1s1",
+        "text": "The same is true for Restore.",
+        "source": "curated",
+        "effects": [
+         {
+          "rule": "curated",
+          "cat": "grant_keyword",
+          "n": null,
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          },
+          "keywords": [
+           {
+            "keyword": "Restore"
+           }
+          ]
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "curated",
+          "cat": "while_other",
+          "what": "another friendly unit has Restore",
+          "w": "another friendly unit has Restore"
+         }
+        ],
+        "structure": [
+         {
+          "rule": "curated",
+          "cat": "keyword_list",
+          "keywords": [
+           "Restore"
+          ]
+         }
+        ],
+        "modifiers": [],
+        "residue": [],
+        "curatedId": "cur-0059",
+        "wants": [],
+        "offers": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:grant-ambush",
+      "why": "text: This unit gains Ambush while another friendly unit has Ambush."
+     },
+     {
+      "tag": "offers:grant-grit",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:grant-hidden",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:grant-overwhelm",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:grant-raid",
+      "why": "text: This unit gains Raid 2 while another friendly unit has Raid."
+     },
+     {
+      "tag": "offers:grant-restore",
+      "why": "text: The same is true for Restore."
+     },
+     {
+      "tag": "offers:grant-saboteur",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:grant-sentinel",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:grant-shielded",
+      "why": "text: The same is true for Grit, Hidden, Overwhelm, Saboteur, Sentinel, and Shielded."
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Jedi",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Republic",
+      "why": "printed trait"
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "05010190",
+   "title": "Anakin Skywalker",
+   "subtitle": "Force Prodigy",
+   "type": "Unit",
+   "structured": {
+    "cost": 1,
+    "power": 1,
+    "hp": 1,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Force",
+     "Fringe"
+    ],
+    "keywordsField": [
+     "Hidden",
+     "Shielded"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Hidden",
+     "granted": false
+    },
+    {
+     "keyword": "Shielded",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Hidden"
+       }
+      ],
+      "granted": false,
+      "source": "Hidden"
+     },
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Shielded"
+       }
+      ],
+      "granted": false,
+      "source": "Shielded"
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:give-shield-self",
+      "why": "Shielded"
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Fringe",
+      "why": "printed trait"
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "06010188",
+   "title": "Darth Traya",
+   "subtitle": "Lord of Betrayal",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 2,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Villainy"
+    ],
+    "traits": [
+     "Force",
+     "Sith"
+    ],
+    "keywordsField": [],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:ready": {
+      "byRepeat": {
+       "per_attack": 1
+      },
+      "byTarget": {
+       "any_leader": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 1,
+    "triggers": {
+     "text:on_attack": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "on_attack",
+        "repeat": "per_attack",
+        "text": "On Attack"
+       }
+      ],
+      "repeat": "per_attack",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "You may ready a non-unit leader.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "ready",
+          "cat": "ready",
+          "n": 1,
+          "target": {
+           "side": "any",
+           "kind": "leader",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "a non-unit leader"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "you_may",
+          "cat": "optional"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Sith",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:ready-unit",
+      "why": "text: You may ready a non-unit leader."
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:extra-attacks",
+      "why": "text: on_attack"
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010018",
+   "title": "The Warrior",
+   "subtitle": "Deft Duelist",
+   "type": "Leader",
+   "structured": {
+    "cost": 5,
+    "power": 3,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Tusken"
+    ],
+    "keywordsField": [
+     "Ambush",
+     "Raid"
+    ],
+    "unique": true,
+    "deployable": true
+   },
+   "keywords": [
+    {
+     "keyword": "Ambush",
+     "granted": false
+    },
+    {
+     "keyword": "Raid",
+     "n": 1,
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "control_resources": 1
+    },
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "per_round": 1
+      },
+      "byTarget": {
+       "ref_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     },
+     "text:play_extra": {
+      "byRepeat": {
+       "per_round": 1
+      },
+      "byTarget": {
+       "none": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "epicAction:epic_action": 1,
+     "text:action": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "action",
+        "repeat": "per_round",
+        "cost": {
+         "exhaust": true,
+         "resources": 1,
+         "force": false,
+         "other": []
+        },
+        "text": "Action [1 resource, Exhaust]"
+       }
+      ],
+      "repeat": "per_round",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "Play a unit with 3 or less power from your hand and give it Ambush for this phase.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "play_from",
+          "cat": "play_extra",
+          "n": 1,
+          "zone": "your hand",
+          "what": "a unit with 3 or less power"
+         },
+         {
+          "rule": "give_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Ambush"
+           }
+          ],
+          "target": {
+           "side": "ref",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "it"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "for_phase",
+          "cat": "duration_phase"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ],
+    "deployBox": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Ambush"
+       }
+      ],
+      "granted": false,
+      "source": "Ambush"
+     },
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Raid",
+        "n": 1
+       }
+      ],
+      "granted": false,
+      "source": "Raid 1"
+     }
+    ],
+    "epicAction": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "epic_action",
+        "repeat": "once_per_game",
+        "cost": {
+         "exhaust": false,
+         "resources": 0,
+         "force": false,
+         "other": []
+        },
+        "text": "Epic Action"
+       }
+      ],
+      "repeat": "once_per_game",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "epicAction.p0s0",
+        "text": "If you control 5 or more resources, deploy this leader.",
+        "source": "grammar",
+        "effects": [],
+        "conditions": [
+         {
+          "rule": "control_resources",
+          "cat": "control_resources",
+          "n": 5
+         }
+        ],
+        "structure": [
+         {
+          "rule": "deploy",
+          "cat": "deploy",
+          "asUpgrade": false
+         }
+        ],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:cheat-play",
+      "why": "text: Play a unit with 3 or less power from your hand and give it Ambush for this phase."
+     },
+     {
+      "tag": "offers:grant-ambush",
+      "why": "text: Play a unit with 3 or less power from your hand and give it Ambush for this phase."
+     },
+     {
+      "tag": "offers:units-entering",
+      "why": "text: Play a unit with 3 or less power from your hand and give it Ambush for this phase."
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "09010024",
+   "title": "Origin Tree",
+   "subtitle": "",
+   "type": "Base",
+   "structured": {
+    "cost": null,
+    "power": null,
+    "hp": 30,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Command"
+    ],
+    "aspectIcons": [
+     "Command"
+    ],
+    "traits": [],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {},
+   "tags": {
+    "offers": [],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "09010028",
+   "title": "Jundland Wastes",
+   "subtitle": "",
+   "type": "Base",
+   "structured": {
+    "cost": null,
+    "power": null,
+    "hp": 30,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [],
+    "aspects": [
+     "Aggression"
+    ],
+    "aspectIcons": [
+     "Aggression"
+    ],
+    "traits": [],
+    "keywordsField": [],
+    "unique": false,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {},
+   "tags": {
+    "offers": [],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "09010117",
+   "title": "Chewbacca",
+   "subtitle": "Resourceful Wookiee",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 0,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Command",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Command",
+     "Heroism"
+    ],
+    "traits": [
+     "Wookiee"
+    ],
+    "keywordsField": [
+     "Overwhelm",
+     "Raid"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [
+     "Overwhelm",
+     "Raid"
+    ],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "scaling": 1,
+     "while_other": 1
+    },
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "constant": 2
+      },
+      "byTarget": {
+       "self_unit": 2
+      },
+      "count": 2,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 2
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "This unit gains Raid 1 for each exhausted resource you control.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Raid",
+            "n": 1
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "exhausted resource you control"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "While each resource you control is exhausted, this unit gains Overwhelm.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Overwhelm"
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          },
+          "conditional": true
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "while_generic",
+          "cat": "while_other",
+          "w": "each resource you control is exhausted"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:grant-overwhelm",
+      "why": "text: While each resource you control is exhausted, this unit gains Overwhelm."
+     },
+     {
+      "tag": "offers:grant-raid",
+      "why": "text: This unit gains Raid 1 for each exhausted resource you control."
+     },
+     {
+      "tag": "offers:is-trait-Wookiee",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:exhausted-own",
+      "why": "text: This unit gains Raid 1 for each exhausted resource you control."
+     },
+     {
+      "tag": "wants:resource-ramp",
+      "why": "text: This unit gains Raid 1 for each exhausted resource you control."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010212",
+   "title": "The Chieftain",
+   "subtitle": "Here Since the Oceans Dried",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 2,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning",
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Cunning",
+     "Heroism"
+    ],
+    "traits": [
+     "Tusken"
+    ],
+    "keywordsField": [
+     "Raid"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [],
+   "keywordCheck": {
+    "fieldNotInText": [
+     "Raid"
+    ],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "scaling": 2,
+     "while_other": 1
+    },
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     },
+     "text:stat_mod": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "ref_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 2
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p0s0",
+        "text": "This unit gains Raid 1 for each other friendly Tusken unit.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Raid",
+            "n": 1
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "This unit"
+          }
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "other friendly Tusken unit"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "While a friendly Tusken unit is defending, it gets +1/+0 for each Raid it has.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "stat_gets",
+          "cat": "stat_mod",
+          "power": 1,
+          "hp": 0,
+          "sign": "buff",
+          "target": {
+           "side": "ref",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "it"
+          },
+          "conditional": true
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "while_generic",
+          "cat": "while_other",
+          "w": "a friendly Tusken unit is defending"
+         },
+         {
+          "rule": "for_each",
+          "cat": "scaling",
+          "per": "Raid it has"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:buff",
+      "why": "text: While a friendly Tusken unit is defending, it gets +1/+0 for each Raid it has."
+     },
+     {
+      "tag": "offers:grant-raid",
+      "why": "text: This unit gains Raid 1 for each other friendly Tusken unit."
+     },
+     {
+      "tag": "offers:is-trait-Tusken",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:wide-board",
+      "why": "text: This unit gains Raid 1 for each other friendly Tusken unit."
+     }
+    ]
+   }
+  },
+  {
+   "cardKey": "09010225",
+   "title": "Boba Fett",
+   "subtitle": "Family Found",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 1,
+    "hp": 5,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Cunning"
+    ],
+    "aspectIcons": [
+     "Cunning"
+    ],
+    "traits": [
+     "Tusken"
+    ],
+    "keywordsField": [
+     "Ambush",
+     "Raid",
+     "Saboteur"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Ambush",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [
+     "Raid",
+     "Saboteur"
+    ],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "per_event": 1
+      },
+      "byTarget": {
+       "ref_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:reactive_friendly": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Ambush"
+       }
+      ],
+      "granted": false,
+      "source": "Ambush"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "reactive_friendly",
+        "repeat": "per_event",
+        "text": "When a friendly unit with Ambush enters play"
+       }
+      ],
+      "repeat": "per_event",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "Give it Raid 1 and Saboteur for this phase.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "give_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Raid",
+            "n": 1
+           },
+           {
+            "keyword": "Saboteur"
+           }
+          ],
+          "target": {
+           "side": "ref",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "it"
+          }
+         }
+        ],
+        "conditions": [],
+        "structure": [],
+        "modifiers": [
+         {
+          "rule": "for_phase",
+          "cat": "duration_phase"
+         }
+        ],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:grant-raid",
+      "why": "text: Give it Raid 1 and Saboteur for this phase."
+     },
+     {
+      "tag": "offers:grant-saboteur",
+      "why": "text: Give it Raid 1 and Saboteur for this phase."
+     },
+     {
+      "tag": "offers:is-trait-Tusken",
+      "why": "printed trait"
+     }
+    ],
+    "wants": []
+   }
+  },
+  {
+   "cardKey": "09010254",
+   "title": "Captain Tarpals",
+   "subtitle": "Grand Army Captain",
+   "type": "Unit",
+   "structured": {
+    "cost": 1,
+    "power": 0,
+    "hp": 2,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Heroism"
+    ],
+    "aspectIcons": [
+     "Heroism"
+    ],
+    "traits": [
+     "Gungan",
+     "Trooper"
+    ],
+    "keywordsField": [
+     "Raid",
+     "Shielded"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Shielded",
+     "granted": false
+    },
+    {
+     "keyword": "Raid",
+     "n": 2,
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {},
+    "effects": {},
+    "optionalEffects": 0,
+    "triggers": {},
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Shielded"
+       }
+      ],
+      "granted": false,
+      "source": "Shielded"
+     },
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Raid",
+        "n": 2
+       }
+      ],
+      "granted": false,
+      "source": "Raid 2"
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:give-shield-self",
+      "why": "Shielded"
+     },
+     {
+      "tag": "offers:is-trait-Gungan",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Trooper",
+      "why": "printed trait"
+     }
+    ],
+    "wants": []
+   }
+  }
+ ]
+}

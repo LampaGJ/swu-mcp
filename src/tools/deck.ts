@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MissingDataError, packageDirOf, readJson, splitCell, type CardRow, type CardStore } from "../data.js";
 import { loadClusterLabels, resolveClusterLabel } from "../embed/cluster-labels.js";
 import type { ClustersFile } from "../embed/files.js";
+import { selectLeaderPopulation, type LeaderSelection, type SelectedLeaderData } from "../meta/leader-split.js";
 import { indexLeaderCards, LEADER_CARDS_MAX, type LeaderCardsEntry, type LeaderCardsIndex } from "../meta/schema.js";
 import { rulesFor } from "../rules/store.js";
 import { countAtOrBelow } from "../scorer/rank.js";
@@ -14,6 +15,7 @@ import { clauseLock, isLocked, lockFields, lockSupply, type ClauseLock, type Loc
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
 import { edgeOrder } from "../synergy/graph.js";
+import { leaderEngineOf, roleKeepOf, suppliedKeywords } from "../synergy/leader-engine.js";
 import { cardLabel } from "../synergy/order.js";
 import type { PairEdge, SynergyCard } from "../synergy/schema.js";
 import type { ToolResult } from "../tools.js";
@@ -22,6 +24,7 @@ import { similarityData } from "./similarity.js";
 import { synergyContextOf } from "./synergy.js";
 import { dataVersion, valueData } from "./value.js";
 import { ok, fail, lower, round } from "./common.js";
+import { cardList, deckLineSchema, decklistField } from "./decklist-field.js";
 import { expandSwudb, hasPrintingColumns, isSwudbId, swudbCandidates, swudbField } from "./swudb.js";
 
 /**
@@ -63,9 +66,30 @@ export function leaderCardsOf(env: DeckEnv): LeaderCardsIndex | null {
   return index;
 }
 
-/** "tournament, 12 decks, 2026-07-04..2026-10-01", plus the community fallback when the leader has no tournament deck. */
-export function leaderSourceText(entry: LeaderCardsEntry): string {
-  return `${entry.population}, ${entry.decks} decks, ${entry.window.from}..${entry.window.to}${entry.fallback ? "; the leader has no tournament decklist in the window, so these are community lists" : ""}`;
+/**
+ * "tournament, 12 decks, 2026-07-04..2026-10-01", plus the community fallback when the leader has no tournament deck
+ * and, with a selection (D60, #148), the base the lists were narrowed to or the one line that says why they were not.
+ */
+export function leaderSourceText(entry: LeaderCardsEntry, selection?: LeaderSelection): string {
+  const fallback = entry.fallback ? "; the leader has no tournament decklist in the window, so these are community lists" : "";
+  return `${entry.population}, ${entry.decks} decks, ${entry.window.from}..${entry.window.to}${fallback}${selection?.line == null ? "" : `; ${selection.line}`}`;
+}
+
+/** The fields a tool adds to its leader-source block when the leader's lists were narrowed by base or a base line applies (D60); empty otherwise, so the block keeps its old shape. */
+export function selectionFields(selection: LeaderSelection): Record<string, unknown> {
+  if (selection.line === null) return {};
+  return {
+    ...(selection.scope === "base" ? { base: selection.label } : selection.scope === "aspect" ? { baseAspects: selection.label } : {}),
+    ...(selection.scope === "all" ? {} : { listsOfLeader: selection.allDecks }),
+    populationNote: selection.line,
+  };
+}
+
+/** The leader's decklists narrowed to the pair's base (D60, #148); null when the package holds none for this leader. */
+export function leaderDataFor(env: DeckEnv, pair: { leader: Piece; base: Piece }): SelectedLeaderData | null {
+  const data = leaderCardsOf(env)?.get(pair.leader.row.cardKey);
+  if (data === undefined) return null;
+  return selectLeaderPopulation(data, { base: { cardKey: pair.base.row.cardKey, title: cardLabel(pair.base.row), aspects: icons(pair.base) } });
 }
 
 export function deckEnvOf(store: CardStore): DeckEnv {
@@ -128,18 +152,7 @@ function citedRules(store: CardStore, ids: readonly string[]): { rulesVersion: s
 // ---------------------------------------------------------------------------------------------
 // Input shapes and name resolution
 
-const deckLineSchema = z.strictObject({
-  card: z
-    .string()
-    .min(1)
-    .describe(
-      "A cardKey (for example 0101033), a SWUDB printing id (SET_NNN, for example HMW_018) or an exact card title; 'Title, Subtitle' picks one of several cards that share a title",
-    ),
-  count: z.number().int().min(1).max(99).default(1),
-});
-
-const cardList = (what: string) => z.array(deckLineSchema).min(1).max(250).describe(what);
-export const decklistField = cardList("Cards as {card, count}; the same card listed twice is added up");
+export { cardList, deckLineSchema, decklistField };
 export const leaderField = z.string().min(1).describe("The leader: a cardKey, a SET_NNN id or an exact title (with subtitle if the title is shared)");
 export const baseField = z.string().min(1).describe("The base: a cardKey, a SET_NNN id or an exact title");
 
@@ -637,7 +650,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const into = edgesInto(env.ctx);
   const generic = genericWantTags(env.ctx);
   const genericHolders = new Map<string, string[]>();
-  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
+  const leaderData = leaderDataFor(env, pair);
   const fedFromDeck = (feeders: readonly PairEdge[], cardKey: string): boolean => feeders.some((e) => inDeck.has(e.a) && e.a !== cardKey);
   const unitCopies = sumBy(
     lines.filter((l) => l.row.type === "Unit"),
@@ -675,7 +688,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
           .map(([w, cards]) => `${w} (${cards.length} ${cards.length === 1 ? "card" : "cards"}): ${cards.join("; ")}`)
           .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card.`;
 
-  const leaderComparison = leaderComparisonOf(env, lines, leaderData);
+  const leaderComparison = leaderComparisonOf(env, lines, leaderData, supplied);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);
   const sideboardEntries = sideboardInput.parse(input).sideboard;
   const sideboard = sideboardEntries === undefined ? undefined : sideboardRows(env, sideboardEntries, supplied, leaderData, locks);
@@ -816,10 +829,10 @@ const STAPLE_INCLUSION = 0.5;
 /** A deck card the leader's lists play in fewer than this share of decks (or never) is rarely played. */
 const RARE_INCLUSION = 0.05;
 
-type LeaderData = NonNullable<ReturnType<LeaderCardsIndex["get"]>>;
+type LeaderData = NonNullable<ReturnType<LeaderCardsIndex["get"]>> & { selection?: LeaderSelection };
 
 /** The deck against the leader's own decklists (D43): staples it lacks and cards those lists rarely play. */
-function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: LeaderData | null): unknown {
+function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: LeaderData | null, supplied: readonly string[]): unknown {
   if (data === null) return { note: "no leader decklist data in this package for this leader, so the deck is not compared with real lists" };
   const { entry, byCard } = data;
   const byTitle = new Map(entry.cards.map((c) => [lower(c.title), c]));
@@ -833,7 +846,9 @@ function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: Lead
       if (syn !== undefined && !MAIN_TYPES.has(syn.type)) return [];
       const card = syn === undefined ? c.title : cardLabel(syn);
       if (heldTitles.has(lower(card))) return [];
-      return [{ card, cardKey: c.cardKey, inclusion: r4(c.inclusion), meanCopies: r2(c.meanCopies), cost: syn?.structured.cost ?? env.store.byKey.get(c.cardKey)?.cost ?? null }];
+      const penalty = syn === undefined ? 0 : singlePenalty(syn, supplied);
+      // A penalised staple is marked, never hidden (D60); a penalty-free row keeps the old shape.
+      return [{ card, cardKey: c.cardKey, inclusion: r4(c.inclusion), meanCopies: r2(c.meanCopies), cost: syn?.structured.cost ?? env.store.byKey.get(c.cardKey)?.cost ?? null, ...(penalty > 0 ? { penalty, penalised: true } : {}) }];
     })
     .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.card, b.card));
   const rarelyPlayed = lines.flatMap((l) => {
@@ -844,8 +859,9 @@ function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: Lead
     population: entry.population,
     decks: entry.decks,
     window: `${entry.window.from}..${entry.window.to}`,
-    source: leaderSourceText(entry),
-    note: `missingStaples: cards in at least ${STAPLE_INCLUSION * 100}% of this leader's decklists that the deck lacks; rarelyPlayed: deck cards in fewer than ${RARE_INCLUSION * 100}% of them, inclusion null = never in the leader's top ${entry.cards.length} cards. Inclusion is placement-weighted (D38).`,
+    ...(data.selection === undefined ? {} : selectionFields(data.selection)),
+    source: leaderSourceText(entry, data.selection),
+    note: `missingStaples: cards in at least ${STAPLE_INCLUSION * 100}% of this leader's decklists that the deck lacks (penalty and penalised: true mark a staple that pays an aspect penalty under this leader and base; a row without them pays none); rarelyPlayed: deck cards in fewer than ${RARE_INCLUSION * 100}% of them, inclusion null = never in the leader's top ${entry.cards.length} cards. Inclusion is placement-weighted (D38).`,
     missingStaples,
     rarelyPlayed,
   };
@@ -922,7 +938,7 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
     norm:
       leaderData === null
         ? `a cluster's share of the ${weighted.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`
-        : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`,
+        : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry, leaderData.selection)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`,
     shown: Math.min(rows.length, limit),
     clusters: rows.slice(0, limit),
   };
@@ -1195,9 +1211,11 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const lockedRank = (cardKey: string | null): number => Number(cardKey !== null && isLocked(lockOf.get(cardKey) ?? { baseLocked: [], needsUnitAspect: [] }));
   const held = new Map(partial.lines.map((l) => [l.syn.cardKey, l.count]));
   const heldCosts = new Set(partial.lines.map((l) => l.syn.structured.cost));
-  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
+  const leaderData = leaderDataFor(env, pair);
   const rankedBy = leaderData !== null && args.rankBy !== "score" ? "leader" : "score";
   const inclusionOf = (cardKey: string): number | null => leaderData?.byCard.get(cardKey)?.inclusion ?? null;
+  // D60: a staple the maxPenalty filter drops is listed apart with its penalty, never silently hidden.
+  const penalisedStaples: { cardKey: string; title: string; cost: number; aspects: string; penalty: number; leaderInclusion: number }[] = [];
 
   const eligible = env.ctx.cards.flatMap((syn) => {
     const cost = syn.structured.cost;
@@ -1209,7 +1227,13 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     if (remaining <= 0) return [];
     if (args.tag !== undefined && ![...syn.tags.offers, ...syn.tags.wants].some((t) => t.tag === args.tag)) return [];
     const penalty = singlePenalty(syn, supplied);
-    if (penalty > args.maxPenalty) return [];
+    if (penalty > args.maxPenalty) {
+      const inclusion = rankedBy === "leader" ? inclusionOf(syn.cardKey) : null;
+      if (inclusion !== null && inclusion >= LEADER_STAPLE_INCLUSION) {
+        penalisedStaples.push({ cardKey: syn.cardKey, title: cardLabel(syn), cost, aspects: aspectGroup(syn), penalty, leaderInclusion: inclusion });
+      }
+      return [];
+    }
     const lock = clauseLock(syn, locks);
     lockOf.set(syn.cardKey, lock);
     return [
@@ -1220,6 +1244,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
         cost,
         aspects: aspectGroup(syn),
         penalty,
+        ...(penalty > 0 ? { penalised: true } : {}),
         playCalibrated: env.scores.get(syn.cardKey)?.playCalibrated ?? null,
         ...(leaderData === null ? {} : { leaderInclusion: inclusionOf(syn.cardKey) }),
         price: priceOf(env, syn.cardKey),
@@ -1280,12 +1305,19 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     leaderSource:
       leaderData === null
         ? null
-        : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}` },
+        : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}`, ...selectionFields(leaderData.selection) },
     emptyCosts: emptyCostsText(emptyCosts, thinList, unusedCosts),
-    note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed),
+    note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed, leaderData?.selection),
     matched: played.length,
     shown: shown.length,
     cards: shown,
+    ...(penalisedStaples.length === 0
+      ? {}
+      : {
+          penalisedStaples: penalisedStaples
+            .sort((a, b) => b.leaderInclusion - a.leaderInclusion || compareCodePoints(a.cardKey, b.cardKey))
+            .map((r) => ({ ...r, note: `played by ${Math.round(r.leaderInclusion * 100)}% of the lists but pays +${r.penalty} under this leader and base, above maxPenalty ${args.maxPenalty}` })),
+        }),
   });
 }
 
@@ -1333,15 +1365,15 @@ function noPlayedRow(cost: number, thin: boolean) {
   };
 }
 
-const playableNote = (entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string =>
-  `${playableRankNote(entry, rankedBy, includeUnplayed)} ${LOCK_NOTE}`;
+const playableNote = (entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean, selection?: LeaderSelection): string =>
+  `${playableRankNote(entry, rankedBy, includeUnplayed, selection)} ${LOCK_NOTE}`;
 
-function playableRankNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string {
+function playableRankNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean, selection?: LeaderSelection): string {
   const score = "play-calibrated score (fitted to Premier inclusion; rank-meaningful only)";
   if (entry === null) return `ranked within each cost by ${score}. Not leader-specific: this package holds no leader-cards data for this leader. Rotated cards are left out.`;
   const capped = entry.cards.length >= LEADER_CARDS_MAX ? ` or below the ${LEADER_CARDS_MAX}-card cap of the leader index` : "";
   const unplayed = `leaderInclusion null = unplayed in this leader's decks${capped}`;
-  const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry)})`;
+  const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry, selection)})`;
   const unplayedRule = includeUnplayed
     ? "includeUnplayed: true lists the unplayed cards after the played ones in each cost"
     : `cards the leader's decks play in under ${LEADER_INCLUSION_FLOOR * 100}% of their lists, or not at all, are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card; with emptyCostsOnly only a cost where the leader's lists hold at least ${LEADER_COST_MIN_COPIES} mean copies in total is reported, and emptyCosts names the other empty costs in one line`;
@@ -1433,9 +1465,31 @@ export const budgetAlternativesShape = {
   leader: leaderField.optional().describe("Give with base to add each substitute's aspect penalty"),
   base: baseField.optional(),
   perSlot: z.number().int().min(1).max(10).default(3),
+  candidates: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(20)
+    .optional()
+    .describe(
+      "Cards to weigh whatever the cost band: cardKeys, SET_NNN ids or exact titles. Each is always evaluated against the deck cards it shares a role with and listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it",
+    ),
 };
 
-type NoAlternativeReason = "no cheaper same-slot card" | "no card within the cost band";
+type NoAlternativeReason = "no cheaper same-slot card" | `no card ${string}`;
+
+/** Named candidates (cardKey, SET_NNN id or title) as feature records; what does not resolve is listed, never guessed (D55). */
+function resolveCandidates(env: DeckEnv, refs: readonly string[] | undefined): { cards: Piece[]; unresolved: Unresolved[] } {
+  const cards: Piece[] = [];
+  const unresolved: Unresolved[] = [];
+  for (const ref of refs ?? []) {
+    const hit = resolveRef(env.store, ref, "main");
+    const syn = hit.ok ? env.ctx.graph.byKey.get(hit.row.cardKey) : undefined;
+    if (hit.ok && syn !== undefined && !cards.some((c) => c.syn.cardKey === syn.cardKey)) cards.push({ row: hit.row, syn });
+    else if (!hit.ok) unresolved.push({ card: ref, count: 1, reason: hit.reason, detail: hit.detail });
+    else if (syn === undefined) unresolved.push({ card: ref, count: 1, reason: "no feature record", detail: `${hit.row.cardKey} is in the card list but not in the feature file` });
+  }
+  return { cards, unresolved };
+}
 
 export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const args = z.object(budgetAlternativesShape).parse(input);
@@ -1445,7 +1499,10 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const { lines, unresolved } = resolveList(env, args.decklist, "main");
   if (lines.length === 0) return noCards(unresolved);
   const supplied = pair === undefined ? undefined : suppliedBy(pair);
-  const leaderData = pair === undefined ? null : (leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null);
+  const leaderData = pair === undefined ? null : leaderDataFor(env, pair);
+  // D60 (#149): a card that readies a leader, or gives a keyword the leader or the deck supplies, keeps that job in its substitutes.
+  const suppliedKw = suppliedKeywords(pair === undefined ? null : leaderEngineOf(pair.leader.syn), lines.map((l) => l.syn));
+  const named = resolveCandidates(env, args.candidates);
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const unpriced: string[] = [];
   const alreadyUnderCap: { card: string; price: number }[] = [];
@@ -1469,7 +1526,9 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
     if (slot === null) return none("no cheaper same-slot card");
     const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
     const slotPenalty = supplied === undefined ? null : singlePenalty(line.syn, supplied);
-    const candidates = substituteCandidates(env, line, slot, supplied, inDeck);
+    const roleKeep = roleKeepOf(line.syn, suppliedKw);
+    const allCandidates = substituteCandidates(env, line, slot, supplied, inDeck);
+    const candidates = roleKeep === null ? allCandidates : allCandidates.filter((c) => roleKeep.keptBy(c.syn).length > 0);
     const alternatives = candidates
       .flatMap((c) => {
         if (!sameSlotShape(line.syn, c.syn)) return [];
@@ -1489,6 +1548,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
             saved: r2(price - cheaper),
             scoreDelta: score === null || slotScore === null ? null : r2(score - slotScore),
             penalty,
+            ...(roleKeep === null ? {} : { keepsRole: roleKeep.keptBy(c.syn).join(", ") }),
             ...(leaderData === null ? {} : { leaderInclusion: leaderData.byCard.get(c.syn.cardKey)?.inclusion ?? null }),
           },
         ];
@@ -1502,7 +1562,10 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
           compareCodePoints(a.cardKey, b.cardKey),
       )
       .slice(0, args.perSlot);
-    if (alternatives.length === 0) return none(candidates.some((c) => sameSlotShape(line.syn, c.syn)) ? "no cheaper same-slot card" : "no card within the cost band");
+    if (alternatives.length === 0) {
+      if (roleKeep !== null && candidates.length === 0) return none(`no card ${roleKeep.jobs.join(" or ")}`);
+      return none(candidates.some((c) => sameSlotShape(line.syn, c.syn)) ? "no cheaper same-slot card" : "no card within the cost band");
+    }
     return [
       {
         card: cardLabel(line.syn),
@@ -1511,19 +1574,60 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
         price,
         aspectPenalty: slotPenalty,
         roles: slot.roles.join(", "),
+        ...(roleKeep === null ? {} : { job: roleKeep.note }),
         ...(leaderData !== null && !alternatives.some((a) => (a.leaderInclusion ?? 0) >= LEADER_INCLUSION_FLOOR) ? { note: "no tournament-played substitute under the cap" } : {}),
         alternatives,
       },
     ];
   });
+  const candidateRows = named.cards.map(({ syn }) => {
+    const price = priceOf(env, syn.cardKey);
+    const score = env.scores.get(syn.cardKey)?.playCalibrated ?? null;
+    const penalty = supplied === undefined ? null : singlePenalty(syn, supplied);
+    const forSlots = lines.flatMap((line) => {
+      const slot = slotMembers(env, line.syn.cardKey);
+      const carried = new Set([...syn.tags.offers, ...syn.tags.wants].map((t) => t.tag));
+      const shared = slot?.roles.filter((tag) => carried.has(tag)) ?? [];
+      if (slot === null || shared.length === 0 || line.syn.cardKey === syn.cardKey) return [];
+      const slotPrice = priceOf(env, line.syn.cardKey);
+      const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
+      const roleKeep = roleKeepOf(line.syn, suppliedKw);
+      return [
+        {
+          card: cardLabel(line.syn),
+          cardKey: line.syn.cardKey,
+          saved: price === null || slotPrice === null ? null : r2(slotPrice - price),
+          scoreDelta: score === null || slotScore === null ? null : r2(score - slotScore),
+          sharedRoles: shared.join(", "),
+          outsideBand: !slot.fills.has(syn.cardKey) || !sameSlotShape(line.syn, syn) || !inPremierPool(env.store)(syn.cardKey),
+          ...(roleKeep === null ? {} : { keepsRole: roleKeep.keptBy(syn).join(", ") || "none" }),
+        },
+      ];
+    });
+    return {
+      cardKey: syn.cardKey,
+      title: cardLabel(syn),
+      type: syn.type,
+      cost: syn.structured.cost,
+      aspects: aspectGroup(syn),
+      price,
+      playCalibrated: score,
+      penalty,
+      ...(inDeck.has(syn.cardKey) ? { inDeck: true } : {}),
+      forSlots,
+      ...(forSlots.length === 0 ? { note: "shares no offers/wants role with a card in the deck" } : {}),
+    };
+  });
   return ok({
     dataVersion: env.dataVersion,
     priceImport: { id: env.market.prices.priceImportId, date: env.market.prices.priceImportFinishedAt?.slice(0, 10) ?? null },
-    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes sort by this leader's decklist inclusion first (played before unplayed), then by role fit and saving; a slot with no played substitute (under 2% of the decks) says so; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
+    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes sort by this leader's decklist inclusion first (played before unplayed), then by role fit and saving; a slot with no played substitute (under 2% of the decks) says so; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry, leaderData.selection)})`}, null = unplayed in this leader's decks.`}`,
     unresolved,
     unpriced,
     alreadyUnderCap,
     noAlternative,
+    ...(args.candidates === undefined ? {} : { candidates: candidateRows }),
+    ...(named.unresolved.length === 0 ? {} : { unresolvedCandidates: named.unresolved }),
     slotsWithAlternatives: slots.length,
     savingPerCopy: r2(Math.max(0, ...slots.flatMap((s) => s.alternatives.map((a) => a.saved)))),
     totalSaving: r2(sumBy(slots, (s) => s.count * s.alternatives[0].saved)),
@@ -1951,7 +2055,7 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones.",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden.",
     deckAuditShape,
     deckAudit,
   ),
@@ -1969,7 +2073,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty.",
     playableCardsShape,
     playableCards,
   ),
@@ -1981,7 +2085,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job: only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

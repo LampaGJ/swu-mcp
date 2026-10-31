@@ -25,7 +25,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   search_cards: { query: "raid", type: "Unit", limit: 5 },
   list_facet: { facet: "keyword" },
   cards_by_facet: { facet: "keyword", value: "Raid", limit: 5 },
-  fungible_substitutes: { cardKey: ELIA_KANE },
+  fungible_substitutes: { cardKey: ELIA_KANE, candidates: ["LOF_190"] },
   find_pairings: { cardKey: ELIA_KANE, limit: 5 },
   find_trios: { cardKey: ELIA_KANE, maxTotalCost: 9, limit: 3 },
   explain_synergy: { cardKeys: [ELIA_KANE, "0101033"] },
@@ -69,7 +69,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   meta_archetypes: { limit: 5 },
   meta_threats: { archetype: "t001" },
   meta_answers: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, archetypes: 5, limit: 5 },
-  leader_cards: { leader: ASAJJ_VENTRESS, limit: 5 },
+  leader_cards: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, limit: 5 },
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {
