@@ -1477,7 +1477,7 @@ export const budgetAlternativesShape = {
     ),
 };
 
-type NoAlternativeReason = "no cheaper same-slot card" | `no card ${string}`;
+type NoAlternativeReason = "no cheaper same-slot card" | `no cheaper same-slot card that ${string}` | `no card ${string}`;
 
 /** Named candidates (cardKey, SET_NNN id or title) as feature records; what does not resolve is listed, never guessed (D55). */
 function resolveCandidates(env: DeckEnv, refs: readonly string[] | undefined): { cards: Piece[]; unresolved: Unresolved[] } {
@@ -1503,6 +1503,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const supplied = pair === undefined ? undefined : suppliedBy(pair);
   const leaderData = pair === undefined ? null : leaderDataFor(env, pair);
   // D60 (#149): a card that readies a leader, or gives a keyword the leader or the deck supplies, keeps that job in its substitutes.
+  // D65 (#156): a unit that readies, draws or removes keeps that job too.
   const suppliedKw = suppliedKeywords(pair === undefined ? null : leaderEngineOf(pair.leader.syn), lines.map((l) => l.syn));
   const named = resolveCandidates(env, args.candidates);
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
@@ -1528,7 +1529,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
     if (slot === null) return none("no cheaper same-slot card");
     const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
     const slotPenalty = supplied === undefined ? null : singlePenalty(line.syn, supplied);
-    const roleKeep = roleKeepOf(line.syn, suppliedKw);
+    const roleKeep = roleKeepOf(line.syn, suppliedKw, true);
     const allCandidates = substituteCandidates(env, line, slot, supplied, inDeck);
     const candidates = roleKeep === null ? allCandidates : allCandidates.filter((c) => roleKeep.keptBy(c.syn).length > 0);
     const alternatives = candidates
@@ -1566,6 +1567,8 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
       .slice(0, args.perSlot);
     if (alternatives.length === 0) {
       if (roleKeep !== null && candidates.length === 0) return none(`no card ${roleKeep.jobs.join(" or ")}`);
+      // D65: cards that do the job exist but none is cheaper in the slot's shape; the row names the job it kept.
+      if (roleKeep !== null && candidates.some((c) => sameSlotShape(line.syn, c.syn))) return none(`no cheaper same-slot card that ${roleKeep.jobs.join(" or ")}`);
       return none(candidates.some((c) => sameSlotShape(line.syn, c.syn)) ? "no cheaper same-slot card" : "no card within the cost band");
     }
     return [
@@ -1593,7 +1596,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
       if (slot === null || shared.length === 0 || line.syn.cardKey === syn.cardKey) return [];
       const slotPrice = priceOf(env, line.syn.cardKey);
       const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
-      const roleKeep = roleKeepOf(line.syn, suppliedKw);
+      const roleKeep = roleKeepOf(line.syn, suppliedKw, true);
       return [
         {
           card: cardLabel(line.syn),
@@ -2087,7 +2090,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job: only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

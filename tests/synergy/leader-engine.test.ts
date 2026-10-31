@@ -109,7 +109,7 @@ describe("find_pairings: the leader's own clause is a want source (#149)", () =>
     expect(boba.reason).toContain("Play a unit with 3 or less power from your hand and give it Ambush for this phase.");
     expect(boba.reason).toContain("When a friendly unit with Ambush enters play");
     expect(boba.leaderInclusion).toBeNull();
-    expect(boba.rank).toBeGreaterThanOrEqual(1.1);
+    expect(boba.rank).toBeLessThanOrEqual(boba.score * 0.5 + 0.001);
     expect(out.tribal?.pairings.map((p: { cardKey: string }) => p.cardKey) ?? []).not.toContain(BOBA);
     expect(out.leader.engine).toMatchObject({ playsUnitMaxPower: 3, grantsKeywords: "Ambush" });
   });
