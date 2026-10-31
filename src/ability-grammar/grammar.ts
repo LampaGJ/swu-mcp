@@ -399,6 +399,7 @@ def("you_may", "optional", "modifier", "\\byou may\\b", () => ({}));
 def("for_phase", "duration_phase", "modifier", "\\bfor this phase\\b", () => ({}));
 def("for_round", "duration_round", "modifier", "\\bfor this round\\b", () => ({}));
 def("for_attack", "duration_attack", "modifier", "\\bfor this attack\\b", () => ({}));
+def("paying_cost", "pays_cost", "modifier", "\\(paying its cost\\)", () => ({}));
 def("while_generic", "while_other", "condition", "^while (?<w>[^,]+)(?=,)", (g) => ({ w: g.w }));
 def("otherwise", "otherwise", "modifier", "\\botherwise\\b", () => ({}));
 

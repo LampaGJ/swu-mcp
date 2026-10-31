@@ -202,6 +202,18 @@
    "example": null
   },
   {
+   "id": "exhaust-resource-payoff",
+   "offers": {
+    "offers:exhaust-resource": 1
+   },
+   "wants": {
+    "wants:exhausted-resources": 1
+   },
+   "strength": 0.7,
+   "reason": "Exhausting your own resource raises the count of exhausted resources that cards like Chewbacca, Resourceful Wookiee read; exhausting a unit does not.",
+   "example": null
+  },
+  {
    "id": "credits",
    "offers": {
     "offers:credit-tokens": 1
@@ -255,7 +267,8 @@
     "offers:cheat-play": 0.7,
     "offers:units-entering": 1,
     "offers:play-from-discard": 0.7,
-    "offers:play-from-resources": 0.7
+    "offers:play-from-resources": 0.7,
+    "offers:paid-play": 0.7
    },
    "wants": {
     "wants:units-entering": 0.7
@@ -297,10 +310,23 @@
    ]
   },
   {
+   "id": "paid-play-trigger",
+   "offers": {
+    "offers:paid-play": 1
+   },
+   "wants": {
+    "wants:units-played": 1
+   },
+   "strength": 0.8,
+   "reason": "A unit played through this ability, paying its cost, still counts as played and triggers 'when you play a unit' payoffs; the gain is the timing or keyword the ability adds, not a free unit.",
+   "example": null
+  },
+  {
    "id": "pilot-attach-trigger",
    "offers": {
     "offers:upgrade-to-attach": 0.7,
-    "offers:cheat-play": 0.8
+    "offers:cheat-play": 0.8,
+    "offers:paid-play": 0.8
    },
    "wants": {
     "wants:pilot-attached": 1
@@ -539,6 +565,10 @@
   {
    "tag": "offers:damage-own-base",
    "note": "Only scaling wordings such as 'every 5 damage on your base' read it, and they parse as wants:own-base-damaged, which no row feeds. Reviewed #14, #15."
+  },
+  {
+   "tag": "offers:ready-resource",
+   "note": "Readying a resource lowers the count of exhausted resources, so it works against wants:exhausted-resources, and it adds no resource toward a 'control N or more resources' threshold. Reviewed #145 (D58), decided no row."
   }
  ]
 }

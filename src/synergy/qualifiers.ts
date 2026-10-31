@@ -28,15 +28,20 @@ export interface Subject {
   /** Cost bounds stated by the target ("a unit that costs 3 or less"). */
   maxCost?: number;
   minCost?: number;
+  /** Power bound stated by the target ("the next unit you play with 1 or less power"), checked against the fed card's printed power (D58). */
+  maxPower?: number;
   nonLeader?: boolean;
   /** The aspect a target must have ("a Heroism unit"). */
   aspect?: string;
   /** The card itself, used when the want acts on the card that carries it. */
   cost?: number | null;
+  power?: number | null;
   isLeader?: boolean;
   aspects?: string[];
   /** The token units the offer creates and hands over, with their printed traits; set only when every token's card is known. */
   supplies?: { token: string; traits: string[] }[];
+  /** `supplies` lists every printed token unit because the offer multiplies whatever tokens are created, not tokens of its own (D58). */
+  anyToken?: boolean;
   /** The effect acts only on the tokens the same clause creates ("create 2 Beast tokens and ready 1 of them"). */
   tokensOnly?: boolean;
   /** Keywords the target must have ("friendly units with Hidden"). */
@@ -54,6 +59,8 @@ export interface AttachBound {
   anyTrait: boolean;
   notTraits: string[];
   arena?: Arena;
+  /** Fortify: the upgrade attaches to your base, never to a unit (CR reminder: "Attach this to your base, not a unit."). */
+  base?: boolean;
 }
 
 export interface TagQualifier {
@@ -228,6 +235,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     notTraits: notTraits.sort(cmp),
     maxCost: bound("cost_le"),
     minCost: bound("cost_ge"),
+    maxPower: bound("power_le"),
     nonLeader: restrict.includes("non_leader") || restrict.includes("non-leader") || undefined,
     aspect,
     ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
@@ -236,9 +244,11 @@ function subjectOf(t: TargetLite | undefined): Subject {
 }
 
 const PILOTING_BOUND: AttachBound = { label: "a Vehicle unit", traits: ["Vehicle"], anyTrait: false, notTraits: [] };
+const FORTIFY_BOUND: AttachBound = { label: "your base", traits: [], anyTrait: false, notTraits: [], base: true };
 
 /** Where the card attaches as an upgrade: an Upgrade's "Attach to ..." restriction, or a Vehicle for a non-Upgrade with Piloting. */
 function attachBound(card: SynergyCard): AttachBound | undefined {
+  if (card.type === "Upgrade" && printedKeywords(card).includes("Fortify")) return FORTIFY_BOUND;
   if (card.type !== "Upgrade") {
     const listed = (card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? [];
     return listed.some((k) => k.keyword === "Piloting" && k.granted !== true) ? PILOTING_BOUND : undefined;
@@ -266,6 +276,8 @@ function printedKeywords(card: SynergyCard): string[] {
 }
 
 const RECEIVING_WANTS = new Set(["wants:upgrades-attached", "wants:pilot-attached"]);
+/** A want that counts upgrades wherever they sit ("you control 2 or more upgrades") or on a base, which a Fortify upgrade can feed. */
+const BASE_OR_ANY_UPGRADE = /\bupgrades? (?:you control|on (?:your|a friendly) base)\b|\bcontrol (?:\d+ or more |an? |any )?upgrades?\b/i;
 const ON_THIS_UNIT = /\b(?:this unit is upgraded|upgrades? (?:on|attach(?:es)? to) (?:this unit|him|her)\b|upgrade on this unit)/i;
 
 /** Token name to printed traits, from the Token Unit cards in the set. */
@@ -276,6 +288,15 @@ function suppliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits
   const names = (clause?.effects ?? []).filter((e) => e.cat === "create_token" && e.token !== undefined).map((e) => e.token as string);
   if (names.length === 0 || tokenTraits === undefined || !names.every((n) => tokenTraits.has(n))) return undefined;
   return [...new Set(names)].sort(cmp).map((token) => ({ token, traits: [...(tokenTraits.get(token) ?? [])] }));
+}
+
+const GENERIC_TOKEN = /^tokens?$/i;
+
+/** Every printed token unit, when the clause only names "tokens" (a doubler: "create twice that number of tokens"). */
+function multipliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined): Subject["supplies"] {
+  const names = (clause?.effects ?? []).filter((e) => e.cat === "create_token" && e.token !== undefined).map((e) => e.token as string);
+  if (names.length === 0 || !names.every((n) => GENERIC_TOKEN.test(n)) || tokenTraits === undefined || tokenTraits.size === 0) return undefined;
+  return [...tokenTraits.keys()].sort(cmp).map((token) => ({ token, traits: [...(tokenTraits.get(token) ?? [])] }));
 }
 
 /**
@@ -331,7 +352,8 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     } else if (clause.effects.some((e) => e.cat === "tuck")) viaCat = "tuck";
   } else if (side === "offers" && CREATE_OFFERS.has(tag)) {
     const supplies = suppliedTokens(clause, tokenTraits);
-    subject = { side: "friendly", traits: [], notTraits: [], ...(supplies === undefined ? {} : { supplies }) };
+    const multiplied = supplies === undefined ? multipliedTokens(clause, tokenTraits) : undefined;
+    subject = { side: "friendly", traits: [], notTraits: [], ...(supplies !== undefined ? { supplies } : multiplied !== undefined ? { supplies: multiplied, anyToken: true } : {}) };
   }
   if (side === "wants" && subject === EMPTY) {
     const watcher = watcherSubject(`${text} ${triggerText}`);
@@ -385,6 +407,7 @@ const cardSubject = (c: SynergyCard): Subject => ({
   traits: c.structured.traits,
   notTraits: [],
   cost: c.structured.cost,
+  power: c.structured.power,
   isLeader: c.type === "Leader",
   aspects: c.structured.aspects,
 });
@@ -424,6 +447,9 @@ export function conflictBetween(
   if (touched.side !== undefined && needed.side !== undefined && touched.side !== needed.side) {
     return `the offer acts on ${touched.side} things, the want is ${needed.side}`;
   }
+  if (offer.attach?.base === true && RECEIVING_WANTS.has(wantTag) && !BASE_OR_ANY_UPGRADE.test(want.text)) {
+    return "the offer is a Fortify upgrade, which attaches to your base, not a unit";
+  }
   if (want.receives === true) {
     const host = cardSubject(b);
     const bound = offer.attach;
@@ -455,6 +481,7 @@ export function conflictBetween(
   if (supplies !== undefined && want.subject.traits.length + want.subject.notTraits.length > 0) {
     const fits = supplies.some((s) => want.subject.traits.every((t) => s.traits.includes(t)) && !want.subject.notTraits.some((t) => s.traits.includes(t)));
     if (!fits) {
+      if (offer.subject.anyToken === true) return `the offer multiplies tokens, and no printed token fits the want's ${want.subject.traits.length > 0 ? want.subject.traits.join(" ") : "trait"} restriction`;
       const first = supplies[0];
       const missing = want.subject.traits.find((t) => !first.traits.includes(t));
       return missing !== undefined ? `the offer supplies a ${first.token} token, the want needs a ${missing}` : `the offer supplies a ${first.token} token, the want excludes it`;
@@ -464,8 +491,9 @@ export function conflictBetween(
     return "the offer acts only on the tokens it creates, the wanting card is not one";
   }
   if (wantConcrete !== undefined) {
-    const { maxCost, minCost, nonLeader, aspect } = offer.subject;
-    const cost = wantConcrete.cost;
+    const { maxCost, minCost, maxPower, nonLeader, aspect } = offer.subject;
+    const { cost, power } = wantConcrete;
+    if (maxPower !== undefined && typeof power === "number" && power > maxPower) return `the offer reaches units with ${maxPower} or less power, the wanting card has ${power}`;
     if (maxCost !== undefined && typeof cost === "number" && cost > maxCost) return `the offer reaches units costing ${maxCost} or less, the wanting card costs ${cost}`;
     if (minCost !== undefined && typeof cost === "number" && cost < minCost) return `the offer reaches units costing ${minCost} or more, the wanting card costs ${cost}`;
     if (nonLeader === true && wantConcrete.isLeader === true) return "the offer reaches non-leader units, the wanting card is a leader";
@@ -502,7 +530,8 @@ export function boardTraits(card: SynergyCard, tokenTraits: TokenTraits | undefi
   const own = card.type === "Unit" || card.type === "Leader" || card.type === "Token Unit" ? card.structured.traits : [];
   const made = card.tags.offers
     .filter((t) => CREATE_OFFERS.has(t.tag))
-    .flatMap((t) => (qualifierOf(card, "offers", t.tag, t.why, tokenTraits).subject.supplies ?? []).flatMap((s) => s.traits));
+    .map((t) => qualifierOf(card, "offers", t.tag, t.why, tokenTraits).subject)
+    .flatMap((s) => (s.anyToken === true ? [] : (s.supplies ?? []).flatMap((x) => x.traits)));
   return [...new Set([...own, ...made])].sort(cmp);
 }
 

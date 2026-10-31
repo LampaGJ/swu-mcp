@@ -42,6 +42,7 @@ const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
 /** Every effect of the clause that reads the discard pile returns the card itself. */
 const onlyReturnsItself = (c: SwuClause): boolean =>
   c.effects.some((e) => e.cat === "recursion") && c.effects.every((e) => !DISCARD_READERS.has(e.cat) || returnsItself(c, e));
+const EXHAUSTED_RESOURCES = /\bresources? you control (?:is|are) exhausted\b|\bexhausted resources?\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 const SEARCH_OFFER: Record<string, string> = {
   deck_top: "offers:tutor-to-deck",
@@ -149,6 +150,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const why = `${face}: ${c.text}`;
           const keywordWant = KEYWORD_WANT.exec(target?.text ?? "");
           if (keywordWant !== null && p !== "enemy") add(wants, `wants:keyword-${keywordWant[1].toLowerCase()}`, why);
+          // A friendly resource exhausted feeds an exhausted-resource count, never an exhausted-unit one (D58).
+          if (e.cat === "exhaust_resource" && p !== "enemy") add(offers, "offers:exhaust-resource", why);
           if (target?.kind === "resource") continue;
           const selfGated = isSelfGated(c, e);
           const offersBefore = new Set(offers.keys());
@@ -219,12 +222,12 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
               const zone = e.zone ?? "";
               if (/discard/.test(zone)) { add(offers, "offers:play-from-discard", why); if (!SELF_DISCARD.test(c.text)) add(wants, "wants:cards-in-discard", why); }
               else if (/resources/.test(zone)) add(offers, "offers:play-from-resources", why);
-              else add(offers, "offers:cheat-play", why);
+              else add(offers, c.modifiers.some((m) => m.cat === "pays_cost") ? "offers:paid-play" : "offers:cheat-play", why);
               if (/(?<!non-)\bunits?\b/.test(typeof e.what === "string" ? e.what : "")) add(offers, "offers:units-entering", why);
               break;
             }
             case "ramp": add(offers, "offers:resource-ramp", why); break;
-            case "ready_resource": add(offers, "offers:resource-ramp", why); break;
+            case "ready_resource": add(offers, "offers:ready-resource", why); break;
             case "extra_attack": add(offers, "offers:extra-attack", why); break;
             case "take_initiative": add(offers, "offers:initiative", why); break;
             case "capture": add(offers, p === "friendly" ? "offers:capture-own" : "offers:capture", why); break;
@@ -256,13 +259,14 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/\byou control\b/i.test(c.text)) for (const tr of traitsOf(what)) add(wants, `wants:trait-${tr}`, why);
             if (what?.kind === "token" || /token/i.test(what?.text ?? "")) add(wants, "wants:tokens", why);
             if (what?.restrict.includes("damaged")) add(wants, "wants:damaged-units", why);
-            if (what?.restrict.includes("exhausted")) add(wants, "wants:exhausted-own", why);
+            if (what?.restrict.includes("exhausted")) add(wants, what.kind === "resource" ? "wants:exhausted-resources" : "wants:exhausted-own", why);
             if (/upgrade/i.test(what?.text ?? "")) add(wants, "wants:upgrades-attached", why);
             if (typeof k.n === "number" && k.n >= 2) add(wants, "wants:wide-board", why);
           }
           if (k.cat === "target_check" && k.check === "attached_is") for (const tr of traitsOf(asTarget(k.what))) add(wants, `wants:trait-${tr}`, why);
           if (k.cat === "control_resources" && face !== "epicAction") add(wants, "wants:resource-ramp", why);
           if (k.cat === "initiative") add(wants, "wants:initiative", why);
+          if (k.cat === "while_other" && EXHAUSTED_RESOURCES.test(typeof k.w === "string" ? k.w : "")) add(wants, "wants:exhausted-resources", why);
           if (k.cat === "force") add(wants, "wants:the-force", why);
           const state = k.state ?? "";
           if (k.cat === "self_state" && /damaged$|^damaged/.test(state) && state !== "undamaged") add(wants, "wants:self-damaged", why);
@@ -280,8 +284,9 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/card in your hand|cards in your hand/.test(per) && !toCount) add(wants, "wants:cards-in-hand", why);
             if (/discard pile/.test(per)) add(wants, "wants:cards-in-discard", why);
             if (/(?:other )?friendly .*units?|unit you control/.test(per)) add(wants, "wants:wide-board", why);
-            if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);
-            if (/exhausted/.test(per)) add(wants, "wants:exhausted-own", why);
+            // "For each exhausted resource" counts resources already paid, not resources controlled, so it wants no ramp (D58).
+            if (/exhausted/.test(per)) add(wants, /resource/.test(per) ? "wants:exhausted-resources" : "wants:exhausted-own", why);
+            else if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);
           }
         }
         for (const st of c.structure) {

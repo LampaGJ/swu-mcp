@@ -28,12 +28,22 @@ export function normalizeText(raw: string | null | undefined): string {
     .replace(/[ \t]+/g, " ");
 }
 
+/** "(paying its cost)" is rules text, not reminder: it decides whether a play is paid or cheated (D58). */
+const KEPT_PARENTHETICAL = /^\(paying its cost\)/i;
+
 /** Reminder text is parenthesised; it is removed before parsing. */
 export function stripReminders(s: string): { text: string; removed: number } {
   let out = "";
   let depth = 0;
   let removed = 0;
-  for (const ch of s) {
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    const kept = depth === 0 && ch === "(" ? KEPT_PARENTHETICAL.exec(s.slice(i)) : null;
+    if (kept !== null) {
+      out += kept[0];
+      i += kept[0].length - 1;
+      continue;
+    }
     if (ch === "(") {
       depth++;
       removed++;

@@ -79,6 +79,7 @@ export const synergyCardSchema = z.looseObject({
   type: z.string(),
   structured: z.looseObject({
     cost: z.number().nullable(),
+    power: z.number().nullable().optional(),
     aspects: z.array(z.string()),
     aspectIcons: z.array(z.string()),
     arenas: z.array(z.string()).optional(),
