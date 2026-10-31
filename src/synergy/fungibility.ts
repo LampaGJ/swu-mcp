@@ -25,6 +25,8 @@ export interface RoleSignature {
   costBand: string;
   /** Arena and non-unit kind the tag acts on ("space", "base", "ground-upgrade"); empty for a plain unit. */
   target: string;
+  /** The unit's own arena(s), lower-cased, sorted and joined with "+" ("ground", "space", "ground+space"); empty for a non-unit. */
+  arena: string;
 }
 
 export interface RoleClass extends RoleSignature {
@@ -111,20 +113,21 @@ function originOf(card: SynergyCard, why: string): Origin {
 
 export function roleSignatures(card: SynergyCard): RoleSignature[] {
   const typeGroup = TYPE_GROUPS.has(card.type) ? card.type : "Other";
+  const arena = card.type === "Unit" ? (card.structured.arenas ?? []).map((a) => a.toLowerCase()).sort(cmp).join("+") : "";
   const out: RoleSignature[] = [];
   for (const side of ["offers", "wants"] as const) {
     for (const { tag, why } of card.tags[side]) {
       if (isTraitTag(tag)) continue;
       const { timing, magnitude } = originOf(card, why);
       const q = qualifierOf(card, side, tag, why);
-      out.push({ tag, side, typeGroup, timing, magnitude, costBand: costBand(card.structured.cost), target: targetLabel(q) });
+      out.push({ tag, side, typeGroup, timing, magnitude, costBand: costBand(card.structured.cost), target: targetLabel(q), arena });
     }
   }
   return out;
 }
 
 export const roleId = (s: RoleSignature): string =>
-  `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}${s.target === "" ? "" : `|t${s.target}`}`;
+  `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}${s.target === "" ? "" : `|t${s.target}`}${s.arena === "" ? "" : `|a${s.arena}`}`;
 
 export function buildFungibility(cards: readonly SynergyCard[]): FungibilityIndex {
   const classes = new Map<string, RoleClass>();

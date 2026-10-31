@@ -175,6 +175,7 @@ export function buildSynergyRun(featuresText: string, tableText: string, codeCom
       magnitude: c.magnitude,
       costBand: c.costBand,
       target: c.target,
+      arena: c.arena,
       size: c.members.length,
       members: c.members,
     })),

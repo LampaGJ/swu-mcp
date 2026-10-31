@@ -16,6 +16,8 @@ interface CardSpec {
   aspects?: string[];
   icons?: string[];
   traits?: string[];
+  /** The unit's own arenas as the feature record carries them ("Ground", "Space"); omitted when the card has none. */
+  arenas?: string[];
   offers?: string[];
   wants?: string[];
   /** One ability per entry: repeat class, clause text, optional effect magnitude. */
@@ -32,7 +34,7 @@ export function mk(cardKey: string, title: string, spec: CardSpec = {}): Synergy
     title,
     subtitle: spec.subtitle ?? null,
     type: spec.type ?? "Unit",
-    structured: { cost: spec.cost === undefined ? 2 : spec.cost, aspects, aspectIcons: spec.icons ?? aspects, traits: spec.traits ?? [] },
+    structured: { cost: spec.cost === undefined ? 2 : spec.cost, aspects, aspectIcons: spec.icons ?? aspects, traits: spec.traits ?? [], ...(spec.arenas === undefined ? {} : { arenas: spec.arenas }) },
     faces: {
       text: (spec.abilities ?? []).map((a) => ({
         kind: "ability",

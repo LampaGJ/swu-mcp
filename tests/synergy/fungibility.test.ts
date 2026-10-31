@@ -55,7 +55,7 @@ const cards = [
 describe("role signatures", () => {
   it("derives timing and magnitude from the ability that produced the tag", () => {
     expect(roleSignatures(cards[0])).toEqual([
-      { tag: "offers:draw", side: "offers", typeGroup: "Unit", timing: "once_on_play", magnitude: "1", costBand: "2-3", target: "" },
+      { tag: "offers:draw", side: "offers", typeGroup: "Unit", timing: "once_on_play", magnitude: "1", costBand: "2-3", target: "", arena: "" },
     ]);
     expect(roleSignatures(cards[5])[0].timing).toBe("per_attack");
     expect(roleSignatures(cards[6])[0].magnitude).toBe("3+");
@@ -72,6 +72,18 @@ describe("role signatures", () => {
       abilities: [{ repeat: "once_on_defeat", text: "x", trigger: "when_defeated" }],
     });
     expect(roleSignatures(c)[0].timing).toBe("once_on_defeat");
+  });
+
+  it("carries a unit's own arena, sorted and joined, and leaves non-units empty", () => {
+    const arenaOf = (type: string, arenas?: string[]) =>
+      roleSignatures(mk("a", "A", { type, arenas, offers: ["offers:buff"] }))[0].arena;
+    expect(arenaOf("Unit", ["Ground"])).toBe("ground");
+    expect(arenaOf("Unit", ["Space"])).toBe("space");
+    expect(arenaOf("Unit", ["Space", "Ground"])).toBe("ground+space");
+    expect(arenaOf("Unit", [])).toBe("");
+    expect(arenaOf("Unit")).toBe("");
+    expect(arenaOf("Event", ["Ground"])).toBe("");
+    expect(arenaOf("Leader", ["Space"])).toBe("");
   });
 
   it("skips trait tags", () => {
@@ -96,6 +108,26 @@ describe("role classes", () => {
   it("separates by timing, magnitude, cost band and card type", () => {
     const ids = new Set(["1", "5", "6", "7", "8"].map((k) => roleOf(index, k, "offers:draw")?.id));
     expect(ids.size).toBe(5);
+  });
+
+  it("splits a Ground and a Space unit that share tag, type, timing, magnitude and cost band", () => {
+    const sentinel = (key: string, arenas: string[], extra = {}) =>
+      mk(key, `Wants Upgrades ${key}`, { cost: 3, arenas, wants: ["wants:upgrades-attached"], ...extra });
+    const arenaIndex = buildFungibility([
+      sentinel("g1", ["Ground"]),
+      sentinel("g2", ["Ground"], { aspects: ["Command"] }),
+      sentinel("s1", ["Space"]),
+      mk("e1", "Event Wants Upgrades", { type: "Event", cost: 3, arenas: ["Ground"], wants: ["wants:upgrades-attached"] }),
+    ]);
+    const ground = roleOf(arenaIndex, "g1", "wants:upgrades-attached");
+    const space = roleOf(arenaIndex, "s1", "wants:upgrades-attached");
+    expect(ground?.id).toBe("wants:upgrades-attached|Unit|static|m-|c2-3|aground");
+    expect(ground?.members).toEqual(["g1", "g2"]);
+    expect(space?.id).toBe("wants:upgrades-attached|Unit|static|m-|c2-3|aspace");
+    expect(space?.members).toEqual(["s1"]);
+    expect(substitutesFor(arenaIndex, space?.members ?? [], "s1")).toEqual([]);
+    expect(substitutesFor(arenaIndex, ground?.members ?? [], "g1").flatMap((g) => g.cards.map((c) => c.cardKey))).toEqual(["g2"]);
+    expect(roleOf(arenaIndex, "e1", "wants:upgrades-attached")?.id).toBe("wants:upgrades-attached|Event|static|m-|c2-3");
   });
 
   it("gives every class a sorted member list and sorts classes by id", () => {

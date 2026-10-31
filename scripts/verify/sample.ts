@@ -374,7 +374,7 @@ function buildFungible(inputs: Inputs, seed: string): Packet {
       const tag = str(cls, "tag");
       return {
         id: str(cls, "id"),
-        roleSignature: { tag, side: cls.side, typeGroup: cls.typeGroup, timing: cls.timing, magnitude: cls.magnitude, costBand: cls.costBand },
+        roleSignature: { tag, side: cls.side, typeGroup: cls.typeGroup, timing: cls.timing, magnitude: cls.magnitude, costBand: cls.costBand, arena: cls.arena },
         size: members.length,
         membersShown: Math.min(8, members.length),
         members: members.slice(0, 8).map((key) => {

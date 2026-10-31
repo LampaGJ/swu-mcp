@@ -41,7 +41,7 @@ This is the owner's standing intent for swu-mcp, one entry per decision, with th
 
 **D12. Trios favour low total cost** (2026-10-16). Shapes are chain, convergent and loop. Since #24, every trio needs at least one mechanical link. Enforced in: `src/synergy/trios.ts`.
 
-**D13. Fungibility: same-role cards across aspects are substitutes** (2026-10-16). Why: flexibility in which card fills a chain slot. Enforced in: `src/synergy/fungibility.ts`.
+**D13. Fungibility: same-role cards across aspects are substitutes** (2026-10-16). Why: flexibility in which card fills a chain slot. A unit's own arena (ground, space or ground+space) is part of its role signature (#66, 2026-10-30), because swapping a Ground unit for a Space unit changes the board; non-units carry no arena and keep their class ids. Enforced in: `src/synergy/fungibility.ts`.
 
 **D14. Similarity uses local embeddings, captured once** (2026-10-16). The model is nomic-embed-text via Ollama, with vectors in a separate file. A surface-blind "kin" variant masks names, traits, keywords, aspects and numbers. Why: find cards that do the same thing under different labels. Enforced in: `src/embed/`, `scripts/similarity`.
 
