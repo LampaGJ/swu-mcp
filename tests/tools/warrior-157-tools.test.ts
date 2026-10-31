@@ -82,7 +82,7 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
     let lockedSeen = 0;
     for (const role of out.roles) {
       for (const group of role.substitutes) {
-        const flags = group.cards.map((c: any) => Boolean(c.baseLocked ?? c.needsUnitAspect));
+        const flags = group.cards.map((c: any) => Boolean(c.baseLocked ?? c.needsUnitAspect ?? c.nameLocked));
         group.cards.forEach((c: any, i: number) => {
           const lock = clauseLock(ctx.graph.byKey.get(c.cardKey)!, supply);
           expect(flags[i], `${c.title} lock ${JSON.stringify(lock)}`).toBe(isLocked(lock));
