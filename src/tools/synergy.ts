@@ -6,9 +6,11 @@ import { CANDIDATE_STATUS, clip, sourcedEvidenceOf, tagEvidence } from "../syner
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
 import { engineHitOf, leaderActionOf, leaderEngineOf, roleKeepOf, suppliedKeywords, type EngineHit } from "../synergy/leader-engine.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
+import { clauseLock, isLocked, lockFields, lockSupply, NO_LOCK, type ClauseLock } from "../synergy/clause-lock.js";
 import {
   aspectGroup,
   commonMembers,
+  jobShare,
   roleOf,
   substitutesFor,
   widenedSubstitutes,
@@ -120,6 +122,19 @@ export const fungibleSubstitutesShape = {
   decklist: decklistField
     .optional()
     .describe("The deck as {card, count}: cards already in it are left out of the substitutes, and the keywords its cards print count as the deck's supply when the card's job is judged"),
+  maxClasses: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .default(8)
+    .describe("Role classes listed, the ones that cover most of the card's job first; the note says how many were cut"),
+  exclude: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Cards the builder has rejected: cardKeys, SET_NNN ids or exact titles (like the deck tools). They are never listed as substitutes"),
   evidence: evidenceFlag,
 };
 
@@ -403,6 +418,16 @@ export interface FungibleResolved {
   /** The named candidates as cardKeys; when absent the input's candidates are read as cardKeys. */
   candidates?: readonly string[];
   unresolvedCandidates?: readonly { card: string; reason: string; detail: string }[];
+  /** The rejected cards as cardKeys (D67); when absent the input's exclude is read as cardKeys. */
+  exclude?: readonly string[];
+  unresolvedExclude?: readonly { card: string; reason: string; detail: string }[];
+}
+
+interface PartnerMark {
+  feedsOriginal?: true;
+  feedsRow?: string;
+  fedByOriginal?: true;
+  fedByRow?: string;
 }
 
 export function fungibleSubstitutes(
@@ -427,11 +452,40 @@ export function fungibleSubstitutes(
     ...(resolved.candidates === undefined ? named.filter((k) => !ctx.graph.byKey.has(k)).map((k) => ({ card: k, reason: "unknown", detail: "no card with this cardKey in the feature file" })) : []),
   ];
   const candidateKeys = [...new Set(named.filter((k) => ctx.graph.byKey.has(k)))];
+  const rejected = resolved.exclude ?? args.exclude ?? [];
+  const unresolvedExclude = [
+    ...(resolved.unresolvedExclude ?? []),
+    ...(resolved.exclude === undefined ? rejected.filter((k) => !ctx.graph.byKey.has(k)).map((k) => ({ card: k, reason: "unknown", detail: "no card with this cardKey in the feature file" })) : []),
+  ];
+  const excluded = new Set(rejected.filter((k) => ctx.graph.byKey.has(k)));
   const supplied: readonly string[] | undefined =
     leader !== undefined && base !== undefined ? [...leader.card.structured.aspectIcons, ...base.structured.aspectIcons] : args.preferAspects;
   const showPenalty = supplied !== undefined && (base !== undefined || candidateKeys.length > 0);
   const penaltyOf = (c: SynergyCard): number | undefined => (showPenalty ? singlePenalty(c, supplied as readonly string[]) : undefined);
   const inDeck = resolved.deckKeys;
+  // D59 needs the leader and the base to judge a lock: with either missing the lock stays silent rather than guess the base.
+  const supply = leader !== undefined && base !== undefined ? lockSupply(leader.card, base, resolved.deckCards) : undefined;
+  const lockOf = (c: SynergyCard): ClauseLock => (supply === undefined ? NO_LOCK : clauseLock(c, supply));
+  const partnerCache = new Map<string, PartnerMark>();
+  const partnerOf = (cardKey: string): PartnerMark => {
+    const known = partnerCache.get(cardKey);
+    if (known !== undefined) return known;
+    const rowOf = (edge: PairEdge | undefined): string | undefined => {
+      const row = edge === undefined ? undefined : mechanicalRows(edge)[0];
+      return row === undefined ? undefined : `${row.row}: ${row.offer} -> ${row.want}`;
+    };
+    const feeds = cardKey === slot.cardKey ? undefined : rowOf(ctx.graph.edgeByKey.get(`${cardKey}>${slot.cardKey}`));
+    const fedBy = cardKey === slot.cardKey ? undefined : rowOf(ctx.graph.edgeByKey.get(`${slot.cardKey}>${cardKey}`));
+    const mark: PartnerMark = {
+      ...(feeds === undefined ? {} : { feedsOriginal: true as const, feedsRow: feeds }),
+      ...(fedBy === undefined ? {} : { fedByOriginal: true as const, fedByRow: fedBy }),
+    };
+    partnerCache.set(cardKey, mark);
+    return mark;
+  };
+  const isPartner = (cardKey: string): boolean => partnerOf(cardKey).feedsOriginal === true || partnerOf(cardKey).fedByOriginal === true;
+  /** Rank inside an aspect group: plain stand-ins, then partners of the original, then locked cards (D67). */
+  const rankOf = (cardKey: string): number => Number(isLocked(lockOf(ctx.graph.byKey.get(cardKey) as SynergyCard))) * 2 + Number(isPartner(cardKey));
   const engine = leader === undefined ? null : leaderEngineOf(leader.card);
   const roleKeep = roleKeepOf(slot, suppliedKeywords(engine, resolved.deckCards));
   const tags =
@@ -447,14 +501,15 @@ export function fungibleSubstitutes(
   const keep = (cardKey: string): boolean =>
     (inPool === undefined || inPool(cardKey)) &&
     !inDeck.has(cardKey) &&
+    !excluded.has(cardKey) &&
     (roleKeep === null || roleKeep.keptBy(ctx.graph.byKey.get(cardKey) as SynergyCard).length > 0);
   const options: SubstituteOptions = {
     preferAspects: args.preferAspects ?? (base === undefined ? undefined : supplied),
     crossAspectOnly: args.crossAspectOnly,
     maxCost: args.maxCost,
     perGroup: args.limit,
-    order: substituteOrder(leader, scores),
-    keep: inPool === undefined && inDeck.size === 0 && roleKeep === null ? undefined : keep,
+    order: ((leaderOrder) => (a: Substitute, b: Substitute) => rankOf(a.cardKey) - rankOf(b.cardKey) || leaderOrder(a, b))(substituteOrder(leader, scores)),
+    keep: inPool === undefined && inDeck.size === 0 && excluded.size === 0 && roleKeep === null ? undefined : keep,
   };
   const roles = tags.flatMap((tag) => {
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
@@ -469,31 +524,45 @@ export function fungibleSubstitutes(
       const kept = roleKeep === null ? [] : roleKeep.keptBy(syn);
       const marked = {
         ...widenedMark,
+        coverage: jobShare(ctx.fungibility, slot.cardKey, c.cardKey),
+        ...lockFields(lockOf(syn)),
+        ...partnerOf(c.cardKey),
         ...(leader === undefined ? {} : { leaderInclusion: inclusionOf(leader, c.cardKey) }),
         ...(penalty === undefined ? {} : { penalty }),
         ...(roleKeep === null ? {} : { keepsRole: kept.join(", ") }),
       };
       return args.evidence ? { ...marked, text: roleText(syn, tag) } : marked;
     };
+    const shownGroups = groups
+      // A group with nothing but locked cards follows the groups that hold a usable one.
+      .map((g) => ({ g, allLocked: g.cards.every((c) => rankOf(c.cardKey) >= 2) }))
+      .sort((x, y) => Number(x.allLocked) - Number(y.allLocked))
+      .map(({ g }) => ({ aspects: g.aspects, differsFromSlot: g.differsFromSlot, covered: g.covered, cards: g.cards.map(withText) }));
+    // A locked card cannot fill the slot in this deck, so only unlocked cards count toward the class's coverage.
+    const usable = groups.flatMap((g) => g.cards).filter((c) => rankOf(c.cardKey) < 2);
     return [
       {
         classId: cls.id,
         tag,
+        coverage: Math.max(0, ...usable.map((c) => jobShare(ctx.fungibility, slot.cardKey, c.cardKey))),
         classSize: cls.members.length,
         widened: widenedResult?.widened ?? null,
         aspectSets: new Set(cls.members.map((k) => aspectGroup(ctx.graph.byKey.get(k) as SynergyCard))).size,
         ...(args.evidence ? { slotText: roleText(slot, tag) } : {}),
-        substitutes: groups.map((g) => ({
-          aspects: g.aspects,
-          differsFromSlot: g.differsFromSlot,
-          covered: g.covered,
-          cards: g.cards.map(withText),
-        })),
+        substitutes: shownGroups,
       },
     ];
   });
   if (roles.length === 0) return fail(`${slot.cardKey} has no role for tag ${args.tag}`);
-  const listedKeys = new Set(roles.flatMap((r) => r.substitutes.flatMap((g) => g.cards.map((c) => c.cardKey))));
+  const everyListedKey = new Set(roles.flatMap((r) => r.substitutes.flatMap((g) => g.cards.map((c) => c.cardKey))));
+  // D67: the classes that cover most of the card's job come first (a class with no substitute last, ties in the order the card carries its roles), and maxClasses cuts the rest.
+  const ordered = roles
+    .map((role, index) => ({ role, index }))
+    .sort((x, y) => y.role.coverage - x.role.coverage || Number(y.role.substitutes.length > 0) - Number(x.role.substitutes.length > 0) || x.index - y.index)
+    .map(({ role }) => role);
+  const shownRoles = ordered.slice(0, args.maxClasses);
+  const classesCut = ordered.length - shownRoles.length;
+  const listedKeys = new Set(shownRoles.flatMap((r) => r.substitutes.flatMap((g) => g.cards.map((c) => c.cardKey))));
   const candidates = candidateKeys.map((key) => {
     const syn = ctx.graph.byKey.get(key) as SynergyCard;
     const penalty = penaltyOf(syn);
@@ -510,15 +579,41 @@ export function fungibleSubstitutes(
       ...(leader === undefined ? {} : { leaderInclusion: inclusionOf(leader, key) }),
       outsideBand: !listedKeys.has(key),
       sharesRoles: shares.join(", ") || "none",
+      coverage: jobShare(ctx.fungibility, slot.cardKey, key),
+      ...lockFields(lockOf(syn)),
+      ...partnerOf(key),
+      ...(excluded.has(key) ? { excluded: true } : {}),
       ...(roleKeep === null ? {} : { keepsRole: roleKeep.keptBy(syn).join(", ") || "none" }),
       ...(inDeck.has(key) ? { inDeck: true } : {}),
       ...(inPool === undefined ? {} : { premierPool: inPool(key) }),
     };
   });
   const slotPenalty = penaltyOf(slot);
+  // The note names the candidates first, then at most PARTNERS_NAMED listed cards; every row carries its own mark.
+  const PARTNERS_NAMED = 3;
+  const partnerKeys = [...new Set([...candidateKeys.filter(isPartner), ...[...listedKeys].filter(isPartner).sort(cmp)])];
+  const namedPartners = partnerKeys.slice(0, Math.max(candidateKeys.filter(isPartner).length, PARTNERS_NAMED));
+  const lockedKeys = [...new Set([...listedKeys, ...candidateKeys])].filter((k) => isLocked(lockOf(ctx.graph.byKey.get(k) as SynergyCard)));
+  const note = [
+    classesCut > 0
+      ? `${shownRoles.length} of ${ordered.length} role classes are listed (maxClasses ${args.maxClasses}; ${classesCut} cut). Classes come in order of coverage, the share of this card's offers and wants that a class's best unlocked card also holds; each card row carries its own coverage.`
+      : undefined,
+    partnerKeys.length === 0
+      ? undefined
+      : `Partners, not replacements: ${namedPartners
+          .map((k) => {
+            const mark = partnerOf(k);
+            const how = mark.feedsOriginal === true && mark.fedByOriginal === true ? "feeds and is fed by" : mark.feedsOriginal === true ? "feeds" : "is fed by";
+            return `${cardLabel(ctx.graph.byKey.get(k) as SynergyCard)} ${how} ${cardLabel(slot)}`;
+          })
+          .join("; ")}${partnerKeys.length > namedPartners.length ? `; ${partnerKeys.length - namedPartners.length} more` : ""}. A card with a pair edge to the original works with it, so the answer to which one is both; its row carries feedsOriginal or fedByOriginal with the edge's row, and it ranks after the plain stand-ins.`,
+    lockedKeys.length === 0
+      ? undefined
+      : "baseLocked or needsUnitAspect: a clause of the card needs a base location or a unit aspect that this leader, base and decklist do not supply (D59); locked cards rank after the unlocked ones.",
+  ].filter((x): x is string => x !== undefined);
   return ok({
     status: CANDIDATE_STATUS,
-    card: { ...brief(slot), ...(slotPenalty === undefined ? {} : { penalty: slotPenalty }) },
+    card: { ...brief(slot), ...lockFields(lockOf(slot)), ...(slotPenalty === undefined ? {} : { penalty: slotPenalty }) },
     ...(leader === undefined ? {} : { leader: leaderBlock(leader, "substitute", base) }),
     ...(showPenalty ? { suppliedIcons: (supplied as readonly string[]).join("+") || "none" } : {}),
     ...(roleKeep === null
@@ -527,12 +622,17 @@ export function fungibleSubstitutes(
           roleKept: {
             families: roleKeep.families,
             note: roleKeep.note,
-            ...(listedKeys.size === 0 ? { none: `no card in the pool ${roleKeep.jobs.join(" or ")}` } : {}),
+            ...(everyListedKey.size === 0 ? { none: `no card in the pool ${roleKeep.jobs.join(" or ")}` } : {}),
           },
         }),
     ...(candidates.length === 0 ? {} : { candidates }),
     ...(unresolvedCandidates.length === 0 ? {} : { unresolvedCandidates }),
-    roles,
+    ...(excluded.size === 0 ? {} : { excluded: [...excluded].sort(cmp).join(", ") }),
+    ...(unresolvedExclude.length === 0 ? {} : { unresolvedExclude }),
+    classesTotal: ordered.length,
+    classesCut,
+    ...(note.length === 0 ? {} : { note: note.join(" ") }),
+    roles: shownRoles,
   });
 }
 
@@ -672,7 +772,9 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
             ? "offers:ready-leader -> leader:action"
             : found.kind === "attack-payoff"
               ? `leader:grant-${keyword} -> wants:extra-attacks`
-              : `leader:grant-${keyword} -> wants:friendly-unit-with-${keyword}`,
+              : found.kind === "grants-held-keyword"
+                ? `leader:grant-${keyword} -> wants:keyword-${keyword}`
+                : `leader:grant-${keyword} -> wants:friendly-unit-with-${keyword}`,
         reason: engineReason(found),
         score,
         aspectPair: cover.aspectPair,
@@ -706,7 +808,16 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
   };
   // A partner the leader's clause pays off but the graph does not link to the leader is added as a leader-engine row, for a leader subject only.
   // A kind that is a payoff (the partner uses what the leader gives) is left out of the enablers direction, and the repeated-Action kind (the partner feeds the leader) out of payoffs.
-  const mainEdges = touching.filter((e) => args.traits === "include" || !e.traitOnly);
+  // D67: since #155 the leader's own grant is also a mechanical edge (offers:grant-ambush -> wants:keyword-ambush). When that edge is all that
+  // links the partner and the engine reads the same partner, the partner is one leader-engine row that quotes both clauses, not a graph row.
+  const duplicatesEngine = (e: PairEdge): boolean => {
+    if (engine === null || leader === undefined || card.cardKey !== leader.card.cardKey || e.a !== card.cardKey) return false;
+    const rows = mechanicalRows(e);
+    if (rows.length === 0 || !rows.every((r) => engine.grantsKeywords.some((k) => r.offer === `offers:grant-${k.toLowerCase()}`))) return false;
+    const kind = engineHitOf(engine, ctx.graph.byKey.get(e.b) as SynergyCard, action)?.kind;
+    return kind === "pays-off" || kind === "grants-held-keyword";
+  };
+  const mainEdges = touching.filter((e) => (args.traits === "include" || !e.traitOnly) && !duplicatesEngine(e));
   const edgePartners = new Set(mainEdges.map((e) => (e.a === card.cardKey ? e.b : e.a)));
   const engineOnly =
     (engine === null && action === null) || leader === undefined || card.cardKey !== leader.card.cardKey
@@ -1019,7 +1130,9 @@ function withContext(store: CardStore, run: (ctx: SynergyContext) => ToolResult)
 
 /** Names to cards at the tool boundary (D55, #143): candidates and decklist lines are cardKeys, SET_NNN ids or exact titles. */
 function resolveNames(store: CardStore, ctx: SynergyContext, input: unknown): FungibleResolved {
-  const names = z.looseObject({ candidates: fungibleSubstitutesShape.candidates, decklist: fungibleSubstitutesShape.decklist }).parse(input);
+  const names = z
+    .looseObject({ candidates: fungibleSubstitutesShape.candidates, exclude: fungibleSubstitutesShape.exclude, decklist: fungibleSubstitutesShape.decklist })
+    .parse(input);
   const candidates: string[] = [];
   const unresolvedCandidates: { card: string; reason: string; detail: string }[] = [];
   for (const ref of names.candidates ?? []) {
@@ -1027,20 +1140,27 @@ function resolveNames(store: CardStore, ctx: SynergyContext, input: unknown): Fu
     if (hit.ok) candidates.push(hit.row.cardKey);
     else unresolvedCandidates.push({ card: ref, reason: hit.reason, detail: hit.detail });
   }
+  const exclude: string[] = [];
+  const unresolvedExclude: { card: string; reason: string; detail: string }[] = [];
+  for (const ref of names.exclude ?? []) {
+    const hit = resolveRef(store, ref, "main");
+    if (hit.ok) exclude.push(hit.row.cardKey);
+    else unresolvedExclude.push({ card: ref, reason: hit.reason, detail: hit.detail });
+  }
   const deckCards: SynergyCard[] = [];
   for (const line of names.decklist ?? []) {
     const hit = resolveRef(store, line.card, "main");
     const syn = hit.ok ? ctx.graph.byKey.get(hit.row.cardKey) : undefined;
     if (syn !== undefined) deckCards.push(syn);
   }
-  return { deckKeys: new Set(deckCards.map((c) => c.cardKey)), deckCards, candidates, unresolvedCandidates };
+  return { deckKeys: new Set(deckCards.map((c) => c.cardKey)), deckCards, candidates, unresolvedCandidates, exclude, unresolvedExclude };
 }
 
 export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Substitutes are Premier-pool cards only (a Premier-legal printing). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off). Give decklist to leave out cards already in the deck. Give candidates (cardKeys or SET_NNN ids) to weigh named cards whatever the cost band: each is listed under candidates with its score, the aspect penalty it pays and outsideBand: true when no role lists it; give base with leader (or preferAspects) and the card's own penalty and each substitute's penalty are shown. A card whose job the deck needs (readying a leader; giving a keyword the leader or the deck supplies, such as Ambush or Raid) keeps that job: only roles in that family are listed, each substitute names the family it keeps in keepsRole, and roleKept.none says so when no card in the pool does it.",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Substitutes are Premier-pool cards only (a Premier-legal printing). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off). Give decklist to leave out cards already in the deck. Give candidates (cardKeys or SET_NNN ids) to weigh named cards whatever the cost band: each is listed under candidates with its score, the aspect penalty it pays and outsideBand: true when no role lists it; give base with leader (or preferAspects) and the card's own penalty and each substitute's penalty are shown. A card whose job the deck needs (readying a leader; giving a keyword the leader or the deck supplies, such as Ambush or Raid) keeps that job: only roles in that family are listed, each substitute names the family it keeps in keepsRole, and roleKept.none says so when no card in the pool does it. Role classes come in order of how much of the card's job they cover (coverage: the share of the card's offers and wants that the class's best unlocked card also holds) and maxClasses (default 8) caps them; classesCut and the note say how many were left out. With leader and base, a card whose clause needs a base location or a unit aspect that they and the decklist do not supply carries baseLocked or needsUnitAspect (D59) and ranks after the unlocked cards of its aspect group. A card with a pair edge to the original (it feeds the original, or the original feeds it) carries feedsOriginal or fedByOriginal with the edge's row, ranks after the plain stand-ins, and the note calls it a partner to keep beside the original, not a replacement: the answer to which one is both. exclude (cardKeys, SET_NNN ids or exact titles) drops cards the builder has rejected.",
     shape: fungibleSubstitutesShape,
     handler: (store: CardStore, input: unknown): ToolResult =>
       withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store), inPremierPool(store), resolveNames(store, ctx, input))),

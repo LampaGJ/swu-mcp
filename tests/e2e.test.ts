@@ -25,7 +25,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   search_cards: { query: "raid", type: "Unit", limit: 5 },
   list_facet: { facet: "keyword" },
   cards_by_facet: { facet: "keyword", value: "Raid", limit: 5 },
-  fungible_substitutes: { cardKey: ELIA_KANE, candidates: ["LOF_190"] },
+  fungible_substitutes: { cardKey: ELIA_KANE, candidates: ["LOF_190"], exclude: ["HMW_118"], maxClasses: 4 },
   find_pairings: { cardKey: ELIA_KANE, limit: 5 },
   find_trios: { cardKey: ELIA_KANE, maxTotalCost: 9, limit: 3 },
   explain_synergy: { cardKeys: [ELIA_KANE, "0101033"] },

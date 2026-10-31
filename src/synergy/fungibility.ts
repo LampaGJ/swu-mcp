@@ -1,4 +1,4 @@
-import { cmp } from "./order.js";
+import { cmp, r3 } from "./order.js";
 import { qualifierOf, targetLabel } from "./qualifiers.js";
 import type { AbilityLite, SynergyCard } from "./schema.js";
 
@@ -227,6 +227,19 @@ export interface SubstituteOptions {
 export function roleOf(index: FungibilityIndex, cardKey: string, tag: string): RoleClass | undefined {
   const id = (index.rolesByCard.get(cardKey) ?? []).find((rid) => (index.classById.get(rid) as RoleClass).tag === tag);
   return id === undefined ? undefined : index.classById.get(id);
+}
+
+/** The distinct tags a card holds a role for (offers, wants and printed keywords), the card's job. */
+export function roleTagsOf(index: FungibilityIndex, cardKey: string): Set<string> {
+  return new Set((index.rolesByCard.get(cardKey) ?? []).map((id) => (index.classById.get(id) as RoleClass).tag));
+}
+
+/** The share, 0 to 1, of the slot card's role tags that the other card also holds a role for: how much of the slot's job it covers (D67). */
+export function jobShare(index: FungibilityIndex, slotCardKey: string, cardKey: string): number {
+  const slot = roleTagsOf(index, slotCardKey);
+  if (slot.size === 0) return 0;
+  const held = roleTagsOf(index, cardKey);
+  return r3([...slot].filter((t) => held.has(t)).length / slot.size);
 }
 
 const iconsCovered = (icons: readonly string[], have: readonly string[]): boolean => {

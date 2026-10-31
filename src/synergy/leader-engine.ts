@@ -63,7 +63,7 @@ export function leaderEngineOf(card: SynergyCard): LeaderEngine | null {
   return { clause: clauseText, playsUnitMaxPower: maxPower, grantsKeywords: [...keywords].sort() };
 }
 
-export type EngineHitKind = "pays-off" | "attack-payoff" | "repeats-action" | "plays";
+export type EngineHitKind = "pays-off" | "attack-payoff" | "grants-held-keyword" | "repeats-action" | "plays";
 export interface EngineHit {
   kind: EngineHitKind;
   keyword: string | null;
@@ -106,6 +106,13 @@ function selfGainedAttackKeyword(card: SynergyCard): { keyword: string; text: st
   return null;
 }
 
+/** The clause behind a card's `wants:keyword-<keyword>` tag, without its face prefix ("text: "), or null when the card holds no such want. */
+function keywordHolderWant(card: SynergyCard, keyword: string): string | null {
+  const tag = `wants:keyword-${keyword.toLowerCase()}`;
+  const why = card.tags.wants.find((w) => w.tag === tag)?.why;
+  return why === undefined ? null : why.replace(/^[A-Za-z]+: /, "");
+}
+
 /** The leader's own Action that exhausts it, as "Action [..]: clause text", or null. A ready aimed at a leader lets it run again. */
 export function leaderActionOf(card: SynergyCard): string | null {
   for (const ability of card.faces.text ?? []) {
@@ -121,7 +128,8 @@ export function leaderActionOf(card: SynergyCard): string | null {
  * How a partner meets the leader's clause. pays-off: the partner's own text keys on a friendly unit with a keyword the
  * leader grants ("When a friendly unit with Ambush enters play"). attack-payoff (D65): the leader gives the played unit an
  * attack on entry (Ambush) and the unit gives itself an attack keyword (Raid, Overwhelm, Saboteur, Restore) that pays per
- * attack. repeats-action (D65): the partner readies a leader and the leader has an Action that exhausts it. plays: the
+ * attack. grants-held-keyword (D67): the leader gives a keyword to the unit it plays, so that unit holds the keyword, and the
+ * partner wants friendly holders of it (`wants:keyword-<k>`, Oppo Rancisis copies the keywords on the board). repeats-action (D65): the partner readies a leader and the leader has an Action that exhausts it. plays: the
  * partner is a unit the leader's action can play (power at or under its limit). Null when none holds, in that order.
  */
 export function engineHitOf(engine: LeaderEngine | null, partner: SynergyCard, action: string | null = null): EngineHit | null {
@@ -140,6 +148,10 @@ export function engineHitOf(engine: LeaderEngine | null, partner: SynergyCard, a
     const gain = selfGainedAttackKeyword(partner);
     if (gain !== null)
       return { kind: "attack-payoff", keyword: entryKeyword, how: `this leader gives it ${entryKeyword}, an attack on entry, and its own text gains ${gain.keyword} while it attacks`, partnerText: gain.text };
+  }
+  for (const keyword of engine?.grantsKeywords ?? []) {
+    const wanted = keywordHolderWant(partner, keyword);
+    if (wanted !== null) return { kind: "grants-held-keyword", keyword, how: `this leader gives the unit it plays ${keyword}, so that unit is a friendly ${keyword} holder, which this card wants`, partnerText: wanted };
   }
   if (action !== null) {
     const ready = readyLeaderClause(partner);
