@@ -125,3 +125,52 @@ describe("trio ranking", () => {
     expect(JSON.stringify(run(cards, rows).result)).toBe(JSON.stringify(run(cards, rows).result));
   });
 });
+
+describe("loop playability (#134)", () => {
+  // Evil is Everywhere + Thermal Detonator + Gar Saxon: the outlet defeats one unit, but the fodder link hands it Gar's token
+  // while the Detonator link needs Gar himself (the Detonator's host) defeated.
+  const outlet = (quant: string, text: string) =>
+    mk("1", "Outlet", {
+      type: "Event",
+      offers: ["offers:defeat-friendly-unit"],
+      wants: ["wants:sac-fodder"],
+      why: { "offers:defeat-friendly-unit": `text: ${text}`, "wants:sac-fodder": "defeats your own units" },
+      abilities: [{ repeat: "once", text, effect: { cat: "defeat", target: { side: "friendly", kind: "unit", quant, text: "a unit" } } }],
+    });
+  const detonator = mk("2", "Detonator", {
+    type: "Upgrade",
+    offers: ["offers:upgrade-to-attach"],
+    wants: ["wants:self-defeated"],
+    why: { "offers:upgrade-to-attach": "is an upgrade or Pilot", "wants:self-defeated": "text: When Defeated" },
+  });
+  const saxon = mk("3", "Saxon", {
+    offers: ["offers:create-token-units"],
+    wants: ["wants:upgrades-attached"],
+    why: { "offers:create-token-units": "text: You may create a Mandalorian token.", "wants:upgrades-attached": "When you play an upgrade on this unit" },
+    abilities: [{ repeat: "once", text: "You may create a Mandalorian token.", effect: { cat: "create_token", token: "Mandalorian" } }],
+  });
+  const token = mk("T", "Mandalorian", { type: "Token Unit", traits: ["Mandalorian"] });
+  const search = (cards: ReturnType<typeof mk>[]) => {
+    const graph = buildPairGraph(cards, COMMITTED_TABLE);
+    return { graph, result: searchTrios(graph, coverCombos(cards)) };
+  };
+
+  it("links the three cards into a cycle at the pair level", () => {
+    const { graph } = search([outlet("one", "Defeat a unit."), detonator, saxon, token]);
+    expect(["1>2", "2>3", "3>1"].every((k) => graph.edgeByKey.has(k))).toBe(true);
+  });
+
+  it("drops the loop when a single-subject outlet must defeat both the supplied token and the upgrade's host", () => {
+    const { result } = search([outlet("one", "Defeat a unit."), detonator, saxon, token]);
+    expect(result.trios.loop).toEqual([]);
+    expect(result.counts.loop).toBe(0);
+    const chains = result.trios.chain.map((t) => `${t.cardA}|${t.cardB}|${t.cardC}`);
+    expect(chains).toContain("2|3|1");
+    expect(chains).toContain("1|2|3");
+  });
+
+  it("keeps the loop when the outlet defeats any number of units", () => {
+    const { result } = search([outlet("any_number", "Defeat any number of friendly units."), detonator, saxon, token]);
+    expect(result.trios.loop.map((t) => `${t.cardA}|${t.cardB}|${t.cardC}`)).toEqual(["1|2|3"]);
+  });
+});

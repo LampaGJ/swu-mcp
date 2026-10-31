@@ -44,3 +44,41 @@ export function edgeEvidence(a: SynergyCard, b: SynergyCard, rows: readonly Pair
 
 export const evidenceOf = (e: PairEdge, byKey: ReadonlyMap<string, SynergyCard>, rows: readonly PairRowHit[] = e.rows): RowEvidence[] =>
   edgeEvidence(byKey.get(e.a) as SynergyCard, byKey.get(e.b) as SynergyCard, rows);
+
+/** Curated entry id -> "face: sourceClause", the clause a curated tag stands for (data/curated-rules.json). */
+export type CuratedClauses = ReadonlyMap<string, string>;
+/** Which side's tag came from the curated table rather than the grammar; the text shown is the curated clause either way. */
+export type EvidenceSource = "grammar" | "curated" | "curated offer" | "curated want";
+
+export interface SourcedEvidence extends RowEvidence {
+  source: EvidenceSource;
+}
+
+const CURATED_WHY = /^curated (\S+)$/;
+
+/** A tag's clause text with a curated id resolved through the table, so no bare id reaches the caller (D49). */
+function sourcedTag(card: SynergyCard, tag: string, curated: CuratedClauses): { text: string; curated: boolean } {
+  const hit = [...card.tags.offers, ...card.tags.wants].find((t) => t.tag === tag);
+  const id = hit === undefined ? undefined : CURATED_WHY.exec(hit.why)?.[1];
+  if (id === undefined) return { text: tagEvidence(card, tag), curated: false };
+  const clause = curated.get(id);
+  return { text: clause === undefined ? MISSING : clip(clause), curated: true };
+}
+
+/** edgeEvidence with curated tags resolved and a `source` naming the curated side. */
+export function sourcedEvidenceOf(e: PairEdge, byKey: ReadonlyMap<string, SynergyCard>, rows: readonly PairRowHit[], curated: CuratedClauses): SourcedEvidence[] {
+  const a = byKey.get(e.a) as SynergyCard;
+  const b = byKey.get(e.b) as SynergyCard;
+  const seen = new Set<string>();
+  const out: SourcedEvidence[] = [];
+  for (const r of rows) {
+    const offer = sourcedTag(a, r.offer, curated);
+    const want = sourcedTag(b, r.want, curated);
+    const source: EvidenceSource = offer.curated ? (want.curated ? "curated" : "curated offer") : want.curated ? "curated want" : "grammar";
+    const key = `${offer.text}\u0000${want.text}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ offer: offer.text, want: want.text, source });
+  }
+  return out;
+}

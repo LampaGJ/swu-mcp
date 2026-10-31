@@ -41,6 +41,8 @@ export interface Subject {
   tokensOnly?: boolean;
   /** Keywords the target must have ("friendly units with Hidden"). */
   keywords?: string[];
+  /** The effect may act on several subjects at once ("Defeat any number of friendly units"). */
+  many?: boolean;
 }
 
 /** What an upgrade or Pilot may attach to: the printed "Attach to ..." line, or a Vehicle for Piloting (CR: "attach to a friendly Vehicle unit"). */
@@ -80,6 +82,7 @@ export interface TagQualifier {
 interface TargetLite {
   side?: string;
   kind?: string;
+  quant?: string;
   arena?: string;
   restrict?: string[];
   text?: string;
@@ -228,6 +231,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     nonLeader: restrict.includes("non_leader") || restrict.includes("non-leader") || undefined,
     aspect,
     ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
+    ...(t.quant === "any_number" || t.quant === "all" ? { many: true } : {}),
   };
 }
 

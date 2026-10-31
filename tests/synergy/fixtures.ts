@@ -21,7 +21,7 @@ interface CardSpec {
   offers?: string[];
   wants?: string[];
   /** One ability per entry: repeat class, clause text, optional effect magnitude. */
-  abilities?: { repeat: string; text: string; n?: number | string; trigger?: string; triggerText?: string; effect?: { cat: string; target: { side: string } } }[];
+  abilities?: { repeat: string; text: string; n?: number | string; trigger?: string; triggerText?: string; effect?: { cat: string; token?: string; target?: { side: string; kind?: string; quant?: string; text?: string } } }[];
   /** Tag -> why, when the test needs the origin lookup to find an ability. */
   why?: Record<string, string>;
   subtitle?: string | null;

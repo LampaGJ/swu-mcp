@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createServer } from "../../src/create-server.js";
 import { loadStore } from "../../src/data.js";
-import { createSynergyContext } from "../../src/synergy/context.js";
+import { createSynergyContext, DEFAULT_CURATED_PATH, loadCuratedClauses } from "../../src/synergy/context.js";
 import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrios, fungibleSubstitutes, SYNERGY_TOOLS } from "../../src/tools/synergy.js";
 import { offerTargetSide } from "../../src/synergy/qualifiers.js";
 import type { SynergyCard } from "../../src/synergy/schema.js";
@@ -216,7 +216,7 @@ describe("find_trios", () => {
     const out = body(findTrios(chainCtx, {}));
     expect(out.trios.every((t: any) => t.totalCost <= 9)).toBe(true);
     expect(out.trios.map((t: any) => t.cardKeys)).not.toContain("1|2|3");
-    const wide = body(findTrios(chainCtx, { maxTotalCost: 20 }));
+    const wide = body(findTrios(chainCtx, { maxTotalCost: 20, cardKey: "3" }));
     expect(wide.trios.map((t: any) => t.cardKeys)).toContain("1|2|3");
     expect(body(findTrios(chainCtx, { cardKey: "4" })).trios.every((t: any) => t.cardKeys.split("|").includes("4"))).toBe(true);
     expect(findTrios(chainCtx, { shape: "loop" }).content[0].text).toContain("shown: 0");
@@ -619,15 +619,15 @@ describe("find_pairings and find_trios with a base (D45)", () => {
   const trioCtx = createSynergyContext(vigilance, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["1", 0.5]]));
 
   it("fixes the trio search to the leader's and the base's icons, and names the base", () => {
-    const withBase = body(findTrios(trioCtx, { leader: "L", base: "Z" }));
+    const withBase = body(findTrios(trioCtx, { leader: "L", base: "Z", minPlayed: 0 }));
     expect(withBase.trios[0].aspectPair).toBe("leader Command+Heroism / base Vigilance");
     expect(withBase.trios[0].penalty).toBe(0);
     expect(withBase.leader.base).toEqual({ cardKey: "Z", title: "Vigilance Base", aspects: "Vigilance" });
-    const without = body(findTrios(trioCtx, { leader: "L" }));
+    const without = body(findTrios(trioCtx, { leader: "L", minPlayed: 0 }));
     expect(without.trios[0].aspectPair).toBe("leader Command+Heroism / base neutral");
     expect(without.trios[0].penalty).toBe(6);
     expect(without.leader.baseNote).toBe("base not given: penalties measured against the leader's icons only");
-    expect(body(findTrios(trioCtx, { leader: "L", base: "Z", baseAspects: [] })).trios[0].aspectPair).toBe("leader Command+Heroism / base neutral");
+    expect(body(findTrios(trioCtx, { leader: "L", base: "Z", baseAspects: [], minPlayed: 0 })).trios[0].aspectPair).toBe("leader Command+Heroism / base neutral");
   });
 });
 
@@ -657,7 +657,7 @@ describe("find_trios with a leader", () => {
     const out = body(findTrios(leaderCtx, { leader: "L" }));
     expect(out.trios[0].cardKeys).toBe("1|2|3");
     expect(out.trios[0].leaderInclusion).toEqual([0.5, 0.5, 0.9]);
-    const delta = out.trios.find((t: any) => t.cardKeys === "1|2|4");
+    const delta = body(findTrios(leaderCtx, { leader: "L", cardKey: "4" })).trios.find((t: any) => t.cardKeys === "1|2|4");
     expect(delta.leaderInclusion).toEqual([0.5, 0.5, null]);
     expect(delta.rank).toBeCloseTo(delta.score * Math.cbrt(1 * 1 * 0.5), 3);
   });
@@ -1000,12 +1000,115 @@ describe("find_trios with a leader ranks by the geometric mean of the member fac
   const ctxG = createSynergyContext(trioCards, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["3", 0.1]]));
 
   it("one played card does not carry two unplayed ones past a better-scored trio", () => {
-    const out = body(findTrios(ctxG, { leader: "L", withAlternatives: false, evidence: false }));
-    expect(out.trios.map((t: any) => t.cardKeys)).toEqual(["1|2|4", "1|2|3"]);
-    const charlie = out.trios[1];
+    const out = body(findTrios(ctxG, { leader: "L", minPlayed: 0, withAlternatives: false, evidence: false }));
+    // 1|2|3 shares Alpha and Bravo with 1|2|4, so it is listed as that row's variant (#134).
+    expect(out.trios.map((t: any) => t.cardKeys)).toEqual(["1|2|4"]);
+    expect(out.trios[0].variants.map((v: any) => v.title)).toEqual(["Charlie"]);
+    const charlie = body(findTrios(ctxG, { leader: "L", minPlayed: 0, cardKey: "3", withAlternatives: false, evidence: false })).trios[0];
+    expect(charlie.cardKeys).toBe("1|2|3");
+    expect(out.trios[0].rank).toBeGreaterThan(charlie.rank);
     expect(charlie.leaderInclusion).toEqual([null, null, 0.1]);
     expect(charlie.rank).toBeCloseTo(charlie.score * Math.cbrt(0.5 * 0.5 * 0.6), 3);
     expect(out.trios[0].rank).toBeCloseTo(out.trios[0].score * 0.5, 3);
     expect(out.leader.note).toContain("cube root");
+  });
+});
+
+describe("find_trios played members and de-duplication (#134)", () => {
+  const cards = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("Z", "Base", { type: "Base", icons: ["Command"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("5", "Echo", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Command"], cost: 3 }),
+    mk("4", "Delta", { wants: ["wants:y"], aspects: ["Command"], cost: 1 }),
+  ];
+  const rows = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const plainCtx = createSynergyContext(cards, rows);
+  const leaderCtx = createSynergyContext(cards, rows, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["1", 0.5], ["2", 0.6], ["3", 0.9]]));
+  const keysOf = (out: Record<string, any>): string[] => out.trios.map((t: any) => t.cardKeys);
+  const played = (t: any): number => t.leaderInclusion.filter((x: number | null) => x !== null && x > 0).length;
+
+  it("with a leader keeps only trios with at least two played members by default, and the note says so", () => {
+    const out = body(findTrios(leaderCtx, { leader: "L", withAlternatives: false }));
+    expect(out.trios.length).toBeGreaterThan(0);
+    expect(out.trios.every((t: any) => played(t) >= 2)).toBe(true);
+    expect(out.leader.minPlayed).toBe(2);
+    expect(out.leader.note).toContain("at least 2 members with leaderInclusion > 0");
+  });
+
+  it("takes minPlayed 0 to 3 and rejects it without leader weighting", () => {
+    const three = body(findTrios(leaderCtx, { leader: "L", minPlayed: 3, withAlternatives: false }));
+    expect(keysOf(three)).toEqual(["1|2|3"]);
+    expect(three.trios[0].variants).toBeUndefined();
+    const zero = body(findTrios(leaderCtx, { leader: "L", minPlayed: 0, withAlternatives: false }));
+    const all = [...keysOf(zero), ...zero.trios.flatMap((t: any) => (t.variants ?? []).map((v: any) => v.title))];
+    expect(all).toContain("Delta");
+    expect(() => findTrios(leaderCtx, { leader: "L", minPlayed: 4 })).toThrow();
+    expect(findTrios(plainCtx, { minPlayed: 1 }).isError).toBe(true);
+    expect(body(findTrios(plainCtx, { minPlayed: 0 })).trios.length).toBeGreaterThan(0);
+  });
+
+  it("collapses rows that share two members into the best-ranked one and lists the other third members as variants", () => {
+    const out = body(findTrios(leaderCtx, { leader: "L", minPlayed: 0, withAlternatives: false }));
+    // 1|2|4, 5|2|3 and the convergent 1|5|2 each share two members with 1|2|3; 5|2|4 shares only Bravo.
+    expect(keysOf(out)).toEqual(["1|2|3", "5|2|4"]);
+    expect(out.trios[0].variants.map((v: any) => v.title)).toEqual(["Echo", "Delta"]);
+    expect(out.trios[0].variants[1]).toEqual({ title: "Delta", cost: 1, leaderInclusion: null });
+    expect(out.trios[1].variants).toBeUndefined();
+    expect(out.shown).toBe(2);
+  });
+
+  it("de-duplicates without a leader too, and its variants carry no leaderInclusion", () => {
+    const out = body(findTrios(plainCtx, { withAlternatives: false }));
+    const pairs = out.trios.map((t: any) => t.cardKeys.split("|"));
+    for (let i = 0; i < pairs.length; i++)
+      for (let j = i + 1; j < pairs.length; j++) expect(pairs[i].filter((k: string) => pairs[j].includes(k)).length).toBeLessThan(2);
+    expect(out.trios[0].variants.length).toBeGreaterThan(0);
+    expect(out.trios[0].variants[0].leaderInclusion).toBeUndefined();
+  });
+});
+
+describe("find_trios curated evidence (#134)", () => {
+  const rows = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "fill-discard", offers: { "offers:discard-own": 1 }, wants: { "wants:cards-in-discard": 1 } },
+  ]);
+  // The cards behind row 5 of the fifth judged session (Cad Bane / Nevarro City): both tags of their link came from the curated table.
+  const trooper = mk("08010045", "Reanimated Night Trooper", {
+    wants: ["wants:x"],
+    offers: ["offers:discard-own"],
+    why: { "wants:x": "text: When Defeated", "offers:discard-own": "curated cur-0141" },
+  });
+  const torture = mk("07010174", "0-0-0", { wants: ["wants:cards-in-discard"], why: { "wants:cards-in-discard": "curated cur-0124" } });
+  const feeder = mk("1", "Feeder", { offers: ["offers:x"], why: { "offers:x": "text: Defeat a friendly unit." } });
+  const realCtx = createSynergyContext([feeder, trooper, torture], rows, null, loadCuratedClauses(DEFAULT_CURATED_PATH));
+  const link = (ctx: ReturnType<typeof createSynergyContext>, name: string) =>
+    body(findTrios(ctx, { withAlternatives: false })).trios[0].evidence.find((e: any) => e.link === name);
+
+  it("shows the committed curated clause text with source curated, never a bare curated id", () => {
+    const row = link(realCtx, "Reanimated Night Trooper > 0-0-0");
+    expect(row).toEqual({
+      link: "Reanimated Night Trooper > 0-0-0",
+      offer: "text: You may discard it.",
+      want: "text: You may put a Aggression card from your discard pile on the bottom of your deck.",
+      source: "curated",
+    });
+    expect(link(realCtx, "Feeder > Reanimated Night Trooper").source).toBe("grammar");
+    expect(findTrios(realCtx, {}).content[0].text).not.toMatch(/curated cur-\d/);
+  });
+
+  it("names the curated side on a synthetic entry, and never prints the id when the table lacks it", () => {
+    const synth = mk("9", "Synth", { offers: ["offers:x"], why: { "offers:x": "curated cur-9001" } });
+    const curated = new Map([["cur-9001", "text: A synthetic curated clause."]]);
+    const ctx = createSynergyContext([synth, trooper, torture], rows, null, curated);
+    expect(link(ctx, "Synth > Reanimated Night Trooper")).toMatchObject({ offer: "text: A synthetic curated clause.", want: "text: When Defeated", source: "curated offer" });
+    expect(link(ctx, "Reanimated Night Trooper > 0-0-0")).toMatchObject({ offer: "(no clause text recorded)", want: "(no clause text recorded)", source: "curated" });
+    const bare = createSynergyContext([synth, trooper, torture], rows);
+    expect(findTrios(bare, {}).content[0].text).not.toMatch(/curated cur-\d/);
   });
 });

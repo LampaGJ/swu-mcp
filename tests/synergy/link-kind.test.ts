@@ -145,7 +145,7 @@ describe("trios and traits", () => {
   it("find_trios takes the same traits parameter", () => {
     const ctx = createSynergyContext(trioCards, COMMITTED_TABLE);
     expect(body(findTrios(ctx, { evidence: false, withAlternatives: false })).trios ?? []).toEqual([]);
-    const out = body(findTrios(ctx, { traits: "include", evidence: false, withAlternatives: false }));
+    const out = body(findTrios(ctx, { traits: "include", cardKey: "C", evidence: false, withAlternatives: false }));
     expect(out.trios.map((t: any) => t.cardKeys)).toContain("A|B|C");
   });
 });

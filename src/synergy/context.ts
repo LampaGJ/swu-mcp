@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { loadCuratedTable } from "../ability-grammar/curated.js";
 import { indexLeaderCards, type LeaderCardsIndex } from "../meta/schema.js";
 import { REPO_ROOT } from "../paths.js";
 import { coverCombos, type CoverCombo } from "./cover.js";
+import type { CuratedClauses } from "./evidence.js";
 import { buildFungibility, type FungibilityIndex } from "./fungibility.js";
 import { buildPairGraph, type PairGraph } from "./graph.js";
 import { complementarityTableSchema, synergyCardsSchema, type ComplementarityTable, type SynergyCard } from "./schema.js";
@@ -20,6 +22,13 @@ import { searchTrios, type TrioSearchOptions, type TrioSearchResult } from "./tr
  */
 
 export const DEFAULT_TABLE_PATH = path.join(REPO_ROOT, "data/complementarity.json");
+export const DEFAULT_CURATED_PATH = path.join(REPO_ROOT, "data/curated-rules.json");
+
+/** Curated id -> "face: sourceClause", through the table's own consumer gate (schema and clause hashes). */
+export function loadCuratedClauses(file: string): CuratedClauses {
+  const { table } = loadCuratedTable(readFileSync(file, "utf8"));
+  return new Map(table.entries.map((e) => [e.id, `${e.face}: ${e.sourceClause}`]));
+}
 
 export interface SynergyContext {
   cards: readonly SynergyCard[];
@@ -28,10 +37,17 @@ export interface SynergyContext {
   combos: readonly CoverCombo[];
   /** Per-leader tournament card inclusion; null when the package has no meta/leader-cards.json. */
   leaderCards: LeaderCardsIndex | null;
+  /** Clause text of the curated entries, so evidence for a curated tag quotes the clause (D49); null when the table is absent. */
+  curated: CuratedClauses | null;
   trios(options?: TrioSearchOptions): TrioSearchResult;
 }
 
-export function createSynergyContext(cards: readonly SynergyCard[], table: ComplementarityTable, leaderCards: LeaderCardsIndex | null = null): SynergyContext {
+export function createSynergyContext(
+  cards: readonly SynergyCard[],
+  table: ComplementarityTable,
+  leaderCards: LeaderCardsIndex | null = null,
+  curated: CuratedClauses | null = null,
+): SynergyContext {
   const graph = buildPairGraph(cards, table);
   const combos = coverCombos(cards);
   let full: TrioSearchResult | undefined;
@@ -40,6 +56,7 @@ export function createSynergyContext(cards: readonly SynergyCard[], table: Compl
     graph,
     combos,
     leaderCards,
+    curated,
     fungibility: buildFungibility(cards),
     trios: (options) => {
       if (options === undefined) return (full ??= searchTrios(graph, combos));
@@ -55,5 +72,6 @@ export function loadSynergyContext(dataDir: string, tablePath = DEFAULT_TABLE_PA
   const table = complementarityTableSchema.parse(JSON.parse(readFileSync(tablePath, "utf8")));
   const leaderCardsPath = path.join(dataDir, "meta/leader-cards.json");
   const leaderCards = existsSync(leaderCardsPath) ? indexLeaderCards(JSON.parse(readFileSync(leaderCardsPath, "utf8"))) : null;
-  return createSynergyContext(cards, table, leaderCards);
+  const curated = existsSync(DEFAULT_CURATED_PATH) ? loadCuratedClauses(DEFAULT_CURATED_PATH) : null;
+  return createSynergyContext(cards, table, leaderCards, curated);
 }

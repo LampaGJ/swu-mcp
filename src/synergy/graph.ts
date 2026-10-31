@@ -34,6 +34,8 @@ export interface PairGraph {
   conditionalByKey: ReadonlyMap<string, PairEdge>;
   /** The traits a card puts on the board: its own as a unit, and those of the tokens it creates. */
   boardTraits(cardKey: string): readonly string[];
+  /** The qualifiers of one tag on one card, from the same cache the pair matcher uses; undefined for an unknown card. */
+  qualifier(cardKey: string, side: "offers" | "wants", tag: string): TagQualifier | undefined;
   rowCounts: Readonly<Record<string, number>>;
   exampleChecks: readonly ExampleCheck[];
 }
@@ -249,6 +251,10 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
     conditional: conditionalList,
     conditionalByKey: conditional,
     boardTraits: boardTraitsOf,
+    qualifier: (cardKey, side, tag) => {
+      const c = byKey.get(cardKey);
+      return c === undefined ? undefined : qualifier(c, side, tag);
+    },
     exampleChecks,
     rowCounts: Object.fromEntries(
       Object.keys(rowCounts)

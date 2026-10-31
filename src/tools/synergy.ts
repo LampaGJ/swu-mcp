@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { packageDirOf, type CardStore } from "../data.js";
 import type { LeaderCardsEntry, LeaderCardRow } from "../meta/schema.js";
-import { CANDIDATE_STATUS, clip, evidenceOf, tagEvidence } from "../synergy/evidence.js";
+import { CANDIDATE_STATUS, clip, evidenceOf, sourcedEvidenceOf, tagEvidence } from "../synergy/evidence.js";
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
 import {
@@ -152,6 +152,15 @@ export const findTriosShape = {
   leader: leaderArg,
   base: baseArg,
   weighting: weightingArg,
+  minPlayed: z
+    .number()
+    .int()
+    .min(0)
+    .max(3)
+    .optional()
+    .describe(
+      "Fewest members the leader's tournament decklists play (leaderInclusion > 0). Default 2 when the rank is leader-weighted, 0 otherwise; above 0 it needs a leader with decklist data and weighting: leader",
+    ),
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(50).default(10),
 };
@@ -439,6 +448,10 @@ function penaltyFor(
 /** Stable partition: the first `perLink` rows of each link keep their place, later rows of that link follow them, both runs in input order. */
 /** How many times the default per-shape trio pool the leader-weighted ranking reads. */
 const LEADER_TRIO_POOL = 5;
+const DEFAULT_MIN_PLAYED = 2;
+/** Third members listed under one kept trio; the rest of a popular pair's partners add length, not choice. */
+const MAX_TRIO_VARIANTS = 5;
+const NO_CURATED: ReadonlyMap<string, string> = new Map();
 
 export function deferRepeatedLinks<T>(
   rows: readonly T[],
@@ -577,25 +590,43 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   const leaderAspects = args.leaderAspects ?? leader?.card.structured.aspectIcons;
   const baseAspects = args.baseAspects ?? base?.structured.aspectIcons;
   const fixed = leaderAspects !== undefined || baseAspects !== undefined;
+  const minPlayed = args.minPlayed ?? (weight === undefined ? 0 : DEFAULT_MIN_PLAYED);
+  if (minPlayed > 0 && weight === undefined) {
+    return fail("minPlayed counts members the leader's tournament decklists play: give a leader with decklist data and weighting: leader, or minPlayed: 0");
+  }
+  const played = (keys: readonly string[]): number => (weight === undefined ? 0 : keys.filter((k) => (inclusionOf(weight, k) ?? 0) > 0).length);
   const search = ctx.trios({
     combos: fixed ? fixedCombo(leaderAspects, baseAspects) : undefined,
     // The leader weight can lift a trio from below the unweighted cut, so the weighted ranking draws from a deeper pool.
     ...(weight === undefined ? {} : { keep: DEFAULT_TRIO_KEEP * LEADER_TRIO_POOL }),
     traits: args.traits,
     ...(args.includeLeaders ? { memberTypes: new Set([...DECK_CARD_TYPES, "Leader", "Base"]) } : {}),
-    accept: (keys, cost) => cost <= args.maxTotalCost && (args.cardKey === undefined || keys.includes(args.cardKey)),
+    accept: (keys, cost) => cost <= args.maxTotalCost && (args.cardKey === undefined || keys.includes(args.cardKey)) && (minPlayed === 0 || played(keys) >= minPlayed),
   });
   const shapes = args.shape === undefined ? TRIO_SHAPES : [args.shape];
   // The geometric mean of the member factors, so one played card cannot carry two unplayed ones (D46).
   const rankOf = (t: TrioRecord): number =>
     weight === undefined ? t.score : r3(t.score * Math.cbrt([t.cardA, t.cardB, t.cardC].reduce((f, k) => f * leaderFactor(weight, k), 1)));
-  const merged: TrioRecord[] = shapes
-    .flatMap((s) => search.trios[s])
-    .sort(weight === undefined ? trioOrder : (x, y) => rankOf(y) - rankOf(x) || trioOrder(x, y))
-    .slice(0, args.limit);
-  const prefer = fixed ? [...(leaderAspects ?? []), ...(baseAspects ?? [])] : undefined;
-  const trios = merged.map((t) => {
+  const ranked: TrioRecord[] = shapes.flatMap((s) => search.trios[s]).sort(weight === undefined ? trioOrder : (x, y) => rankOf(y) - rankOf(x) || trioOrder(x, y));
+  // D49: a trio sharing two members with a better-ranked one is that trio with another third card, listed as its variant.
+  const kept: { t: TrioRecord; keys: string[]; variants: string[] }[] = [];
+  for (const t of ranked) {
     const keys = [t.cardA, t.cardB, t.cardC];
+    const host = kept.find((k) => k.keys.filter((x) => keys.includes(x)).length >= 2);
+    if (host === undefined) {
+      kept.push({ t, keys, variants: [] });
+      continue;
+    }
+    const third = keys.find((x) => !host.keys.includes(x));
+    if (third !== undefined && !host.variants.includes(third) && host.variants.length < MAX_TRIO_VARIANTS) host.variants.push(third);
+  }
+  const shown = kept.slice(0, args.limit);
+  const variantOf = (k: string): Record<string, unknown> => {
+    const c = ctx.graph.byKey.get(k) as SynergyCard;
+    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }) };
+  };
+  const prefer = fixed ? [...(leaderAspects ?? []), ...(baseAspects ?? [])] : undefined;
+  const trios = shown.map(({ t, keys, variants }) => {
     const out: Record<string, unknown> = {
       cards: keys.map((k) => cardLabel(ctx.graph.byKey.get(k) as SynergyCard)).join(" + "),
       cardKeys: keys.join("|"),
@@ -607,10 +638,11 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
       reasons: t.reasons,
       score: t.score,
       ...(weight === undefined ? {} : { rank: rankOf(t), leaderInclusion: keys.map((k) => inclusionOf(weight, k)) }),
+      ...(variants.length === 0 ? {} : { variants: variants.map(variantOf) }),
     };
     if (args.evidence) {
       out.evidence = trioLinks(ctx.graph, t).flatMap((e) =>
-        evidenceOf(e, ctx.graph.byKey, primaryRows(e).slice(0, 1)).map((ev) => ({
+        sourcedEvidenceOf(e, ctx.graph.byKey, primaryRows(e).slice(0, 1), ctx.curated ?? NO_CURATED).map((ev) => ({
           link: `${cardLabel(ctx.graph.byKey.get(e.a) as SynergyCard)} > ${cardLabel(ctx.graph.byKey.get(e.b) as SynergyCard)}`,
           ...ev,
         })),
@@ -640,12 +672,22 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   return ok({
     counts: { chain: search.counts.chain, convergent: search.counts.convergent, loop: search.counts.loop },
     maxTotalCost: args.maxTotalCost,
-    ...(leader === undefined ? {} : { leader: leaderBlock(leader, "trio", base, args.leaderAspects === undefined && args.baseAspects === undefined, { ...picked, weighted: args.weighting === "leader" }) }),
+    ...(leader === undefined ? {} : { leader: playedNote(leaderBlock(leader, "trio", base, args.leaderAspects === undefined && args.baseAspects === undefined, { ...picked, weighted: args.weighting === "leader" }), weight === undefined ? undefined : minPlayed) }),
     traits: args.traits,
     partnerFilter: partnerFilterNote(args.includeLeaders),
     shown: trios.length,
     trios,
   });
+}
+
+/** The leader block of a weighted trio search names minPlayed and states it in the note. */
+function playedNote(block: Record<string, unknown>, minPlayed: number | undefined): Record<string, unknown> {
+  if (minPlayed === undefined) return block;
+  const rule =
+    minPlayed === 0
+      ? "minPlayed 0: a trio may hold members the leader's decks do not play."
+      : `minPlayed ${minPlayed}: every trio has at least ${minPlayed} member${minPlayed === 1 ? "" : "s"} with leaderInclusion > 0.`;
+  return { ...block, minPlayed, note: `${String(block.note)} ${rule}` };
 }
 
 export function explainSynergy(ctx: SynergyContext, input: unknown): ToolResult {
@@ -785,7 +827,7 @@ export const SYNERGY_TOOLS = {
   find_trios: {
     title: "Find trios",
     description:
-      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot (only Premier-pool cards that keep the slot's links with the other members, so a substitute never bypasses a trait restriction the slot card met), with the clause text behind each link (status: candidate). Trios hold only cards a deck's 50 can hold; includeLeaders: true admits Leader and Base cards (partnerFilter states which applied). Give leader (cardKey or exact title) to weight each trio by the leader's tournament decklists: every member carries leaderInclusion (null when unplayed), rank is the score times the geometric mean (cube root of the product) of the member factors so one played card cannot carry two unplayed ones, leaderAspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and baseAspects default to its icons and the leader block names the base; with a leader alone the base is not fixed and the leader block says so. A Leader cardKey with no leader argument defaults the leader (and its most-played tournament base) the same way, with defaulted: true in the leader block; weighting: none turns that off. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot (only Premier-pool cards that keep the slot's links with the other members, so a substitute never bypasses a trait restriction the slot card met), with the clause text behind each link (status: candidate). Trios hold only cards a deck's 50 can hold; includeLeaders: true admits Leader and Base cards (partnerFilter states which applied). Give leader (cardKey or exact title) to weight each trio by the leader's tournament decklists: every member carries leaderInclusion (null when unplayed), rank is the score times the geometric mean (cube root of the product) of the member factors so one played card cannot carry two unplayed ones, leaderAspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and baseAspects default to its icons and the leader block names the base; with a leader alone the base is not fixed and the leader block says so. A Leader cardKey with no leader argument defaults the leader (and its most-played tournament base) the same way, with defaulted: true in the leader block; weighting: none turns that off. With a leader-weighted rank, minPlayed (default 2) keeps only trios with at least that many members the leader's decks play. A trio sharing two members with a better-ranked one is folded into it, and its third card is listed under variants. A loop whose single-target outlet would have to defeat both the token it is fed and the unit an upgrade sits on is not listed as a loop. Evidence for a curated tag quotes the curated clause, and source names the curated side. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findTriosShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input, inPremierPool(store))),
   },

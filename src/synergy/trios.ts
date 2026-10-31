@@ -14,6 +14,8 @@ import { TRIO_SHAPES } from "./schema.js";
  */
 
 export const TRIO_FANOUT = 30;
+/** Offers that remove a friendly unit from play; one such effect consumes one subject unless its target takes several (D49). */
+const CONSUMING_OFFERS: ReadonlySet<string> = new Set(["offers:defeat-friendly-unit", "offers:defeat-any-unit"]);
 export const TRIO_MEMBER_TYPES: ReadonlySet<string> = new Set(["Unit", "Event", "Upgrade"]);
 export const DEFAULT_TRIO_KEEP = 100;
 
@@ -119,6 +121,34 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   /** A conditional link (#108) holds only when the trio's third member puts its needed traits on the board. */
   const supplied = (links: readonly PairEdge[], keys: readonly string[]): boolean =>
     links.every((e) => e.needs === undefined || keys.some((k) => k !== e.a && k !== e.b && e.needs?.every((t) => graph.boardTraits(k).includes(t))));
+  /** The subject a loop link needs its outlet to consume: the wanting unit, or the host an upgrade sits on through the next link. */
+  const consumedFor = (out: PairEdge, next: PairEdge): string | undefined => {
+    const rows = linkRows(out);
+    const self = rows.every((r) => CONSUMING_OFFERS.has(r.offer) && graph.qualifier(out.b, "wants", r.want)?.onSelf === true);
+    if (rows.length === 0 || !self) return undefined;
+    const wanting = member(out.b);
+    if (wanting.type === "Unit") return `card:${out.b}`;
+    const attaches = linkRows(next).length > 0 && linkRows(next).every((r) => r.offer === "offers:upgrade-to-attach");
+    return wanting.type === "Upgrade" && attaches ? `card:${next.b}` : undefined;
+  };
+  /** The subject a fodder link hands its outlet: the tokens the feeding card creates (Subject.supplies, D42). */
+  const suppliedTo = (into: PairEdge): string | undefined => {
+    const rows = linkRows(into);
+    if (rows.length === 0 || !rows.every((r) => r.offer === "offers:create-token-units" && r.want === "wants:sac-fodder")) return undefined;
+    const tokens = rows.flatMap((r) => (graph.qualifier(into.a, "offers", r.offer)?.subject.supplies ?? []).map((t) => t.token));
+    return `tokens:${into.a}:${[...new Set(tokens)].sort(cmp).join(",")}`;
+  };
+  const consumesMany = (out: PairEdge): boolean => linkRows(out).some((r) => graph.qualifier(out.a, "offers", r.offer)?.subject.many === true);
+  /**
+   * D49: a loop fires in one game only when no outlet is claimed by two links for different subjects, as when the fodder
+   * link hands it a token while the next link needs the unit carrying an upgrade defeated. links[i].a is links[i + 1]'s source.
+   */
+  const playableLoop = (links: readonly PairEdge[]): boolean =>
+    links.every((out, i) => {
+      const consumed = consumedFor(out, links[(i + 1) % 3]);
+      const supplied = suppliedTo(links[(i + 2) % 3]);
+      return consumed === undefined || supplied === undefined || consumed === supplied || consumesMany(out);
+    });
   const sameName = (...ks: string[]): boolean => new Set(ks.map((k) => member(k).title)).size < ks.length;
   const costOf = (...ks: string[]): number => ks.reduce((s, k) => s + (member(k).structured.cost ?? 0), 0);
 
@@ -154,7 +184,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         const a = e3.b;
         if (a === b || a === c) continue;
         const e1 = edgeByKey.get(`${a}>${b}`);
-        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c])) continue;
+        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c]) || !playableLoop([e1, e2, e3])) continue;
         counts.loop++;
         const keys: [string, string, string] = [a, b, c];
         if (accept(keys, costOf(...keys))) keepTop(trios.loop, record("loop", keys, [e1, e2, e3]));
