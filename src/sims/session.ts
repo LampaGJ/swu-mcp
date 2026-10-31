@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { compareCodePoints } from "../swu/canonical.js";
 import { enumerateActions, promptKindOf, type CanonicalAction, type PromptKind } from "./actions.js";
-import { rngCursor, type EngineGame, type EnginePlayer, type StartedGame } from "./engine.js";
-import { PolicyChain, type ChainChoice } from "./policy.js";
+import { bookmarkState, engineStateSha, releaseBookmark, rngCursor, rollbackState, type EngineBookmark, type EngineGame, type EnginePlayer, type StartedGame } from "./engine.js";
+import { PolicyChain, type ChainChoice, type SearchBookmark, type SearchHooks } from "./policy.js";
 import { DecisionRandom, type Seat } from "./rng.js";
 import { legalActionsSha256, type CompactDecision, type FullDecision, type MatchFooter, type RngCursor } from "./schemas.js";
 
@@ -12,7 +12,9 @@ import { legalActionsSha256, type CompactDecision, type FullDecision, type Match
  * take over (#110, #141), writing the decision records replay asserts against.
  * @tacticalObjective Visits the two seats in a fixed cycle, as the spike did, but keeps the cycle position across a
  * pause, so pausing changes where the loop yields, not what it does. Every engine or driver exception ends the match
- * with endCondition error and a null winner; nothing is dropped.
+ * with endCondition error and a null winner; nothing is dropped. Each policy view carries bookmark and rollback hooks
+ * for a search (rung 3, #163); after a rollback the chosen action is re-enumerated, because the rebuilt prompt has a
+ * new uuid.
  */
 
 export type EndCondition = MatchFooter["result"]["endCondition"];
@@ -34,6 +36,41 @@ export interface SessionOptions {
   recordMode: RecordMode;
   playedMetric: number;
   maxDecisions?: number;
+  /** forceteki's SnapshotType.Manual (Constants.ts:23); the engine module passes its own value. */
+  manualSnapshotType?: unknown;
+  /** Fidelity mode: every rollback must restore the full state fingerprint taken at its bookmark, or the match errors. */
+  verifyRollback?: boolean;
+}
+
+/**
+ * sha256 over what a rollback must restore: the engine RNG and the adapter's draw count, round, phase, the active
+ * player, every card of both players in every zone (uuid, name, damage, exhaustion in play), base damage, the
+ * statistics log length and both seats' canonical legal actions. Slow; fidelity checks only.
+ */
+export function stateFingerprint(game: EngineGame, players: readonly [EnginePlayer, EnginePlayer], cardKeys: Readonly<Record<string, string>>, draws: number): string {
+  const h = createHash("sha256");
+  /* eslint-disable @typescript-eslint/no-explicit-any -- engine objects */
+  const g = game as any;
+  const safe = (f: () => unknown): string => {
+    try {
+      return String(f());
+    } catch {
+      return "-";
+    }
+  };
+  h.update(`${engineStateSha(game)}|${draws}|${game.roundNumber}|${game.currentPhase}|${safe(() => g.actionPhaseActivePlayer?.id)}|${g.statsTracker.cardMetrics.length}\n`);
+  for (const p of players as readonly any[]) {
+    for (const zone of ["hand", "drawDeck", "resources", "discard"]) h.update(`${zone}:${((p[zone] ?? []) as any[]).map((c) => `${c.uuid}=${c.internalName}`).join(",")}\n`);
+    h.update(`arena:${(p.getArenaCards() as any[]).map((c) => `${c.uuid}=${c.internalName}/${safe(() => c.damage)}/${safe(() => c.exhausted)}`).join(",")}|base:${p.base.damage}\n`);
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  for (const seat of [1, 2] as const) h.update(`legal${seat}:${enumerateActions(game, players, seat, cardKeys).map((a) => a.action.descriptor).join(";")}\n`);
+  return h.digest("hex");
+}
+
+interface Mark extends SearchBookmark {
+  engine: EngineBookmark;
+  fingerprint: string | null;
 }
 
 export interface RunOptions {
@@ -60,6 +97,11 @@ export class Session {
   errorStack: string | null = null;
   readonly coverage = { decisions: [0, 0] as [number, number], answered: [0, 0] as [number, number] };
   readonly gaps = { cardRefs: 0, nullCardKey: 0 };
+  /** Search work done through the hooks: bookmarks, rollbacks, and rollbacks checked against the full fingerprint. */
+  readonly search = { bookmarks: 0, rollbacks: 0, verified: 0 };
+  /** The bookmark and rollback hooks each seat's policy view carries. */
+  readonly hooks: readonly [SearchHooks, SearchHooks];
+  private rolledBack = false;
   private cursor: 0 | 1 = 0;
   private actedThisPass = false;
   private idle = 0;
@@ -73,6 +115,33 @@ export class Session {
     this.started = started;
     this.game = started.game;
     this.players = started.players;
+    this.hooks = [this.searchHooks(1), this.searchHooks(2)];
+  }
+
+  private searchHooks(seat: Seat): SearchHooks {
+    const manual = this.opts.manualSnapshotType ?? "manual";
+    const fingerprint = (): string | null => (this.opts.verifyRollback === true ? stateFingerprint(this.game, this.players, this.opts.cardKeys, this.started.rng.draws) : null);
+    return {
+      cardKeys: this.opts.cardKeys,
+      seed: this.opts.seed,
+      bookmark: (): Mark => {
+        this.search.bookmarks += 1;
+        const engine = bookmarkState(this.game, this.players[seat - 1], this.started.rng);
+        return { snapshotId: engine.snapshotId, engine, fingerprint: fingerprint() };
+      },
+      rollback: (b: SearchBookmark): void => {
+        const m = b as Mark;
+        rollbackState(this.game, m.engine, this.started.rng, manual);
+        this.search.rollbacks += 1;
+        this.rolledBack = true;
+        if (m.fingerprint !== null) {
+          const now = fingerprint();
+          if (now !== m.fingerprint) throw new Error(`rollback fidelity: state after rollback ${now} differs from bookmark ${m.fingerprint} at decision ${this.k}`);
+          this.search.verified += 1;
+        }
+      },
+      release: (b: SearchBookmark): void => releaseBookmark(this.game, (b as Mark).engine),
+    };
   }
 
   get ended(): boolean {
@@ -149,12 +218,19 @@ export class Session {
       forced === null
         ? chain.choose(
             actions.map((a) => a.action),
-            { seat, k: this.k, promptKind: pending.promptKind, multi: this.players[seat - 1].promptState.selectCardMode === "multiple", game: this.game, players: this.players },
+            { seat, k: this.k, promptKind: pending.promptKind, multi: this.players[seat - 1].promptState.selectCardMode === "multiple", game: this.game, players: this.players, search: this.hooks[seat - 1] },
             random.next,
           )
         : { index: forced, policy: chain.top, fallback: "forced", utilities: null };
     if (opts.check?.(pending, choice, this) === true) return false;
-    const chosen = actions[choice.index];
+    let chosen = actions[choice.index];
+    if (this.rolledBack) {
+      // A rollback rebuilds the prompt with a new uuid, so the actions enumerated before the search submit to a dead prompt.
+      this.rolledBack = false;
+      const fresh = enumerateActions(this.game, this.players, seat, this.opts.cardKeys);
+      if (fresh.length !== actions.length || fresh.some((a, i) => a.action.descriptor !== actions[i].action.descriptor)) throw new Error(`legal actions changed across a search rollback at decision ${this.k}`);
+      chosen = fresh[choice.index];
+    }
     this.coverage.decisions[seat - 1] += 1;
     if (choice.policy === chain.top && forced === null) this.coverage.answered[seat - 1] += 1;
     for (const a of actions) {

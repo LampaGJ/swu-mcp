@@ -22,6 +22,24 @@ export interface PolicyView {
   multi: boolean;
   game: EngineGame;
   players: readonly [EnginePlayer, EnginePlayer];
+  /** Bookmark and rollback for a search (rung 3); a policy that uses it must leave the state as it found it. */
+  search?: SearchHooks;
+}
+
+export interface SearchBookmark {
+  readonly snapshotId: number;
+}
+
+export interface SearchHooks {
+  cardKeys: Readonly<Record<string, string>>;
+  /** The match seed, for a search's own counter-based randomness. */
+  seed: string;
+  /** Marks the current state; throws when the match runs with undo off. */
+  bookmark(): SearchBookmark;
+  /** Puts the bookmarked state back, the engine RNG and its draw counter included. */
+  rollback(b: SearchBookmark): void;
+  /** Frees the bookmark once the decision is made. */
+  release(b: SearchBookmark): void;
 }
 
 export interface PolicyChoice {

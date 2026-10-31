@@ -575,5 +575,10 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
 
   const choose = (answers: readonly LegalAnswer[], view: GameView): number => tryChoose(answers, view) ?? randomIndex(answers, view);
 
-  return { id: opts.id, version: opts.version, rung: opts.rung, params: { ...params }, choose, tryChoose, stats };
+  const pure = (answers: readonly LegalAnswer[], view: GameView): number | null => {
+    const c = answers.length === 0 ? null : decide(answers, view);
+    return c !== null && c.index >= 0 && c.index < answers.length ? c.index : null;
+  };
+
+  return { id: opts.id, version: opts.version, rung: opts.rung, params: { ...params }, choose, tryChoose, decide: pure, stats };
 }

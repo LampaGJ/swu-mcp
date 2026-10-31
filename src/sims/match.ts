@@ -94,7 +94,7 @@ export interface PlayedMatch {
 }
 
 /** Plays one match. An exception while building the game also ends as an error record; nothing is dropped. */
-export async function playMatch(engine: Engine, spec: MatchSpec, cardKeys: Readonly<Record<string, string>>, opts: { maxDecisions?: number } = {}): Promise<PlayedMatch> {
+export async function playMatch(engine: Engine, spec: MatchSpec, cardKeys: Readonly<Record<string, string>>, opts: { maxDecisions?: number; verifyRollback?: boolean } = {}): Promise<PlayedMatch> {
   const header = buildHeader(engine, spec, cardKeys);
   return playHeader(engine, header, cardKeys, spec.recordMode, opts);
 }
@@ -114,7 +114,7 @@ export function setupErrorFooter(message: string): MatchFooter {
   };
 }
 
-async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonly<Record<string, string>>, mode: RecordMode, opts: { maxDecisions?: number }): Promise<PlayedMatch> {
+async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonly<Record<string, string>>, mode: RecordMode, opts: { maxDecisions?: number; verifyRollback?: boolean }): Promise<PlayedMatch> {
   let started;
   try {
     started = await startGame(engine, [header.decks[0].engineList, header.decks[1].engineList], { engineSeed: header.rng.engineSeed, undo: header.engine.undoMode === "free" });
@@ -128,6 +128,8 @@ async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonl
     recordMode: mode,
     playedMetric: engine.playedMetric,
     maxDecisions: opts.maxDecisions,
+    manualSnapshotType: engine.SnapshotType.Manual,
+    verifyRollback: opts.verifyRollback,
   });
   session.run();
   const record: MatchRecord = { header, decisions: mode === "none" ? [] : session.decisions, footer: session.footer() };
@@ -153,9 +155,13 @@ const CURSOR_FIELDS = ["engineDraws", "engineStateSha", "botDraws"] as const;
 /**
  * Replays a record: same engine pin, seed, decks and policies; at every k asserts actor, legalActionsSha256, the three
  * rngCursor fields and (after the policy chose) the chosen descriptor; a full record also asserts round, phase and
- * promptKind. Stops at the first mismatch. A clean replay must end on the logged result and traceSha256.
+ * promptKind. Stops at the first mismatch. A clean replay must end on the logged result, footer and traceSha256.
+ *
+ * byDescriptor applies each logged descriptor without asking the policies: the replay oracle for a search policy
+ * (rung 3), whose trials and rollbacks then never run, so any residue a rollback left shows as a mismatch. Bot draws
+ * are not compared in that mode, because the policies that drew them are not consulted.
  */
-export async function replayMatch(engine: Engine, input: unknown, cardKeys: Readonly<Record<string, string>>, opts: { maxDecisions?: number } = {}): Promise<ReplayResult> {
+export async function replayMatch(engine: Engine, input: unknown, cardKeys: Readonly<Record<string, string>>, opts: { maxDecisions?: number; byDescriptor?: boolean } = {}): Promise<ReplayResult> {
   const record = matchRecordSchema.parse(input);
   const h = record.header;
   if (h.recordMode === "none") return { ok: false, decisions: 0, traceSha256: "", mismatch: { k: null, field: "header.recordMode", expected: "full or compact", actual: "none" } };
@@ -175,10 +181,23 @@ export async function replayMatch(engine: Engine, input: unknown, cardKeys: Read
     recordMode: "none",
     playedMetric: engine.playedMetric,
     maxDecisions: opts.maxDecisions,
+    manualSnapshotType: engine.SnapshotType.Manual,
   });
   let mismatch: ReplayMismatch | null = null;
   const full = (d: FullDecision | CompactDecision): d is FullDecision => typeof d.chosen === "object";
+  const logged = (k: number): string | undefined => {
+    const rec = record.decisions[k];
+    return rec === undefined ? undefined : full(rec) ? rec.chosen.descriptor : rec.chosen;
+  };
+  const cursorFields = opts.byDescriptor === true ? CURSOR_FIELDS.filter((f) => f !== "botDraws") : CURSOR_FIELDS;
   session.run({
+    force:
+      opts.byDescriptor === true
+        ? (p) => {
+            const i = p.actions.findIndex((a) => a.action.descriptor === logged(p.k));
+            return i < 0 ? null : i;
+          }
+        : undefined,
     until: (p) => {
       const rec = record.decisions[p.k];
       if (rec === undefined) {
@@ -188,7 +207,7 @@ export async function replayMatch(engine: Engine, input: unknown, cardKeys: Read
       const checks: [string, unknown, unknown][] = [
         ["actor", rec.actor, p.seat],
         ["legalActionsSha256", rec.legalActionsSha256, p.legalActionsSha256],
-        ...CURSOR_FIELDS.map((f): [string, unknown, unknown] => [`rngCursor.${f}`, rec.rngCursor[f], p.rngCursor[f]]),
+        ...cursorFields.map((f): [string, unknown, unknown] => [`rngCursor.${f}`, rec.rngCursor[f], p.rngCursor[f]]),
       ];
       if (full(rec)) {
         checks.push(["round", rec.round, session.game.roundNumber], ["phase", rec.phase, session.game.currentPhase], ["promptKind", rec.promptKind, p.promptKind]);
@@ -206,8 +225,7 @@ export async function replayMatch(engine: Engine, input: unknown, cardKeys: Read
       return false;
     },
     check: (p, choice) => {
-      const rec = record.decisions[p.k];
-      const expected = full(rec) ? rec.chosen.descriptor : rec.chosen;
+      const expected = logged(p.k);
       const actual = p.actions[choice.index].action.descriptor;
       if (expected === actual) return false;
       mismatch = { k: p.k, field: "chosen", expected, actual };
@@ -217,10 +235,14 @@ export async function replayMatch(engine: Engine, input: unknown, cardKeys: Read
   const trace = session.traceSha256();
   if (mismatch !== null) return fail(mismatch, session.k, trace);
   const footer = session.footer();
+  const cursor = (c: MatchFooter["finalRngCursor"]): string => canonicalJson(opts.byDescriptor === true ? { engineDraws: c.engineDraws, engineStateSha: c.engineStateSha } : c);
   for (const [field, expected, actual] of [
     ["result", canonicalJson(record.footer.result), canonicalJson(footer.result)],
     ["error", record.footer.error, footer.error],
-    ["finalRngCursor", canonicalJson(record.footer.finalRngCursor), canonicalJson(footer.finalRngCursor)],
+    ["finalRngCursor", cursor(record.footer.finalRngCursor), cursor(footer.finalRngCursor)],
+    ["cardsPlayed", canonicalJson(record.footer.cardsPlayed), canonicalJson(footer.cardsPlayed)],
+    ["baseDamage", canonicalJson(record.footer.baseDamage), canonicalJson(footer.baseDamage)],
+    ["endBoard", canonicalJson(record.footer.endBoard), canonicalJson(footer.endBoard)],
     ["traceSha256", record.footer.traceSha256, trace],
   ] as const)
     if (expected !== actual) return fail({ k: footer.result.decisions, field, expected, actual }, session.k, trace);

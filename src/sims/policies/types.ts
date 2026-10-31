@@ -184,6 +184,8 @@ export interface BotPolicy {
   choose: Policy;
   /** Like choose, but returns null where no rule applies, so a policy chain can hand the decision to the rung below. */
   tryChoose: (answers: readonly LegalAnswer[], view: GameView) => number | null;
+  /** The rule answer with no side effect (no counters, no loop guard), for a search that asks the rung for its order (rung 3). */
+  decide?: (answers: readonly LegalAnswer[], view: GameView) => number | null;
   stats: PolicyStats;
 }
 

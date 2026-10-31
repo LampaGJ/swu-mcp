@@ -73,7 +73,8 @@ export async function main(argv: string[] = process.argv.slice(2), defaults: { w
     }
   } else {
     const pool = await createPool({ workers, forceteki: values.forceteki, pin: ctx.engine.pin, memo: !values["no-memo"] });
-    const chunk = Math.max(workers * 4, 48);
+    // Every batch waits for its slowest game (measured x1.14 wall time at 4 per worker); 40 per worker keeps ticks pollable.
+    const chunk = Math.max(workers * 40, 48);
     try {
       for (let i = 0; i < specs.length; i += chunk) {
         records.push(...(await pool.run({ specs: specs.slice(i, i + chunk), cardKeys: ctx.bridge.engineCardKeys, maxDecisions })));

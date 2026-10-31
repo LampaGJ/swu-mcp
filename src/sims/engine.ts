@@ -82,7 +82,8 @@ export interface EngineGame {
   readonly roundNumber: number;
   readonly randomGenerator: EngineRandom;
   readonly statsTracker: { cardMetrics: readonly { metric: number; cardInternalName: string; player: string }[] };
-  readonly snapshotManager: { currentSnapshotId: unknown };
+  readonly snapshotManager: { currentSnapshotId: unknown; rollbackTo(settings: unknown): { success: boolean; entryPoint?: unknown } };
+  postRollbackOperations(entryPoint: unknown): void;
   readonly actionPhaseActivePlayer: EnginePlayer | null;
   getPlayerById(id: string): EnginePlayer;
   cardClicked(playerId: string, cardUuid: string): unknown;
@@ -290,3 +291,54 @@ export function engineStateSha(game: EngineGame): string {
 }
 
 export const rngCursor = (game: EngineGame, rng: RngCounter, botDraws: number): RngCursor => ({ engineDraws: rng.draws, engineStateSha: engineStateSha(game), botDraws });
+
+/** A manual bookmark of the current timepoint snapshot, plus the adapter state a rollback must put back. */
+export interface EngineBookmark {
+  playerId: string;
+  snapshotId: number;
+  draws: number;
+  stateSha: string;
+  /** Length of the engine's chat log, a plain array outside the snapshotted state. */
+  chatLength: number;
+}
+
+const chatOf = (game: EngineGame): unknown[] | null => {
+  const messages = (game as unknown as { gameChat?: { messages?: unknown } }).gameChat?.messages;
+  return Array.isArray(messages) ? messages : null;
+};
+
+/**
+ * forceteki's manual snapshot bookmarks the snapshot taken when the current timepoint began (SnapshotManager.ts:214),
+ * so it equals the live state only where nothing has happened since: at a main-action prompt. Undo mode must be on.
+ */
+export function bookmarkState(game: EngineGame, player: EnginePlayer, rng: RngCounter): EngineBookmark {
+  const snapshotId = game.takeManualSnapshot(player);
+  if (snapshotId < 0) throw new Error("undo mode is off: a search needs the match started with undo on");
+  return { playerId: player.id, snapshotId, draws: rng.draws, stateSha: engineStateSha(game), chatLength: chatOf(game)?.length ?? 0 };
+}
+
+/**
+ * Restores a bookmark with the two calls Game.rollbackToSnapshot makes (Game.ts:2167, :2175), without its two full
+ * game-state captures and its chat alert per rollback. The draw counter lives in this adapter, outside the engine
+ * state, so it is put back here, and the engine RNG state must come back with the snapshot. The chat log is not
+ * snapshotted either (GameChat.ts:12): it is cut back to its bookmarked length, or a search's playouts fill a
+ * worker's heap (a 128 MB worker ran out during game-length playouts).
+ */
+export function rollbackState(game: EngineGame, b: EngineBookmark, rng: RngCounter, manualType: unknown): void {
+  const r = game.snapshotManager.rollbackTo({ type: manualType, playerId: b.playerId, snapshotId: b.snapshotId });
+  if (!r.success) throw new Error(`rollback to snapshot ${b.snapshotId} failed`);
+  game.postRollbackOperations(r.entryPoint);
+  rng.draws = b.draws;
+  const chat = chatOf(game);
+  if (chat !== null && chat.length > b.chatLength) chat.length = b.chatLength;
+  const sha = engineStateSha(game);
+  if (sha !== b.stateSha) throw new Error(`rollback restored engine RNG ${sha}, expected ${b.stateSha}`);
+}
+
+/** Drops a bookmark: forceteki keeps manual snapshots per id until removed, each holding a serialised game state. */
+export function releaseBookmark(game: EngineGame, b: EngineBookmark): void {
+  const store = (game.snapshotManager as unknown as { manualSnapshots?: Map<string, { removeSnapshot?: (id: number) => void }> }).manualSnapshots;
+  const map = store?.get(b.playerId);
+  if (typeof map?.removeSnapshot !== "function") throw new Error("forceteki manual snapshot store changed shape; bookmark not released");
+  map.removeSnapshot(b.snapshotId);
+}

@@ -1,5 +1,7 @@
 import { parsePolicySpec, policyHeader as specHeader, policyOf, type PolicySpec } from "./index.js";
 import { ViewBuilder, type TypedAction } from "./engine-view.js";
+import { flatMonteCarloPolicy } from "./flat-mc.js";
+import { lookaheadPolicy } from "./rung3.js";
 import type { CardTables } from "./tables.js";
 import type { BotPolicy } from "./types.js";
 
@@ -10,7 +12,8 @@ import type { BotPolicy } from "./types.js";
  * @tacticalObjective Wraps a BotPolicy as a driver Policy: the view is read from the live engine through ViewBuilder,
  * the answers from the driver's canonical actions; a prompt no rule covers returns null, so the chain descends to
  * rung 0 and the driver's coverage counter records it. `registerRungs` adds named chains to the driver's POLICIES
- * registry. The driver's types are restated structurally here, so this file compiles with or without the driver.
+ * registry, the two rung 3 searches included (rung3.ts top-K lookahead, flat-mc.ts flat Monte Carlo, #163). The
+ * driver's types are restated structurally here, so this file compiles with or without the driver.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- engine objects are untyped JavaScript */
@@ -21,6 +24,8 @@ export interface DriverPolicyView {
   multi: boolean;
   game: any;
   players: readonly any[];
+  /** The session's bookmark and rollback hooks (src/sims/policy.ts SearchHooks); only rung 3 reads them. */
+  search?: unknown;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -36,10 +41,10 @@ export interface DriverPolicy {
 
 /** The pinned tables a rung reads, by name, for the match header (only the ones it reads). */
 export function inputsOf(spec: PolicySpec, tables: CardTables): Record<string, string> {
-  if (spec.kind !== "rules") return {};
+  if (spec.kind !== "rules" && spec.kind !== "lookahead" && spec.kind !== "montecarlo") return {};
   const p = tables.pins;
   const base: Record<string, string> = { scores: p.scoresSha256, coefficients: p.coefficientsSha256, features: p.featuresSha256 };
-  if (spec.rung === 1) return base;
+  if (spec.kind === "lookahead" || spec.kind === "montecarlo" || spec.rung === 1) return base;
   if (p.pairsSha256 === null || p.pairPrecisionSha256 === null || p.complementaritySha256 === null) throw new Error("rung 2 needs the pair table loaded");
   return { ...base, leaderCards: p.leaderCardsSha256, pairs: p.pairsSha256, pairPrecision: p.pairPrecisionSha256, complementarity: p.complementaritySha256 };
 }
@@ -132,6 +137,18 @@ export function registerRungs(
       continue;
     }
     const spec = parsePolicySpec(name);
+    if (spec.kind === "montecarlo") {
+      const inputs = inputsOf(spec, tables);
+      const params = spec.params;
+      registry[name] = () => makeChain([flatMonteCarloPolicy(tables, params, inputs)]);
+      continue;
+    }
+    if (spec.kind === "lookahead") {
+      const inputs = inputsOf(spec, tables);
+      const params = spec.params;
+      registry[name] = () => makeChain([lookaheadPolicy(tables, params, inputs)]);
+      continue;
+    }
     if (spec.kind !== "rules") throw new Error(`policy ${name} has no driver form`);
     const inputs = inputsOf(spec, tables);
     registry[name] = () => {
