@@ -432,3 +432,55 @@ describe("candidate evidence", () => {
       expect(SYNERGY_TOOLS[name].description).toContain("candidate");
   });
 });
+
+describe("fungible_substitutes widening", () => {
+  const lone = (key: string, title: string, cost: number, n: number, extra: Record<string, unknown> = {}) =>
+    mk(key, title, {
+      cost,
+      aspects: ["Command"],
+      arenas: ["Ground"],
+      wants: ["wants:self-damaged"],
+      why: { "wants:self-damaged": `text: ${title} wants` },
+      abilities: [{ repeat: "static", text: `${title} wants`, n }],
+      ...extra,
+    });
+  const wideCtx = createSynergyContext(
+    [
+      lone("slot", "Lone Slot", 3, 1),
+      lone("near", "Next Band", 5, 1, { aspects: ["Aggression"] }),
+      lone("big", "Bigger", 5, 3, { aspects: ["Cunning"] }),
+      lone("space", "Other Arena", 4, 1, { arenas: ["Space"] }),
+    ],
+    COMMITTED_TABLE,
+  );
+
+  it("reports widened: 'cost band' and tags the substitutes found that way", () => {
+    const out = body(fungibleSubstitutes(wideCtx, { cardKey: "slot", tag: "wants:self-damaged", evidence: false }));
+    const role = out.roles[0];
+    expect(role.classSize).toBe(1);
+    expect(role.widened).toBe("cost band");
+    const cards = role.substitutes.flatMap((g: any) => g.cards);
+    expect(cards.map((c: any) => c.cardKey)).toEqual(["near"]);
+    expect(cards.every((c: any) => c.match === "widened")).toBe(true);
+  });
+
+  it("widens past magnitude only when the cost-band step finds nothing, and keeps the arena", () => {
+    const only = createSynergyContext([lone("slot", "Lone Slot", 3, 1), lone("big", "Bigger", 5, 3), lone("space", "Other Arena", 4, 3, { arenas: ["Space"] })], COMMITTED_TABLE);
+    const role = body(fungibleSubstitutes(only, { cardKey: "slot", tag: "wants:self-damaged", evidence: false })).roles[0];
+    expect(role.widened).toBe("cost band + magnitude");
+    expect(role.substitutes.flatMap((g: any) => g.cards.map((c: any) => [c.cardKey, c.match]))).toEqual([["big", "widened"]]);
+  });
+
+  it("reports widened: null, and no match field, when the exact class has other members", () => {
+    const role = body(fungibleSubstitutes(ctx, { cardKey: "1", tag: "offers:damage-friendly-unit" })).roles[0];
+    expect(role.widened).toBeNull();
+    expect(role.substitutes.flatMap((g: any) => g.cards).some((c: any) => "match" in c)).toBe(false);
+  });
+
+  it("reports widened: null with no substitutes when widening finds nothing", () => {
+    const alone = createSynergyContext([lone("slot", "Lone Slot", 3, 1), lone("far", "Far", 9, 1)], COMMITTED_TABLE);
+    const role = body(fungibleSubstitutes(alone, { cardKey: "slot", tag: "wants:self-damaged", evidence: false })).roles[0];
+    expect(role.widened).toBeNull();
+    expect(role.substitutes).toEqual([]);
+  });
+});

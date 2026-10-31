@@ -92,7 +92,7 @@ Synergy and combos
 
 Fungibility and substitutes
 
-- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect, with the role's clause text for the slot card and each substitute and `status: candidate`.
+- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect, with the role's clause text for the slot card and each substitute and `status: candidate`. A card whose class holds no other member is retried with the cost band relaxed, then with magnitude ignored; `widened` names the step and those substitutes carry `match: widened`.
 
 Market and play data
 

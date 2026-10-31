@@ -8,6 +8,7 @@ import {
   roleOf,
   roleSignatures,
   substitutesFor,
+  widenedSubstitutes,
 } from "../../src/synergy/fungibility.js";
 import { mk } from "./fixtures.js";
 
@@ -199,5 +200,74 @@ describe("substitutes by aspect", () => {
     const common = commonMembers(idx, "a", ["offers:draw", "wants:self-damaged"]);
     expect(common.members).toEqual(["a", "b"]);
     expect(commonMembers(idx, "a", ["offers:heal"]).members).toEqual([]);
+  });
+});
+
+describe("widened substitutes for a slot with no other class member", () => {
+  const wants = (key: string, title: string, cost: number, extra: Record<string, unknown> = {}, n = 1) =>
+    mk(key, title, {
+      cost,
+      aspects: ["Command"],
+      arenas: ["Ground"],
+      wants: ["wants:self-damaged"],
+      why: { "wants:self-damaged": `text: ${title} wants` },
+      abilities: [{ repeat: "static", text: `${title} wants`, n }],
+      ...extra,
+    });
+  const slot = wants("s", "Lone Slot", 3);
+  const keysOf = (r: ReturnType<typeof widenedSubstitutes>) => r?.groups.flatMap((g) => g.cards.map((c) => c.cardKey)).sort();
+
+  it("relaxes the cost band to the adjacent bands first and reports it", () => {
+    const index = buildFungibility([
+      slot,
+      wants("near", "Next Band", 5),
+      wants("lower", "Lower Band", 1),
+      wants("far", "Two Bands Away", 6),
+      wants("space", "Other Arena", 4, { arenas: ["Space"] }),
+      mk("ev", "Event Twin", { type: "Event", cost: 4, wants: ["wants:self-damaged"], why: { "wants:self-damaged": "text: x" } }),
+      wants("mag", "Bigger Magnitude", 4, {}, 3),
+    ]);
+    const cls = roleOf(index, "s", "wants:self-damaged") as NonNullable<ReturnType<typeof roleOf>>;
+    expect(cls.members).toEqual(["s"]);
+    const widened = widenedSubstitutes(index, cls, "s");
+    expect(widened?.widened).toBe("cost band");
+    expect(keysOf(widened)).toEqual(["lower", "near"]);
+  });
+
+  it("ignores magnitude next, still inside the adjacent bands, the same arena and the same type", () => {
+    const index = buildFungibility([
+      slot,
+      wants("mag", "Bigger Magnitude", 4, {}, 3),
+      wants("space", "Other Arena", 4, { arenas: ["Space"] }, 3),
+      wants("far", "Two Bands Away", 6, {}, 3),
+    ]);
+    const cls = roleOf(index, "s", "wants:self-damaged") as NonNullable<ReturnType<typeof roleOf>>;
+    const widened = widenedSubstitutes(index, cls, "s");
+    expect(widened?.widened).toBe("cost band + magnitude");
+    expect(keysOf(widened)).toEqual(["mag"]);
+  });
+
+  it("keeps the timing, and returns null when nothing qualifies", () => {
+    const index = buildFungibility([
+      slot,
+      wants("timing", "Other Timing", 3, { abilities: [{ repeat: "per_attack", text: "x", n: 1 }], why: { "wants:self-damaged": "text: x" } }),
+    ]);
+    const cls = roleOf(index, "s", "wants:self-damaged") as NonNullable<ReturnType<typeof roleOf>>;
+    expect(widenedSubstitutes(index, cls, "s")).toBeNull();
+  });
+
+  it("applies the same options as the exact search", () => {
+    const index = buildFungibility([slot, wants("near", "Next Band", 5)]);
+    const cls = roleOf(index, "s", "wants:self-damaged") as NonNullable<ReturnType<typeof roleOf>>;
+    expect(widenedSubstitutes(index, cls, "s", { maxCost: 4 })).toBeNull();
+    expect(keysOf(widenedSubstitutes(index, cls, "s", { maxCost: 5 }))).toEqual(["near"]);
+  });
+
+  it("widens a null-cost slot only against null-cost cards", () => {
+    const index = buildFungibility([
+      mk("n", "No Cost", { cost: null, wants: ["wants:self-damaged"], why: { "wants:self-damaged": "text: x" } }),
+      mk("c", "Costed", { cost: 2, wants: ["wants:self-damaged"], why: { "wants:self-damaged": "text: x" } }),
+    ]);
+    expect(widenedSubstitutes(index, roleOf(index, "n", "wants:self-damaged") as never, "n")).toBeNull();
   });
 });

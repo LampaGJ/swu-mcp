@@ -228,6 +228,56 @@ export function substitutesFor(
   );
 }
 
+export type Widening = "cost band" | "cost band + magnitude";
+
+export interface WidenedSubstitutes {
+  widened: Widening;
+  groups: SubstituteGroup[];
+}
+
+const COST_BAND_ORDER = ["0-1", "2-3", "4-5", "6+"];
+
+const adjacentBands = (a: string, b: string): boolean => {
+  const i = COST_BAND_ORDER.indexOf(a);
+  const j = COST_BAND_ORDER.indexOf(b);
+  return i < 0 || j < 0 ? a === b : Math.abs(i - j) <= 1;
+};
+
+/**
+ * Substitutes for a slot whose class holds no other card: the same tag, type, timing, target and
+ * arena, with the cost band relaxed to the adjacent bands, then with magnitude ignored as well.
+ * Null when neither step finds a card.
+ */
+export function widenedSubstitutes(
+  index: FungibilityIndex,
+  slotClass: RoleClass,
+  slotCardKey: string,
+  options: SubstituteOptions = {},
+): WidenedSubstitutes | null {
+  const steps: [Widening, (c: RoleClass) => boolean][] = [
+    ["cost band", (c) => c.magnitude === slotClass.magnitude],
+    ["cost band + magnitude", () => true],
+  ];
+  for (const [widened, magnitudeOk] of steps) {
+    const members = index.classes
+      .filter(
+        (c) =>
+          c.id !== slotClass.id &&
+          c.tag === slotClass.tag &&
+          c.typeGroup === slotClass.typeGroup &&
+          c.timing === slotClass.timing &&
+          c.target === slotClass.target &&
+          c.arena === slotClass.arena &&
+          adjacentBands(c.costBand, slotClass.costBand) &&
+          magnitudeOk(c),
+      )
+      .flatMap((c) => c.members);
+    const groups = substitutesFor(index, members, slotCardKey, options);
+    if (groups.length > 0) return { widened, groups };
+  }
+  return null;
+}
+
 export interface FungibilityStats {
   classes: number;
   cardsWithRole: number;

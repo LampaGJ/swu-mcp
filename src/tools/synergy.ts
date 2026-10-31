@@ -8,6 +8,7 @@ import {
   commonMembers,
   roleOf,
   substitutesFor,
+  widenedSubstitutes,
   type SubstituteGroup,
   type SubstituteOptions,
 } from "../synergy/fungibility.js";
@@ -180,14 +181,19 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
   const roles = tags.flatMap((tag) => {
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
     if (cls === undefined) return [];
-    const groups = substitutesFor(ctx.fungibility, cls.members, slot.cardKey, options);
-    const withText = (c: SubstituteGroup["cards"][number]) =>
-      args.evidence ? { ...c, text: tagEvidence(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : c;
+    const exact = substitutesFor(ctx.fungibility, cls.members, slot.cardKey, options);
+    const widenedResult = cls.members.length === 1 ? widenedSubstitutes(ctx.fungibility, cls, slot.cardKey, options) : null;
+    const groups = widenedResult?.groups ?? exact;
+    const withText = (c: SubstituteGroup["cards"][number]) => {
+      const marked = widenedResult === null ? c : { ...c, match: "widened" };
+      return args.evidence ? { ...marked, text: tagEvidence(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : marked;
+    };
     return [
       {
         classId: cls.id,
         tag,
         classSize: cls.members.length,
+        widened: widenedResult?.widened ?? null,
         aspectSets: new Set(cls.members.map((k) => aspectGroup(ctx.graph.byKey.get(k) as SynergyCard))).size,
         ...(args.evidence ? { slotText: tagEvidence(slot, tag) } : {}),
         substitutes: groups.map((g) => ({
@@ -511,7 +517,7 @@ export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
     shape: fungibleSubstitutesShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input)),
   },
