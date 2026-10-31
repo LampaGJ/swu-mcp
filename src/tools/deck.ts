@@ -399,6 +399,16 @@ function substituteCandidates(
   return out;
 }
 
+const arenaKey = (c: SynergyCard): string => (c.structured.arenas ?? []).map((a) => a.toLowerCase()).sort(compareCodePoints).join("+");
+
+/** A budget swap keeps the card's type, a unit's arena and its cost to within one. */
+function sameSlotShape(slotCard: SynergyCard, other: SynergyCard): boolean {
+  if (slotCard.type !== other.type) return false;
+  if (slotCard.type === "Unit" && arenaKey(slotCard) !== arenaKey(other)) return false;
+  const [a, b] = [slotCard.structured.cost, other.structured.cost];
+  return a === null || b === null ? a === b : Math.abs(a - b) <= 1;
+}
+
 const numberOr = (value: number | null | undefined, fallback: number): number => value ?? fallback;
 const playedBy = (row: { leaderInclusion?: number | null }): number => ((row.leaderInclusion ?? 0) > 0 ? 1 : 0);
 
@@ -1022,6 +1032,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
     const slotPenalty = supplied === undefined ? null : singlePenalty(line.syn, supplied);
     const alternatives = substituteCandidates(env, line, slot, supplied, inDeck)
       .flatMap((c) => {
+        if (!sameSlotShape(line.syn, c.syn)) return [];
         const cheaper = priceOf(env, c.syn.cardKey);
         if (cheaper === null || price - cheaper < args.minSaving || (args.maxPrice !== undefined && cheaper > args.maxPrice)) return [];
         const score = env.scores.get(c.syn.cardKey)?.playCalibrated ?? null;
@@ -1067,11 +1078,12 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   return ok({
     dataVersion: env.dataVersion,
     priceImport: { id: env.market.prices.priceImportId, date: env.market.prices.priceImportFinishedAt?.slice(0, 10) ?? null },
-    note: `Canonical normal prices, US only. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes this leader's decks play (leaderInclusion > 0) come first; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
+    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes this leader's decks play (leaderInclusion > 0) come first; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
     unresolved,
     unpriced,
     slotsWithAlternatives: slots.length,
-    bestSavingPerCopy: r2(sumBy(slots, (s) => s.count * s.alternatives[0].saved)),
+    savingPerCopy: r2(Math.max(0, ...slots.flatMap((s) => s.alternatives.map((a) => a.saved)))),
+    totalSaving: r2(sumBy(slots, (s) => s.count * s.alternatives[0].saved)),
     slots,
   });
 }

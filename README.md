@@ -128,7 +128,7 @@ Decks, collections and trades (lists arrive as `{card, count}` arguments, a card
 - `suggest_leader_base` leader and base aspect pairs ranked by the penalty for a pile of cards.
 - `playable_cards` the best cards for a leader and base, by cost, optionally filling the costs of a partial pile. Within a cost, cards that this leader's tournament decklists play most come first (`leaderInclusion`, with the population and window named), then the play-calibrated score; `rankBy: "score"`, or a data package without `meta/leader-cards.json`, ranks by score alone.
 - `fungible_in_deck` same-role substitutes per deck slot, least aspect penalty first.
-- `budget_alternatives` cheaper same-role substitutes with the saving and the score change. With a leader and base, a substitute never carries a higher aspect penalty than the card it replaces, and substitutes that the leader's tournament decks play come first (`leaderInclusion`).
+- `budget_alternatives` cheaper same-role substitutes with the saving and the score change. With a leader and base, a substitute never carries a higher aspect penalty than the card it replaces, and substitutes that the leader's tournament decks play come first (`leaderInclusion`). A substitute has the card's type, a unit's arena and a cost within 1 of the card's. `savingPerCopy` is the best single swap on one copy; `totalSaving` sums every slot's first swap times its copies.
 - `price_list` total US price of a deck or collection, with the top share and totals by first set, rarity, aspect or type.
 - `trade_balance` two lists compared by market price, low price and rubric score.
 - `owned_vs_needed` a decklist against an owned list: missing copies, cost to complete, owned substitutes.

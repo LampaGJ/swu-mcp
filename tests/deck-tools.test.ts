@@ -717,8 +717,50 @@ describe("budget_alternatives", () => {
         penalty: null,
       },
     ]);
-    expect(out.bestSavingPerCopy).toBe(1.4);
+    expect(out).not.toHaveProperty("bestSavingPerCopy");
+    expect(out.savingPerCopy).toBe(0.7);
+    expect(out.totalSaving).toBe(1.4);
     expect(out.unpriced).toEqual(["Filler 1"]);
+  });
+
+  describe("same cost band", () => {
+    const costly = (key: string, title: string, cost: number, normal: number): Spec => ({
+      key,
+      title,
+      cost,
+      icons: ["Command"],
+      offers: ["offers:draw-card"],
+      price: { normal },
+    });
+    const bandEnv = buildEnv([
+      ...SPECS,
+      costly("Q1", "Costly Seven", 7, 10),
+      costly("Q2", "Costly Six", 6, 3),
+      costly("Q3", "Costly Eleven", 11, 1),
+      costly("Q4", "Costly Eight", 8, 2),
+      costly("Q5", "Costly Nine", 9, 0.5),
+    ]);
+    const deck = lines(["Q1", 2], ["P1", 3]);
+
+    it("offers only substitutes within one cost of the replaced card, though they share its role class", () => {
+      const out = body(budgetAlternatives(bandEnv, { decklist: deck, minSaving: 0.25 }));
+      const slot = out.slots.find((s: { cardKey: string }) => s.cardKey === "Q1");
+      expect(slot.alternatives.map((a: { cardKey: string; cost: number }) => [a.cardKey, a.cost])).toEqual([
+        ["Q4", 8],
+        ["Q2", 6],
+      ]);
+      expect(out.note).toContain("cost within 1 of the card it replaces");
+    });
+
+    it("reports the best single swap per copy apart from the total over all copies", () => {
+      const out = body(budgetAlternatives(bandEnv, { decklist: deck, minSaving: 0.25 }));
+      expect(out.slots.map((s: { cardKey: string; count: number; alternatives: { saved: number }[] }) => [s.cardKey, s.count, s.alternatives[0].saved])).toEqual([
+        ["Q1", 2, 8],
+        ["P1", 3, 0.7],
+      ]);
+      expect(out.savingPerCopy).toBe(8);
+      expect(out.totalSaving).toBe(18.1);
+    });
   });
 
   it("adds the aspect penalty under a leader and base, and honours maxPrice and a smaller minSaving", () => {
