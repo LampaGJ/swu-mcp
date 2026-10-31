@@ -1,0 +1,98 @@
+[
+ {
+  "name": "KTOD",
+  "channelId": "UCpLg-Fi_v1A-NwhIWsrvY0Q",
+  "channelUrl": "https://www.youtube.com/channel/UCpLg-Fi_v1A-NwhIWsrvY0Q",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30). The 14 newest uploads are Star Wars: Unlimited (Show Me Your Deck, spoilers, deck deep dives). Its RSS feed answered 500/404 on 2026-10-30, so discovery falls back to yt-dlp. Bobby Sapphire hosts Show Me Your Deck here."
+ },
+ {
+  "name": "Veiled Shot",
+  "channelId": "UC3hSy-2NdTLLEFlaTd0w_sA",
+  "channelUrl": "https://www.youtube.com/channel/UC3hSy-2NdTLLEFlaTd0w_sA",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30). The 14 newest uploads are all Star Wars: Unlimited. RSS feed answered 404."
+ },
+ {
+  "name": "Underwhelming Barrage",
+  "channelId": "UCTj5AjrkiQjTTs50x74jEyQ",
+  "channelUrl": "https://www.youtube.com/channel/UCTj5AjrkiQjTTs50x74jEyQ",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); channel is titled 'Underwhelming Barrage - Star Wars: Unlimited TCG'. Uploads are infrequent (podcast episodes, spoiler specials). RSS feed answered 404."
+ },
+ {
+  "name": "Bobby Sapphire",
+  "channelId": null,
+  "channelUrl": null,
+  "resolvedBy": null,
+  "titleMatch": null,
+  "note": "Not resolved. A channel named BobbySapphire exists (UCr6TXzL5n50VHDudG_PDyIQ, @BobbySapphire) but its newest 40 uploads are Pokemon TCG Pocket with 0 Star Wars: Unlimited titles, so it was rejected. His SWU work is the Show Me Your Deck podcast on the KTOD channel (captured under KTOD) and guest spots on other channels. Set channelId by hand in this file if the owner names another channel."
+ },
+ {
+  "name": "Unplayable",
+  "channelId": "UCaRxbAydIP4P_nNjima5yJA",
+  "channelUrl": "https://www.youtube.com/channel/UCaRxbAydIP4P_nNjima5yJA",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); the generic name was disambiguated by content: the 14 newest uploads are Star Wars: Unlimited (Twin Suns, Homeworlds, Icons spoilers). The 'Unplayable and Golden Dice Podcast' collab appears under a different, unlisted channel and is not captured. RSS feed answered 404."
+ },
+ {
+  "name": "GarbageRollers",
+  "channelId": "UCwqLCVdCxF-_u8FJMohnZAg",
+  "channelUrl": "https://www.youtube.com/channel/UCwqLCVdCxF-_u8FJMohnZAg",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); channel is titled 'Garbage Rollers'. Search hits are Star Wars: Unlimited (unboxings, drafts, GenCon decks); upload cadence looks low. RSS feed answered 404."
+ },
+ {
+  "name": "Out Maneuver TCG",
+  "channelId": "UCXIISiQzBkKa5RE-zXBXzuw",
+  "channelUrl": "https://www.youtube.com/channel/UCXIISiQzBkKa5RE-zXBXzuw",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); channel is titled 'Outmaneuver - A Star Wars Unlimited Channel' (one word, not 'Out Maneuver'). Search hits are Star Wars: Unlimited. RSS feed answered 404."
+ },
+ {
+  "name": "Padawan Unlimited",
+  "channelId": "UCtJkrmhSAjCEaff5LIfX13w",
+  "channelUrl": "https://www.youtube.com/channel/UCtJkrmhSAjCEaff5LIfX13w",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30). The 14 newest uploads are Star Wars: Unlimited podcast episodes. RSS feed answered 404."
+ },
+ {
+  "name": "Unlimited Power",
+  "channelId": "UCyL8R22Kk7VwREQU_ZkJZzA",
+  "channelUrl": "https://www.youtube.com/channel/UCyL8R22Kk7VwREQU_ZkJZzA",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); the generic name also matches meme channels (Empire Fan Productions, Video Memes), which were rejected. This channel's 14 newest uploads are Star Wars: Unlimited feature matches and deck builds. RSS feed answered 404."
+ },
+ {
+  "name": "Mog TCG",
+  "channelId": "UCU0zH9o4c9LT0XymAH0rVdA",
+  "channelUrl": "https://www.youtube.com/channel/UCU0zH9o4c9LT0XymAH0rVdA",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); channel is titled 'MoG TCG'. Search hits are Star Wars: Unlimited gameplay and event coverage. RSS feed answered 404."
+ },
+ {
+  "name": "Gonk Gang",
+  "channelId": "UC3OOlDa7OzrtCTOzlxw-_qA",
+  "channelUrl": "https://www.youtube.com/channel/UC3OOlDa7OzrtCTOzlxw-_qA",
+  "resolvedBy": "search",
+  "titleMatch": null,
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30); channel is titled 'Gonk Gang TCG'. Search hits are Star Wars: Unlimited deck and meta videos. RSS feed answered 404."
+ },
+ {
+  "name": "Fantasy Flight Games",
+  "channelId": "UCBgLoSqJJnzp3eQdjDEdl9w",
+  "channelUrl": "https://www.youtube.com/channel/UCBgLoSqJJnzp3eQdjDEdl9w",
+  "resolvedBy": "search",
+  "titleMatch": "star wars|swu|unlimited",
+  "note": "Resolved by yt-dlp ytsearch (2026-10-30). The publisher's channel mixes board and card games (the newest uploads include Arkham Horror), so titleMatch keeps only titles naming Star Wars, SWU or Unlimited. RSS feed answered 404."
+ }
+]
