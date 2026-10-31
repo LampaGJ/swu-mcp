@@ -67,12 +67,14 @@ describe.skipIf(!hasData)("find_trios anchors to the owner's decklist (#159, D71
     }
   });
 
-  it("holds deck cards in every one of the first 50 trios, the unlocked ones ordered by deck members", () => {
+  // D73 replaced the order "more deck members first" with tiers (a trio that adds a card, then all-deck trios); the full tier test is in warrior-160-tools.test.ts.
+  it("holds deck cards in every one of the first 50 trios, the unlocked ones grouped by tier", () => {
     const trios = step6({ limit: 50 });
     const open = trios.filter((t) => ["needsHost", "baseLocked", "nameLocked", "needsForce", "needsTrait"].every((k) => t[k] === undefined));
     const counts = open.map((t) => t.deckMembers as number);
     expect(counts.every((n) => n >= 1)).toBe(true);
-    expect([...counts].sort((x, y) => y - x)).toEqual(counts);
+    const tiers = counts.map((n) => (n === 3 ? 1 : 0));
+    expect([...tiers].sort((x, y) => x - y)).toEqual(tiers);
   });
 
   it("keeps the unanchored answer without a decklist", () => {

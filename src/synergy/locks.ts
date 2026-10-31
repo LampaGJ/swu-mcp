@@ -51,3 +51,23 @@ export function baseLockOfAll(cards: readonly SynergyCard[], base: SynergyCard |
   const names = [...new Set(cards.flatMap((c) => baseLockOf(c) ?? []))].filter((n) => !baseMeets(base, n)).sort(compareCodePoints);
   return { names, unmet: names.length > 0 };
 }
+
+/** "you control another Wookiee unit or a Kashyyyk base": the named base may be one alternative of the condition. */
+const ENABLING_BASE = /\byou control (?:[^.,;]*? or )?an? ([A-Z][\w'-]*(?: [A-Z][\w'-]*)*) base\b/;
+
+/**
+ * Decision D73: the positive side of D59. The location and the clause when the given base meets a base name the
+ * card's own clause names, else null. An opponent's base ("If an opponent controls a Kashyyyk base") never counts.
+ */
+export function baseEnabledOf(card: SynergyCard, base: SynergyCard | undefined): { location: string; clause: string } | null {
+  if (base === undefined) return null;
+  for (const clause of clauseTextsOf(card)) {
+    const name = ENABLING_BASE.exec(clause)?.[1];
+    if (name !== undefined && !ASPECT_NAMES.has(name) && baseMeets(base, name)) return { location: name, clause };
+  }
+  return null;
+}
+
+/** The D73 output fields: the location the given base supplies and the clause that names it, present only while a base meets one. */
+export const enabledFields = (e: { location: string; clause: string } | null): Record<string, string> =>
+  e === null ? {} : { baseEnabled: e.location, baseEnabledClause: e.clause };

@@ -50,3 +50,19 @@ export function slotRoles(keys: readonly string[], links: readonly PairEdge[]): 
     wants: [...new Set(links.filter((e) => e.b === cardKey).map((e) => topRow(e).want))].sort(cmp),
   }));
 }
+
+/** Decision D73: rows that close a trio weakly: a threshold a ramp card only speeds up, and a replay of a unit whose play trigger is small. */
+export const WEAK_CLOSING_ROWS: ReadonlySet<string> = new Set(["ramp-threshold", "bounce-replay"]);
+
+/**
+ * Whether a link into the trio's payoff (every link of a loop) rests on weak rows alone, so a trio with a mechanical
+ * closing payoff ranks before it. A link that also carries any other mechanical row is not weak.
+ */
+export function hasWeakClosingLink(graph: PairGraph, t: Pick<TrioRecord, "cardA" | "cardB" | "cardC" | "shape">): boolean {
+  return trioLinks(graph, t)
+    .filter((e) => t.shape === "loop" || e.b === t.cardC)
+    .some((e) => {
+      const rows = primaryRows(e);
+      return rows.length > 0 && rows.every((r) => WEAK_CLOSING_ROWS.has(r.baseId));
+    });
+}

@@ -12,6 +12,7 @@ import type { ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
 import { clauseLock, isLocked, lockFields, lockSupply, type ClauseLock, type LockSupply } from "../synergy/clause-lock.js";
+import { baseEnabledOf, enabledFields } from "../synergy/locks.js";
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
 import { edgeOrder } from "../synergy/graph.js";
@@ -1211,6 +1212,9 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const locks = lockSupply(pair.leader.syn, pair.base.syn, partial.lines.map((l) => l.syn));
   const lockOf = new Map<string, ClauseLock>();
   const lockedRank = (cardKey: string | null): number => Number(cardKey !== null && isLocked(lockOf.get(cardKey) ?? { baseLocked: [], needsUnitAspect: [] }));
+  // D73: a card whose own clause names a base location that the given base meets.
+  const enabledOf = new Map<string, NonNullable<ReturnType<typeof baseEnabledOf>>>();
+  const enabledRank = (cardKey: string | null): number => Number(cardKey === null || !enabledOf.has(cardKey));
   const held = new Map(partial.lines.map((l) => [l.syn.cardKey, l.count]));
   const heldCosts = new Set(partial.lines.map((l) => l.syn.structured.cost));
   const leaderData = leaderDataFor(env, pair);
@@ -1238,6 +1242,8 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     }
     const lock = clauseLock(syn, locks);
     lockOf.set(syn.cardKey, lock);
+    const enabled = baseEnabledOf(syn, pair.base.syn);
+    if (enabled !== null) enabledOf.set(syn.cardKey, enabled);
     return [
       {
         cardKey: syn.cardKey,
@@ -1252,6 +1258,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
         price: priceOf(env, syn.cardKey),
         remainingCopies: remaining,
         ...lockFields(lock),
+        ...enabledFields(enabled),
       },
     ];
   });
@@ -1267,12 +1274,16 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const usedCosts = dropUnplayed && args.emptyCostsOnly ? leaderUsedCosts(env, leaderData) : null;
   const unusedCosts = usedCosts === null ? [] : allCosts.filter((c) => !usedCosts.has(c) && !heldCosts.has(c));
   const reported = (cost: number): boolean => usedCosts === null || usedCosts.has(cost);
-  const played = everPlayed.filter((r) => reported(r.cost));
+  // D73: a card the given base enables is listed even when the leader's lists play it under the floor; it still counts as no tournament-played card at its cost.
+  const enabledUnplayed = dropUnplayed ? eligible.filter((r) => enabledOf.has(r.cardKey) && (inclusionOf(r.cardKey) ?? 0) < LEADER_INCLUSION_FLOOR) : [];
+  const played = [...everPlayed, ...enabledUnplayed].filter((r) => reported(r.cost));
   played.sort(
     (a, b) =>
       a.cost - b.cost ||
       // D59: within a cost a card whose clause this leader, base and deck cannot meet follows the cards that can be played as printed.
       lockedRank(a.cardKey) - lockedRank(b.cardKey) ||
+      // D73: then a card the given base enables, ahead of the plays-most order.
+      enabledRank(a.cardKey) - enabledRank(b.cardKey) ||
       (rankedBy === "leader" ? numberOr(inclusionOf(b.cardKey), -1) - numberOr(inclusionOf(a.cardKey), -1) : 0) ||
       numberOr(b.playCalibrated, -Infinity) - numberOr(a.playCalibrated, -Infinity) ||
       a.penalty - b.penalty ||
@@ -1323,6 +1334,9 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   });
 }
 
+const ENABLED_NOTE =
+  "baseEnabled: <Location> with baseEnabledClause marks a card whose own clause names a base location that the given base meets (D73); it ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the floor (leaderInclusion null).";
+
 const floorText = (cost: number): string => `no tournament-played card (>= ${LEADER_INCLUSION_FLOOR * 100}%) at cost ${cost}`;
 
 function emptyCostsText(never: readonly number[], thin: readonly number[], unused: readonly number[]): string {
@@ -1368,7 +1382,7 @@ function noPlayedRow(cost: number, thin: boolean) {
 }
 
 const playableNote = (entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean, selection?: LeaderSelection): string =>
-  `${playableRankNote(entry, rankedBy, includeUnplayed, selection)} ${LOCK_NOTE}`;
+  `${playableRankNote(entry, rankedBy, includeUnplayed, selection)} ${LOCK_NOTE} ${ENABLED_NOTE}`;
 
 function playableRankNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean, selection?: LeaderSelection): string {
   const score = "play-calibrated score (fitted to Premier inclusion; rank-meaningful only)";
@@ -2078,7 +2092,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty. A card whose own clause names a base location that the given base meets carries baseEnabled: <Location> and baseEnabledClause (the clause quoted), ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the 2% floor (D73).",
     playableCardsShape,
     playableCards,
   ),

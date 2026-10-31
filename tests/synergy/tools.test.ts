@@ -535,8 +535,10 @@ describe("find_pairings with a leader", () => {
     const squad = out.pairings.find((p: any) => p.cardKey === "4");
     expect(grit.leaderInclusion).toBe(0.8);
     expect(squad.leaderInclusion).toBeNull();
-    expect(grit.rank).toBeCloseTo(rankOf(plain, "5") * 1.3, 3);
-    expect(squad.rank).toBeCloseTo(rankOf(plain, "4") * 0.5, 3);
+    // D73: the weighted rank divides the score by 1 + penalty where the plain rank divides it by 1 + penalty / 2.
+    const penaltyFix = (o: Record<string, any>, k: string) => (1 + o.pairings.find((p: any) => p.cardKey === k).penalty / 2) / (1 + o.pairings.find((p: any) => p.cardKey === k).penalty);
+    expect(grit.rank).toBeCloseTo(rankOf(plain, "5") * penaltyFix(plain, "5") * 1.3, 2);
+    expect(squad.rank).toBeCloseTo(rankOf(plain, "4") * penaltyFix(plain, "4") * 0.5, 2);
     expect(out.pairings[0].cardKey).toBe("5");
   });
 
@@ -1152,8 +1154,10 @@ describe("played means leaderInclusion of at least 2% in every synergy tool (#13
     const plain = body(findPairings(ctx, { cardKey: "1", aspects: ["Aggression", "Villainy"], withAlternatives: false }));
     const rankOf = (o: Record<string, any>, k: string) => o.pairings.find((p: any) => p.cardKey === k).rank as number;
     expect(out.pairings.find((p: any) => p.cardKey === "5").leaderInclusion).toBe(0.0039);
-    expect(rankOf(out, "5")).toBeCloseTo(rankOf(plain, "5") * 0.5, 3);
-    expect(rankOf(out, "4")).toBeCloseTo(rankOf(plain, "4") * 0.52, 3);
+    // D73: the weighted rank divides the score by 1 + penalty where the plain rank divides it by 1 + penalty / 2.
+    const penaltyFix = (k: string) => (1 + plain.pairings.find((p: any) => p.cardKey === k).penalty / 2) / (1 + plain.pairings.find((p: any) => p.cardKey === k).penalty);
+    expect(rankOf(out, "5")).toBeCloseTo(rankOf(plain, "5") * penaltyFix("5") * 0.5, 2);
+    expect(rankOf(out, "4")).toBeCloseTo(rankOf(plain, "4") * penaltyFix("4") * 0.52, 2);
   });
 
   it("fungible_substitutes: a card under the floor sorts with the unplayed ones, by score", () => {
