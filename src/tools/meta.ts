@@ -443,7 +443,7 @@ interface Answer {
   hits: { archetype: Archetype; hit: RelationHit }[];
 }
 
-export type EvidenceClass = "ok" | "negative" | "unmeasured";
+export type EvidenceClass = "ok" | "negative" | "unmeasured" | "thin-control";
 
 /** What a deck-evidence cell needs to be classed: the object cardDeckEvidence returns, or the reason it has none. */
 export type DeckEvidenceView =
@@ -469,6 +469,23 @@ const NEGATIVE_GAP = -0.05;
 /** Decision D36: a side with fewer decks than this is one deck's luck, however many matches it played. */
 export const MIN_EVIDENCE_DECKS = 10;
 
+/**
+ * Decision D36 (#139): the decks without the card are a control group only when they hold at least this share of the
+ * comparable decks, or CONTROL_DECKS_CAP decks, whichever is smaller. The decks with the card are not held to it: a
+ * rarely played card is still measured against the field (an owner question is open on that side).
+ */
+export const CONTROL_SHARE = 0.1;
+export const CONTROL_DECKS_CAP = 50;
+
+/** The without-card count and the comparable total when the without side is too small to be a control group; undefined otherwise. */
+export function thinControl(evidence: Exclude<DeckEvidenceView, string>): { decks: number; of: number } | undefined {
+  const of = evidence.withCard.decks + evidence.withoutCard.decks;
+  return evidence.withoutCard.decks < Math.min(of * CONTROL_SHARE, CONTROL_DECKS_CAP) ? { decks: evidence.withoutCard.decks, of } : undefined;
+}
+
+const thinControlText = (t: NonNullable<ReturnType<typeof thinControl>>): string =>
+  `the decks without this card are ${t.decks} of ${t.of} comparable decks: not a control group`;
+
 /** What keeps a side from being measured: fewer than minN decisive matches or fewer than MIN_EVIDENCE_DECKS decks. */
 export function thinSides(evidence: Exclude<DeckEvidenceView, string>, minN: number): string[] {
   const out: string[] = [];
@@ -483,13 +500,15 @@ export function thinSides(evidence: Exclude<DeckEvidenceView, string>, minN: num
 /**
  * Decision D36: unmeasured unless both sides have at least minN decisive matches. Then negative on a point gap below
  * -0.05 whatever the deck count (a thin negative still warns), else ok only when both sides also have MIN_EVIDENCE_DECKS
- * decks, else unmeasured.
+ * decks, else unmeasured. #139: an otherwise ok figure whose without-card side holds under the smaller of 10% of the
+ * comparable decks and 50 decks is thin-control, because a handful of decks that skip a staple are not a control group.
  */
 export function evidenceClassOf(evidence: DeckEvidenceView, minN: number): EvidenceClass {
   if (typeof evidence === "string" || evidence.difference === null) return "unmeasured";
   if (evidence.withCard.n < minN || evidence.withoutCard.n < minN) return "unmeasured";
   if (evidence.difference < NEGATIVE_GAP) return "negative";
-  return thinSides(evidence, minN).length > 0 ? "unmeasured" : "ok";
+  if (thinSides(evidence, minN).length > 0) return "unmeasured";
+  return thinControl(evidence) === undefined ? "ok" : "thin-control";
 }
 
 /** Decision D36: 0-2, 3-4, 5-6, 7+ and, last, an unknown cost. */
@@ -560,6 +579,10 @@ function cardDeckEvidence(env: MetaEnv, cardKey: string, ours: { archetype: stri
 function annotated(a: Answer, minN: number): Answer["evidence"] | (Exclude<DeckEvidenceView, string> & Record<string, string>) {
   if (typeof a.evidence === "string") return a.evidence;
   if (a.evidenceClass === "unmeasured") return { ...a.evidence, unmeasured: unmeasuredWhy(a.evidence, minN) };
+  if (a.evidenceClass === "thin-control") {
+    const thin = thinControl(a.evidence);
+    return thin === undefined ? a.evidence : { ...a.evidence, thinControl: thinControlText(thin) };
+  }
   if (a.evidenceClass === "negative" && a.evidence.withCard.decks < MIN_EVIDENCE_DECKS)
     return { ...a.evidence, thin: `(thin: ${a.evidence.withCard.decks} decks with the card)` };
   return a.evidence;
@@ -811,7 +834,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     },
     staples: staples.map(rowOf),
     additions: additions.map(rowOf),
-    note: `Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured; deckEvidence.unmeasured names the thin side. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
+    note: `Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
   });
 }
 

@@ -469,6 +469,71 @@ describe("answer rank", () => {
     expect(evidenceClassOf("no tournament decklists captured", 10)).toBe("unmeasured");
   });
 
+  describe("thin-control (#139)", () => {
+    const evidence = (difference: number, withDecks: number, withoutDecks: number) => ({
+      withCard: { n: 400, decks: withDecks },
+      withoutCard: { n: 400, decks: withoutDecks },
+      difference,
+    });
+
+    it("does not call a withoutCard group of 10 decks among 310 comparable decks ok: Marrok's figure is not card impact", () => {
+      expect(evidenceClassOf(evidence(0.1385, 300, 10), 10)).toBe("thin-control");
+    });
+
+    it("needs the without-card side to hold the smaller of 10% of the comparable decks and 50 decks", () => {
+      expect(evidenceClassOf(evidence(0.1251, 284, 16), 10)).toBe("thin-control");
+      expect(evidenceClassOf(evidence(0.1, 450, 50), 10)).toBe("ok");
+      expect(evidenceClassOf(evidence(0.1, 460, 49), 10)).toBe("thin-control");
+      expect(evidenceClassOf(evidence(0.1, 90, 10), 10)).toBe("ok");
+      expect(evidenceClassOf(evidence(0.1, 91, 9), 10)).toBe("unmeasured");
+    });
+
+    it("does not hold the with-card side to the control rule", () => {
+      expect(evidenceClassOf(evidence(0.1, 12, 4000), 10)).toBe("ok");
+    });
+
+    it("leaves a negative gap negative and a side under 10 decks unmeasured", () => {
+      expect(evidenceClassOf(evidence(-0.2, 300, 10), 10)).toBe("negative");
+      expect(evidenceClassOf(evidence(0.2, 300, 9), 10)).toBe("unmeasured");
+    });
+
+    it("labels the answer thin-control with the counts and sorts it with ok, not behind the negatives", () => {
+      const thin = createMetaEnv(
+        deckEnv,
+        meta,
+        {
+          ...winrates,
+          deckEvidence: {
+            ...winrates.deckEvidence,
+            groups: [
+              {
+                level: "archetype",
+                key: "OL|Aggression",
+                leader: "OL",
+                baseAspects: ["Aggression"],
+                aspects: ["Aggression", "Heroism", "Vigilance"],
+                decks: 400,
+                wins: 210,
+                losses: 190,
+                draws: 0,
+                cards: [{ cardKey: "06010182", decks: 390, wins: 200, losses: 150, draws: 0 }],
+              },
+            ],
+          },
+        },
+        loadCounterTable(),
+        features,
+      );
+      const out = body(metaAnswers(thin, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+      const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === "06010182");
+      expect(charged.deckEvidence.withoutCard.decks).toBe(10);
+      expect(charged.deckEvidence.difference).toBeGreaterThan(0.1);
+      expect(charged.evidenceClass).toBe("thin-control");
+      expect(charged.deckEvidence.thinControl).toBe("the decks without this card are 10 of 400 comparable decks: not a control group");
+      expect(out.note).toContain("thin-control");
+    });
+  });
+
   it("sorts unmeasured with ok and only negative behind them", () => {
     expect(
       sorted([
