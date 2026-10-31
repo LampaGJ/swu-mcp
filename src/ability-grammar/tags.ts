@@ -27,6 +27,21 @@ const HOSTILE_CATS = new Set([...HARM_CATS, "take_control"]);
 const hostile = (e: { cat: string; sign?: string; tokens?: readonly (readonly [string, unknown])[] }): boolean =>
   HOSTILE_CATS.has(e.cat) || (e.cat === "stat_mod" && e.sign !== "buff") || (e.tokens ?? []).some(([tok]) => tok === "Weakness");
 const SELF_DISCARD = /\bdiscarded this way\b/i;
+/** "Each player discards all but 3 cards": the effect punishes a full hand, so its clause wants no cards in hand (D57). */
+const DISCARD_TO_COUNT = /\bdiscards? all but (?:\d+|X) cards?\b/i;
+const discardsToCount = (c: SwuClause): boolean =>
+  c.effects.some((e) => e.cat === "discard_self" || e.cat === "discard_opponent") && DISCARD_TO_COUNT.test(c.text);
+/** The object of a return-from-discard that is the card itself, so the pile's other cards are no want (D57). */
+const SELF_OBJECT = /^this (?:card|unit|upgrade)$/i;
+type ClauseEffect = SwuClause["effects"][number];
+const isSelfGated = (c: SwuClause, e: ClauseEffect): boolean =>
+  e.conditional === true && (pol(e.target) === "self" || pol(e.target) === "ref") && c.conditions.some((k) => k.cat === "self_state");
+const returnsItself = (c: SwuClause, e: ClauseEffect): boolean =>
+  e.cat === "recursion" && (SELF_OBJECT.test(e.target?.text ?? "") || isSelfGated(c, e));
+const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
+/** Every effect of the clause that reads the discard pile returns the card itself. */
+const onlyReturnsItself = (c: SwuClause): boolean =>
+  c.effects.some((e) => e.cat === "recursion") && c.effects.every((e) => !DISCARD_READERS.has(e.cat) || returnsItself(c, e));
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 const SEARCH_OFFER: Record<string, string> = {
   deck_top: "offers:tutor-to-deck",
@@ -114,8 +129,14 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
       }
       for (const c of clauses) {
         if (c.source === "none") continue;
+        const toCount = discardsToCount(c);
+        const selfReturn = onlyReturnsItself(c);
         for (const o of c.offers ?? []) add(offers, o, `curated ${c.curatedId}`);
-        for (const w of c.wants ?? []) add(wants, w, `curated ${c.curatedId}`);
+        // Overrides a curated row's want too (cur-0189, cur-0180), because the table cannot be hand-edited.
+        for (const w of c.wants ?? []) {
+          if ((toCount && w === "wants:cards-in-hand") || (selfReturn && w === "wants:cards-in-discard")) continue;
+          add(wants, w, `curated ${c.curatedId}`);
+        }
         const clauseWhy = `${face}: ${c.text}`;
         if (/when played ability/i.test(c.text)) add(wants, "wants:when-played-cards", clauseWhy);
         if (/\b(?:dealt damage to an enemy base this phase|enemy base was damaged this phase)/i.test(c.text)) add(wants, "wants:enemy-base-damaged", clauseWhy);
@@ -129,7 +150,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const keywordWant = KEYWORD_WANT.exec(target?.text ?? "");
           if (keywordWant !== null && p !== "enemy") add(wants, `wants:keyword-${keywordWant[1].toLowerCase()}`, why);
           if (target?.kind === "resource") continue;
-          const selfGated = e.conditional === true && (p === "self" || p === "ref") && c.conditions.some((k) => k.cat === "self_state");
+          const selfGated = isSelfGated(c, e);
           const offersBefore = new Set(offers.keys());
           switch (e.cat) {
             case "defeat":
@@ -164,7 +185,10 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "discard_self": add(offers, "offers:discard-own", why); break;
             case "discard_opponent": add(offers, "offers:discard-opponent", why); break;
             case "mill": add(offers, e.whose === "your" ? "offers:self-mill" : "offers:mill-opponent", why); break;
-            case "recursion": add(offers, "offers:return-from-discard", why); if (!SELF_DISCARD.test(c.text)) add(wants, "wants:cards-in-discard", why); break;
+            case "recursion":
+              add(offers, "offers:return-from-discard", why);
+              if (!SELF_DISCARD.test(c.text) && !returnsItself(c, e)) add(wants, "wants:cards-in-discard", why);
+              break;
             case "create_token": {
               const token = e.token ?? "";
               if (token === "" || token.toLowerCase() === "token") break;
@@ -253,7 +277,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/damaged/.test(per)) add(wants, "wants:damaged-units", why);
             if (/upgrade|experience|shield/.test(per)) add(wants, "wants:upgrades-attached", why);
             if (/token/.test(per)) add(wants, "wants:tokens", why);
-            if (/card in your hand|cards in your hand/.test(per)) add(wants, "wants:cards-in-hand", why);
+            if (/card in your hand|cards in your hand/.test(per) && !toCount) add(wants, "wants:cards-in-hand", why);
             if (/discard pile/.test(per)) add(wants, "wants:cards-in-discard", why);
             if (/(?:other )?friendly .*units?|unit you control/.test(per)) add(wants, "wants:wide-board", why);
             if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);
