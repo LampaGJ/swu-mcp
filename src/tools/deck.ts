@@ -473,6 +473,36 @@ function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: Readon
     .join("; ");
 }
 
+/** Wants a card carries for having any When Played, On Attack or When Defeated ability; nearly every deck feeds them by accident. */
+const TRIGGER_WANTS: ReadonlySet<string> = new Set(["wants:replay-when-played", "wants:extra-attacks", "wants:self-defeated"]);
+/** A want fed by an offer that more than this share of main-deck cards carry is generic. */
+const GENERIC_FEEDER_SHARE = 0.25;
+
+const genericIndex = new WeakMap<SynergyContext, Set<string>>();
+
+/** The want tags no audit row should name one card at a time: trigger-derived wants, and wants most of the pool can feed. */
+function genericWantTags(ctx: SynergyContext): ReadonlySet<string> {
+  const hit = genericIndex.get(ctx);
+  if (hit !== undefined) return hit;
+  const offersFor = new Map<string, Set<string>>();
+  for (const row of ctx.graph.rows) {
+    if (row.family === "trait") continue;
+    for (const want of Object.keys(row.wants)) {
+      const set = offersFor.get(want) ?? new Set<string>();
+      for (const offer of Object.keys(row.offers)) set.add(offer);
+      offersFor.set(want, set);
+    }
+  }
+  const main = ctx.cards.filter((c) => MAIN_TYPES.has(c.type));
+  const generic = new Set(TRIGGER_WANTS);
+  for (const [want, offers] of offersFor) {
+    const feeders = main.filter((c) => c.tags.offers.some((o) => offers.has(o.tag))).length;
+    if (main.length > 0 && feeders / main.length > GENERIC_FEEDER_SHARE) generic.add(want);
+  }
+  genericIndex.set(ctx, generic);
+  return generic;
+}
+
 const wantsOf = (syn: SynergyCard): string[] =>
   [...new Set(syn.tags.wants.map((t) => t.tag).filter((tag) => !tag.startsWith("wants:trait-")))].sort(compareCodePoints);
 
@@ -522,23 +552,42 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
 
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const into = edgesInto(env.ctx);
+  const generic = genericWantTags(env.ctx);
+  const genericHolders = new Map<string, string[]>();
+  const fedFromDeck = (feeders: readonly PairEdge[], cardKey: string): boolean => feeders.some((e) => inDeck.has(e.a) && e.a !== cardKey);
   const orphanWants = lines.flatMap((l) => {
     const wants = wantsOf(l.syn);
     if (wants.length === 0) return [];
-    const feeders = into.get(l.syn.cardKey) ?? [];
-    if (feeders.some((e) => inDeck.has(e.a) && e.a !== l.syn.cardKey)) return [];
+    const all = into.get(l.syn.cardKey) ?? [];
+    const feeding = (tags: readonly string[]): PairEdge[] => all.filter((e) => e.rows.some((r) => tags.includes(r.want)));
+    const vague = wants.filter((w) => generic.has(w));
+    const specific = wants.filter((w) => !generic.has(w));
+    if (vague.length > 0 && !fedFromDeck(feeding(vague), l.syn.cardKey)) {
+      for (const w of vague) genericHolders.set(w, [...(genericHolders.get(w) ?? []), cardLabel(l.syn)]);
+    }
+    const feeders = feeding(specific);
+    if (specific.length === 0 || fedFromDeck(feeders, l.syn.cardKey)) return [];
     return [
       {
         card: cardLabel(l.syn),
         cardKey: l.syn.cardKey,
-        wants: wants.slice(0, 4).join(", "),
+        wants: specific.slice(0, 4).join(", "),
         feedersInCardPool: feeders.length,
         feeders: namedFeeders(env, feeders, inDeck, supplied),
       },
     ];
   });
+  const genericWants =
+    genericHolders.size === 0
+      ? "none"
+      : `${[...genericHolders.entries()]
+          .sort(([a], [b]) => compareCodePoints(a, b))
+          .map(([w, cards]) => `${w} (${cards.length} ${cards.length === 1 ? "card" : "cards"}): ${cards.join("; ")}`)
+          .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card.`;
 
-  const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit);
+  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
+  const leaderComparison = leaderComparisonOf(env, lines, leaderData);
+  const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);
 
   return ok({
     dataVersion: env.dataVersion,
@@ -567,24 +616,84 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
       note: "+2 resources per aspect icon the leader and base do not supply, counted per copy; leader abilities that ignore the penalty are not modelled",
       uncovered: cover.uncovered,
     },
+    leaderComparison,
     orphanWants,
+    genericWants,
     clusterGaps,
   });
 }
 
-/** Clusters over-represented in the penalty-free Premier pool relative to this deck, by the pool's own share. */
-function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: readonly string[], limit: number): unknown {
+/** A card the leader's lists play in at least this share of decks, and the deck lacks, is a missing staple. */
+const STAPLE_INCLUSION = 0.5;
+/** A deck card the leader's lists play in fewer than this share of decks (or never) is rarely played. */
+const RARE_INCLUSION = 0.05;
+
+type LeaderData = NonNullable<ReturnType<LeaderCardsIndex["get"]>>;
+
+/** The deck against the leader's own decklists (D43): staples it lacks and cards those lists rarely play. */
+function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: LeaderData | null): unknown {
+  if (data === null) return { note: "no leader decklist data in this package for this leader, so the deck is not compared with real lists" };
+  const { entry, byCard } = data;
+  const byTitle = new Map(entry.cards.map((c) => [lower(c.title), c]));
+  const heldTitles = new Set(lines.map((l) => lower(cardLabel(l.syn))));
+  const inclusionOf = (l: DeckLine): number | null => (byCard.get(l.syn.cardKey) ?? byTitle.get(lower(cardLabel(l.syn))))?.inclusion ?? null;
+  const held = new Set(lines.map((l) => l.syn.cardKey));
+  const missingStaples = entry.cards
+    .filter((c) => c.inclusion >= STAPLE_INCLUSION && !held.has(c.cardKey))
+    .flatMap((c) => {
+      const syn = env.ctx.graph.byKey.get(c.cardKey);
+      if (syn !== undefined && !MAIN_TYPES.has(syn.type)) return [];
+      const card = syn === undefined ? c.title : cardLabel(syn);
+      if (heldTitles.has(lower(card))) return [];
+      return [{ card, cardKey: c.cardKey, inclusion: r4(c.inclusion), meanCopies: r2(c.meanCopies), cost: syn?.structured.cost ?? env.store.byKey.get(c.cardKey)?.cost ?? null }];
+    })
+    .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.card, b.card));
+  const rarelyPlayed = lines.flatMap((l) => {
+    const inclusion = inclusionOf(l);
+    return inclusion !== null && inclusion >= RARE_INCLUSION ? [] : [{ card: cardLabel(l.syn), cardKey: l.syn.cardKey, count: l.count, inclusion: inclusion === null ? null : r4(inclusion) }];
+  });
+  return {
+    population: entry.population,
+    decks: entry.decks,
+    window: `${entry.window.from}..${entry.window.to}`,
+    source: leaderSourceText(entry),
+    note: `missingStaples: cards in at least ${STAPLE_INCLUSION * 100}% of this leader's decklists that the deck lacks; rarelyPlayed: deck cards in fewer than ${RARE_INCLUSION * 100}% of them, inclusion null = never in the leader's top ${entry.cards.length} cards. Inclusion is placement-weighted (D38).`,
+    missingStaples,
+    rarelyPlayed,
+  };
+}
+
+/**
+ * Clusters over-represented in the yardstick relative to this deck: the leader's tournament cards weighted by
+ * inclusion when the package has them (D43), otherwise the penalty-free Premier pool. A cluster made mostly of
+ * cards a main deck cannot hold (bases, leaders, tokens) is never a gap.
+ */
+function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: readonly string[], limit: number, leaderData: LeaderData | null): unknown {
   if (env.clusters === null) return { note: "no similarity run in this package, so role clusters are unavailable" };
   const labels = loadClusterLabels(env.clusterLabelsPath);
-  const clusterOf = new Map(env.clusters.clusters.flatMap((c) => c.members.map((k) => [k, c.id] as const)));
-  const pool = env.ctx.cards.filter((syn) => {
-    const row = env.store.byKey.get(syn.cardKey);
-    return row !== undefined && MAIN_TYPES.has(syn.type) && cardScope(env.store, row) !== "rotated" && singlePenalty(syn, supplied) === 0;
-  });
+  const typeOf = (k: string): string | undefined => env.ctx.graph.byKey.get(k)?.type ?? env.store.byKey.get(k)?.type;
+  const deckable = (c: ClustersFile["clusters"][number]): boolean => c.members.filter((k) => MAIN_TYPES.has(typeOf(k) ?? "")).length * 2 >= c.members.length;
+  const clusterOf = new Map(env.clusters.clusters.filter(deckable).flatMap((c) => c.members.map((k) => [k, c.id] as const)));
+  const skipped = new Set(env.clusters.clusters.filter((c) => !deckable(c)).flatMap((c) => c.members));
+  const weighted: { cardKey: string; weight: number }[] =
+    leaderData === null
+      ? env.ctx.cards
+          .filter((syn) => {
+            const row = env.store.byKey.get(syn.cardKey);
+            return row !== undefined && MAIN_TYPES.has(syn.type) && cardScope(env.store, row) !== "rotated" && singlePenalty(syn, supplied) === 0;
+          })
+          .map((syn) => ({ cardKey: syn.cardKey, weight: 1 }))
+      : leaderData.entry.cards.filter((c) => MAIN_TYPES.has(typeOf(c.cardKey) ?? "")).map((c) => ({ cardKey: c.cardKey, weight: c.inclusion }));
+  const poolWeight = new Map<number, number>();
   const poolCount = new Map<number, number>();
-  for (const syn of pool) {
-    const id = clusterOf.get(syn.cardKey);
-    if (id !== undefined) poolCount.set(id, (poolCount.get(id) ?? 0) + 1);
+  let totalWeight = 0;
+  for (const { cardKey, weight } of weighted) {
+    if (skipped.has(cardKey)) continue;
+    totalWeight += weight;
+    const id = clusterOf.get(cardKey);
+    if (id === undefined) continue;
+    poolWeight.set(id, (poolWeight.get(id) ?? 0) + weight);
+    poolCount.set(id, (poolCount.get(id) ?? 0) + 1);
   }
   const deckCount = new Map<number, number>();
   for (const l of lines) {
@@ -598,7 +707,7 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
   const labelOf = new Map(env.clusters.clusters.map((c) => [c.id, resolveClusterLabel(c, labels)]));
   const rows = [...poolCount.entries()]
     .map(([id, n]) => {
-      const expected = (n / pool.length) * mainCopies;
+      const expected = totalWeight === 0 ? 0 : ((poolWeight.get(id) ?? 0) / totalWeight) * mainCopies;
       const have = deckCount.get(id) ?? 0;
       return {
         clusterId: id,
@@ -613,7 +722,10 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
     .filter((row) => row.gap >= 1)
     .sort((a, b) => b.gap - a.gap || a.clusterId - b.clusterId);
   return {
-    norm: `a cluster's share of the ${pool.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held`,
+    norm:
+      leaderData === null
+        ? `a cluster's share of the ${weighted.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held; clusters made mostly of bases, leaders or tokens are skipped`
+        : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; clusters made mostly of bases, leaders or tokens are skipped`,
     shown: Math.min(rows.length, limit),
     clusters: rows.slice(0, limit),
   };
@@ -664,7 +776,8 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
   const leader = piece(args.leader, "leader");
   const base = piece(args.base, "base");
 
-  const { lines, unresolved, copies } = resolveList(env, args.decklist, "any");
+  const { lines, unresolved } = resolveList(env, args.decklist, "any");
+  const listedCopies = sumBy(args.decklist, (entry) => entry.count);
   for (const u of unresolved)
     failures.push({ rule: CR.deckContents, check: "unresolved card", detail: `"${u.card}" x${u.count}: ${u.reason}, ${u.detail}` });
 
@@ -758,7 +871,7 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     rulesVersion: verified.rulesVersion,
     leader: leader === undefined ? null : head(leader.row),
     base: base === undefined ? null : head(base.row),
-    counts: { mainDeck: mainCopies, minimum, maxCopies: MAX_COPIES, distinct: main.length, listedCopies: copies },
+    counts: { mainDeck: mainCopies, minimum, maxCopies: MAX_COPIES, distinct: main.length, listedCopies },
     failures,
     warnings,
     dataLimits,

@@ -559,6 +559,11 @@ describe("deck_legality_check", () => {
     }
   });
 
+  it("counts every listed copy in listedCopies, unresolved lines included (#105)", () => {
+    const out = body(deckLegalityCheck(env, { decklist: [...legalDeck, { card: "Nobody Home", count: 2 }, { card: "Also Nobody", count: 3 }], leader: "L1", base: "BC" }));
+    expect(out.counts).toMatchObject({ mainDeck: 51, listedCopies: 56 });
+  });
+
   it("states the data limits", () => {
     const out = body(deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC" }));
     const limits = out.dataLimits.join(" ");
@@ -749,6 +754,100 @@ describe("playable_cards, leader-aware", () => {
     const byScore = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, rankBy: "score" }));
     expect(keys(byScore)).toEqual(["P1", "P2", "W1"]);
     expect(byScore.emptyCosts).toBe("none");
+  });
+});
+
+describe("deck_audit, leader-aware (#105)", () => {
+  const file = leaderCardsFile({ L1: [["W1", 0.8], ["P2", 0.6], ["F01", 0.5], ["P3", 0.04]] });
+  const leaderEnv: DeckEnv = { ...env, leaderCards: indexLeaderCards(file) };
+
+  it("lists the leader's staples the deck lacks and the deck cards its decks rarely or never play, naming population and window", () => {
+    const out = body(deckAudit(leaderEnv, { decklist: lines(["P1", 3], ["P3", 1], ["F02", 3]), leader: "L1", base: "BC" }));
+    const lc = out.leaderComparison;
+    expect(lc).toMatchObject({ population: "tournament", decks: 12, window: "2026-07-04..2026-10-01" });
+    expect(lc.missingStaples).toEqual([
+      { card: "Grit Brute", cardKey: "W1", inclusion: 0.8, meanCopies: 2, cost: 3 },
+      { card: "Pinger Green", cardKey: "P2", inclusion: 0.6, meanCopies: 2, cost: 3 },
+      { card: "Filler 1", cardKey: "F01", inclusion: 0.5, meanCopies: 2, cost: 2 },
+    ]);
+    expect(lc.rarelyPlayed).toEqual([
+      { card: "Pinger Red", cardKey: "P1", count: 3, inclusion: null },
+      { card: "Pinger Blue", cardKey: "P3", count: 1, inclusion: 0.04 },
+      { card: "Filler 2", cardKey: "F02", count: 3, inclusion: null },
+    ]);
+  });
+
+  it("says so when the package has no tournament data for the leader", () => {
+    const out = body(deckAudit(env, { decklist: lines(["P1", 3]), leader: "L1", base: "BC" }));
+    expect(out.leaderComparison.note).toContain("no leader decklist data");
+    expect(out.leaderComparison.missingStaples).toBeUndefined();
+  });
+
+  const clusters: ClustersFile = {
+    renderVersion: 1,
+    k: 3,
+    seed: 1,
+    restarts: 1,
+    maxIter: 1,
+    inertia: 0,
+    clusters: [
+      { id: 0, size: 16, label: "fillers", members: FILLERS.slice(0, 16).map((f) => f.key) },
+      { id: 1, size: 3, label: "pingers", members: ["P1", "P2", "W1"] },
+      { id: 2, size: 5, label: "bases and a filler", members: ["BC", "BV", "BS", "BT1", "F17"] },
+    ],
+  };
+  const absent = path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "absent.json");
+  const deck = lines(["R1", 4], ["PR1", 4]);
+
+  it("measures cluster gaps against the leader's tournament cards, inclusion-weighted, and says so", () => {
+    const file2 = leaderCardsFile({ L1: [["P2", 0.8], ["W1", 0.8], ["F01", 0.4], ["F17", 0.5]] });
+    const out = body(deckAudit({ ...buildEnv(SPECS, clusters), clusterLabelsPath: absent, leaderCards: indexLeaderCards(file2) }, { decklist: deck, leader: "L1", base: "BC" }));
+    // weights: pingers 1.6, fillers 0.4; the bases cluster is skipped, so its 0.5 is out of the total: 1.6 / 2 * 8 and 0.4 / 2 * 8
+    expect(out.clusterGaps.norm).toContain("tournament");
+    expect(out.clusterGaps.clusters.map((r: Record<string, unknown>) => [r.clusterId, r.expected, r.gap])).toEqual([
+      [1, 6.4, 6.4],
+      [0, 1.6, 1.6],
+    ]);
+  });
+
+  it("skips a cluster made mostly of cards a main deck cannot hold, with or without leader data", () => {
+    // the leader's lists play F17 heavily, but F17's cluster is four bases and one unit
+    const file3 = leaderCardsFile({ L1: [["F17", 0.9], ["F01", 0.1]] });
+    const led = body(deckAudit({ ...buildEnv(SPECS, clusters), clusterLabelsPath: absent, leaderCards: indexLeaderCards(file3) }, { decklist: deck, leader: "L1", base: "BC" }));
+    expect(led.clusterGaps.clusters.map((r: Record<string, unknown>) => [r.clusterId, r.expected])).toEqual([[0, 8]]);
+    const pool = body(deckAudit({ ...buildEnv(SPECS, clusters), clusterLabelsPath: absent }, { decklist: deck, leader: "L1", base: "BC" }));
+    expect(pool.clusterGaps.clusters.map((r: Record<string, unknown>) => r.clusterId)).not.toContain(2);
+    expect(pool.clusterGaps.norm).toContain("Premier-scope");
+  });
+});
+
+describe("deck_audit, generic wants (#105)", () => {
+  const extra: Spec[] = [
+    { key: "WP1", title: "Entry Guy", cost: 2, icons: ["Aggression"], wants: ["wants:replay-when-played"] },
+    { key: "WP2", title: "Mixed Guy", cost: 3, icons: ["Aggression"], wants: ["wants:replay-when-played", "wants:self-damaged"] },
+  ];
+  const genericEnv = buildEnv([...SPECS, extra[0], extra[1]]);
+
+  it("collapses a When Played replay want into one genericWants line and keeps the specific wants as rows", () => {
+    const out = body(deckAudit(genericEnv, { decklist: lines(["WP1", 3], ["WP2", 3], ["F01", 3]), leader: "L1", base: "BC" }));
+    expect(out.orphanWants.map((o: { cardKey: string }) => o.cardKey)).toEqual(["WP2"]);
+    expect(out.orphanWants[0].wants).toBe("wants:self-damaged");
+    expect(out.genericWants).toContain("wants:replay-when-played");
+    expect(out.genericWants).toContain("Entry Guy");
+    expect(out.genericWants).toContain("Mixed Guy");
+  });
+
+  it("treats a want that more than a quarter of the main-deck pool can feed as generic", () => {
+    // without the 17 fillers, 3 of the 6 main-deck cards offer damage to a friendly unit
+    const small = buildEnv(SPECS.filter((s) => !s.key.startsWith("F")));
+    const out = body(deckAudit(small, { decklist: lines(["W1", 2], ["R1", 3]), leader: "L1", base: "BC" }));
+    expect(out.orphanWants).toEqual([]);
+    expect(out.genericWants).toContain("wants:self-damaged");
+  });
+
+  it("reads none when no generic want is unfed", () => {
+    const out = body(deckAudit(genericEnv, { decklist: lines(["W1", 2], ["F01", 3]), leader: "L1", base: "BC" }));
+    expect(out.genericWants).toBe("none");
   });
 });
 
