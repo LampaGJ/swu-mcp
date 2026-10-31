@@ -1,7 +1,7 @@
-node_modules/
+node_modules
 dist/
-/data/originals/
-/data/runs/
+/data/originals
+/data/runs
 /data/packages/
 /tmp/
 /reports/

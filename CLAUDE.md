@@ -10,6 +10,7 @@ pnpm typecheck
 pnpm test
 pnpm lint
 pnpm mcp                      # stdio MCP server (src/server.ts)
+scripts/dev/worktree-add.sh <name> <branch> [<base>]   # new worktree without pnpm install: symlinks node_modules and data/ from the main checkout
 pnpm build:data [--originals <dir>] [--date <d>]   # rebuild every data product in order (export:package, card-features, score, synergy, market, rules:fetch, similarity) and write data/runs/<date>/build.json
 pnpm package:zip [--data <run dir>] [--out <dir>] [--no-zip]   # assemble the lean reader zip (llm/, optional/, audit/, docs/) from a built run
 pnpm export:package [--originals <dir>] [--runs <dir>] [--date <d>]   # build llm/ from mault's originals (no zip)
@@ -42,7 +43,7 @@ Prefer actual tournament decks and match outcomes over casual and simulated game
 
 Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code and synthetic-fixture tests only. Never commit player names, player ids or game ids. Karabast-derived numbers, aggregates included, never appear in the data release, in tool output or in committed docs; they belong in local benchmark reports only (decision D22 in `docs/decisions.md`). Public win rates come from swumetastats tournament data.
 
-The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored).
+The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored). This volume stalls on executable launches (Gatekeeper scan) and intermittently on links and renames: never `pnpm install` in a worktree (use `scripts/dev/worktree-add.sh`), call `node <package entry>` instead of a `node_modules/.bin` shim inside scripts, and bound every wait.
 
 ## Layout
 
