@@ -1015,13 +1015,27 @@ describe("locks are honoured in playable_cards, meta_answers and deck_audit (#14
   const LOCKED_BASE = clone("LK1", "Tatooine Defeater", "If you control a Tatooine base, defeat a non-leader unit.");
   const LOCKED_ASPECT = clone("LK2", "Aggression Defeater", "Aggression unit, defeat a non-leader unit.");
   const OPEN = clone("LK3", "Open Defeater", "Defeat a non-leader unit.");
+  // D71 (#159): an open offer on one clause and a locked clause that answers nothing (Ritual Dragon: printed Saboteur, a Tatooine clause).
+  const PARTLY = ((): Record<string, unknown> => {
+    const card = clone("LK4", "Defeater With A Tatooine Clause", "Defeat a non-leader unit.") as { faces: { text: Record<string, unknown>[] } };
+    card.faces.text.push({
+      kind: "ability",
+      triggers: [{ trigger: "event_resolve", repeat: "once_on_play" }],
+      repeat: "once_on_play",
+      granted: false,
+      clauses: [{ path: "text.p1s0", text: "If you control a Tatooine base, draw a card.", source: "grammar", effects: [], conditions: [], structure: [], modifiers: [], residue: [] }],
+      grantedAbilities: [],
+      options: [],
+    });
+    return card;
+  })();
   const TATOOINE_BASE = mk("TB", "Jundland Wastes", { type: "Base", icons: ["Command"], cost: null, traits: ["Tatooine"] });
   const KASHYYYK_BASE = mk("KB", "Origin Tree", { type: "Base", icons: ["Command"], cost: null, traits: ["Kashyyyk"] });
   const AGGRO_BASE = mk("AB2", "Aggro Base", { type: "Base", aspects: ["Aggression"], icons: ["Aggression"], cost: null });
   const AGGRESSION_UNIT = mk("AU", "Aggression Unit", { aspects: ["Aggression"], cost: 2 });
 
   const build = () => {
-    const all = [...features, featureRecord(TATOOINE_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(KASHYYYK_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(AGGRESSION_UNIT, { power: 2, hp: 2, arenas: ["Ground"] }), featureRecord(AGGRO_BASE, { power: null, hp: 25, arenas: [] }), LOCKED_BASE, LOCKED_ASPECT, OPEN];
+    const all = [...features, featureRecord(TATOOINE_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(KASHYYYK_BASE, { power: null, hp: 25, arenas: [] }), featureRecord(AGGRESSION_UNIT, { power: 2, hp: 2, arenas: ["Ground"] }), featureRecord(AGGRO_BASE, { power: null, hp: 25, arenas: [] }), LOCKED_BASE, LOCKED_ASPECT, OPEN, PARTLY];
     const syn = synergyCardsSchema.parse(all);
     const rowsOf: CardRow[] = syn.map((s) => ({
       cardKey: s.cardKey, title: s.title, subtitle: s.subtitle, type: s.type, cost: s.structured.cost, power: null, hp: null,
@@ -1065,6 +1079,25 @@ describe("locks are honoured in playable_cards, meta_answers and deck_audit (#14
     const out = run("OB", [{ card: "LK1", count: 1 }]);
     expect(out.staples.find((x: { cardKey: string }) => x.cardKey === "LK1")).toMatchObject({ inDeck: 1, baseLocked: "Tatooine", lockedOut: true, coverage: 0 });
     expect(out.lockedAnswers.map((x: { cardKey: string }) => x.cardKey)).not.toContain("LK1");
+  });
+
+  it("meta_answers: a locked clause that no answering offer rests on still flags the card and ranks it after every unlocked answer (D71)", () => {
+    const out = run("OB");
+    expect(answer(out, "LK4")).toMatchObject({ coverage: 1, baseLocked: "Tatooine" });
+    expect(answer(out, "LK4")).not.toHaveProperty("lockedOut");
+    const rows = out.additions as { cardKey: string; baseLocked?: string }[];
+    const at = rows.findIndex((r) => r.cardKey === "LK4");
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(rows.slice(0, at).every((r) => r.baseLocked === undefined)).toBe(true);
+    expect(rows.findIndex((r) => r.cardKey === "LK3")).toBeLessThan(at);
+    const under = answer(run("TB"), "LK4");
+    expect(under).toMatchObject({ coverage: 1 });
+    expect(under).not.toHaveProperty("baseLocked");
+  });
+
+  it("meta_answers: a card already in the decklist stays a staple and carries the lock of its unrelated clause (D71)", () => {
+    const staple = run("OB", [{ card: "LK4", count: 1 }]).staples.find((x: { cardKey: string }) => x.cardKey === "LK4");
+    expect(staple).toMatchObject({ inDeck: 1, baseLocked: "Tatooine" });
   });
 
   it("meta_answers: an aspect-unit clause is locked until the leader or a deck unit supplies that aspect; a base is no unit", () => {

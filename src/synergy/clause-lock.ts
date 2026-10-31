@@ -255,3 +255,19 @@ export function resourceLockOfCards(
   );
   return { needsForce: lock.needsForce ?? [], needsTrait: lock.needsTrait ?? [] };
 }
+
+/**
+ * D71: a Pilot unit (printed Piloting, offering `offers:upgrade-to-attach`) attaches to a Vehicle, so a trio that
+ * leans on that offer needs a Vehicle unit on the board. The suppliers are the leader, the deck and the other members.
+ */
+export function hostNeedOfCards(cards: readonly SynergyCard[], leader: SynergyCard | undefined, deck: readonly SynergyCard[]): string[] {
+  const pilots = cards.filter(
+    (c) =>
+      c.type === "Unit" &&
+      (((c.structured as { keywordsField?: unknown }).keywordsField as unknown[] | undefined) ?? []).includes("Piloting") &&
+      c.tags.offers.some((o) => o.tag === "offers:upgrade-to-attach"),
+  );
+  if (pilots.length === 0) return [];
+  const hosted = [leader, ...deck, ...cards].some((c) => c !== undefined && (c === leader || c.type === "Unit") && !pilots.includes(c) && c.structured.traits.includes("Vehicle"));
+  return hosted ? [] : ["Vehicle"];
+}

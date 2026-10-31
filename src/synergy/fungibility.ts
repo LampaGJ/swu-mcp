@@ -397,7 +397,7 @@ export function commonMembers(
 export const FEEDER_GAP = 4;
 
 /** The rule behind a keep recommendation (D69), quoted in the tool's answer and in the note. */
-export const KEEP_RULE = `keep the card that at least ${FEEDER_GAP} more deck cards feed than the other (a payoff the deck feeds many times over earns a 2-resource penalty, while a small feeder gap does not); otherwise the card with the lower aspect penalty under the base; then the higher play share in the leader's lists (unplayed under the 2% floor ranks last); then the first listed, the card already in the deck`;
+export const KEEP_RULE = `keep the card that at least ${FEEDER_GAP} more deck cards feed than the other (a payoff the deck feeds many times over earns a 2-resource penalty, while a small feeder gap does not; a deck card feeds only through the job compared, for a keyword holder the keyword rows); otherwise the card with the lower aspect penalty under the base; then the higher play share in the leader's lists (unplayed under the 2% floor ranks last); then the first listed, the card already in the deck. When the card kept is the original and the runner-up is its partner, the deck card to cut for the partner, never one that feeds either of the two, is the one with the highest aspect penalty under the base, then the lowest play share in the leader's lists, then the fewest pair edges to the rest of the deck`;
 
 export interface KeepEntry {
   cardKey: string;
@@ -412,11 +412,34 @@ export interface KeepEntry {
   relationToFirst?: "feeds" | "fedBy";
 }
 
+/** D71: a deck card that could make room for a partner. */
+export interface KeepCut {
+  cardKey: string;
+  label: string;
+  /** Aspect penalty under the base; null when none was computed. */
+  penalty: number | null;
+  /** Share of the leader's lists that play the card; null when unplayed or when no leader data exists. */
+  playShare: number | null;
+  /** How many other deck cards have a mechanical pair edge into or out of the card: the fewer, the less the deck relies on it. */
+  deckLinks: number;
+  /** The cardKeys of the compared cards (the original and the candidates) this card has a mechanical pair edge into; a card that feeds one of the two in play is never the cut. */
+  feeds: readonly string[];
+}
+
 export interface KeepVerdict {
   keep: string;
   decidedBy: "deckFeeders" | "penalty" | "playShare" | "tie";
   sentence: string;
+  /** D71: set when the original is kept over a partner candidate and the deck holds another card to cut for it. */
+  cutForCandidate?: KeepCut;
 }
+
+/** D71: the want rows that make a card a keyword holder's payoff are one job whatever the keyword (wants:keyword-raid, wants:keyword-hidden), so a feeder of any of them feeds it. */
+export const jobFamilyOf = (wantTag: string): string => (wantTag.startsWith("wants:keyword-") ? "wants:keyword-*" : wantTag);
+
+/** The deck card to cut: highest penalty first, then the lowest play share (unplayed lowest), then the fewest links to the rest of the deck, then title and cardKey so the pick is stable. */
+export const cutOrder = (a: KeepCut, b: KeepCut): number =>
+  (b.penalty ?? -1) - (a.penalty ?? -1) || (a.playShare ?? -1) - (b.playShare ?? -1) || a.deckLinks - b.deckLinks || cmp(a.label, b.label) || cmp(a.cardKey, b.cardKey);
 
 type KeepStep = KeepVerdict["decidedBy"];
 
@@ -433,17 +456,23 @@ const champion = (entries: readonly KeepEntry[]): KeepEntry =>
   entries.slice(1).reduce((best, next) => (keepCompare(best, next)[0] > 0 ? next : best), entries[0] as KeepEntry);
 
 /** D69: the first entry is the card already in the deck, so it wins every tie. Built from the numbers only. */
-export function recommendKeep(entries: readonly KeepEntry[]): KeepVerdict {
+export function recommendKeep(entries: readonly KeepEntry[], deckCards: readonly KeepCut[] = []): KeepVerdict {
   const win = champion(entries);
   const rest = entries.filter((e) => e !== win);
   const next = champion(rest);
   const [, step] = keepCompare(win, next);
-  const share = (e: KeepEntry): string => (e.playShare === null ? "unplayed" : `${Math.round(e.playShare * 100)}% of decks`);
+  const share = (e: { playShare: number | null }): string => (e.playShare === null ? "unplayed" : `${Math.round(e.playShare * 100)}% of decks`);
   const original = entries[0] as KeepEntry;
   const partnerClause =
     win === original && next.relationToFirst !== undefined
       ? `, and ${next.label} is a partner worth a slot elsewhere because it ${next.relationToFirst === "feeds" ? "feeds" : "is fed by"} ${win.label}`
       : "";
+  const cut =
+    win === original && next.relationToFirst !== undefined
+      ? [...deckCards].filter((c) => c.cardKey !== win.cardKey && c.cardKey !== next.cardKey && !c.feeds.includes(win.cardKey) && !c.feeds.includes(next.cardKey)).sort(cutOrder)[0]
+      : undefined;
+  const cutClause =
+    cut === undefined ? "" : ` To make room for ${next.label}, cut ${cut.label} (${cut.penalty === null ? "" : `penalty ${cut.penalty}, `}${share(cut)}, ${cut.deckLinks} pair ${cut.deckLinks === 1 ? "link" : "links"} to other deck cards).`;
   const gap = `the feeder gap is under ${FEEDER_GAP} (${win.fedBy} against ${next.fedBy})`;
   const sentence = {
     deckFeeders: `Keep ${win.label}: ${win.fedBy} cards already in the deck feed it against ${next.fedBy} for ${next.label}, a gap of at least ${FEEDER_GAP}${win.penalty !== null && next.penalty !== null && win.penalty > next.penalty ? ` that outweighs its penalty ${win.penalty}` : ""}${partnerClause}.`,
@@ -451,5 +480,5 @@ export function recommendKeep(entries: readonly KeepEntry[]): KeepVerdict {
     playShare: `Keep ${win.label}: ${gap}${win.penalty === null ? "" : `, penalty ties (${win.penalty})`}, and the leader's lists play it in ${share(win)} against ${share(next)} for ${next.label}${partnerClause}.`,
     tie: `Keep ${win.label}: the feeder gap is under ${FEEDER_GAP}, penalty and play share tie, so the card already in the deck stays${partnerClause}.`,
   }[step];
-  return { keep: win.cardKey, decidedBy: step, sentence };
+  return { keep: win.cardKey, decidedBy: step, sentence: `${sentence}${cutClause}`, ...(cut === undefined ? {} : { cutForCandidate: cut }) };
 }
