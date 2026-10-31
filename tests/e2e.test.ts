@@ -69,6 +69,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   meta_archetypes: { limit: 5 },
   meta_threats: { archetype: "t001" },
   meta_answers: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, archetypes: 5, limit: 5 },
+  leader_cards: { leader: ASAJJ_VENTRESS, limit: 5 },
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {

@@ -14,6 +14,7 @@ import {
 } from "../meta/counters.js";
 import { archetypeEvidenceKey, aspectsEvidenceKey } from "../meta/outcomes.js";
 import {
+  LEADER_CARDS_MAX,
   metaFileSchema,
   POPULATIONS,
   SWUMETASTATS_SOURCE,
@@ -34,7 +35,9 @@ import {
   cardScope,
   decklistField,
   deckEnvOf,
+  leaderCardsOf,
   leaderField,
+  leaderSourceText,
   MAIN_TYPES,
   resolveList,
   resolvePair,
@@ -592,6 +595,54 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
 }
 
 // ---------------------------------------------------------------------------------------------
+// leader_cards
+
+/** These rows are counts over decklists, not candidate links, so they carry status fact. */
+export const FACT_STATUS = "fact";
+
+export const leaderCardsShape = {
+  leader: leaderField,
+  limit: z.number().int().min(1).max(LEADER_CARDS_MAX).default(40),
+  sortBy: z
+    .enum(["inclusion", "lift"])
+    .default("inclusion")
+    .describe("inclusion (default): raw popularity in the leader's decks; lift: inclusion minus the card's inclusion in decks that could play it"),
+  minInclusion: z.number().min(0).max(1).default(0.1).describe("Leave out cards played in a smaller share of the leader's decks"),
+};
+
+export function leaderCards(env: MetaEnv, input: unknown): ToolResult {
+  const args = z.object(leaderCardsShape).parse(input);
+  const index = leaderCardsOf(env.deck);
+  if (index === null) return fail('no meta/leader-cards.json in this data package; it predates the leader index (run "pnpm meta" or "pnpm build:data")');
+  const leader = resolveRef(env.deck.store, args.leader, "leader");
+  if (!leader.ok) return fail(`leader "${args.leader}": ${leader.reason}, ${leader.detail}`);
+  const hit = index.get(leader.row.cardKey);
+  if (hit === undefined) return fail(`no tournament or community decklist with leader ${cardLabel(leader.row)} in ${env.meta.window.from}..${env.meta.window.to}`);
+  const { entry } = hit;
+  const kept = entry.cards.filter((c) => c.inclusion >= args.minInclusion);
+  const sorted =
+    args.sortBy === "lift"
+      ? kept.slice().sort((a, b) => b.lift - a.lift || b.inclusion - a.inclusion || compareCodePoints(a.cardKey, b.cardKey))
+      : kept;
+  const shown = sorted.slice(0, args.limit);
+  return ok({
+    dataVersion: env.deck.dataVersion,
+    leader: { cardKey: leader.row.cardKey, title: cardLabel(leader.row) },
+    population: entry.population,
+    fallback: entry.fallback,
+    window: `${entry.window.from}..${entry.window.to}`,
+    decks: entry.decks,
+    topBase: entry.topBase,
+    status: FACT_STATUS,
+    sortBy: args.sortBy,
+    matched: kept.length,
+    shown: shown.length,
+    cards: shown,
+    note: `Counts over this leader's decklists (${leaderSourceText(entry)}), every deck of the leader in the window, all its archetypes. inclusion = placement-weighted share of the leader's decks that play the card; meanCopies = placement-weighted copies per deck; baselineInclusion = the same share across every ${entry.population} deck in the window whose leader and base icons cover the card's aspects (decks that could play it without a penalty); lift = inclusion - baselineInclusion. Weighting: ${env.meta.method.weighting}. Small deck counts are noisy; at most ${LEADER_CARDS_MAX} cards per leader are kept.`,
+  });
+}
+
+// ---------------------------------------------------------------------------------------------
 // registration
 
 function withEnv(store: CardStore, run: (env: MetaEnv) => ToolResult): ToolResult {
@@ -628,5 +679,11 @@ export const META_TOOLS = {
     "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first. Takes a leader and base, or a decklist.",
     metaAnswersShape,
     metaAnswers,
+  ),
+  leader_cards: tool(
+    "Leader cards",
+    "The cards a leader's recent decklists actually play: for every card in the leader's decks in the meta window (tournament decklists, or community lists only when the leader has no tournament deck, and the output says so), the placement-weighted inclusion, mean copies, baseline inclusion among decks whose aspects could play it, and lift over that baseline. Names the population, window and deck count; status: fact. sortBy inclusion (raw popularity) or lift.",
+    leaderCardsShape,
+    leaderCards,
   ),
 } as const;

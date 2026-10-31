@@ -10,6 +10,7 @@ import type { ClustersFile } from "../src/embed/files.js";
 import type { PlayFile, PricesFile } from "../src/market/build.js";
 import { rulesFor } from "../src/rules/store.js";
 import type { ScoreRow } from "../src/scorer/scores-file.js";
+import { indexLeaderCards, type LeaderCardsFile } from "../src/meta/schema.js";
 import { createSynergyContext } from "../src/synergy/context.js";
 import type { ToolResult } from "../src/tools.js";
 import {
@@ -19,6 +20,7 @@ import {
   deckEnvOf,
   deckLegalityCheck,
   fungibleInDeck,
+  leaderCardsOf,
   ownedVsNeeded,
   playValueVsPrice,
   playableCards,
@@ -589,6 +591,88 @@ describe("playable_cards", () => {
   it("filters by tag", () => {
     const out = body(playableCards(env, { leader: "L1", base: "BC", tag: "wants:self-damaged" }));
     expect(out.cards.map((c: { cardKey: string }) => c.cardKey)).toEqual(["W1"]);
+  });
+});
+
+/** A meta/leader-cards.json with one tournament entry per leader: [cardKey, inclusion] rows. */
+function leaderCardsFile(byLeader: Record<string, [string, number][]>): LeaderCardsFile {
+  return {
+    schemaVersion: 1,
+    window: { from: "2026-07-04", to: "2026-10-01", days: 90 },
+    weighting: "test weighting",
+    baseline: "test baseline",
+    maxCards: 150,
+    leaders: Object.entries(byLeader).map(([leader, cards]) => ({
+      leader: { cardKey: leader, title: leader, aspects: [] },
+      population: "tournament" as const,
+      fallback: false,
+      decks: 12,
+      weight: 18,
+      window: { from: "2026-07-04", to: "2026-10-01" },
+      topBase: null,
+      cards: cards.map(([cardKey, inclusion]) => ({ cardKey, title: cardKey, inclusion, meanCopies: 2, baselineInclusion: 0.1, lift: inclusion - 0.1 })),
+    })),
+  };
+}
+
+describe("playable_cards, leader-aware", () => {
+  const file = leaderCardsFile({ L1: [["W1", 0.8], ["P2", 0.4]], L2: [["P3", 0.5]] });
+  const leaderEnv: DeckEnv = { ...env, leaderCards: indexLeaderCards(file) };
+  const keys = (out: Record<string, any>) => out.cards.map((c: { cardKey: string }) => c.cardKey);
+
+  it("ranks within a cost by the leader's tournament inclusion, then play-calibrated score, and shows leaderInclusion", () => {
+    const out = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5 }));
+    expect(keys(out)).toEqual(["W1", "P2", "P1"]);
+    expect(out.cards.map((c: { leaderInclusion: number | null }) => c.leaderInclusion)).toEqual([0.8, 0.4, null]);
+    expect(out.rankedBy).toBe("leader");
+    expect(out.note).toContain("ranked by this leader's tournament decklist inclusion (tournament, 12 decks, 2026-07-04..2026-10-01)");
+    expect(out.note).toContain("leaderInclusion null = unplayed in this leader's decks");
+  });
+
+  it("ranks by score with rankBy score, and falls back to score for a leader without data", () => {
+    const byScore = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, rankBy: "score" }));
+    expect(keys(byScore)).toEqual(["P1", "P2", "W1"]);
+    expect(byScore.rankedBy).toBe("score");
+    expect(byScore.cards[2].leaderInclusion).toBe(0.8);
+    const none = body(playableCards({ ...env, leaderCards: indexLeaderCards(leaderCardsFile({ L2: [] })) }, { leader: "L1", base: "BC", costs: [3], perCost: 5 }));
+    expect(keys(none)).toEqual(["P1", "P2", "W1"]);
+    expect(none.rankedBy).toBe("score");
+    expect(none.cards[0]).not.toHaveProperty("leaderInclusion");
+  });
+
+  it("loads meta/leader-cards.json lazily from the package, and a package without it ranks by score", () => {
+    const pkg = mkdtempSync(path.join(process.env.TMPDIR ?? tmpdir(), "swu-leader-cards-"));
+    mkdirSync(path.join(pkg, "llm"));
+    const without: DeckEnv = { ...env, store: { ...env.store, dataDir: path.join(pkg, "llm") } };
+    expect(leaderCardsOf(without)).toBeNull();
+    expect(body(playableCards(without, { leader: "L1", base: "BC", costs: [3], perCost: 5 })).rankedBy).toBe("score");
+    mkdirSync(path.join(pkg, "meta"));
+    writeFileSync(path.join(pkg, "meta/leader-cards.json"), `${JSON.stringify(file)}\n`);
+    const withFile: DeckEnv = { ...env, store: { ...env.store, dataDir: path.join(pkg, "llm") } };
+    expect(leaderCardsOf(withFile)?.get("L1")?.byCard.get("W1")?.inclusion).toBe(0.8);
+    expect(keys(body(playableCards(withFile, { leader: "L1", base: "BC", costs: [3], perCost: 5 })))).toEqual(["W1", "P2", "P1"]);
+  });
+});
+
+describe("budget_alternatives, leader-aware", () => {
+  const leaderEnv: DeckEnv = { ...env, leaderCards: indexLeaderCards(leaderCardsFile({ L1: [["P2", 0.4]], L2: [["P3", 0.5]] })) };
+
+  it("lists only substitutes whose aspect penalty is no higher than the replaced card's, with leaderInclusion", () => {
+    const out = body(budgetAlternatives(leaderEnv, { decklist: lines(["P1", 1]), leader: "L1", base: "BC", minSaving: 0.1 }));
+    expect(out.slots[0].aspectPenalty).toBe(0);
+    expect(out.slots[0].alternatives.map((a: { cardKey: string; penalty: number; leaderInclusion: number | null }) => [a.cardKey, a.penalty, a.leaderInclusion])).toEqual([
+      ["P2", 0, 0.4],
+    ]);
+  });
+
+  it("prefers substitutes the leader's tournament decks play", () => {
+    const plain = body(budgetAlternatives(env, { decklist: lines(["P1", 1]), leader: "L2", base: "BV", minSaving: 0.1 }));
+    expect(plain.slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["P2", "P3"]);
+    const out = body(budgetAlternatives(leaderEnv, { decklist: lines(["P1", 1]), leader: "L2", base: "BV", minSaving: 0.1 }));
+    expect(out.slots[0].alternatives.map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion])).toEqual([
+      ["P3", 0.5],
+      ["P2", null],
+    ]);
   });
 });
 

@@ -1,8 +1,8 @@
 /**
  * @displayName Meta archetype step
  * @strategicPurpose Manipulation node (reduces), pipeline step of build:data (LampaGJ/swu-mcp#25): recent decklist
- * snapshots and the pinned swumetastats matchup capture in; data/runs/<date>/meta/{archetypes,winrates}.json and a
- * replay record out. The meta tools read only these files, and meta/ ships in the public data release, so every
+ * snapshots and the pinned swumetastats matchup capture in; data/runs/<date>/meta/{archetypes,winrates,leader-cards}.json
+ * and a replay record out. The meta tools read only these files, and meta/ ships in the public data release, so every
  * win rate here comes from swumetastats tournament data (decision D22): this step reads no Karabast data at all.
  * @tacticalObjective Maps each snapshot deck's SET_NNN ids to the run's cardKeys, keeps Premier decks only
  * (src/meta/format.ts), labels each tournament (event and placement known) or community, and hands the decks to
@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { DATED_DIR, readJson } from "../src/data.js";
-import { buildMeta, cardFacts, type MetaDeck } from "../src/meta/build.js";
+import { buildLeaderCards, buildMeta, cardFacts, type MetaDeck } from "../src/meta/build.js";
 import {
   foldDeckEvidence,
   foldMatchups,
@@ -27,7 +27,14 @@ import {
   parseMatchRecord,
   type NameResolver,
 } from "../src/meta/outcomes.js";
-import { metaFileSchema, metaReplaySchema, snapshotDeckSchema, winRatesFileSchema, type WinRatesFile } from "../src/meta/schema.js";
+import {
+  leaderCardsFileSchema,
+  metaFileSchema,
+  metaReplaySchema,
+  snapshotDeckSchema,
+  winRatesFileSchema,
+  type WinRatesFile,
+} from "../src/meta/schema.js";
 import { FormatRejects, premierVerdict, snapshotDeclaresPremier } from "../src/meta/format.js";
 import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap, normalizeName, type CardMap } from "./bench/card-map.js";
@@ -225,6 +232,8 @@ function main(): void {
   }
   p.log({ phase: "cluster", decks: decks.length });
   const meta = buildMeta(decks, facts);
+  p.log({ phase: "leader cards" });
+  const leaderCards = buildLeaderCards(decks, facts);
 
   const outcomeHashes: Record<string, string> = {};
   let matchups: WinRatesFile["matchups"] = null;
@@ -244,6 +253,7 @@ function main(): void {
   const outputs: Record<string, string> = {
     "archetypes.json": `${JSON.stringify(metaFileSchema.parse(meta))}\n`,
     "winrates.json": `${JSON.stringify(winrates)}\n`,
+    "leader-cards.json": `${JSON.stringify(leaderCardsFileSchema.parse(leaderCards))}\n`,
   };
   for (const [name, text] of Object.entries(outputs)) writeFileSync(path.join(outDir, name), text);
   const replay = metaReplaySchema.parse({
@@ -252,7 +262,7 @@ function main(): void {
     outputHash: Object.fromEntries(Object.entries(outputs).map(([name, text]) => [name, sha256Hex(text)])),
   });
   writeFileSync(path.join(outDir, "replay.json"), `${JSON.stringify(replay, null, 1)}\n`);
-  p.done({ archetypes: meta.archetypes.length });
+  p.done({ archetypes: meta.archetypes.length, leaders: leaderCards.leaders.length });
   console.log(
     JSON.stringify(
       {
@@ -261,6 +271,7 @@ function main(): void {
         primary: meta.primary,
         fallback: meta.fallback,
         populations: meta.populations,
+        leaderCards: { leaders: leaderCards.leaders.length, fallback: leaderCards.leaders.filter((l) => l.fallback).length },
         deckStats,
         matchups:
           matchups === null

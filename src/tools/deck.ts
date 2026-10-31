@@ -1,7 +1,10 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
-import { MissingDataError, splitCell, type CardRow, type CardStore } from "../data.js";
+import { MissingDataError, packageDirOf, readJson, splitCell, type CardRow, type CardStore } from "../data.js";
 import { loadClusterLabels, resolveClusterLabel } from "../embed/cluster-labels.js";
 import type { ClustersFile } from "../embed/files.js";
+import { indexLeaderCards, LEADER_CARDS_MAX, type LeaderCardsEntry, type LeaderCardsIndex } from "../meta/schema.js";
 import { rulesFor } from "../rules/store.js";
 import { countAtOrBelow } from "../scorer/rank.js";
 import type { ScoreRow } from "../scorer/scores-file.js";
@@ -40,9 +43,28 @@ export interface DeckEnv {
   /** Where the pinned cluster labels are read from; the committed data/cluster-labels.json when unset. */
   clusterLabelsPath?: string;
   dataVersion: string;
+  /** Per-leader tournament card inclusion; undefined = read <package>/meta/leader-cards.json on first use, null = none. */
+  leaderCards?: LeaderCardsIndex | null;
 }
 
 const envs = new WeakMap<CardStore, DeckEnv>();
+const leaderIndexes = new WeakMap<CardStore, LeaderCardsIndex | null>();
+
+/** The leader-cards index, loaded lazily so a package built before #19 still serves every deck tool (score ranking). */
+export function leaderCardsOf(env: DeckEnv): LeaderCardsIndex | null {
+  if (env.leaderCards !== undefined) return env.leaderCards;
+  const hit = leaderIndexes.get(env.store);
+  if (hit !== undefined) return hit;
+  const file = path.join(packageDirOf(env.store), "meta", "leader-cards.json");
+  const index = existsSync(file) ? indexLeaderCards(readJson(file)) : null;
+  leaderIndexes.set(env.store, index);
+  return index;
+}
+
+/** "tournament, 12 decks, 2026-07-04..2026-10-01", plus the community fallback when the leader has no tournament deck. */
+export function leaderSourceText(entry: LeaderCardsEntry): string {
+  return `${entry.population}, ${entry.decks} decks, ${entry.window.from}..${entry.window.to}${entry.fallback ? "; the leader has no tournament decklist in the window, so these are community lists" : ""}`;
+}
 
 export function deckEnvOf(store: CardStore): DeckEnv {
   const hit = envs.get(store);
@@ -378,6 +400,7 @@ function substituteCandidates(
 }
 
 const numberOr = (value: number | null | undefined, fallback: number): number => value ?? fallback;
+const playedBy = (row: { leaderInclusion?: number | null }): number => ((row.leaderInclusion ?? 0) > 0 ? 1 : 0);
 
 // ---------------------------------------------------------------------------------------------
 // deck_audit
@@ -800,6 +823,12 @@ export const playableCardsShape = {
   maxPenalty: z.number().int().min(0).default(0).describe("Highest aspect penalty to allow; 0 means every icon is supplied"),
   perCost: z.number().int().min(1).max(20).default(3),
   limit: z.number().int().min(1).max(200).default(30),
+  rankBy: z
+    .enum(["leader", "score"])
+    .optional()
+    .describe(
+      "leader (the default when the package holds leader-cards data for this leader): within a cost, cards this leader's tournament decks play most first, then play-calibrated score; score: play-calibrated score only",
+    ),
 };
 
 export function playableCards(env: DeckEnv, input: unknown): ToolResult {
@@ -810,6 +839,9 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const supplied = suppliedBy(pair);
   const held = new Map(partial.lines.map((l) => [l.syn.cardKey, l.count]));
   const heldCosts = new Set(partial.lines.map((l) => l.syn.structured.cost));
+  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
+  const rankedBy = leaderData !== null && args.rankBy !== "score" ? "leader" : "score";
+  const inclusionOf = (cardKey: string): number | null => leaderData?.byCard.get(cardKey)?.inclusion ?? null;
 
   const rows = env.ctx.cards.flatMap((syn) => {
     const cost = syn.structured.cost;
@@ -831,6 +863,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
         aspects: aspectGroup(syn),
         penalty,
         playCalibrated: env.scores.get(syn.cardKey)?.playCalibrated ?? null,
+        ...(leaderData === null ? {} : { leaderInclusion: inclusionOf(syn.cardKey) }),
         price: priceOf(env, syn.cardKey),
         remainingCopies: remaining,
       },
@@ -839,6 +872,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   rows.sort(
     (a, b) =>
       a.cost - b.cost ||
+      (rankedBy === "leader" ? numberOr(inclusionOf(b.cardKey), -1) - numberOr(inclusionOf(a.cardKey), -1) : 0) ||
       numberOr(b.playCalibrated, -Infinity) - numberOr(a.playCalibrated, -Infinity) ||
       a.penalty - b.penalty ||
       compareCodePoints(a.cardKey, b.cardKey),
@@ -857,11 +891,27 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     base: head(pair.base.row),
     suppliedIcons: iconText(supplied),
     unresolved: partial.unresolved,
-    note: "ranked within each cost by play-calibrated score (fitted to Premier inclusion; rank-meaningful only). Not leader-specific: no leader-level play data is held. Rotated cards are left out.",
+    rankedBy,
+    leaderSource:
+      leaderData === null
+        ? null
+        : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}` },
+    note: playableNote(leaderData?.entry ?? null, rankedBy),
     matched: rows.length,
     shown: shown.length,
     cards: shown,
   });
+}
+
+function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score"): string {
+  const score = "play-calibrated score (fitted to Premier inclusion; rank-meaningful only)";
+  if (entry === null) return `ranked within each cost by ${score}. Not leader-specific: this package holds no leader-cards data for this leader. Rotated cards are left out.`;
+  const capped = entry.cards.length >= LEADER_CARDS_MAX ? ` or below the ${LEADER_CARDS_MAX}-card cap of the leader index` : "";
+  const unplayed = `leaderInclusion null = unplayed in this leader's decks${capped}`;
+  const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry)})`;
+  return rankedBy === "leader"
+    ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}. Rotated cards are left out.`
+    : `ranked within each cost by ${score} (rankBy score); leaderInclusion = ${source}; ${unplayed}. Rotated cards are left out.`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -956,6 +1006,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const { lines, unresolved } = resolveList(env, args.decklist, "main");
   if (lines.length === 0) return noCards(unresolved);
   const supplied = pair === undefined ? undefined : suppliedBy(pair);
+  const leaderData = pair === undefined ? null : (leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null);
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const unpriced: string[] = [];
   const slots = lines.flatMap((line) => {
@@ -974,6 +1025,8 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
         const cheaper = priceOf(env, c.syn.cardKey);
         if (cheaper === null || price - cheaper < args.minSaving || (args.maxPrice !== undefined && cheaper > args.maxPrice)) return [];
         const score = env.scores.get(c.syn.cardKey)?.playCalibrated ?? null;
+        const penalty = supplied === undefined ? null : singlePenalty(c.syn, supplied);
+        if (penalty !== null && slotPenalty !== null && penalty > slotPenalty) return [];
         return [
           {
             cardKey: c.syn.cardKey,
@@ -984,12 +1037,14 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
             price: cheaper,
             saved: r2(price - cheaper),
             scoreDelta: score === null || slotScore === null ? null : r2(score - slotScore),
-            penalty: supplied === undefined ? null : singlePenalty(c.syn, supplied),
+            penalty,
+            ...(leaderData === null ? {} : { leaderInclusion: leaderData.byCard.get(c.syn.cardKey)?.inclusion ?? null }),
           },
         ];
       })
       .sort(
         (a, b) =>
+          playedBy(b) - playedBy(a) ||
           b.fills - a.fills ||
           b.saved - a.saved ||
           numberOr(b.scoreDelta, -Infinity) - numberOr(a.scoreDelta, -Infinity) ||
@@ -1012,7 +1067,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   return ok({
     dataVersion: env.dataVersion,
     priceImport: { id: env.market.prices.priceImportId, date: env.market.prices.priceImportFinishedAt?.slice(0, 10) ?? null },
-    note: `Canonical normal prices, US only. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base."}`,
+    note: `Canonical normal prices, US only. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes this leader's decks play (leaderInclusion > 0) come first; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
     unresolved,
     unpriced,
     slotsWithAlternatives: slots.length,
@@ -1448,7 +1503,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: tool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by play-calibrated score. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Not leader-specific play data.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
     playableCardsShape,
     playableCards,
   ),
@@ -1460,7 +1515,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: tool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty. Cards without a price are listed.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; played substitutes first). Cards without a price are listed.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

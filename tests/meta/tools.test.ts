@@ -1,9 +1,9 @@
 import { decode } from "@toon-format/toon";
 import { describe, expect, it } from "vitest";
 import type { CardRow, CardStore } from "../../src/data.js";
-import { buildMeta, cardFacts, DEFAULT_META_OPTIONS } from "../../src/meta/build.js";
+import { buildLeaderCards, buildMeta, cardFacts, DEFAULT_META_OPTIONS } from "../../src/meta/build.js";
 import { loadCounterTable } from "../../src/meta/counters.js";
-import { SWUMETASTATS_SOURCE } from "../../src/meta/schema.js";
+import { indexLeaderCards, LEADER_CARDS_MAX, leaderCardsFileSchema, SWUMETASTATS_SOURCE } from "../../src/meta/schema.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
@@ -13,13 +13,14 @@ import {
   costBand,
   createMetaEnv,
   evidenceClassOf,
+  leaderCards,
   metaAnswers,
   metaArchetypes,
   metaThreats,
   type AnswerRank,
 } from "../../src/tools/meta.js";
 import { COMMITTED_TABLE, mk } from "../synergy/fixtures.js";
-import { COUNTER_CARDS, deck } from "./fixtures.js";
+import { COUNTER_CARDS, deck, fact, LEADER_CARDS_DECKS, LEADER_CARDS_FACTS } from "./fixtures.js";
 
 const ENEMY_LEADER = mk("EL", "Enemy Leader", { type: "Leader", icons: ["Aggression", "Villainy"], cost: 6 });
 const OUR_LEADER = mk("OL", "Our Leader", { type: "Leader", icons: ["Vigilance", "Heroism"], cost: 6, subtitle: "Defender" });
@@ -27,6 +28,8 @@ const OUR_BASE = mk("OB", "Our Base", { type: "Base", icons: ["Command"], cost: 
 const ENEMY_BASE = mk("EB", "Enemy Base", { type: "Base", icons: ["Cunning"], cost: null });
 const AGGRESSION_BASE = mk("AB", "Aggression Base", { type: "Base", icons: ["Aggression"], cost: null });
 const ENEMY_BASE_2 = mk("EB2", "Other Enemy Base", { type: "Base", icons: ["Cunning"], cost: null });
+const BOUNTY_BOSS = mk("LC", "Bounty Boss", { type: "Leader", icons: ["Command", "Heroism"], cost: 5 });
+const CASUAL_LEADER = mk("CL", "Casual Leader", { type: "Leader", icons: ["Cunning"], cost: 4 });
 
 function featureRecord(card: ReturnType<typeof mk>, stats: { power: number | null; hp: number | null; arenas: string[] }) {
   return { ...card, structured: { ...card.structured, ...stats }, keywords: [] };
@@ -39,6 +42,8 @@ const extra = [
   featureRecord(ENEMY_BASE, { power: null, hp: 25, arenas: [] }),
   featureRecord(ENEMY_BASE_2, { power: null, hp: 25, arenas: [] }),
   featureRecord(AGGRESSION_BASE, { power: null, hp: 25, arenas: [] }),
+  featureRecord(BOUNTY_BOSS, { power: 3, hp: 6, arenas: ["Ground"] }),
+  featureRecord(CASUAL_LEADER, { power: 2, hp: 5, arenas: ["Ground"] }),
 ];
 const features = [...COUNTER_CARDS, ...extra];
 const synergy = synergyCardsSchema.parse(features);
@@ -403,5 +408,93 @@ describe("tool output carries no Karabast number (D22)", () => {
       expect(text.toLowerCase()).not.toContain("karabast");
       expect(text).toContain(SWUMETASTATS_SOURCE);
     }
+  });
+});
+
+describe("leader cards build (meta/leader-cards.json)", () => {
+  const file = buildLeaderCards(LEADER_CARDS_DECKS, LEADER_CARDS_FACTS);
+
+  it("gives each leader's placement-weighted inclusion, mean copies and lift over aspect-eligible decks", () => {
+    const lc = file.leaders.find((l) => l.leader.cardKey === "LC");
+    expect(lc).toMatchObject({
+      leader: { cardKey: "LC", title: "Bounty Boss", aspects: ["Command", "Heroism"] },
+      population: "tournament",
+      fallback: false,
+      decks: 2,
+      window: { from: file.window.from, to: "2026-10-01" },
+      topBase: { cardKey: "CB", title: "Command Base", decks: 2 },
+    });
+    expect(lc?.cards).toEqual([
+      { cardKey: "A", title: "Card A", inclusion: 1, meanCopies: 2.5, baselineInclusion: 1, lift: 0 },
+      { cardKey: "N", title: "Card N", inclusion: 1, meanCopies: 1.5, baselineInclusion: 0.6, lift: 0.4 },
+      { cardKey: "B", title: "Card B", inclusion: 0.5, meanCopies: 1, baselineInclusion: 0.5, lift: 0 },
+    ]);
+  });
+
+  it("falls back to community lists only for a leader with no tournament deck, and says so", () => {
+    const cl = file.leaders.find((l) => l.leader.cardKey === "CL");
+    expect(cl).toMatchObject({ population: "community", fallback: true, decks: 1 });
+    expect(cl?.cards.map((c) => c.cardKey)).toEqual(["N"]);
+    expect(file.leaders.map((l) => l.leader.cardKey)).toEqual(["AX", "CL", "LC", "OX"]);
+  });
+
+  it("is deterministic and independent of deck order, and parses as its strict schema", () => {
+    const again = buildLeaderCards([...LEADER_CARDS_DECKS].reverse(), LEADER_CARDS_FACTS);
+    expect(JSON.stringify(again)).toBe(JSON.stringify(file));
+    expect(() => leaderCardsFileSchema.parse({ ...file, extra: 1 })).toThrow();
+  });
+
+  it("caps each leader at LEADER_CARDS_MAX cards", () => {
+    const keys = Array.from({ length: LEADER_CARDS_MAX + 10 }, (_, i) => `K${String(i).padStart(3, "0")}`);
+    const facts = new Map([...LEADER_CARDS_FACTS, ...keys.map((k) => [k, fact(k)] as const)]);
+    const big = deck("big", { leader: "LC", base: "CB", cards: keys.map((k) => [k, 1] as [string, number]) });
+    const out = buildLeaderCards([big], facts);
+    expect(out.leaders[0].cards).toHaveLength(LEADER_CARDS_MAX);
+  });
+});
+
+describe("leader_cards", () => {
+  const file = buildLeaderCards(LEADER_CARDS_DECKS, LEADER_CARDS_FACTS);
+  const leaderEnv = createMetaEnv({ ...deckEnv, leaderCards: indexLeaderCards(file) }, meta, winrates, loadCounterTable(), features);
+  const keys = (out: { cards: { cardKey: string }[] }) => out.cards.map((c) => c.cardKey);
+
+  it("lists the leader's cards by inclusion with population, window, deck count and status fact", () => {
+    const out = body(leaderCards(leaderEnv, { leader: "LC" }));
+    expect(out).toMatchObject({
+      leader: { cardKey: "LC", title: "Bounty Boss" },
+      population: "tournament",
+      fallback: false,
+      window: `${file.window.from}..2026-10-01`,
+      decks: 2,
+      topBase: { cardKey: "CB", title: "Command Base", decks: 2 },
+      status: "fact",
+      matched: 3,
+      shown: 3,
+    });
+    expect(keys(out)).toEqual(["A", "N", "B"]);
+    expect(out.cards[1]).toEqual({ cardKey: "N", title: "Card N", inclusion: 1, meanCopies: 1.5, baselineInclusion: 0.6, lift: 0.4 });
+    expect(out.note).toContain("tournament");
+  });
+
+  it("sorts by lift, filters by minInclusion, honours limit and resolves an exact title", () => {
+    expect(keys(body(leaderCards(leaderEnv, { leader: "LC", sortBy: "lift" })))).toEqual(["N", "A", "B"]);
+    expect(keys(body(leaderCards(leaderEnv, { leader: "LC", minInclusion: 0.6 })))).toEqual(["A", "N"]);
+    const one = body(leaderCards(leaderEnv, { leader: "Bounty Boss", limit: 1 }));
+    expect(one).toMatchObject({ matched: 3, shown: 1 });
+    expect(keys(one)).toEqual(["A"]);
+  });
+
+  it("names the community fallback, and fails for a leader with no decks or a package without the file", () => {
+    const cl = body(leaderCards(leaderEnv, { leader: "CL" }));
+    expect(cl).toMatchObject({ population: "community", fallback: true, decks: 1 });
+    expect(cl.note).toContain("no tournament decklist");
+    expect(leaderCards(leaderEnv, { leader: "OL" }).isError).toBe(true);
+    expect(leaderCards(createMetaEnv({ ...deckEnv, leaderCards: null }, meta, winrates, loadCounterTable(), features), { leader: "LC" }).isError).toBe(
+      true,
+    );
+  });
+
+  it("carries no Karabast mention (D22)", () => {
+    expect(leaderCards(leaderEnv, { leader: "LC" }).content[0].text.toLowerCase()).not.toContain("karabast");
   });
 });

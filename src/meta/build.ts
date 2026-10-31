@@ -1,7 +1,17 @@
 import { z } from "zod";
 import { compareCodePoints, sha256Hex, canonicalJson } from "../swu/canonical.js";
 import { clusterDecks, type ClusterDeck, type ClusterOptions } from "./cluster.js";
-import { metaFileSchema, type Archetype, type KeyUnit, type MetaFile, type Population, type ThreatProfile } from "./schema.js";
+import {
+  LEADER_CARDS_MAX,
+  leaderCardsFileSchema,
+  metaFileSchema,
+  type Archetype,
+  type KeyUnit,
+  type LeaderCardsFile,
+  type MetaFile,
+  type Population,
+  type ThreatProfile,
+} from "./schema.js";
 
 /**
  * @displayName Meta archetype builder
@@ -345,16 +355,20 @@ function archetypesOf(
   return { archetypes: out, clustered };
 }
 
+function inWindowOf(allDecks: readonly MetaDeck[], window: { from: string; to: string }): MetaDeck[] {
+  return allDecks.filter((d) => {
+    const day = d.createdAt.slice(0, 10);
+    return compareCodePoints(day, window.from) >= 0 && compareCodePoints(day, window.to) <= 0;
+  });
+}
+
 export function buildMeta(
   allDecks: readonly MetaDeck[],
   facts: ReadonlyMap<string, CardFact>,
   options: MetaOptions = DEFAULT_META_OPTIONS,
 ): MetaFile {
   const window = windowOf(allDecks, options.days);
-  const inWindow = allDecks.filter((d) => {
-    const day = d.createdAt.slice(0, 10);
-    return compareCodePoints(day, window.from) >= 0 && compareCodePoints(day, window.to) <= 0;
-  });
+  const inWindow = inWindowOf(allDecks, window);
   const weights = deckWeights(inWindow);
   const byPopulation = (p: Population): MetaDeck[] => inWindow.filter((d) => d.population === p);
   const tournament = byPopulation("tournament");
@@ -401,5 +415,118 @@ export function buildMeta(
     },
     populations,
     archetypes,
+  });
+}
+
+export const LEADER_CARDS_BASELINE =
+  "baselineInclusion = placement-weighted inclusion of the card across every deck of the same population in the window whose leader and base aspect icons cover the card's aspect icons (decks that could play it without an aspect penalty); lift = inclusion - baselineInclusion";
+
+const iconCounts = (icons: readonly string[]): Map<string, number> => {
+  const out = new Map<string, number>();
+  for (const icon of icons) out.set(icon, (out.get(icon) ?? 0) + 1);
+  return out;
+};
+
+interface IconGroup {
+  supplied: Map<string, number>;
+  weight: number;
+  inclusion: Map<string, number>;
+}
+
+/** Baseline inclusion of a card: weighted share among the decks whose leader and base icons cover the card's icons. */
+function baselineOf(decks: readonly MetaDeck[], weights: ReadonlyMap<string, number>, facts: ReadonlyMap<string, CardFact>) {
+  const groups = new Map<string, IconGroup>();
+  for (const d of [...decks].sort((a, b) => compareCodePoints(a.key, b.key))) {
+    const icons = [...(facts.get(d.leader)?.aspectIcons ?? []), ...(facts.get(d.base)?.aspectIcons ?? [])].sort(compareCodePoints);
+    const key = icons.join("+");
+    const group = groups.get(key) ?? { supplied: iconCounts(icons), weight: 0, inclusion: new Map<string, number>() };
+    const w = weights.get(d.key) ?? 1;
+    group.weight += w;
+    for (const [card] of d.cards) group.inclusion.set(card, (group.inclusion.get(card) ?? 0) + w);
+    groups.set(key, group);
+  }
+  const ordered = [...groups].sort((a, b) => compareCodePoints(a[0], b[0])).map(([, g]) => g);
+  const covering = new Map<string, IconGroup[]>();
+  return (card: CardFact): number => {
+    const needKey = [...card.aspectIcons].sort(compareCodePoints).join("+");
+    let hit = covering.get(needKey);
+    if (hit === undefined) {
+      const need = iconCounts(card.aspectIcons);
+      hit = ordered.filter((g) => [...need].every(([icon, n]) => (g.supplied.get(icon) ?? 0) >= n));
+      covering.set(needKey, hit);
+    }
+    const weight = hit.reduce((s, g) => s + g.weight, 0);
+    return weight === 0 ? 0 : hit.reduce((s, g) => s + (g.inclusion.get(card.cardKey) ?? 0), 0) / weight;
+  };
+}
+
+/**
+ * Manipulation node (reduces), #19: per leader, the placement-weighted inclusion and mean copies of every card over all
+ * of the leader's decks in the meta window, against the card's baseline among aspect-eligible decks of the same
+ * population. Tournament decks only, unless the leader has none in the window (then community, flagged fallback).
+ */
+export function buildLeaderCards(
+  allDecks: readonly MetaDeck[],
+  facts: ReadonlyMap<string, CardFact>,
+  options: MetaOptions = DEFAULT_META_OPTIONS,
+): LeaderCardsFile {
+  const window = windowOf(allDecks, options.days);
+  const inWindow = inWindowOf(allDecks, window);
+  const weights = deckWeights(inWindow);
+  const byPopulation = new Map(
+    (["tournament", "community"] as Population[]).map((p) => {
+      const decks = inWindow.filter((d) => d.population === p);
+      return [p, { decks, baseline: baselineOf(decks, weights, facts) }] as const;
+    }),
+  );
+  const leaders = [...new Set(inWindow.map((d) => d.leader))].sort(compareCodePoints);
+  const entries = leaders.map((leaderKey) => {
+    const tournament = (byPopulation.get("tournament") as { decks: MetaDeck[] }).decks.filter((d) => d.leader === leaderKey);
+    const population: Population = tournament.length > 0 ? "tournament" : "community";
+    const pop = byPopulation.get(population) as { decks: MetaDeck[]; baseline: (card: CardFact) => number };
+    const members = (population === "tournament" ? tournament : pop.decks.filter((d) => d.leader === leaderKey))
+      .slice()
+      .sort((a, b) => compareCodePoints(a.key, b.key));
+    const weighted = members.map((deck) => ({ deck, weight: weights.get(deck.key) ?? 1 }));
+    const { copies, inclusion, total } = meanCopies(weighted);
+    const cards = [...inclusion]
+      .filter(([card]) => facts.has(card))
+      .map(([card, inc]) => {
+        const f = facts.get(card) as CardFact;
+        const included = r4(inc);
+        const baselineInclusion = r4(pop.baseline(f));
+        return {
+          cardKey: card,
+          title: f.title,
+          inclusion: included,
+          meanCopies: r2(copies.get(card) ?? 0),
+          baselineInclusion,
+          lift: r4(included - baselineInclusion),
+        };
+      })
+      .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.cardKey, b.cardKey))
+      .slice(0, LEADER_CARDS_MAX);
+    const baseCounts = new Map<string, number>();
+    for (const d of members) baseCounts.set(d.base, (baseCounts.get(d.base) ?? 0) + 1);
+    const top = [...baseCounts].sort((a, b) => b[1] - a[1] || compareCodePoints(a[0], b[0]))[0];
+    const leader = facts.get(leaderKey);
+    return {
+      leader: { cardKey: leaderKey, title: leader?.title ?? leaderKey, aspects: leader?.aspectIcons ?? [] },
+      population,
+      fallback: population !== "tournament",
+      decks: members.length,
+      weight: r2(total),
+      window: { from: window.from, to: window.to },
+      topBase: top === undefined ? null : { cardKey: top[0], title: facts.get(top[0])?.title ?? top[0], decks: top[1] },
+      cards,
+    };
+  });
+  return leaderCardsFileSchema.parse({
+    schemaVersion: 1,
+    window,
+    weighting: WEIGHTING,
+    baseline: LEADER_CARDS_BASELINE,
+    maxCards: LEADER_CARDS_MAX,
+    leaders: entries,
   });
 }

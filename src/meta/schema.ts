@@ -129,6 +129,52 @@ export const metaFileSchema = z.strictObject({
 });
 export type MetaFile = z.infer<typeof metaFileSchema>;
 
+/** Most cards kept per leader in meta/leader-cards.json, the size guard of the file. */
+export const LEADER_CARDS_MAX = 150;
+
+const leaderCardRow = z.strictObject({
+  cardKey: z.string(),
+  title: z.string(),
+  inclusion: z.number(),
+  meanCopies: z.number(),
+  baselineInclusion: z.number(),
+  lift: z.number(),
+});
+export type LeaderCardRow = z.infer<typeof leaderCardRow>;
+
+const window2 = z.strictObject({ from: z.iso.date(), to: z.iso.date() });
+
+const leaderCardsEntry = z.strictObject({
+  leader: z.strictObject({ cardKey: z.string(), title: z.string(), aspects: z.array(z.string()) }),
+  population: z.enum(POPULATIONS),
+  /** True when the leader has no tournament deck in the window, so its rows rest on community lists. */
+  fallback: z.boolean(),
+  decks: z.number().int(),
+  weight: z.number(),
+  window: window2,
+  topBase: z.strictObject({ cardKey: z.string(), title: z.string(), decks: z.number().int() }).nullable(),
+  cards: z.array(leaderCardRow).max(LEADER_CARDS_MAX),
+});
+export type LeaderCardsEntry = z.infer<typeof leaderCardsEntry>;
+
+/** Per-leader card inclusion over all of the leader's decks in the meta window, with lift over aspect-eligible decks (#19). */
+export const leaderCardsFileSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  window: z.strictObject({ from: z.iso.date(), to: z.iso.date(), days: z.number().int() }),
+  weighting: z.string(),
+  baseline: z.string(),
+  maxCards: z.number().int(),
+  leaders: z.array(leaderCardsEntry),
+});
+export type LeaderCardsFile = z.infer<typeof leaderCardsFileSchema>;
+
+export type LeaderCardsIndex = ReadonlyMap<string, { entry: LeaderCardsEntry; byCard: ReadonlyMap<string, LeaderCardRow> }>;
+
+export function indexLeaderCards(raw: unknown): LeaderCardsIndex {
+  const file = leaderCardsFileSchema.parse(raw);
+  return new Map(file.leaders.map((entry) => [entry.leader.cardKey, { entry, byCard: new Map(entry.cards.map((c) => [c.cardKey, c])) }]));
+}
+
 /**
  * Every shipped win-rate number comes from swumetastats.com's melee.gg tournament data (decision D22): Karabast
  * games, aggregates included, never reach meta/ outputs or tool output. The literal is the only source a

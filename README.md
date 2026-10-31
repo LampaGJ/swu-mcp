@@ -2,7 +2,7 @@
 
 Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discovery and card similarity, served to AI assistants over the Model Context Protocol (MCP, stdio). Every number comes from deterministic code over pinned inputs. No model runs at query time and none decides a score.
 
-Status: MVP (swu-mcp#7). All 48 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
+Status: MVP (swu-mcp#7). All 49 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
 
 ## Install
 
@@ -126,9 +126,9 @@ Decks, collections and trades (lists arrive as `{card, count}` arguments, a card
 - `deck_audit` one-call report on a decklist under a leader and base: curve against the rubric's stat curve, mean score, aspect penalty per card, orphan wants and role-cluster gaps.
 - `deck_legality_check` exactly 1 leader and 1 base, 50 other cards (or the base's changed minimum), 3 copies at most, no tokens, Premier cardpool, each failure with its Comprehensive Rules section (9.2.2.a to d, 8.5.5, 1.2.3, 3.2.1.a). No ban or suspension ledger, no asOf date and no sideboard check yet.
 - `suggest_leader_base` leader and base aspect pairs ranked by the penalty for a pile of cards.
-- `playable_cards` the best cards for a leader and base, by cost, optionally filling the costs of a partial pile.
+- `playable_cards` the best cards for a leader and base, by cost, optionally filling the costs of a partial pile. Within a cost, cards that this leader's tournament decklists play most come first (`leaderInclusion`, with the population and window named), then the play-calibrated score; `rankBy: "score"`, or a data package without `meta/leader-cards.json`, ranks by score alone.
 - `fungible_in_deck` same-role substitutes per deck slot, least aspect penalty first.
-- `budget_alternatives` cheaper same-role substitutes with the saving and the score change.
+- `budget_alternatives` cheaper same-role substitutes with the saving and the score change. With a leader and base, a substitute never carries a higher aspect penalty than the card it replaces, and substitutes that the leader's tournament decks play come first (`leaderInclusion`).
 - `price_list` total US price of a deck or collection, with the top share and totals by first set, rarity, aspect or type.
 - `trade_balance` two lists compared by market price, low price and rubric score.
 - `owned_vs_needed` a decklist against an owned list: missing copies, cost to complete, owned substitutes.
@@ -140,6 +140,7 @@ Meta defense (every win rate comes from swumetastats tournament data, melee.gg e
 - `meta_archetypes` the current Premier archetypes: tournament decklists from the last 90 days of the newest snapshot (placement-weighted), clustered by leader, base aspect and shared core cards, with meta share, top-8 share, the date window, the leader and base aspect's tournament match record (n and 95% interval), threats, core cards and the most-played base (`topBase`). Community lists are a separate population, and the fallback when a window holds too few tournament decks.
 - `meta_threats` one archetype in depth: bases, arena split, curve, keywords, upgrade and token reliance, key units with cost, power and HP, core cards with inclusion rates, threats and its tournament record against the field and against each other large archetype (leader and base aspect matchups, with n and 95% interval).
 - `meta_answers` cards in our aspects that answer the largest archetypes, penalty-free first, from a leader and base or a decklist: the threats each answers with clause evidence and `status: candidate`, coverage weighted by meta share, cost, copies already in the deck, and tournament deck evidence: the match win rate of comparable decks (same leader and base aspects, else same aspect set) with the card against those without it, with n, 95% interval, source and window. Opponents are not known per match, so this is not a rate against any archetype. The answer relations are the committed table `data/counters.json`.
+- `leader_cards` the cards a leader's decklists actually play: every card in all of the leader's decks in the meta window (tournament decklists; community lists only when the leader has no tournament deck, and the output says so), with placement-weighted inclusion, mean copies, baseline inclusion across the decks whose leader and base aspects could play the card, and lift over that baseline. `sortBy` is `inclusion` (raw popularity) or `lift`; the output names the population, window and deck count, with `status: fact`.
 
 Provenance
 

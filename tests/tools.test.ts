@@ -127,6 +127,7 @@ describe("MCP protocol", () => {
       "get_rule",
       "keyword_rules",
       "kin_cards",
+      "leader_cards",
       "list_facet",
       "list_sets",
       "meta_answers",
