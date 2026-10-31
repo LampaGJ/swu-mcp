@@ -1,0 +1,418 @@
+{
+ "schemaVersion": 1,
+ "step": "rung2-tuning",
+ "label": "bot play (forceteki, typed driver), not human results",
+ "baseline": {
+  "spec": "rung1",
+  "id": "rung1-rules",
+  "version": "1",
+  "rung": 1,
+  "params": {
+   "mu": 0,
+   "lambda": 0,
+   "handWeight": 0.5,
+   "protectThreshold": 1,
+   "tempo": 0.5,
+   "mulliganCheap": 2,
+   "resourceCap": 7
+  },
+  "paramsSha256": "587af70cb95bb0e4512c2a0154955f47d1ee0f0d9ce65c71194918ada9c46a07"
+ },
+ "driver": {
+  "name": "typed (src/sims)",
+  "codeCommit": "a5edac6415545b9448da13c21397db23dbdd5e09",
+  "botScheme": "sha256-counter-v1",
+  "recordMode": "none"
+ },
+ "engine": {
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "inputs": {
+  "scoresSha256": "edbc91eb4b7d18d3e5fe76c4e31ac2092697047c033cb3da58b9885bd00b4284",
+  "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "featuresSha256": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "leaderCardsSha256": "6f828e4f54941acaff7691db4ded2ea5a236b4c2de87226a319dc322a1b726eb",
+  "pairsSha256": "a9e0f6c8e639b95e4a800562d9371d0673a5393b166b058bf8ff6744463d36be",
+  "pairPrecisionSha256": "aec05327d3a57d4ed808708b99a31cc6b00f47f88c3c0670b405a2021fd8e3e1",
+  "complementaritySha256": "451871fc24a92325729b915257106c80123550c267126653a788ba66c3e39934"
+ },
+ "run": "2026-10-31",
+ "panel": [
+  {
+   "archetype": "t001-a98697",
+   "archetypeName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "share": 0.0754,
+   "file": "melee-5681125d-f7a1-4c75-87ca-b4bc0160f8a6.json",
+   "placement": 1,
+   "field": 72,
+   "date": "2026-09-06",
+   "sha256": "a94a1f812a931cdc081e752bb3bc115618cddd980d45127bb4e30d82d635cf3b"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "archetypeName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "share": 0.0716,
+   "file": "melee-2162c700-3b5a-424d-95cb-b4920028faa5.json",
+   "placement": 1,
+   "field": 545,
+   "date": "2026-07-25",
+   "sha256": "6fffe102c14b889b8fbb59aab8416e6f7216ab7d28d40226f813e21374281cc6"
+  },
+  {
+   "archetype": "t003-75e861",
+   "archetypeName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "share": 0.051,
+   "file": "melee-46ae29fa-01b5-4a84-8a78-b4d101228caf.json",
+   "placement": 1,
+   "field": 97,
+   "date": "2026-09-27",
+   "sha256": "bd507aa9298d16e212de6a7bc40ff68914f3e9e65c7b144187d264071c2b0d53"
+  },
+  {
+   "archetype": "t004-15109d",
+   "archetypeName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "share": 0.0478,
+   "file": "melee-94acf967-5ed2-4f3f-9b7c-b4c90186712e.json",
+   "placement": 1,
+   "field": 42,
+   "date": "2026-09-19",
+   "sha256": "6750dc1aa20b17a8a8d23be4bfef84c3c7ec905a04a9a51c92e37b53a1f51323"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "archetypeName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "share": 0.0385,
+   "file": "melee-56969b6a-395c-41f9-91cb-b4ad00fe690f.json",
+   "placement": 1,
+   "field": 24,
+   "date": "2026-08-23",
+   "sha256": "50dfdf3d84b841de1d18e555b1267b5ba4ac0e45c8aa705c1bab6e7290f6dc0e"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "archetypeName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "share": 0.0365,
+   "file": "melee-4ae98532-3303-470b-b77d-b4d1002ee4ac.json",
+   "placement": 1,
+   "field": 74,
+   "date": "2026-09-26",
+   "sha256": "62784817ef64f28396b388843e5a5a1509a4b0e57bf9a91745b2e5594493fdbe"
+  }
+ ],
+ "codeCommit": "9f224cf6817dc969685428dbefc3e7887126a495-dirty",
+ "seeds": {
+  "range": "tuning",
+  "from": 1000000,
+  "to": 1000143
+ },
+ "grid": "mu=0,0.5,1,2;lambda=0,0.25,0.5,1",
+ "rows": [
+  {
+   "mu": 0,
+   "lambda": 0.25,
+   "pooled": {
+    "wins": 143,
+    "n": 284,
+    "share": 0.5035,
+    "low": 0.4457,
+    "high": 0.5612
+   },
+   "discordant": {
+    "candidate2to0": 5,
+    "baseline2to0": 4,
+    "pValue": 1
+   },
+   "nonDecisiveShare": 0.0139,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 0,
+   "lambda": 0.5,
+   "pooled": {
+    "wins": 145,
+    "n": 284,
+    "share": 0.5106,
+    "low": 0.4527,
+    "high": 0.5682
+   },
+   "discordant": {
+    "candidate2to0": 10,
+    "baseline2to0": 7,
+    "pValue": 0.6291
+   },
+   "nonDecisiveShare": 0.0139,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 0,
+   "lambda": 1,
+   "pooled": {
+    "wins": 146,
+    "n": 283,
+    "share": 0.5159,
+    "low": 0.4579,
+    "high": 0.5735
+   },
+   "discordant": {
+    "candidate2to0": 16,
+    "baseline2to0": 12,
+    "pValue": 0.5716
+   },
+   "nonDecisiveShare": 0.0174,
+   "decksAbove": 3,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 0.5,
+   "lambda": 0,
+   "pooled": {
+    "wins": 147,
+    "n": 285,
+    "share": 0.5158,
+    "low": 0.4579,
+    "high": 0.5732
+   },
+   "discordant": {
+    "candidate2to0": 7,
+    "baseline2to0": 3,
+    "pValue": 0.3438
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0001
+  },
+  {
+   "mu": 0.5,
+   "lambda": 0.25,
+   "pooled": {
+    "wins": 145,
+    "n": 285,
+    "share": 0.5088,
+    "low": 0.451,
+    "high": 0.5663
+   },
+   "discordant": {
+    "candidate2to0": 8,
+    "baseline2to0": 6,
+    "pValue": 0.7905
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0001
+  },
+  {
+   "mu": 0.5,
+   "lambda": 0.5,
+   "pooled": {
+    "wins": 146,
+    "n": 285,
+    "share": 0.5123,
+    "low": 0.4545,
+    "high": 0.5698
+   },
+   "discordant": {
+    "candidate2to0": 9,
+    "baseline2to0": 6,
+    "pValue": 0.6072
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0001
+  },
+  {
+   "mu": 0.5,
+   "lambda": 1,
+   "pooled": {
+    "wins": 144,
+    "n": 286,
+    "share": 0.5035,
+    "low": 0.4459,
+    "high": 0.561
+   },
+   "discordant": {
+    "candidate2to0": 11,
+    "baseline2to0": 10,
+    "pValue": 1
+   },
+   "nonDecisiveShare": 0.0069,
+   "decksAbove": 3,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 1,
+   "lambda": 0,
+   "pooled": {
+    "wins": 138,
+    "n": 284,
+    "share": 0.4859,
+    "low": 0.4284,
+    "high": 0.5438
+   },
+   "discordant": {
+    "candidate2to0": 7,
+    "baseline2to0": 12,
+    "pValue": 0.3593
+   },
+   "nonDecisiveShare": 0.0139,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 1,
+   "lambda": 0.25,
+   "pooled": {
+    "wins": 141,
+    "n": 285,
+    "share": 0.4947,
+    "low": 0.4371,
+    "high": 0.5525
+   },
+   "discordant": {
+    "candidate2to0": 9,
+    "baseline2to0": 11,
+    "pValue": 0.8238
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 1,
+   "lambda": 0.5,
+   "pooled": {
+    "wins": 143,
+    "n": 285,
+    "share": 0.5018,
+    "low": 0.4441,
+    "high": 0.5594
+   },
+   "discordant": {
+    "candidate2to0": 7,
+    "baseline2to0": 7,
+    "pValue": 1
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 1,
+   "lambda": 1,
+   "pooled": {
+    "wins": 143,
+    "n": 285,
+    "share": 0.5018,
+    "low": 0.4441,
+    "high": 0.5594
+   },
+   "discordant": {
+    "candidate2to0": 13,
+    "baseline2to0": 13,
+    "pValue": 1
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 2,
+   "lambda": 0,
+   "pooled": {
+    "wins": 136,
+    "n": 285,
+    "share": 0.4772,
+    "low": 0.4199,
+    "high": 0.5351
+   },
+   "discordant": {
+    "candidate2to0": 7,
+    "baseline2to0": 14,
+    "pValue": 0.1892
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 2,
+   "lambda": 0.25,
+   "pooled": {
+    "wins": 139,
+    "n": 285,
+    "share": 0.4877,
+    "low": 0.4302,
+    "high": 0.5455
+   },
+   "discordant": {
+    "candidate2to0": 10,
+    "baseline2to0": 14,
+    "pValue": 0.5413
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0002
+  },
+  {
+   "mu": 2,
+   "lambda": 0.5,
+   "pooled": {
+    "wins": 135,
+    "n": 285,
+    "share": 0.4737,
+    "low": 0.4165,
+    "high": 0.5316
+   },
+   "discordant": {
+    "candidate2to0": 9,
+    "baseline2to0": 17,
+    "pValue": 0.1686
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0001
+  },
+  {
+   "mu": 2,
+   "lambda": 1,
+   "pooled": {
+    "wins": 134,
+    "n": 285,
+    "share": 0.4702,
+    "low": 0.413,
+    "high": 0.5281
+   },
+   "discordant": {
+    "candidate2to0": 13,
+    "baseline2to0": 23,
+    "pValue": 0.1325
+   },
+   "nonDecisiveShare": 0.0104,
+   "decksAbove": 4,
+   "fallbackShare": 0.0001
+  }
+ ],
+ "best": {
+  "mu": 0,
+  "lambda": 1,
+  "pooled": {
+   "wins": 146,
+   "n": 283,
+   "share": 0.5159,
+   "low": 0.4579,
+   "high": 0.5735
+  },
+  "discordant": {
+   "candidate2to0": 16,
+   "baseline2to0": 12,
+   "pValue": 0.5716
+  },
+  "nonDecisiveShare": 0.0174,
+  "decksAbove": 3,
+  "fallbackShare": 0.0002
+ }
+}

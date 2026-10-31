@@ -1,0 +1,390 @@
+{
+ "schemaVersion": 1,
+ "step": "warrior-deck-rung1",
+ "label": "bot play (forceteki, typed driver), not human results",
+ "policy": {
+  "spec": "rung1",
+  "id": "rung1-rules",
+  "version": "1",
+  "rung": 1,
+  "params": {
+   "mu": 0,
+   "lambda": 0,
+   "handWeight": 0.5,
+   "protectThreshold": 1,
+   "tempo": 0.5,
+   "mulliganCheap": 2,
+   "resourceCap": 7
+  },
+  "paramsSha256": "587af70cb95bb0e4512c2a0154955f47d1ee0f0d9ce65c71194918ada9c46a07",
+  "driverPolicy": "rung1"
+ },
+ "driver": {
+  "name": "typed (src/sims)",
+  "codeCommit": "a5edac6415545b9448da13c21397db23dbdd5e09",
+  "botScheme": "sha256-counter-v1",
+  "recordMode": "none"
+ },
+ "engine": {
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "inputs": {
+  "scoresSha256": "edbc91eb4b7d18d3e5fe76c4e31ac2092697047c033cb3da58b9885bd00b4284",
+  "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "featuresSha256": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "leaderCardsSha256": "6f828e4f54941acaff7691db4ded2ea5a236b4c2de87226a319dc322a1b726eb",
+  "pairsSha256": null,
+  "pairPrecisionSha256": null,
+  "complementaritySha256": null
+ },
+ "run": "2026-10-31",
+ "panel": [
+  {
+   "archetype": "t001-a98697",
+   "archetypeName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "share": 0.0754,
+   "file": "melee-5681125d-f7a1-4c75-87ca-b4bc0160f8a6.json",
+   "placement": 1,
+   "field": 72,
+   "date": "2026-09-06",
+   "sha256": "a94a1f812a931cdc081e752bb3bc115618cddd980d45127bb4e30d82d635cf3b"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "archetypeName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "share": 0.0716,
+   "file": "melee-2162c700-3b5a-424d-95cb-b4920028faa5.json",
+   "placement": 1,
+   "field": 545,
+   "date": "2026-07-25",
+   "sha256": "6fffe102c14b889b8fbb59aab8416e6f7216ab7d28d40226f813e21374281cc6"
+  },
+  {
+   "archetype": "t003-75e861",
+   "archetypeName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "share": 0.051,
+   "file": "melee-46ae29fa-01b5-4a84-8a78-b4d101228caf.json",
+   "placement": 1,
+   "field": 97,
+   "date": "2026-09-27",
+   "sha256": "bd507aa9298d16e212de6a7bc40ff68914f3e9e65c7b144187d264071c2b0d53"
+  },
+  {
+   "archetype": "t004-15109d",
+   "archetypeName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "share": 0.0478,
+   "file": "melee-94acf967-5ed2-4f3f-9b7c-b4c90186712e.json",
+   "placement": 1,
+   "field": 42,
+   "date": "2026-09-19",
+   "sha256": "6750dc1aa20b17a8a8d23be4bfef84c3c7ec905a04a9a51c92e37b53a1f51323"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "archetypeName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "share": 0.0385,
+   "file": "melee-56969b6a-395c-41f9-91cb-b4ad00fe690f.json",
+   "placement": 1,
+   "field": 24,
+   "date": "2026-08-23",
+   "sha256": "50dfdf3d84b841de1d18e555b1267b5ba4ac0e45c8aa705c1bab6e7290f6dc0e"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "archetypeName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "share": 0.0365,
+   "file": "melee-4ae98532-3303-470b-b77d-b4d1002ee4ac.json",
+   "placement": 1,
+   "field": 74,
+   "date": "2026-09-26",
+   "sha256": "62784817ef64f28396b388843e5a5a1509a4b0e57bf9a91745b2e5594493fdbe"
+  }
+ ],
+ "codeCommit": "9f224cf6817dc969685428dbefc3e7887126a495-dirty",
+ "seeds": {
+  "range": "deckCheck",
+  "from": 3000000,
+  "to": 3001799,
+  "perOpponentPerSeat": 150
+ },
+ "results": [
+  {
+   "name": "base",
+   "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+   "swaps": [],
+   "sha256": "311e44c0278a227bd4d92a7fc2cabb3c7956a14dbc436b98aaece02bf2317a43",
+   "share": {
+    "wins": 767,
+    "n": 1800,
+    "share": 0.4261,
+    "low": 0.4034,
+    "high": 0.4491
+   },
+   "nonDecisive": 0,
+   "byOpponent": {
+    "t001-a98697": {
+     "wins": 259,
+     "n": 300,
+     "share": 0.8633,
+     "low": 0.8198,
+     "high": 0.8976
+    },
+    "t002-6d0fc3": {
+     "wins": 37,
+     "n": 300,
+     "share": 0.1233,
+     "low": 0.0908,
+     "high": 0.1654
+    },
+    "t003-75e861": {
+     "wins": 152,
+     "n": 300,
+     "share": 0.5067,
+     "low": 0.4504,
+     "high": 0.5628
+    },
+    "t004-15109d": {
+     "wins": 70,
+     "n": 300,
+     "share": 0.2333,
+     "low": 0.189,
+     "high": 0.2844
+    },
+    "t005-46ed7e": {
+     "wins": 148,
+     "n": 300,
+     "share": 0.4933,
+     "low": 0.4372,
+     "high": 0.5496
+    },
+    "t006-beda5a": {
+     "wins": 101,
+     "n": 300,
+     "share": 0.3367,
+     "low": 0.2856,
+     "high": 0.3919
+    }
+   },
+   "vsFirst": null
+  },
+  {
+   "name": "chieftain-to-podracer",
+   "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+   "swaps": [
+    "HMW_212>LAW_232"
+   ],
+   "sha256": "c6cad52845d8d740883478cdc342f847a06c8f865dc369a64433a342df65d516",
+   "share": {
+    "wins": 810,
+    "n": 1800,
+    "share": 0.45,
+    "low": 0.4271,
+    "high": 0.4731
+   },
+   "nonDecisive": 0,
+   "byOpponent": {
+    "t001-a98697": {
+     "wins": 261,
+     "n": 300,
+     "share": 0.87,
+     "low": 0.8272,
+     "high": 0.9034
+    },
+    "t002-6d0fc3": {
+     "wins": 35,
+     "n": 300,
+     "share": 0.1167,
+     "low": 0.0851,
+     "high": 0.1579
+    },
+    "t003-75e861": {
+     "wins": 166,
+     "n": 300,
+     "share": 0.5533,
+     "low": 0.4968,
+     "high": 0.6086
+    },
+    "t004-15109d": {
+     "wins": 75,
+     "n": 300,
+     "share": 0.25,
+     "low": 0.2044,
+     "high": 0.302
+    },
+    "t005-46ed7e": {
+     "wins": 155,
+     "n": 300,
+     "share": 0.5167,
+     "low": 0.4603,
+     "high": 0.5726
+    },
+    "t006-beda5a": {
+     "wins": 118,
+     "n": 300,
+     "share": 0.3933,
+     "low": 0.3397,
+     "high": 0.4496
+    }
+   },
+   "vsFirst": {
+    "baseOnly": 146,
+    "variantOnly": 189,
+    "pValue": 0.02161
+   }
+  },
+  {
+   "name": "oppo-to-anakin",
+   "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+   "swaps": [
+    "LOF_105>LOF_190"
+   ],
+   "sha256": "8ac357a12e36eab7677432732bed15e6fddafbe7dd7b4c4696323ecb017624d4",
+   "share": {
+    "wins": 818,
+    "n": 1800,
+    "share": 0.4544,
+    "low": 0.4316,
+    "high": 0.4775
+   },
+   "nonDecisive": 0,
+   "byOpponent": {
+    "t001-a98697": {
+     "wins": 266,
+     "n": 300,
+     "share": 0.8867,
+     "low": 0.8458,
+     "high": 0.9178
+    },
+    "t002-6d0fc3": {
+     "wins": 40,
+     "n": 300,
+     "share": 0.1333,
+     "low": 0.0995,
+     "high": 0.1765
+    },
+    "t003-75e861": {
+     "wins": 159,
+     "n": 300,
+     "share": 0.53,
+     "low": 0.4735,
+     "high": 0.5857
+    },
+    "t004-15109d": {
+     "wins": 80,
+     "n": 300,
+     "share": 0.2667,
+     "low": 0.2198,
+     "high": 0.3194
+    },
+    "t005-46ed7e": {
+     "wins": 161,
+     "n": 300,
+     "share": 0.5367,
+     "low": 0.4801,
+     "high": 0.5923
+    },
+    "t006-beda5a": {
+     "wins": 112,
+     "n": 300,
+     "share": 0.3733,
+     "low": 0.3205,
+     "high": 0.4293
+    }
+   },
+   "vsFirst": {
+    "baseOnly": 109,
+    "variantOnly": 160,
+    "pValue": 0.002239
+   }
+  },
+  {
+   "name": "control-3-strongest-to-podracer",
+   "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+   "swaps": [
+    "HMW_254>LAW_232",
+    "HMW_254>LAW_232",
+    "HMW_225>LAW_232"
+   ],
+   "sha256": "6a5964bd39ce0a42b8af0fbf6ccb644d39b23f3ea7befb7188bfe87384cc64a6",
+   "share": {
+    "wins": 749,
+    "n": 1800,
+    "share": 0.4161,
+    "low": 0.3935,
+    "high": 0.439
+   },
+   "nonDecisive": 0,
+   "byOpponent": {
+    "t001-a98697": {
+     "wins": 253,
+     "n": 300,
+     "share": 0.8433,
+     "low": 0.7979,
+     "high": 0.8801
+    },
+    "t002-6d0fc3": {
+     "wins": 26,
+     "n": 300,
+     "share": 0.0867,
+     "low": 0.0598,
+     "high": 0.124
+    },
+    "t003-75e861": {
+     "wins": 153,
+     "n": 300,
+     "share": 0.51,
+     "low": 0.4537,
+     "high": 0.5661
+    },
+    "t004-15109d": {
+     "wins": 61,
+     "n": 300,
+     "share": 0.2033,
+     "low": 0.1617,
+     "high": 0.2525
+    },
+    "t005-46ed7e": {
+     "wins": 155,
+     "n": 300,
+     "share": 0.5167,
+     "low": 0.4603,
+     "high": 0.5726
+    },
+    "t006-beda5a": {
+     "wins": 101,
+     "n": 300,
+     "share": 0.3367,
+     "low": 0.2856,
+     "high": 0.3919
+    }
+   },
+   "vsFirst": {
+    "baseOnly": 277,
+    "variantOnly": 259,
+    "pValue": 0.4628
+   }
+  }
+ ],
+ "health": {
+  "candidateCoverage": {
+   "decisions": 402084,
+   "fallback": 7,
+   "fallbackShare": 0
+  },
+  "opponentCoverage": {
+   "decisions": 431368,
+   "fallback": 1,
+   "fallbackShare": 0
+  },
+  "endConditions": {
+   "base_destroyed": 7200
+  },
+  "errors": [],
+  "meanRounds": 7.02,
+  "meanDecisions": 115.8,
+  "tracesSha256": "0495c1a68bf38c6c62215496e00d05c52792b4b4a2d8d9ebdb29a3f8a3858332"
+ }
+}
