@@ -440,6 +440,10 @@
    "note": "Raises stats; the only readers are power thresholds (4 or more power) worded per card, which no want tag models. Reviewed #14, decided no row."
   },
   {
+   "tag": "offers:gain-saboteur-self",
+   "note": "A unit that gains Saboteur on itself under a condition on itself (while upgraded); no card acts on units with Saboteur and nothing is offered to another card. Read only by the meta counter table (data/counters.json, D45)."
+  },
+  {
    "tag": "offers:grant-ambush",
    "note": "No card text acts on 'units with Ambush'. Reviewed #14."
   },

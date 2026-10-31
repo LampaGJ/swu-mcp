@@ -551,6 +551,77 @@ describe("find_pairings with a leader", () => {
   });
 });
 
+describe("find_pairings and find_trios with a base (D45)", () => {
+  // Grit Brute (5, Aggression) pairs with Pinger Green (3, Command) and Draw Payoff (6, Command): the leader's icons
+  // alone leave their Command icon uncovered, the Command Base covers it.
+  const baseCtx = createSynergyContext(cards, COMMITTED_TABLE, leaderCardsFile("L1", "Aggro Leader", ["Aggression", "Villainy"], [["5", 0.8]]));
+  const penalty = (o: Record<string, any>, k: string) => o.pairings.find((p: any) => p.cardKey === k).penalty as number;
+
+  it("defaults aspects to the leader's and the base's icons, and the leader block names the base", () => {
+    const out = body(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "BC" }));
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy+Command")).toBe(true);
+    expect(penalty(out, "3")).toBe(0);
+    expect(penalty(out, "6")).toBe(0);
+    expect(out.leader.base).toEqual({ cardKey: "BC", title: "Command Base", aspects: "Command" });
+    expect(out.leader).not.toHaveProperty("baseNote");
+    expect(body(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "Command Base" })).leader.base.cardKey).toBe("BC");
+  });
+
+  it("measures against the leader's icons only without a base, and says so", () => {
+    const out = body(findPairings(baseCtx, { cardKey: "5", leader: "L1" }));
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy")).toBe(true);
+    expect(penalty(out, "3")).toBe(2);
+    expect(penalty(out, "6")).toBe(2);
+    expect(out.leader.baseNote).toBe("base not given: penalties measured against the leader's icons only");
+    expect(out.leader).not.toHaveProperty("base");
+    const noData = body(findPairings(baseCtx, { cardKey: "5", leader: "L2" }));
+    expect(noData.leader.baseNote).toContain("base not given");
+  });
+
+  it("lets an explicit aspects list win, and says nothing about a missing base then", () => {
+    const out = body(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "BC", aspects: ["Vigilance"] }));
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Vigilance")).toBe(true);
+    expect(body(findPairings(baseCtx, { cardKey: "5", leader: "L1", aspects: ["Vigilance"] })).leader).not.toHaveProperty("baseNote");
+  });
+
+  it("rejects a base that is not a Base card, an unknown base, and a base without a leader", () => {
+    expect(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "nope" }).isError).toBe(true);
+    expect(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "L2" }).isError).toBe(true);
+    expect(findPairings(baseCtx, { cardKey: "5", leader: "L1", base: "5" }).isError).toBe(true);
+    expect(findPairings(baseCtx, { cardKey: "5", base: "BC" }).isError).toBe(true);
+    expect(findTrios(baseCtx, { base: "BC" }).isError).toBe(true);
+  });
+
+  it("leaves the no-leader answers byte-identical", () => {
+    expect(findPairings(baseCtx, { cardKey: "5" }).content[0].text).toBe(findPairings(ctx, { cardKey: "5" }).content[0].text);
+  });
+
+  const vigilance = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("Z", "Vigilance Base", { type: "Base", icons: ["Vigilance"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Vigilance"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Vigilance"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Vigilance"], cost: 3 }),
+  ];
+  const trioTable = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const trioCtx = createSynergyContext(vigilance, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["1", 0.5]]));
+
+  it("fixes the trio search to the leader's and the base's icons, and names the base", () => {
+    const withBase = body(findTrios(trioCtx, { leader: "L", base: "Z" }));
+    expect(withBase.trios[0].aspectPair).toBe("leader Command+Heroism / base Vigilance");
+    expect(withBase.trios[0].penalty).toBe(0);
+    expect(withBase.leader.base).toEqual({ cardKey: "Z", title: "Vigilance Base", aspects: "Vigilance" });
+    const without = body(findTrios(trioCtx, { leader: "L" }));
+    expect(without.trios[0].aspectPair).toBe("leader Command+Heroism / base neutral");
+    expect(without.trios[0].penalty).toBe(6);
+    expect(without.leader.baseNote).toBe("base not given: penalties measured against the leader's icons only");
+    expect(body(findTrios(trioCtx, { leader: "L", base: "Z", baseAspects: [] })).trios[0].aspectPair).toBe("leader Command+Heroism / base neutral");
+  });
+});
+
 describe("find_trios with a leader", () => {
   const trioCards = [
     mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),

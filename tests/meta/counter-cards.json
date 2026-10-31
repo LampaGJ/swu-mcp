@@ -1,5 +1,5 @@
 {
- "source": "2026-10-17/features/features.json, the example cards of data/counters.json v1; copied verbatim, filtered by cardKey",
+ "source": "2026-10-30/features/features.json, the example cards of data/counters.json v1; copied verbatim, filtered by cardKey",
  "cards": [
   {
    "cardKey": "0101239",
@@ -2094,6 +2094,196 @@
    "tags": {
     "offers": [],
     "wants": []
+   }
+  },
+  {
+   "cardKey": "08010030",
+   "title": "Marrok",
+   "subtitle": "Mysterious Warrior",
+   "type": "Unit",
+   "structured": {
+    "cost": 3,
+    "power": 2,
+    "hp": 6,
+    "upgradePower": null,
+    "upgradeHp": null,
+    "arenas": [
+     "Ground"
+    ],
+    "aspects": [
+     "Vigilance",
+     "Aggression",
+     "Villainy"
+    ],
+    "aspectIcons": [
+     "Aggression",
+     "Vigilance",
+     "Villainy"
+    ],
+    "traits": [
+     "Force",
+     "Inquisitor"
+    ],
+    "keywordsField": [
+     "Saboteur",
+     "Sentinel"
+    ],
+    "unique": true,
+    "deployable": false
+   },
+   "keywords": [
+    {
+     "keyword": "Sentinel",
+     "granted": false
+    }
+   ],
+   "keywordCheck": {
+    "fieldNotInText": [
+     "Saboteur"
+    ],
+    "textNotInField": []
+   },
+   "vector": {
+    "conditions": {
+     "self_state": 1
+    },
+    "effects": {
+     "text:grant_keyword": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "self_unit": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 0,
+      "varN": 0
+     },
+     "text:remove_keyword": {
+      "byRepeat": {
+       "constant": 1
+      },
+      "byTarget": {
+       "self_ref": 1
+      },
+      "count": 1,
+      "granted": 0,
+      "modal": 0,
+      "sumN": 1,
+      "varN": 0
+     }
+    },
+    "optionalEffects": 0,
+    "triggers": {
+     "text:constant": 1
+    },
+    "unclassified": 0
+   },
+   "unclassified": [],
+   "faces": {
+    "text": [
+     {
+      "kind": "keyword",
+      "keywords": [
+       {
+        "keyword": "Sentinel"
+       }
+      ],
+      "granted": false,
+      "source": "Sentinel"
+     },
+     {
+      "kind": "ability",
+      "triggers": [
+       {
+        "trigger": "constant",
+        "repeat": "constant"
+       }
+      ],
+      "repeat": "constant",
+      "granted": false,
+      "clauses": [
+       {
+        "path": "text.p1s0",
+        "text": "While this unit is upgraded, he loses Sentinel and gains Saboteur.",
+        "source": "grammar",
+        "effects": [
+         {
+          "rule": "lose_keyword",
+          "cat": "remove_keyword",
+          "n": 1,
+          "keywords": [
+           "Sentinel"
+          ],
+          "target": {
+           "side": "self",
+           "kind": "ref",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "he"
+          },
+          "conditional": true
+         },
+         {
+          "rule": "grant_keyword",
+          "cat": "grant_keyword",
+          "keywords": [
+           {
+            "keyword": "Saboteur"
+           }
+          ],
+          "target": {
+           "side": "self",
+           "kind": "unit",
+           "arena": "any",
+           "quant": "one",
+           "restrict": [],
+           "text": "this unit"
+          },
+          "conditional": true
+         }
+        ],
+        "conditions": [
+         {
+          "rule": "self_state",
+          "cat": "self_state",
+          "state": "upgraded"
+         }
+        ],
+        "structure": [],
+        "modifiers": [],
+        "residue": []
+       }
+      ],
+      "grantedAbilities": [],
+      "options": []
+     }
+    ]
+   },
+   "tags": {
+    "offers": [
+     {
+      "tag": "offers:gain-saboteur-self",
+      "why": "text: While this unit is upgraded, he loses Sentinel and gains Saboteur."
+     },
+     {
+      "tag": "offers:is-trait-Force",
+      "why": "printed trait"
+     },
+     {
+      "tag": "offers:is-trait-Inquisitor",
+      "why": "printed trait"
+     }
+    ],
+    "wants": [
+     {
+      "tag": "wants:upgrades-attached",
+      "why": "text: While this unit is upgraded, he loses Sentinel and gains Saboteur."
+     }
+    ]
    }
   }
  ]

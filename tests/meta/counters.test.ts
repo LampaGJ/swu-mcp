@@ -84,6 +84,33 @@ describe("data/counters.json", () => {
   );
 });
 
+describe("a conditional Saboteur gained on the card itself (D45)", () => {
+  const marrok = byKey.get("08010030") as NonNullable<ReturnType<typeof byKey.get>>;
+  const hitFor = (id: string) => {
+    const relation = table.relations.find((r) => r.id === id) as (typeof table.relations)[number];
+    return relationHit(marrok, answerOffers(marrok), relation, everything);
+  };
+
+  it("offers gain-saboteur-self from the self-conditioned clause, and no unconditional grant-saboteur", () => {
+    const tags = answerOffers(marrok).map((o) => o.tag);
+    expect(tags).toContain("offers:gain-saboteur-self");
+    expect(tags).not.toContain("offers:grant-saboteur");
+  });
+
+  it("answers the sentinel wall at weight 0.5 with the condition in the evidence", () => {
+    const hit = hitFor("sentinel-bypass-conditional");
+    expect(hit).toMatchObject({ threat: "sentinel-wall", offer: "offers:gain-saboteur-self", weight: 0.5, fraction: 1 });
+    expect(hit?.evidence).toContain("While this unit is upgraded");
+    expect(hit?.evidence).toContain("gains Saboteur");
+  });
+
+  it("answers the shield threat at weight 0.5 too, but no unconditional-grant relation counts it as a full answer", () => {
+    expect(hitFor("shield-removal-conditional")).toMatchObject({ threat: "shields", weight: 0.5 });
+    expect(hitFor("sentinel-bypass")).toBeNull();
+    expect(hitFor("shield-removal")).toBeNull();
+  });
+});
+
 describe("removal qualifiers against key unit stats", () => {
   const effect = (spec: Partial<EffectSpec>): EffectSpec => ({
     cat: "defeat",

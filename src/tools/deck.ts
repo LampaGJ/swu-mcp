@@ -421,6 +421,9 @@ function sameSlotShape(slotCard: SynergyCard, other: SynergyCard): boolean {
 }
 
 const numberOr = (value: number | null | undefined, fallback: number): number => value ?? fallback;
+
+/** Decision D45: a card in under 2% of the leader's decklists is not a card the leader plays; the tools that fill a deck leave it out. */
+export const LEADER_INCLUSION_FLOOR = 0.02;
 const playedBy = (row: { leaderInclusion?: number | null }): number => ((row.leaderInclusion ?? 0) > 0 ? 1 : 0);
 
 // ---------------------------------------------------------------------------------------------
@@ -895,7 +898,14 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     ];
   });
   const dropUnplayed = rankedBy === "leader" && !args.includeUnplayed;
-  const played = dropUnplayed ? eligible.filter((r) => inclusionOf(r.cardKey) !== null) : eligible;
+  const everPlayed = dropUnplayed ? eligible.filter((r) => inclusionOf(r.cardKey) !== null) : eligible;
+  // Decision D45: with emptyCostsOnly, a cost whose most-played card sits under the floor counts as unfilled.
+  const best = new Map<number, number>();
+  for (const r of everPlayed) best.set(r.cost, Math.max(best.get(r.cost) ?? 0, inclusionOf(r.cardKey) ?? 0));
+  const thinCosts = new Set(
+    dropUnplayed && args.emptyCostsOnly ? [...best].filter(([, top]) => top < LEADER_INCLUSION_FLOOR).map(([cost]) => cost) : [],
+  );
+  const played = everPlayed.filter((r) => !thinCosts.has(r.cost));
   played.sort(
     (a, b) =>
       a.cost - b.cost ||
@@ -904,11 +914,14 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       a.penalty - b.penalty ||
       compareCodePoints(a.cardKey, b.cardKey),
   );
-  const playedCosts = new Set(played.map((r) => r.cost));
+  const playedCosts = new Set(everPlayed.map((r) => r.cost));
   const emptyCosts = dropUnplayed
     ? [...new Set([...(args.costs ?? []), ...eligible.map((r) => r.cost)])].filter((c) => !playedCosts.has(c)).sort((a, b) => a - b)
     : [];
-  const rows = args.emptyCostsOnly ? [...played, ...emptyCosts.map(noPlayedRow)].sort((a, b) => a.cost - b.cost) : played;
+  const thinList = [...thinCosts].sort((a, b) => a - b);
+  const rows = args.emptyCostsOnly
+    ? [...played, ...emptyCosts.map((c) => noPlayedRow(c, false)), ...thinList.map((c) => noPlayedRow(c, true))].sort((a, b) => a.cost - b.cost)
+    : played;
   const perCost = new Map<number, number>();
   const shown = rows
     .filter((r) => {
@@ -928,7 +941,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       leaderData === null
         ? null
         : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}` },
-    emptyCosts: emptyCosts.length === 0 ? "none" : `${emptyCosts.join(", ")}: no tournament-played card at ${emptyCosts.length === 1 ? "this cost" : "these costs"}; includeUnplayed: true lists score-ranked cards`,
+    emptyCosts: emptyCostsText(emptyCosts, thinList),
     note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed),
     matched: played.length,
     shown: shown.length,
@@ -936,11 +949,21 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   });
 }
 
+const floorText = (cost: number): string => `no tournament-played card (>= ${LEADER_INCLUSION_FLOOR * 100}%) at cost ${cost}`;
+
+function emptyCostsText(never: readonly number[], thin: readonly number[]): string {
+  const parts = [
+    ...(never.length === 0 ? [] : [`${never.join(", ")}: no tournament-played card at ${never.length === 1 ? "this cost" : "these costs"}`]),
+    ...thin.map(floorText),
+  ];
+  return parts.length === 0 ? "none" : `${parts.join("; ")}; includeUnplayed: true lists score-ranked cards`;
+}
+
 /** The row that stands in for a cost the leader's decks never play, so a gap reads as a gap and not as a filled cost. */
-function noPlayedRow(cost: number) {
+function noPlayedRow(cost: number, thin: boolean) {
   return {
     cardKey: null,
-    title: `no tournament-played card at cost ${cost}; includeUnplayed: true lists score-ranked cards`,
+    title: `${thin ? floorText(cost) : `no tournament-played card at cost ${cost}`}; includeUnplayed: true lists score-ranked cards`,
     type: null,
     cost,
     aspects: null,
@@ -960,7 +983,7 @@ function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "scor
   const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry)})`;
   const unplayedRule = includeUnplayed
     ? "includeUnplayed: true lists the unplayed cards after the played ones in each cost"
-    : "cards the leader's decks do not play are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card";
+    : `cards the leader's decks do not play are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card; with emptyCostsOnly a cost whose most-played card is in under ${LEADER_INCLUSION_FLOOR * 100}% of the leader's decks counts as unfilled`;
   return rankedBy === "leader"
     ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}; ${unplayedRule}. Rotated cards are left out.`
     : `ranked within each cost by ${score} (rankBy score); leaderInclusion = ${source}; ${unplayed}. Rotated cards are left out.`;

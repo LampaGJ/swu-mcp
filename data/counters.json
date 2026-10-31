@@ -124,6 +124,14 @@
    "example": { "card": "Insurgent Saboteurs", "cardKey": "04010168", "clause": "You may defeat an upgrade." }
   },
   {
+   "id": "shield-removal-conditional",
+   "threat": "shields",
+   "offers": { "offers:gain-saboteur-self": 0.5 },
+   "qualifier": {},
+   "reason": "A unit that gains Saboteur on itself under a condition (while upgraded) strips the defender's Shields only while the condition holds, so it counts for half; the clause shows the condition.",
+   "example": { "card": "Marrok", "cardKey": "08010030", "clause": "While this unit is upgraded, he loses Sentinel and gains Saboteur." }
+  },
+  {
    "id": "sweeper",
    "threat": "go-wide",
    "offers": { "offers:damage-enemy-unit": 1, "offers:damage-any-unit": 1, "offers:defeat-enemy-unit": 1, "offers:defeat-any-unit": 1 },
@@ -138,6 +146,14 @@
    "qualifier": {},
    "reason": "Saboteur ignores Sentinel when attacking, so it reaches the base or the unit behind the wall.",
    "example": { "card": "Rebel Pathfinder", "cardKey": "0101239", "clause": "printed keyword Saboteur" }
+  },
+  {
+   "id": "sentinel-bypass-conditional",
+   "threat": "sentinel-wall",
+   "offers": { "offers:gain-saboteur-self": 0.5 },
+   "qualifier": {},
+   "reason": "A unit that gains Saboteur on itself under a condition (while upgraded) bypasses the wall only while the condition holds, so it counts for half; the clause shows the condition.",
+   "example": { "card": "Marrok", "cardKey": "08010030", "clause": "While this unit is upgraded, he loses Sentinel and gains Saboteur." }
   },
   {
    "id": "space-removal",

@@ -368,6 +368,25 @@ describe("answer rank", () => {
     expect(sorted([rank({ cardKey: "b" }), rank({ cardKey: "a" })])).toEqual(["a", "b"]);
   });
 
+  it("breaks a tie on the leader's decklist inclusion after evidence class and cost band, before exact coverage (D45)", () => {
+    // Same band 0.40, same class, same cost band 2: the more-played card leads although its exact coverage is lower.
+    expect(
+      sorted([
+        rank({ cardKey: "rare", cost: 5, coverage: 0.3927, leaderInclusion: 0.03 }),
+        rank({ cardKey: "staple", cost: 6, coverage: 0.3925, leaderInclusion: 0.4 }),
+      ]),
+    ).toEqual(["staple", "rare"]);
+    // An unplayed card (null) sorts behind every played one, and a card with no leader data ties as before.
+    expect(
+      sorted([rank({ cardKey: "none", leaderInclusion: null }), rank({ cardKey: "some", leaderInclusion: 0.001 })]),
+    ).toEqual(["some", "none"]);
+    expect(sorted([rank({ cardKey: "b" }), rank({ cardKey: "a" })])).toEqual(["a", "b"]);
+    // Cost band, evidence class and coverage band still outrank inclusion.
+    expect(sorted([rank({ cardKey: "late", cost: 11, leaderInclusion: 0.9 }), rank({ cardKey: "early", cost: 3, leaderInclusion: 0.1 })])).toEqual(["early", "late"]);
+    expect(sorted([rank({ cardKey: "neg", evidenceClass: "negative", leaderInclusion: 0.9 }), rank({ cardKey: "ok", leaderInclusion: 0.1 })])).toEqual(["ok", "neg"]);
+    expect(sorted([rank({ cardKey: "low", coverage: 0.3499, leaderInclusion: 0.9 }), rank({ cardKey: "high", coverage: 0.3927, leaderInclusion: 0.1 })])).toEqual(["high", "low"]);
+  });
+
   it("calls a difference below -0.05 negative on minN decisive matches per side, and ok only with 10 decks per side too", () => {
     const evidence = (difference: number | null, withN: number, withoutN: number, withDecks = 40, withoutDecks = 4000) => ({
       withCard: { n: withN, decks: withDecks },
@@ -449,6 +468,104 @@ describe("meta_answers", () => {
 
   it("asks for a leader and base when neither is given", () => {
     expect(metaAnswers(env, {}).isError).toBe(true);
+  });
+});
+
+describe("meta_answers respects what the leader plays (D45)", () => {
+  // Penalty-free under Our Leader plus the Aggression base: It's Worse (7) and Charged with Treason (4) cover 1, the
+  // Freighter (5) and Profundity (9) cover 0.5. The leader's decks play It's Worse (30%), the Freighter (2.5%) and
+  // Charged with Treason (1%, under the 2% floor); Profundity is unplayed.
+  const IT_IS_WORSE = "05010264";
+  const CHARGED = "06010182";
+  const FREIGHTER = "0101250";
+  const PROFUNDITY = "04010154";
+  const leaderFile = (rows: [string, number][]) =>
+    leaderCardsFileSchema.parse({
+      schemaVersion: 1,
+      window: { from: "2026-07-04", to: "2026-10-01", days: 90 },
+      weighting: "test weighting",
+      baseline: "test baseline",
+      maxCards: 150,
+      leaders: [
+        {
+          leader: { cardKey: "OL", title: "Our Leader", aspects: ["Vigilance", "Heroism"] },
+          population: "tournament",
+          fallback: false,
+          decks: 12,
+          weight: 18,
+          window: { from: "2026-07-04", to: "2026-10-01" },
+          topBase: null,
+          cards: rows.map(([cardKey, inclusion]) => ({ cardKey, title: cardKey, inclusion, meanCopies: 2, baselineInclusion: 0.1, lift: inclusion - 0.1 })),
+        },
+      ],
+    });
+  const played = createMetaEnv(
+    { ...deckEnv, leaderCards: indexLeaderCards(leaderFile([[IT_IS_WORSE, 0.3], [FREIGHTER, 0.025], [CHARGED, 0.01]])) },
+    meta,
+    winrates,
+    loadCounterTable(),
+    features,
+  );
+  const run = (extra: object = {}) => body(metaAnswers(played, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, perThreat: 60, ...extra }));
+  const keys = (out: any): string[] => out.answers.map((a: { cardKey: string }) => a.cardKey);
+
+  it("keeps on the page only answers the leader's decks play at 2% or more, and counts the rest in capped", () => {
+    const out = run();
+    expect(keys(out)).toEqual([IT_IS_WORSE, FREIGHTER]);
+    expect(out.answers.map((a: { leaderInclusion: number | null }) => a.leaderInclusion)).toEqual([0.3, 0.025]);
+    expect(out.matched).toBe(4);
+    expect(out.shown).toBe(2);
+    expect(out.capped).toBe(2);
+    expect(out.leaderSource).toMatchObject({ population: "tournament", decks: 12, window: "2026-07-04..2026-10-01" });
+    expect(out.note).toContain("includeUnplayed");
+    expect(out.note).toContain("leaderInclusion");
+  });
+
+  it("lists every answer with leaderInclusion null for an unplayed card when includeUnplayed is true", () => {
+    const out = run({ includeUnplayed: true });
+    expect(new Set(keys(out))).toEqual(new Set([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]));
+    const byKey = Object.fromEntries(out.answers.map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion]));
+    expect(byKey).toEqual({ [IT_IS_WORSE]: 0.3, [CHARGED]: 0.01, [FREIGHTER]: 0.025, [PROFUNDITY]: null });
+    expect(out.capped).toBe(0);
+  });
+
+  it("keeps a card already in the deck even when the leader's decks do not play it", () => {
+    const out = run({
+      decklist: [
+        { card: "OL", count: 1 },
+        { card: "AB", count: 1 },
+        { card: PROFUNDITY, count: 1 },
+      ],
+    });
+    expect(keys(out)).toContain(PROFUNDITY);
+    expect(keys(out)).not.toContain(CHARGED);
+    expect(out.capped).toBe(1);
+  });
+
+  it("does not filter when the package has no decklist data for the leader", () => {
+    const out = body(metaAnswers(env, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, perThreat: 60 }));
+    expect(keys(out)).toHaveLength(4);
+    expect(out.answers[0].leaderInclusion).toBeNull();
+    expect(out.leaderSource).toBeNull();
+  });
+
+  it("lists Marrok as a sentinel-wall answer with the condition, so the threat shows an answer", () => {
+    const sentinel = { ...loadCounterTable(), threats: loadCounterTable().threats.map((t) => (t.id === "sentinel-wall" ? { ...t, metrics: ["meanCost"], min: 0 } : t)) };
+    const walled = createMetaEnv(deckEnv, meta, winrates, sentinel, features);
+    const out = body(metaAnswers(walled, { leader: "OL", base: "AB", maxPenalty: 4, limit: 60, perThreat: 60 }));
+    const marrok = out.answers.find((a: { cardKey: string }) => a.cardKey === "08010030");
+    expect(marrok.answers).toContainEqual(
+      expect.objectContaining({ threat: "sentinel-wall", relation: "sentinel-bypass-conditional", offer: "offers:gain-saboteur-self" }),
+    );
+    expect(marrok.answers.find((x: { threat: string }) => x.threat === "sentinel-wall").evidence).toContain("While this unit is upgraded");
+    expect(out.threatsCovered).toMatch(/sentinel-wall [1-9]\d* \(share 1\)/);
+  });
+
+  it("does not let hidden unplayed rows use up a perThreat slot", () => {
+    // Charged with Treason (hidden, 1%) and It's Worse share the key-units threat; the hidden one must not defer the played one.
+    const out = run({ perThreat: 1 });
+    expect(keys(out)).toEqual([IT_IS_WORSE, FREIGHTER]);
+    expect(out.capped).toBe(2);
   });
 });
 

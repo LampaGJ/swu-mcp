@@ -161,3 +161,18 @@ describe("damage and Weakness that land on the source card are not offers to ano
     expect(offerTags(card)).not.toContain("offers:give-weakness-self");
   });
 });
+
+describe("a keyword a unit gains conditionally on itself is offers:gain-<keyword>-self (D45)", () => {
+  it("08010030 Marrok: 'While this unit is upgraded, he loses Sentinel and gains Saboteur' offers gain-saboteur-self, not grant-saboteur", () => {
+    const card = featuresOf(CARDS["08010030"]);
+    expect(offerTags(card)).toContain("offers:gain-saboteur-self");
+    expect(offerTags(card)).not.toContain("offers:grant-saboteur");
+    expect(wantTags(card)).toContain("wants:upgrades-attached");
+  });
+
+  it("an unconditional grant to another unit stays offers:grant-saboteur", () => {
+    const card = featuresOf({ cardKey: "99990006", title: "Cable", type: "Unit", text: "When Played: Give a friendly unit Saboteur for this phase." });
+    expect(offerTags(card)).toContain("offers:grant-saboteur");
+    expect(offerTags(card)).not.toContain("offers:gain-saboteur-self");
+  });
+});

@@ -717,6 +717,34 @@ describe("playable_cards, leader-aware", () => {
     expect(listed.cards).toHaveLength(3);
   });
 
+  it("skips a cost whose best leaderInclusion is under 2% for emptyCostsOnly and reports it (D45)", () => {
+    // Cost 2 holds only Filler 1, played in 0.89% of the leader's lists; cost 3 is held by the pile.
+    const thin = { ...env, leaderCards: indexLeaderCards(leaderCardsFile({ L1: [["W1", 0.8], ["P2", 0.4], ["F01", 0.0089]] })) };
+    const pile = lines(["P1", 1]);
+    const out = body(playableCards(thin, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50 }));
+    expect(out.cards).toHaveLength(1);
+    expect(out.cards[0]).toMatchObject({
+      cardKey: null,
+      cost: 2,
+      title: "no tournament-played card (>= 2%) at cost 2; includeUnplayed: true lists score-ranked cards",
+      leaderInclusion: null,
+    });
+    expect(out.emptyCosts).toContain("no tournament-played card (>= 2%) at cost 2");
+    expect(out.matched).toBe(0);
+    expect(out.note).toContain("2%");
+
+    // A cost whose best card clears the floor lists its played cards as before, thin ones included.
+    const mixed = { ...env, leaderCards: indexLeaderCards(leaderCardsFile({ L1: [["F01", 0.0089], ["F02", 0.03]] })) };
+    const kept = body(playableCards(mixed, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50 }));
+    expect(keys(kept)).toEqual(["F02", "F01"]);
+    expect(kept.emptyCosts).toBe("none");
+
+    // includeUnplayed lists the score-ranked cards; without emptyCostsOnly a thin card is still listed.
+    const listed = body(playableCards(thin, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50, includeUnplayed: true }));
+    expect(listed.cards.every((c: { cost: number; cardKey: string | null }) => c.cost === 2 && c.cardKey !== null)).toBe(true);
+    expect(keys(body(playableCards(thin, { leader: "L1", base: "BC", costs: [2], perCost: 3 })))).toEqual(["F01"]);
+  });
+
   it("is unaffected by includeUnplayed when ranking by score", () => {
     const byScore = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, rankBy: "score" }));
     expect(keys(byScore)).toEqual(["P1", "P2", "W1"]);

@@ -212,7 +212,11 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "cost_reduction": if (/credit/i.test(c.text)) add(wants, "wants:credit-tokens", why); break;
             default: break;
           }
-          if (selfGated) for (const k of [...offers.keys()]) if (!offersBefore.has(k)) offers.delete(k);
+          if (selfGated) {
+            for (const k of [...offers.keys()]) if (!offersBefore.has(k)) offers.delete(k);
+            // A conditional gain on the card itself is no grant to another card, but the meta counter table reads it (D45).
+            if (e.cat === "grant_keyword") for (const k of e.keywords ?? []) if (keywordName(k) === "Saboteur") add(offers, "offers:gain-saboteur-self", why);
+          }
           const restr = target?.restrict ?? [];
           if (restr.includes("damaged") && p !== "enemy") add(wants, "wants:damaged-units", why);
           if (restr.includes("exhausted") && target && FRIENDLYISH.has(target.side)) add(wants, "wants:exhausted-own", why);
