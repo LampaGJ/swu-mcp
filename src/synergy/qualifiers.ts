@@ -87,6 +87,10 @@ export interface TagQualifier {
   receives?: boolean;
   /** The want comes from a condition on what an opponent controls ("if an opponent controls an upgrade"), so only an offer that can act on the opponent's side feeds it (D62). */
   opponentControls?: boolean;
+  /** The offer acts on the unit its own watcher trigger saw ("When you play a unit ...: ready that unit"); holds that trigger text, so a trio can tell which want it relays (D64). */
+  relays?: string;
+  /** The unit a play offer puts into play ("Play a Vehicle unit from your discard pile"), read off the play effect's object (D64). */
+  delivers?: Subject;
 }
 
 interface TargetLite {
@@ -101,6 +105,7 @@ interface EffectLite {
   cat?: string;
   token?: string;
   target?: TargetLite;
+  what?: unknown;
 }
 interface ClauseLite {
   text: string;
@@ -182,6 +187,8 @@ const OFFER_CATS: [RegExp, string[]][] = [
 const WANT_CATS: [RegExp, string[]][] = [[/^wants:credit-tokens$/, ["defeat"]]];
 const CREATE_OFFERS = new Set(["offers:credit-tokens", "offers:create-token-units", "offers:the-force"]);
 const SELF_OFFERS = new Set(["offers:defeat-self"]);
+/** A keyword holder offers itself (D64). */
+const isSelfOffer = (tag: string): boolean => SELF_OFFERS.has(tag) || tag.startsWith("offers:has-keyword-");
 const SELF_WANTS = new Set(["wants:self-defeated", "wants:self-damaged", "wants:replay-when-played", "wants:ready-unit"]);
 
 const catsFor = (table: [RegExp, string[]][], tag: string): string[] => table.find(([re]) => re.test(tag))?.[1] ?? [];
@@ -301,6 +308,46 @@ function actsOnOwnSide(offerTag: string, offer: TagQualifier): boolean {
 }
 const ON_THIS_UNIT = /\b(?:this unit is upgraded|upgrades? (?:on|attach(?:es)? to) (?:this unit|him|her)\b|upgrade on this unit)/i;
 
+const isRef = (t: TargetLite | undefined): boolean => t?.kind === "ref" || t?.side === "ref";
+const RELAYED = /^(?:(?:that|the|those) units?|it|them)$/i;
+const ATTACHED_UNIT = /^attached unit$/i;
+
+/** The target of a take-control earlier in the ability, which a later "ready it" acts on (Commandeer, D64). */
+function seizedTarget(ability: AbilityNode, clause: ClauseLite): TargetLite | undefined {
+  const clauses = clausesOf(ability);
+  for (let i = clauses.indexOf(clause); i >= 0; i--) {
+    const hit = clauses[i].effects.find((e) => e.cat === "take_control" && e.target !== undefined);
+    if (hit !== undefined) return hit.target;
+  }
+  return undefined;
+}
+
+/** An "attached unit" effect acts on the host, so the upgrade's attach line or Piloting's Vehicle bounds it (Han Solo, D64). */
+function boundToHost(subject: Subject, bound: AttachBound | undefined): Subject {
+  if (bound === undefined || bound.base === true) return subject;
+  return {
+    ...subject,
+    traits: bound.anyTrait ? subject.traits : [...new Set([...subject.traits, ...bound.traits])].sort(cmp),
+    notTraits: [...new Set([...subject.notTraits, ...bound.notTraits])].sort(cmp),
+    arena: subject.arena ?? bound.arena,
+  };
+}
+
+const PLAY_OFFERS = new Set(["offers:play-from-discard", "offers:play-from-resources", "offers:paid-play", "offers:cheat-play", "offers:units-entering"]);
+const PLAYED_TRAIT = /\b((?:[A-Z][\w'-]*\s)*[A-Z][\w'-]*) units?\b/;
+
+/** The unit a play effect names ("a Vehicle unit", "a unit that costs 3 or less"), as a target subject. */
+function playedSubject(what: string): Subject {
+  const restrict: string[] = [];
+  const trait = PLAYED_TRAIT.exec(what);
+  if (trait !== null) restrict.push(`trait:${trait[1]}`);
+  const cost = /\bcosts? (\d+) or less\b/i.exec(what);
+  if (cost !== null) restrict.push(`cost_le_${cost[1]}`);
+  const power = /\b(\d+) or less power\b/i.exec(what);
+  if (power !== null) restrict.push(`power_le_${power[1]}`);
+  return subjectOf({ text: what, restrict });
+}
+
 /** Token name to printed traits, from the Token Unit cards in the set. */
 export type TokenTraits = ReadonlyMap<string, readonly string[]>;
 
@@ -347,7 +394,7 @@ const scopeOf = (text: string): TagQualifier["scope"] =>
 export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: string, why: string, tokenTraits?: TokenTraits): TagQualifier {
   const origin = findOrigin(card, why);
   if (origin === undefined) {
-    const onSelf = side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(FACE_PREFIX.exec(why)?.[2] ?? why));
+    const onSelf = side === "offers" ? isSelfOffer(tag) : SELF_WANTS.has(tag) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(FACE_PREFIX.exec(why)?.[2] ?? why));
     const subject = side === "wants" && tag === "wants:sac-fodder" ? outletSubject(card) : EMPTY;
     const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
     return { subject, triggers: [], forAttackOnly: false, onSelf, text: "", ...(attach === undefined ? {} : { attach }) };
@@ -360,11 +407,15 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
 
   let subject: Subject = EMPTY;
   let viaCat: string | undefined;
+  let relays: string | undefined;
   const cats = catsFor(side === "offers" ? OFFER_CATS : WANT_CATS, tag);
   if (clause !== undefined && cats.length > 0) {
     const hit = clause.effects.find((e) => cats.includes(e.cat ?? ""));
     if (hit !== undefined) {
-      subject = subjectOf(hit.target);
+      const seized = isRef(hit.target) ? seizedTarget(ability, clause) : undefined;
+      subject = subjectOf(seized ?? hit.target);
+      if ((hit.cat === "ready" || hit.cat === "extra_attack") && ATTACHED_UNIT.test(hit.target?.text ?? "")) subject = boundToHost(subject, attachBound(card));
+      if (isRef(hit.target) && RELAYED.test(hit.target?.text ?? "") && (ability.triggers ?? []).some((t) => t.trigger?.startsWith("reactive") === true)) relays = triggerText;
       // A ready aimed back at "them" readies only the tokens the clause just made; give-* offers stay open because an upgrade on a token still counts as an upgrade.
       if (tag === "offers:ready-unit" && hit.target?.kind === "ref" && clause.effects.some((e) => e.cat === "create_token")) {
         const supplies = suppliedTokens(clause, tokenTraits);
@@ -384,6 +435,8 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
   const receives = side === "wants" && RECEIVING_WANTS.has(tag) && (hostAbility || ON_THIS_UNIT.test(`${text} ${triggerText}`));
   const opponentControls = side === "wants" && CONDITION_WANTS.has(tag) && OPPONENT_CONTROLS.test(text) && !YOU_CONTROL.test(text);
+  const played = side === "offers" && PLAY_OFFERS.has(tag) ? clause?.effects.find((e) => e.cat === "play_extra" && typeof e.what === "string") : undefined;
+  const delivers = played === undefined ? undefined : playedSubject(played.what as string);
   return {
     subject,
     triggers,
@@ -392,7 +445,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     viaCat,
     onSelf:
       side === "offers"
-        ? SELF_OFFERS.has(tag)
+        ? isSelfOffer(tag)
         : SELF_WANTS.has(tag) ||
           (tag === "wants:heal" && /\bthis unit\b/i.test(triggerText)) ||
           (tag === "wants:extra-attacks" && (ATTACK_TRIGGERS.has(payload) || grantsItself(clause))),
@@ -401,6 +454,8 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     ...(attach === undefined ? {} : { attach }),
     ...(receives ? { receives } : {}),
     ...(opponentControls ? { opponentControls } : {}),
+    ...(relays === undefined ? {} : { relays }),
+    ...(delivers === undefined ? {} : { delivers }),
   };
 }
 
@@ -441,6 +496,19 @@ const cardSubject = (c: SynergyCard): Subject => ({
 });
 
 const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
+
+/** The card can be the subject: kind, traits, cost, power and arena all fit (D64). */
+export function admits(subject: Subject, c: SynergyCard): boolean {
+  const s = cardSubject(c);
+  const kindOk =
+    subject.kind === undefined || subject.kind === "card" || (subject.kind === "unit" ? s.kind === "unit" || c.type === "Token Unit" : c.type.toLowerCase().includes(subject.kind));
+  if (!kindOk) return false;
+  if (subject.traits.some((t) => !s.traits.includes(t)) || subject.notTraits.some((t) => s.traits.includes(t))) return false;
+  if (subject.maxCost !== undefined && typeof s.cost === "number" && s.cost > subject.maxCost) return false;
+  if (subject.minCost !== undefined && typeof s.cost === "number" && s.cost < subject.minCost) return false;
+  if (subject.maxPower !== undefined && typeof s.power === "number" && s.power > subject.maxPower) return false;
+  return subject.arena === undefined || s.arena === undefined || subject.arena === s.arena;
+}
 
 /** Wants on a lasting state; a combat scope limits when the payoff applies, not when the state may be created. */
 const STATE_WANTS = new Set(["wants:exhausted-enemy", "wants:exhausted-own", "wants:damaged-units"]);

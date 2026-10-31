@@ -1,6 +1,7 @@
 import { makeBestCover, type CoverCombo } from "./cover.js";
 import { edgeScore, mechanicalRows, type PairGraph } from "./graph.js";
 import { cardLabel, cmp, r3 } from "./order.js";
+import { admits } from "./qualifiers.js";
 import type { PairEdge, SynergyCard, TraitsMode, TrioRecord, TrioShape } from "./schema.js";
 import { TRIO_SHAPES } from "./schema.js";
 
@@ -17,6 +18,9 @@ export const TRIO_FANOUT = 30;
 /** Offers that remove a friendly unit from play; one such effect consumes one subject unless its target takes several (D49). */
 const CONSUMING_OFFERS: ReadonlySet<string> = new Set(["offers:defeat-friendly-unit", "offers:defeat-any-unit"]);
 export const TRIO_MEMBER_TYPES: ReadonlySet<string> = new Set(["Unit", "Event", "Upgrade"]);
+const COUNTING_WANTS: ReadonlySet<string> = new Set(["wants:wide-board"]);
+/** "for each other friendly Pilot unit and upgrade", "control 3 or more units": the clause counts units, upgrades, cards or tokens; "for each exhausted resource" counts none of them. */
+const COUNTS_FEEDERS = /\bfor each (?:other )?(?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b|\b(?:\d+|X) or more (?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b/i;
 export const DEFAULT_TRIO_KEEP = 100;
 
 export interface TrioSearchOptions {
@@ -149,6 +153,28 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       const supplied = suppliedTo(links[(i + 2) % 3]);
       return consumed === undefined || supplied === undefined || consumed === supplied || consumesMany(out);
     });
+  /**
+   * D64: when B's offer acts on the unit its own watcher saw ("ready that unit") and A is what feeds that watcher, C must be
+   * the unit A puts into play. A chain whose C cannot be that unit acts on two different objects and never fires.
+   */
+  const relayReaches = (e1: PairEdge, e2: PairEdge): boolean =>
+    linkRows(e2).length === 0 ||
+    linkRows(e2).some((r2) => {
+      const relay = graph.qualifier(e2.a, "offers", r2.offer)?.relays;
+      if (relay === undefined) return true;
+      const fed = linkRows(e1).filter((r1) => graph.qualifier(e1.b, "wants", r1.want)?.text === relay);
+      return fed.length === 0 || fed.some((r1) => {
+        const delivered = graph.qualifier(e1.a, "offers", r1.offer)?.delivers;
+        return delivered === undefined || admits(delivered, member(e2.b));
+      });
+    });
+  const rowSignature = (e: PairEdge): string => [...new Set(linkRows(e).map((r) => `${r.offer}>${r.want}`))].sort(cmp).join("|");
+  /** A want that counts its feeders ("for each ... unit and upgrade", "3 or more units", a board-width or trait count), so two of them add up (D64). */
+  const counting = (cardKey: string, want: string): boolean =>
+    COUNTING_WANTS.has(want) || want.startsWith("wants:trait-") || COUNTS_FEEDERS.test(graph.qualifier(cardKey, "wants", want)?.text ?? "");
+  /** D64: two members that offer the third the very same thing are substitutes, not a combo, unless the want counts its feeders. */
+  const substitutes = (x: PairEdge, y: PairEdge): boolean =>
+    rowSignature(x) !== "" && rowSignature(x) === rowSignature(y) && !linkRows(x).some((r) => counting(x.b, r.want));
   const sameName = (...ks: string[]): boolean => new Set(ks.map((k) => member(k).title)).size < ks.length;
   const costOf = (...ks: string[]): number => ks.reduce((s, k) => s + (member(k).structured.cost ?? 0), 0);
 
@@ -158,7 +184,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const outs = outAdj.get(b) ?? [];
     for (const e1 of ins) {
       for (const e2 of outs) {
-        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b])) continue;
+        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b]) || !relayReaches(e1, e2)) continue;
         counts.chain++;
         const keys: [string, string, string] = [e1.a, b, e2.b];
         if (accept(keys, costOf(...keys))) keepTop(trios.chain, record("chain", keys, [e1, e2]));
@@ -175,7 +201,11 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         counts.convergent++;
         counts[shape] = (counts[shape] ?? 0) + 1;
         const keys: [string, string, string] = [x.a, y.a, b];
-        if (accept(keys, costOf(...keys))) keepTop(trios[shape], record(shape, keys, [x, y]));
+        if (accept(keys, costOf(...keys))) {
+          const rec = record(shape, keys, [x, y]);
+          // Ranked as a substitute: kept in its shape so the pair stays findable, scored 0 so every combo ranks above it.
+          keepTop(trios[shape], substitutes(x, y) ? { ...rec, score: 0, reasons: `substitutes: either one is enough | ${rec.reasons}` } : rec);
+        }
       }
     }
     for (const e2 of outs) {

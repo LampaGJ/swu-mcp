@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "tableVersion": 4,
- "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note. genericallyFed lists the want tags every deck feeds by playing cards at all (D62): deck_audit never calls such a want an orphan, and pairings keep only the row feeders that supply it beyond that. The name family links a card whose text names another card by its title (D62).",
+ "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note. genericallyFed lists the want tags every deck feeds by playing cards at all (D62): deck_audit never calls such a want an orphan, and pairings keep only the row feeders that supply it beyond that. The name family links a card whose text names another card by its title (D62). offers:has-keyword-<k> marks a unit that has one of the nine keywords another card reads (printed, or given by its own text), and wants:keyword-<k> a card that reads it on another friendly unit (D64).",
  "rows": [
   {
    "id": "name-reference",
@@ -431,37 +431,118 @@
   {
    "id": "grant-sentinel-payoff",
    "offers": {
-    "offers:grant-sentinel": 1
+    "offers:grant-sentinel": 1,
+    "offers:has-keyword-sentinel": 1
    },
    "wants": {
     "wants:keyword-sentinel": 1
    },
    "strength": 0.6,
-   "reason": "A granted Sentinel makes the unit a target for cards that act on units with Sentinel. Example: Academy Graduate feeds Kylo Ren's Command Shuttle.",
+   "reason": "A granted Sentinel makes the unit a target for cards that act on units with Sentinel. Example: Academy Graduate feeds Kylo Ren's Command Shuttle. A unit printed with the keyword, or one whose own text gives it the keyword, is such a target too; Oppo Rancisis copies it from one (D64).",
    "example": null
   },
   {
    "id": "grant-hidden-payoff",
    "offers": {
-    "offers:grant-hidden": 1
+    "offers:grant-hidden": 1,
+    "offers:has-keyword-hidden": 1
    },
    "wants": {
     "wants:keyword-hidden": 1
    },
    "strength": 0.6,
-   "reason": "A granted Hidden makes the unit a target for cards that act on units with Hidden. Example: Third Sister feeds Dooku.",
+   "reason": "A granted Hidden makes the unit a target for cards that act on units with Hidden. Example: Third Sister feeds Dooku. A unit printed with the keyword, or one whose own text gives it the keyword, is such a target too; Oppo Rancisis copies it from one (D64).",
    "example": null
   },
   {
    "id": "grant-shielded-payoff",
    "offers": {
-    "offers:grant-shielded": 1
+    "offers:grant-shielded": 1,
+    "offers:has-keyword-shielded": 1
    },
    "wants": {
     "wants:keyword-shielded": 1
    },
    "strength": 0.6,
-   "reason": "A granted Shielded makes the unit a target for cards that act on units with Shielded. Example: Rio Durant feeds The Armorer.",
+   "reason": "A granted Shielded makes the unit a target for cards that act on units with Shielded. Example: Rio Durant feeds The Armorer. A unit printed with the keyword, or one whose own text gives it the keyword, is such a target too; Oppo Rancisis copies it from one (D64).",
+   "example": null
+  },
+  {
+   "id": "keyword-ambush-payoff",
+   "offers": {
+    "offers:grant-ambush": 1,
+    "offers:has-keyword-ambush": 1
+   },
+   "wants": {
+    "wants:keyword-ambush": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Ambush (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Ambush while another friendly unit has it. (D64)",
+   "example": null
+  },
+  {
+   "id": "keyword-grit-payoff",
+   "offers": {
+    "offers:grant-grit": 1,
+    "offers:has-keyword-grit": 1
+   },
+   "wants": {
+    "wants:keyword-grit": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Grit (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Grit while another friendly unit has it. (D64)",
+   "example": null
+  },
+  {
+   "id": "keyword-overwhelm-payoff",
+   "offers": {
+    "offers:grant-overwhelm": 1,
+    "offers:has-keyword-overwhelm": 1
+   },
+   "wants": {
+    "wants:keyword-overwhelm": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Overwhelm (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Overwhelm while another friendly unit has it. (D64)",
+   "example": null
+  },
+  {
+   "id": "keyword-raid-payoff",
+   "offers": {
+    "offers:grant-raid": 1,
+    "offers:has-keyword-raid": 1
+   },
+   "wants": {
+    "wants:keyword-raid": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Raid (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Marchion Ro doubles each friendly unit's Raid, and Oppo Rancisis gains Raid 2 while another friendly unit has Raid. (D64)",
+   "example": null
+  },
+  {
+   "id": "keyword-restore-payoff",
+   "offers": {
+    "offers:grant-restore": 1,
+    "offers:has-keyword-restore": 1
+   },
+   "wants": {
+    "wants:keyword-restore": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Restore (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Restore while another friendly unit has it. (D64)",
+   "example": null
+  },
+  {
+   "id": "keyword-saboteur-payoff",
+   "offers": {
+    "offers:grant-saboteur": 1,
+    "offers:has-keyword-saboteur": 1
+   },
+   "wants": {
+    "wants:keyword-saboteur": 1
+   },
+   "strength": 0.6,
+   "reason": "A unit that has Saboteur (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Saboteur while another friendly unit has it. (D64)",
    "example": null
   },
   {
@@ -486,30 +567,6 @@
   {
    "tag": "offers:gain-saboteur-self",
    "note": "A unit that gains Saboteur on itself under a condition on itself (while upgraded); no card acts on units with Saboteur and nothing is offered to another card. Read only by the meta counter table (data/counters.json, D45)."
-  },
-  {
-   "tag": "offers:grant-ambush",
-   "note": "No card text acts on 'units with Ambush'. Reviewed #14."
-  },
-  {
-   "tag": "offers:grant-grit",
-   "note": "Grit is the grantee's own damaged-state bonus; no card acts on units with Grit. Reviewed #14."
-  },
-  {
-   "tag": "offers:grant-overwhelm",
-   "note": "Breach reads a friendly unit that has Overwhelm, worded as a condition no want tag models. Reviewed #14."
-  },
-  {
-   "tag": "offers:grant-raid",
-   "note": "No card text acts on 'units with Raid'. Reviewed #14."
-  },
-  {
-   "tag": "offers:grant-restore",
-   "note": "No card text acts on 'units with Restore'. Reviewed #14."
-  },
-  {
-   "tag": "offers:grant-saboteur",
-   "note": "No card text acts on 'units with Saboteur'. Reviewed #14."
   },
   {
    "tag": "offers:grant-support",

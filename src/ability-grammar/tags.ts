@@ -54,6 +54,14 @@ const ATTACK_KEYWORDS = new Set(["Raid", "Overwhelm", "Saboteur", "Restore"]);
 /** The grammar marks "attached unit", a referenced "it" and "each friendly unit" as self too, so the clause must say the card gains it. */
 export const SELF_GAINS = /\bthis unit (?:gets [^.;]*? and )?gains\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
+/** Keywords a card's text reads on another friendly unit (Oppo Rancisis copies these nine; Marchion Ro doubles Raid; "units with Hidden"), so a holder of one is an offer (D64). */
+const HOLDER_KEYWORDS = new Set(["Ambush", "Grit", "Hidden", "Overwhelm", "Raid", "Restore", "Saboteur", "Sentinel", "Shielded"]);
+/** "This unit gains Ambush while another friendly unit has Ambush": the card copies a keyword onto itself; the grammar also reads the condition as a grant to "another friendly unit" (D64). */
+const COPIES_KEYWORD = /\banother friendly unit has\b/i;
+const copiesKeyword = (c: SwuClause): boolean =>
+  COPIES_KEYWORD.test(c.text) || c.conditions.some((k) => COPIES_KEYWORD.test(`${typeof k.w === "string" ? k.w : ""} ${typeof k.what === "string" ? k.what : ""}`));
+/** "for each other friendly Tusken unit": the capitalised words before "unit" name the trait counted (D64). */
+const COUNTED_TRAIT = /\bfriendly ((?:[A-Z][\w'-]*\s)*[A-Z][\w'-]*) units?\b/;
 const SEARCH_OFFER: Record<string, string> = {
   deck_top: "offers:tutor-to-deck",
   play: "offers:tutor-to-play",
@@ -101,6 +109,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
     if (k.granted) continue;
     if (k.keyword === "Grit") add(wants, "wants:self-damaged", "Grit");
     if (k.keyword === "Shielded") add(offers, "offers:give-shield-self", "Shielded");
+    if (HOLDER_KEYWORDS.has(k.keyword) && (card.type === "Unit" || card.type === "Token Unit")) add(offers, `offers:has-keyword-${k.keyword.toLowerCase()}`, `printed keyword ${k.keyword}`);
   }
 
   for (const face of Object.keys(card.faces) as (keyof typeof card.faces)[]) {
@@ -142,6 +151,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (c.source === "none") continue;
         const toCount = discardsToCount(c);
         const selfReturn = onlyReturnsItself(c);
+        const copies = copiesKeyword(c);
         for (const o of c.offers ?? []) add(offers, o, `curated ${c.curatedId}`);
         // Overrides a curated row's want too (cur-0189, cur-0180), because the table cannot be hand-edited.
         for (const w of c.wants ?? []) {
@@ -160,6 +170,9 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           const why = `${face}: ${c.text}`;
           const keywordWant = KEYWORD_WANT.exec(target?.text ?? "");
           if (keywordWant !== null && p !== "enemy") add(wants, `wants:keyword-${keywordWant[1].toLowerCase()}`, why);
+          if (p !== "enemy" && !hostile(e)) {
+            for (const r of target?.restrict ?? []) if (r.startsWith("keyword:") && HOLDER_KEYWORDS.has(r.slice(8))) add(wants, `wants:keyword-${r.slice(8).toLowerCase()}`, why);
+          }
           // A friendly resource exhausted feeds an exhausted-resource count, never an exhausted-unit one (D58).
           if (e.cat === "exhaust_resource" && p !== "enemy") add(offers, "offers:exhaust-resource", why);
           if (target?.kind === "resource") continue;
@@ -243,8 +256,19 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "capture": add(offers, p === "friendly" ? "offers:capture-own" : "offers:capture", why); break;
             case "stat_mod": if (e.sign === "buff" && p !== "enemy") add(offers, "offers:buff", why); break;
             case "grant_keyword":
-              for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
               if (SELF_GAINS.test(c.text) && p === "self" && wantsExtraAttacks && (e.keywords ?? []).some((k) => ATTACK_KEYWORDS.has(keywordName(k)))) add(wants, "wants:extra-attacks", why);
+              // A copier gives nothing: it wants a friendly unit that already has the keyword, and holds it while one does (D64).
+              if (copies) {
+                for (const k of e.keywords ?? []) {
+                  if (p !== "self" || !HOLDER_KEYWORDS.has(keywordName(k))) continue;
+                  add(wants, `wants:keyword-${keywordName(k).toLowerCase()}`, why);
+                  if (card.type === "Unit" || card.type === "Token Unit") add(offers, `offers:has-keyword-${keywordName(k).toLowerCase()}`, why);
+                }
+                break;
+              }
+              // "This unit gains Raid" gives nothing to another unit; the unit holds the keyword (offers:has-keyword-*, below; D64).
+              if (p === "self" && SELF_GAINS.test(c.text)) break;
+              for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
               break;
             case "attach": if (e.rule === "attach_self") add(offers, "offers:upgrade-to-attach", why); break;
             case "cost_reduction": if (/credit/i.test(c.text)) add(wants, "wants:credit-tokens", why); break;
@@ -254,6 +278,11 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             for (const k of [...offers.keys()]) if (!offersBefore.has(k)) offers.delete(k);
             // A conditional gain on the card itself is no grant to another card, but the meta counter table reads it (D45).
             if (e.cat === "grant_keyword") for (const k of e.keywords ?? []) if (keywordName(k) === "Saboteur") add(offers, "offers:gain-saboteur-self", why);
+          }
+          // After the self-gated pruning: a unit that gains a keyword only sometimes still holds it then (D64).
+          // A leader's "this unit gains" sits on its deployed unit side, which holds the keyword too.
+          if (e.cat === "grant_keyword" && !copies && p === "self" && SELF_GAINS.test(c.text) && (card.type === "Unit" || card.type === "Token Unit" || card.type === "Leader")) {
+            for (const k of e.keywords ?? []) if (HOLDER_KEYWORDS.has(keywordName(k))) add(offers, `offers:has-keyword-${keywordName(k).toLowerCase()}`, why);
           }
           const restr = target?.restrict ?? [];
           if (restr.includes("damaged") && p !== "enemy") add(wants, "wants:damaged-units", why);
@@ -295,6 +324,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/card in your hand|cards in your hand/.test(per) && !toCount) add(wants, "wants:cards-in-hand", why);
             if (/discard pile/.test(per)) add(wants, "wants:cards-in-discard", why);
             if (/(?:other )?friendly .*units?|unit you control/.test(per)) add(wants, "wants:wide-board", why);
+            const counted = COUNTED_TRAIT.exec(k.per ?? "");
+            if (counted !== null) add(wants, `wants:trait-${counted[1]}`, why);
             // "For each exhausted resource" counts resources already paid, not resources controlled, so it wants no ramp (D58).
             if (/exhausted/.test(per)) add(wants, /resource/.test(per) ? "wants:exhausted-resources" : "wants:exhausted-own", why);
             else if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);
