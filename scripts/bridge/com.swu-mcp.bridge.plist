@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Interim remote endpoint (#16): mcp-proxy bridges the stdio server to Streamable HTTP on 127.0.0.1:8765; the
+     share tool (Tailscale Funnel + Caddy) publishes it at /swu. Install: copy to ~/Library/LaunchAgents and
+     `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.swu-mcp.bridge.plist`. Logs stay on the internal
+     disk and the binaries are Homebrew's, because launchd cannot open log paths on an external volume and TCC grants
+     are per binary. Substitute your home for /Users/USER in the two log paths, and create that log directory first. -->
+<dict>
+  <key>Label</key><string>com.swu-mcp.bridge</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/uvx</string>
+    <string>mcp-proxy</string>
+    <string>--port</string><string>8765</string>
+    <string>--host</string><string>127.0.0.1</string>
+    <string>--stateless</string>
+    <string>--pass-environment</string>
+    <string>--allow-origin</string><string>*</string>
+    <string>--</string>
+    <string>/opt/homebrew/bin/pnpm</string>
+    <string>--silent</string>
+    <string>--dir</string><string>/Volumes/Local Files/Projects/swu-mcp</string>
+    <string>mcp</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Volumes/Local Files/Projects/swu-mcp</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>TMPDIR</key><string>/Volumes/Local Files/Projects/swu-mcp/tmp</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>/Users/USER/Library/Logs/swu-mcp-bridge/out.log</string>
+  <key>StandardErrorPath</key><string>/Users/USER/Library/Logs/swu-mcp-bridge/err.log</string>
+</dict>
+</plist>
