@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { indexLeaderCards, type LeaderCardsIndex } from "../meta/schema.js";
 import { REPO_ROOT } from "../paths.js";
 import { coverCombos, type CoverCombo } from "./cover.js";
 import { buildFungibility, type FungibilityIndex } from "./fungibility.js";
@@ -13,7 +14,9 @@ import { searchTrios, type TrioSearchOptions, type TrioSearchResult } from "./tr
  * synergy tools answer from, built by the same pure functions as the `pnpm synergy` run so a tool
  * answer and a run output cannot disagree.
  * @tacticalObjective Built from `<dataDir>/features/features.json` and the committed
- * `data/complementarity.json`; the trio search is lazy because it is the slow part.
+ * `data/complementarity.json`; the trio search is lazy because it is the slow part. The leader card
+ * inclusion (`<dataDir>/meta/leader-cards.json`, #19) is optional: a package without it still serves
+ * every synergy tool, only without leader weighting.
  */
 
 export const DEFAULT_TABLE_PATH = path.join(REPO_ROOT, "data/complementarity.json");
@@ -23,10 +26,12 @@ export interface SynergyContext {
   graph: PairGraph;
   fungibility: FungibilityIndex;
   combos: readonly CoverCombo[];
+  /** Per-leader tournament card inclusion; null when the package has no meta/leader-cards.json. */
+  leaderCards: LeaderCardsIndex | null;
   trios(options?: TrioSearchOptions): TrioSearchResult;
 }
 
-export function createSynergyContext(cards: readonly SynergyCard[], table: ComplementarityTable): SynergyContext {
+export function createSynergyContext(cards: readonly SynergyCard[], table: ComplementarityTable, leaderCards: LeaderCardsIndex | null = null): SynergyContext {
   const graph = buildPairGraph(cards, table);
   const combos = coverCombos(cards);
   let full: TrioSearchResult | undefined;
@@ -34,6 +39,7 @@ export function createSynergyContext(cards: readonly SynergyCard[], table: Compl
     cards,
     graph,
     combos,
+    leaderCards,
     fungibility: buildFungibility(cards),
     trios: (options) => {
       if (options === undefined) return (full ??= searchTrios(graph, combos));
@@ -47,5 +53,7 @@ export function loadSynergyContext(dataDir: string, tablePath = DEFAULT_TABLE_PA
   if (!existsSync(featuresPath)) throw new Error(`no ${featuresPath}; run "pnpm card-features" first`);
   const cards = synergyCardsSchema.parse(JSON.parse(readFileSync(featuresPath, "utf8")));
   const table = complementarityTableSchema.parse(JSON.parse(readFileSync(tablePath, "utf8")));
-  return createSynergyContext(cards, table);
+  const leaderCardsPath = path.join(dataDir, "meta/leader-cards.json");
+  const leaderCards = existsSync(leaderCardsPath) ? indexLeaderCards(JSON.parse(readFileSync(leaderCardsPath, "utf8"))) : null;
+  return createSynergyContext(cards, table, leaderCards);
 }

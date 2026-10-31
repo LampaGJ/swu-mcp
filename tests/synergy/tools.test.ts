@@ -8,6 +8,7 @@ import { createServer } from "../../src/create-server.js";
 import { loadStore } from "../../src/data.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrios, fungibleSubstitutes, SYNERGY_TOOLS } from "../../src/tools/synergy.js";
+import { indexLeaderCards } from "../../src/meta/schema.js";
 import type { ToolResult } from "../../src/tools.js";
 import { COMMITTED_TABLE, mk, table } from "./fixtures.js";
 
@@ -482,5 +483,109 @@ describe("fungible_substitutes widening", () => {
     const role = body(fungibleSubstitutes(alone, { cardKey: "slot", tag: "wants:self-damaged", evidence: false })).roles[0];
     expect(role.widened).toBeNull();
     expect(role.substitutes).toEqual([]);
+  });
+});
+
+/** A small leader-cards.json (meta/leader-cards.json shape, src/meta/schema.ts leaderCardsFileSchema). */
+const leaderCardsFile = (leaderKey: string, title: string, aspects: string[], rows: [string, number][]) =>
+  indexLeaderCards({
+    schemaVersion: 1,
+    window: { from: "2026-07-20", to: "2026-10-17", days: 90 },
+    weighting: "test weighting",
+    baseline: "test baseline",
+    maxCards: 150,
+    leaders: [
+      {
+        leader: { cardKey: leaderKey, title, aspects },
+        population: "tournament",
+        fallback: false,
+        decks: 12,
+        weight: 10.5,
+        window: { from: "2026-07-20", to: "2026-10-17" },
+        topBase: null,
+        cards: rows.map(([cardKey, inclusion]) => ({ cardKey, title: cardKey, inclusion, meanCopies: 2, baselineInclusion: 0.1, lift: inclusion - 0.1 })),
+      },
+    ],
+  });
+
+describe("find_pairings with a leader", () => {
+  const leaderCtx = createSynergyContext(cards, COMMITTED_TABLE, leaderCardsFile("L1", "Aggro Leader", ["Aggression", "Villainy"], [["5", 0.8]]));
+
+  it("leaves the no-leader answer byte-identical when leader data is loaded", () => {
+    for (const args of [{ cardKey: "1" }, { cardKey: "1", aspects: ["Command"] }, { cardKey: "4", direction: "enablers" }]) {
+      expect(findPairings(leaderCtx, args).content[0].text).toBe(findPairings(ctx, args).content[0].text);
+    }
+  });
+
+  it("carries each partner's leaderInclusion (null when unplayed) and weights the rank by it", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "1", leader: "L1" }));
+    const plain = body(findPairings(ctx, { cardKey: "1", aspects: ["Aggression", "Villainy"] }));
+    const rankOf = (o: Record<string, any>, k: string) => o.pairings.find((p: any) => p.cardKey === k).rank as number;
+    const grit = out.pairings.find((p: any) => p.cardKey === "5");
+    const squad = out.pairings.find((p: any) => p.cardKey === "4");
+    expect(grit.leaderInclusion).toBe(0.8);
+    expect(squad.leaderInclusion).toBeNull();
+    expect(grit.rank).toBeCloseTo(rankOf(plain, "5") * 1.3, 3);
+    expect(squad.rank).toBeCloseTo(rankOf(plain, "4") * 0.5, 3);
+    expect(out.pairings[0].cardKey).toBe("5");
+  });
+
+  it("defaults aspects to the leader's icons and names the population and window", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "1", leader: "Aggro Leader" }));
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy")).toBe(true);
+    expect(out.leader).toMatchObject({ cardKey: "L1", population: "tournament", decks: 12, window: "2026-07-20..2026-10-17" });
+    expect(out.leader.note).toContain("tournament, 12 decks, 2026-07-20..2026-10-17");
+    const given = body(findPairings(leaderCtx, { cardKey: "1", leader: "L1", aspects: ["Command"] }));
+    expect(given.pairings.every((p: any) => p.aspectPair === "icons Command")).toBe(true);
+  });
+
+  it("rejects a leader that is not a Leader card", () => {
+    expect(findPairings(leaderCtx, { cardKey: "1", leader: "nope" }).isError).toBe(true);
+    expect(findPairings(leaderCtx, { cardKey: "1", leader: "5" }).isError).toBe(true);
+  });
+
+  it("says so when the package has no decklists for the leader, and does not weight the rank", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "1", leader: "L2" }));
+    expect(out.leader.note).toContain("no decklist data");
+    expect(out.pairings.every((p: any) => !("leaderInclusion" in p))).toBe(true);
+  });
+});
+
+describe("find_trios with a leader", () => {
+  const trioCards = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("Z", "Base", { type: "Base", icons: ["Command"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Command"], cost: 3 }),
+    mk("4", "Delta", { wants: ["wants:y"], aspects: ["Command"], cost: 1 }),
+  ];
+  const trioTable = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const plainCtx = createSynergyContext(trioCards, trioTable);
+  const leaderCtx = createSynergyContext(trioCards, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["1", 0.5], ["2", 0.5], ["3", 0.9]]));
+
+  it("leaves the no-leader answer byte-identical when leader data is loaded", () => {
+    expect(findTrios(leaderCtx, {}).content[0].text).toBe(findTrios(plainCtx, {}).content[0].text);
+  });
+
+  it("carries each member's leaderInclusion and ranks played members first", () => {
+    const plain = body(findTrios(plainCtx, { leaderAspects: ["Command", "Heroism"] }));
+    expect(plain.trios[0].cardKeys).toBe("1|2|4");
+    const out = body(findTrios(leaderCtx, { leader: "L" }));
+    expect(out.trios[0].cardKeys).toBe("1|2|3");
+    expect(out.trios[0].leaderInclusion).toEqual([0.5, 0.5, 0.9]);
+    const delta = out.trios.find((t: any) => t.cardKeys === "1|2|4");
+    expect(delta.leaderInclusion).toEqual([0.5, 0.5, null]);
+    expect(delta.rank).toBeCloseTo(delta.score * 1 * 1 * 0.5, 3);
+  });
+
+  it("defaults the leader aspects to the leader's icons and names the population and window", () => {
+    const out = body(findTrios(leaderCtx, { leader: "L" }));
+    expect(out.trios[0].aspectPair).toBe(body(findTrios(plainCtx, { leaderAspects: ["Command", "Heroism"] })).trios[0].aspectPair);
+    expect(out.leader).toMatchObject({ cardKey: "L", population: "tournament", window: "2026-07-20..2026-10-17" });
+    expect(findTrios(leaderCtx, { leader: "nope" }).isError).toBe(true);
   });
 });
