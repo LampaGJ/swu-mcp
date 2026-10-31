@@ -51,8 +51,12 @@ const playsFree = (c: SwuClause): boolean => c.effects.some((e) => e.cat === "co
 const EXHAUSTED_RESOURCES = /\bresources? you control (?:is|are) exhausted\b|\bexhausted resources?\b/i;
 /** Keywords that act only while the unit attacks (CR: Raid, Overwhelm, Saboteur, Restore); one a unit gives itself pays off per attack, like an On Attack (D62). */
 const ATTACK_KEYWORDS = new Set(["Raid", "Overwhelm", "Saboteur", "Restore"]);
-/** The grammar marks "attached unit", a referenced "it" and "each friendly unit" as self too, so the clause must say the card gains it. */
-export const SELF_GAINS = /\bthis unit (?:gets [^.;]*? and )?gains\b/i;
+/**
+ * The grammar marks "attached unit", a referenced "it" and "each friendly unit" as self too, so the clause must say the card
+ * gains it: "this unit gains", or a pronoun whose antecedent is the card in the same clause ("While this unit is ready, it
+ * gains Sentinel"; "While this is the only ..., she gains Sentinel"), never "If attached unit is a Fighter, it gains" (D70).
+ */
+export const SELF_GAINS = /\bthis unit (?:gets [^.;]*? and )?gains\b|\bthis(?: unit)? (?:is|has)\b[^.;]*?, (?:it|he|she) (?:gets [^.;]*? and )?gains\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 /** Keywords a card's text reads on another friendly unit (Oppo Rancisis copies these nine; Marchion Ro doubles Raid; "units with Hidden"), so a holder of one is an offer (D64). */
 const HOLDER_KEYWORDS = new Set(["Ambush", "Grit", "Hidden", "Overwhelm", "Raid", "Restore", "Saboteur", "Sentinel", "Shielded"]);
@@ -66,6 +70,24 @@ function paysOpponentOnly(clauses: readonly SwuClause[]): boolean {
   const chosen = clauses.some((c) => /\bchoose an opponent\b/i.test(c.text));
   const acting = clauses.filter((c) => c.effects.length > 0);
   return acting.length > 0 && acting.every((c) => OPPONENT_GAINS.test(c.text) || (chosen && /\bthey may\b/i.test(c.text)));
+}
+/** An effect that costs the card's own controller: a friendly resource exhausted, a card discarded from your hand, damage to your base (D70). */
+function costsController(e: ClauseEffect): boolean {
+  const p = pol(e.target);
+  if (e.cat === "exhaust_resource") return p !== "enemy";
+  if (e.cat === "discard_self") return true;
+  if (e.cat === "damage" || e.cat === "indirect_damage") return e.target?.kind === "base" && (p === "friendly" || p === "self");
+  return false;
+}
+/**
+ * D70, extending D68: a When Defeated whose every effect pays an opponent or costs its own controller ("Exhaust a ready
+ * friendly resource", "Discard a card from your hand") is a printed drawback. The card wants no defeat, and the drawback
+ * enables nothing: it fires only when the card dies, which its controller rarely picks the moment of, and it costs them.
+ * An optional cost that buys something (Enoch's base damage for a discount) is no drawback.
+ */
+function isDrawback(clauses: readonly SwuClause[]): boolean {
+  const acting = clauses.filter((c) => c.effects.length > 0);
+  return paysOpponentOnly(clauses) || (acting.length > 0 && acting.every((c) => c.effects.every(costsController)));
 }
 /** "This unit gains Ambush while another friendly unit has Ambush": the card copies a keyword onto itself; the grammar also reads the condition as a grant to "another friendly unit" (D64). */
 const COPIES_KEYWORD = /\banother friendly unit has\b/i;
@@ -129,9 +151,12 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
     for (const { a, clauses, grantedBy } of walkAbilities(nodes, null)) {
       const wantsExtraAttacks = card.type !== "Event" && !(grantedBy && ONE_SHOT_GRANT.test(grantedBy.text));
       const replayCats = !a.granted && card.type === "Unit" ? replayWorthyCats(clauses) : [];
+      const drawback = a.triggers.some((t) => t.trigger === "when_defeated") && isDrawback([...a.clauses, ...a.options.flatMap((o) => o.clauses)]);
+      // "When Played/When Defeated" keeps its offers: the When Played route is chosen on your own turn.
+      const offersNothing = drawback && a.triggers.every((t) => t.trigger === "when_defeated");
       for (const t of a.triggers) {
         const tt = t.text ?? "";
-        if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted) && !paysOpponentOnly([...a.clauses, ...a.options.flatMap((o) => o.clauses)]))
+        if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted) && !drawback)
           add(wants, "wants:self-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_defeated" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_played" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-played", `${face}: When Played`);
@@ -159,6 +184,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (/play a card from your resources/i.test(tt)) add(wants, "wants:resource-ramp", tt);
         if (/deploy a leader/i.test(tt)) add(wants, "wants:leader-deployed", tt);
       }
+      const offersBeforeClauses = new Set(offers.keys());
       for (const c of clauses) {
         if (c.source === "none") continue;
         const toCount = discardsToCount(c);
@@ -189,6 +215,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           if (e.cat === "exhaust_resource" && p !== "enemy") add(offers, "offers:exhaust-resource", why);
           if (target?.kind === "resource") continue;
           const selfGated = isSelfGated(c, e);
+          // A pronoun the grammar reads as a reference ("it gains") is the card itself when SELF_GAINS names it the antecedent.
+          const gainsSelf = (p === "self" || p === "ref") && SELF_GAINS.test(c.text);
           const offersBefore = new Set(offers.keys());
           switch (e.cat) {
             case "defeat":
@@ -268,7 +296,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "capture": add(offers, p === "friendly" ? "offers:capture-own" : "offers:capture", why); break;
             case "stat_mod": if (e.sign === "buff" && p !== "enemy") add(offers, "offers:buff", why); break;
             case "grant_keyword":
-              if (SELF_GAINS.test(c.text) && p === "self" && wantsExtraAttacks && (e.keywords ?? []).some((k) => ATTACK_KEYWORDS.has(keywordName(k)))) add(wants, "wants:extra-attacks", why);
+              if (gainsSelf && wantsExtraAttacks && (e.keywords ?? []).some((k) => ATTACK_KEYWORDS.has(keywordName(k)))) add(wants, "wants:extra-attacks", why);
               // A copier gives nothing: it wants a friendly unit that already has the keyword, and holds it while one does (D64).
               if (copies) {
                 for (const k of e.keywords ?? []) {
@@ -279,7 +307,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                 break;
               }
               // "This unit gains Raid" gives nothing to another unit; the unit holds the keyword (offers:has-keyword-*, below; D64).
-              if (p === "self" && SELF_GAINS.test(c.text)) break;
+              if (gainsSelf) break;
               for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
               break;
             case "attach": if (e.rule === "attach_self") add(offers, "offers:upgrade-to-attach", why); break;
@@ -293,7 +321,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           }
           // After the self-gated pruning: a unit that gains a keyword only sometimes still holds it then (D64).
           // A leader's "this unit gains" sits on its deployed unit side, which holds the keyword too.
-          if (e.cat === "grant_keyword" && !copies && p === "self" && SELF_GAINS.test(c.text) && (card.type === "Unit" || card.type === "Token Unit" || card.type === "Leader")) {
+          if (e.cat === "grant_keyword" && !copies && gainsSelf && (card.type === "Unit" || card.type === "Token Unit" || card.type === "Leader")) {
             for (const k of e.keywords ?? []) if (HOLDER_KEYWORDS.has(keywordName(k))) add(offers, `offers:has-keyword-${keywordName(k).toLowerCase()}`, why);
           }
           const restr = target?.restrict ?? [];
@@ -349,6 +377,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           if (st.cat === "attach_restriction") for (const tr of traitsOf(st.target)) add(wants, `wants:trait-${tr}`, `${face}: ${c.text}`);
         }
       }
+      if (offersNothing) for (const k of [...offers.keys()]) if (!offersBeforeClauses.has(k)) offers.delete(k);
     }
   }
   if (offers.has("offers:defeat-friendly-unit")) add(wants, "wants:sac-fodder", "defeats your own units");

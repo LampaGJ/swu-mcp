@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { extractFeatures } from "../../src/ability-grammar/index.js";
 import { indexLeaderCards, leaderCardsFileSchema } from "../../src/meta/schema.js";
+import { swuFeatureInputCardSchema } from "../../src/schemas/card-features.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { engineHitOf, leaderEngineOf, readiesLeader, roleKeepOf, suppliedKeywords } from "../../src/synergy/leader-engine.js";
 import { synergyCardsSchema, type SynergyCard } from "../../src/synergy/schema.js";
@@ -24,6 +26,19 @@ const ANAKIN = "05010190";
 const TRAYA = "06010188";
 const CHEWBACCA = "09010117";
 const CHIEFTAIN = "09010212";
+const TALZIN = "09010039";
+// Text verbatim from the 2026-10-31 run (originals 2026-10-16). She prints Raid 1, and "Each other friendly unit gains Restore 1" puts her in Oppo's Restore grant class (D70).
+const TALZIN_CARD: SynergyCard = synergyCardsSchema.parse(
+  extractFeatures(
+    [
+      swuFeatureInputCardSchema.parse({
+        cardKey: TALZIN, title: "Mother Talzin", subtitle: "Pledged to the Sisterhood", type: "Unit", type2: "", traits: "Force|Night", keywords: "Raid|Restore",
+        cost: 3, power: 3, hp: 4, arenas: "Ground", unique: true, aspects: "Vigilance|Aggression", text: "Raid 1\nEach other friendly unit gains Restore 1.",
+      }),
+    ],
+    new Map(),
+  ).cards,
+)[0];
 
 const body = (result: ToolResult): Record<string, any> => {
   expect(result.isError, result.content[0].text).toBeUndefined();
@@ -154,7 +169,6 @@ describe("find_pairings: the leader's own clause is a want source (#149)", () =>
 
 describe("fungible_substitutes: named candidates, the deck, and the card's job (#149)", () => {
   const ctx = createSynergyContext(CARDS, COMMITTED_TABLE, leaderCards([[CHEWBACCA, 0.5]]));
-  const deck = new Set([CHEWBACCA, CHIEFTAIN, BOBA]);
   const call = (extra: object, deckCards: SynergyCard[] = [card(CHEWBACCA), card(CHIEFTAIN), card(BOBA)]) =>
     body(fungibleSubstitutes(ctx, { cardKey: OPPO, evidence: false, ...extra }, new Map(), undefined, { deckKeys: new Set(deckCards.map((c) => c.cardKey)), deckCards }));
   const listed = (out: Record<string, any>): string[] => out.roles.flatMap((r: any) => r.substitutes.flatMap((g: any) => g.cards.map((c: any) => c.cardKey)));
@@ -173,11 +187,15 @@ describe("fungible_substitutes: named candidates, the deck, and the card's job (
     expect(out.card.penalty).toBe(0);
   });
 
+  // D70: Boba Fett, Family Found prints neither Raid nor Saboteur (he gives them for a phase), so he left the printed-keyword classes; Mother Talzin prints Raid.
   it("excludes cards already in the deck from the substitutes when a decklist is given", () => {
-    const without = call({}, []);
-    expect(listed(without)).toEqual(expect.arrayContaining([CHEWBACCA, CHIEFTAIN, BOBA]));
-    const out = call({});
-    for (const k of deck) expect(listed(out)).not.toContain(k);
+    const withTalzin = createSynergyContext([...CARDS, TALZIN_CARD], COMMITTED_TABLE, leaderCards([[CHEWBACCA, 0.5]]));
+    const run = (deckCards: SynergyCard[]) =>
+      body(fungibleSubstitutes(withTalzin, { cardKey: OPPO, evidence: false }, new Map(), undefined, { deckKeys: new Set(deckCards.map((c) => c.cardKey)), deckCards }));
+    const inDeck = [card(CHEWBACCA), card(CHIEFTAIN), TALZIN_CARD];
+    expect(listed(run([]))).toEqual(expect.arrayContaining([CHEWBACCA, CHIEFTAIN, TALZIN]));
+    const out = run(inDeck);
+    for (const c of inDeck) expect(listed(out)).not.toContain(c.cardKey);
   });
 
   it("lists a candidate that is in the deck, marked inDeck, and says when one does not resolve", () => {

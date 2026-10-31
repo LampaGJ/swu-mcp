@@ -17,6 +17,7 @@ import {
   roleOf,
   roleTagsOf,
   substitutesFor,
+  textGrantTags,
   widenedSubstitutes,
   type KeepCut,
   type KeepEntry,
@@ -411,9 +412,12 @@ function groupText(groups: readonly SubstituteGroup[], maxGroups: number): strin
     );
 }
 
-/** The text behind a role: the tag's clause, or the printed keyword for a keyword role (it has no clause). */
-const roleText = (card: SynergyCard, tag: string): string =>
-  tag.startsWith("keyword:") ? `printed keyword ${tag.slice("keyword:".length)}` : tagEvidence(card, tag);
+/** The text behind a role: the tag's clause, the granting clause of a grant the tag step cannot name (D70), or the printed keyword for a keyword role (it has no clause). */
+const roleText = (card: SynergyCard, tag: string): string => {
+  if (tag.startsWith("keyword:")) return `printed keyword ${tag.slice("keyword:".length)}`;
+  const grant = textGrantTags(card).find((t) => t.tag === tag);
+  return grant === undefined ? tagEvidence(card, tag) : clip(evidenceSpan(card, grant.why));
+};
 
 /** Higher first, a missing value last. */
 const descNullLast = (a: number | null | undefined, b: number | null | undefined): number =>
@@ -756,6 +760,9 @@ export function fungibleSubstitutes(
             return `${cardLabel(ctx.graph.byKey.get(k) as SynergyCard)} ${how} ${cardLabel(slot)}`;
           })
           .join("; ")}${partnerKeys.length > namedPartners.length ? `; ${partnerKeys.length - namedPartners.length} more` : ""}. A card with a pair edge to the original works beside it: partners lists it with the edge's row (feedsOriginal or fedByOriginal), and standIns, the cards that do the original's job, never does.${partnersCut > 0 ? ` ${partnersCut} more partners cut (maxPartners ${args.maxPartners}).` : ""}`,
+    standIns.length === 0
+      ? `No stand-in exists for ${cardLabel(slot)}: no card in its role classes does its job without a pair edge to it (cards in the deck or excluded are left out) (D70).`
+      : undefined,
     recommendation === undefined ? undefined : `recommendation (D69): ${KEEP_RULE}.`,
     lockedKeys.length === 0
       ? undefined

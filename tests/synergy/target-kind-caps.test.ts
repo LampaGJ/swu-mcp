@@ -24,6 +24,7 @@ const CARDS = {
     text: "Exhaust a friendly unit. If you do, for each different aspect it has, exhaust an enemy unit in the same arena.",
   },
   "08010216": { cardKey: "08010216", title: "Mandalorian Scout", type: "Unit", traits: "Mandalorian", cost: 2, power: 3, hp: 3, arenas: "Ground", text: "When Defeated: Exhaust a ready friendly resource." },
+  "06010216": { cardKey: "06010216", title: "Regulations Bureaucrat", type: "Unit", traits: "Imperial|Official", cost: 2, power: 0, hp: 5, arenas: "Ground", text: "Action [Exhaust]: Exhaust a resource." },
   "09010228": { cardKey: "09010228", title: "Lakeside Shaaks", type: "Unit", traits: "Creature", cost: 4, power: 4, hp: 4, arenas: "Ground", text: "When Played: Ready a friendly resource." },
   "09010209": { cardKey: "09010209", title: "Corona Squadron X-Wing", type: "Unit", traits: "New Republic|Vehicle|Fighter", cost: 2, power: 2, hp: 2, arenas: "Space", text: "On Attack: You may ready a resource." },
   "08010248": {
@@ -50,8 +51,9 @@ describe("an exhausted-resource want is not an exhausted-unit want", () => {
     expect(w).toContain("wants:exhausted-own");
     expect(w).not.toContain("wants:exhausted-resources");
   });
-  it("08010216 Mandalorian Scout exhausting a friendly resource offers exhaust-resource", () => {
-    expect(offerTags(featuresOf(CARDS["08010216"]))).toContain("offers:exhaust-resource");
+  it("06010216 Regulations Bureaucrat exhausting a resource offers exhaust-resource; 08010216 Mandalorian Scout's When Defeated drawback offers none (D70)", () => {
+    expect(offerTags(featuresOf(CARDS["06010216"]))).toContain("offers:exhaust-resource");
+    expect(offerTags(featuresOf(CARDS["08010216"]))).not.toContain("offers:exhaust-resource");
   });
   it("an enemy resource exhaust offers nothing to an exhausted-resource want", () => {
     const f = featuresOf({ cardKey: "T145C", title: "Resource Jam", type: "Event", text: "Exhaust 2 enemy resources." });
@@ -85,8 +87,9 @@ describe("the pair links that rested on the kind and size of the target", () => 
   it("07010226 Secret Battle of Pretend still feeds an exhausted-unit count", () => {
     expect(rowsOf("07010226", "T145B")).toContain("exhaust-own-payoff");
   });
-  it("08010216 Mandalorian Scout feeds 09010117 Chewbacca through exhaust-resource-payoff", () => {
-    expect(rowsOf("08010216", "09010117")).toContain("exhaust-resource-payoff");
+  it("06010216 Regulations Bureaucrat feeds 09010117 Chewbacca through exhaust-resource-payoff; 08010216 Mandalorian Scout's drawback does not (D70)", () => {
+    expect(rowsOf("06010216", "09010117")).toContain("exhaust-resource-payoff");
+    expect(rowsOf("08010216", "09010117")).toEqual([]);
   });
   it.each(["09010228", "09010209"] as const)("%s readying a resource does not feed 09010117 Chewbacca", (key) => {
     expect(rowsOf(key, "09010117")).toEqual([]);

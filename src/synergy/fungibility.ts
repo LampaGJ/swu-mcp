@@ -128,12 +128,49 @@ function originOf(card: SynergyCard, why: string): Origin {
   return { timing: "static", magnitude: "-" };
 }
 
-/** Printed keywords: the keyword field plus the keywords list, without keywords the text only grants. */
+const keywordField = (card: SynergyCard): string[] =>
+  ((card.structured.keywordsField as unknown[] | undefined) ?? []).filter((n): n is string => typeof n === "string" && n !== "");
+
+/**
+ * Printed keywords: the parsed keyword lines, without keywords the text only grants. The source's keyword field also lists
+ * every keyword the text gains, grants or names (Admiral Yularen lists Grit for "Choose Grit, ..."), so it counts only for
+ * a record that carries no parsed list (D70).
+ */
 function printedKeywords(card: SynergyCard): string[] {
-  const field = (card.structured.keywordsField as unknown[] | undefined) ?? [];
-  const listed = (card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? [];
-  const names = [...field, ...listed.filter((k) => k.granted !== true).map((k) => k.keyword)];
+  const listed = card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined;
+  const names = Array.isArray(listed) ? listed.filter((k) => k.granted !== true).map((k) => k.keyword) : keywordField(card);
   return [...new Set(names.filter((n): n is string => typeof n === "string" && n !== ""))].sort(cmp);
+}
+
+const wordRe = (word: string): RegExp => new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+
+/**
+ * Grants of a keyword to other units that the tag step cannot name, because the effect names no keyword ("each friendly
+ * Vehicle unit gains the chosen keyword" after "Choose Grit, Restore 1, Sentinel, or Shielded"): one offers:grant-<k> per
+ * keyword of the field that the granting ability names and the card does not print. They join the grant class of every
+ * named grant, never the printed-keyword class (D70).
+ */
+export function textGrantTags(card: SynergyCard): { tag: string; why: string }[] {
+  const printed = new Set(printedKeywords(card));
+  const have = new Set(card.tags.offers.map((t) => t.tag));
+  const out = new Map<string, string>();
+  for (const face of Object.keys(card.faces).sort(cmp)) {
+    for (const a of abilitiesOf(card.faces[face])) {
+      const clauses = [...(a.clauses ?? []), ...(a.options ?? []).flatMap((o) => o.clauses)];
+      for (const c of clauses) {
+        for (const raw of c.effects) {
+          const e = raw as { cat?: unknown; keywords?: unknown[]; target?: { side?: unknown } };
+          if (e.cat !== "grant_keyword" || (e.keywords ?? []).length > 0 || e.target?.side === "enemy" || e.target?.side === "self") continue;
+          for (const k of keywordField(card)) {
+            const tag = `offers:grant-${k.toLowerCase()}`;
+            if (printed.has(k) || have.has(tag) || out.has(tag) || !clauses.some((x) => wordRe(k).test(x.text))) continue;
+            out.set(tag, `${face}: ${c.text}`);
+          }
+        }
+      }
+    }
+  }
+  return [...out.entries()].sort((x, y) => cmp(x[0], y[0])).map(([tag, why]) => ({ tag, why }));
 }
 
 /** Timings of an ability that holds without an event ("While this unit is upgraded ..."). */
@@ -144,7 +181,7 @@ export function roleSignatures(card: SynergyCard): RoleSignature[] {
   const arena = card.type === "Unit" ? (card.structured.arenas ?? []).map((a) => a.toLowerCase()).sort(cmp).join("+") : "";
   const out: RoleSignature[] = [];
   for (const side of ["offers", "wants"] as const) {
-    for (const { tag, why } of card.tags[side]) {
+    for (const { tag, why } of side === "offers" ? [...card.tags.offers, ...textGrantTags(card)] : card.tags.wants) {
       if (isTraitTag(tag)) continue;
       const { timing, magnitude } = originOf(card, why);
       const q = qualifierOf(card, side, tag, why);

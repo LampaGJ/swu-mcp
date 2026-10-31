@@ -54,9 +54,11 @@ describe.skipIf(!hasData)("fungible_substitutes splits partners from stand-ins f
     expect(anakin.feedsRow).toMatch(/offers:has-keyword-(hidden|shielded) -> wants:keyword-(hidden|shielded)$/);
   });
 
-  it("returns a non-empty standIns list in which no card has a pair edge to Oppo, and partners that all have one", () => {
+  // D70: Oppo prints none of the keywords it copies, so no printed-keyword class lists him and every keyword holder is a partner.
+  it("returns standIns in which no card has a pair edge to Oppo, says so when there is none, and partners that all have one", () => {
     const out = call({ maxPartners: 50 });
-    expect(out.standIns.length).toBeGreaterThan(0);
+    if (out.standIns.length === 0) expect(out.note).toContain("No stand-in exists for Oppo Rancisis");
+    else expect(out.note ?? "").not.toContain("No stand-in exists");
     for (const row of out.standIns) expect(hasEdge(row.cardKey), `${row.title} is a partner`).toBe(false);
     expect(out.partners.length).toBeGreaterThan(1);
     for (const row of out.partners) expect(hasEdge(row.cardKey), `${row.title} has no edge`).toBe(true);

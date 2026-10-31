@@ -56,6 +56,7 @@ const CARDS = {
     text: "This unit gains Raid 1 for each exhausted resource you control.\nWhile each resource you control is exhausted, this unit gains Overwhelm.",
   },
   "08010216": { cardKey: "08010216", title: "Mandalorian Scout", type: "Unit", traits: "Mandalorian", cost: 2, power: 3, hp: 3, arenas: "Ground", text: "When Defeated: Exhaust a ready friendly resource." },
+  "06010216": { cardKey: "06010216", title: "Regulations Bureaucrat", type: "Unit", traits: "Imperial|Official", cost: 2, power: 0, hp: 5, arenas: "Ground", text: "Action [Exhaust]: Exhaust a resource." },
   T153E: { cardKey: "T153E", title: "Plain Draw", type: "Event", cost: 2, text: "Draw 2 cards." },
   "09010127": {
     cardKey: "09010127", title: "Chewbacca's Bowcaster", subtitle: "Handcrafted Tradition", type: "Upgrade", traits: "Item|Weapon", cost: 3, unique: true,
@@ -127,8 +128,9 @@ describe("defect 3: a want every deck feeds by paying costs is generically fed",
     const hit = (COMMITTED_TABLE.genericallyFed ?? []).find((g) => g.tag === "wants:exhausted-resources");
     expect(hit?.note).toMatch(/pay/i);
   });
-  it("08010216 Mandalorian Scout, which exhausts a resource without paying, stays a specific feeder of 09010117 Chewbacca", () => {
-    expect(rowsOf("08010216", "09010117")).toContain("exhaust-resource-payoff");
+  it("06010216 Regulations Bureaucrat, which exhausts a resource without paying, stays a specific feeder of 09010117 Chewbacca; 08010216 Mandalorian Scout's When Defeated drawback is none (D70)", () => {
+    expect(rowsOf("06010216", "09010117")).toContain("exhaust-resource-payoff");
+    expect(rowsOf("08010216", "09010117")).toEqual([]);
   });
   it("a card that only costs resources is no pairing feeder of 09010117 Chewbacca", () => {
     expect(rowsOf("T153E", "09010117")).toEqual([]);
