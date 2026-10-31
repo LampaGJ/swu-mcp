@@ -8,7 +8,8 @@ import type { SynergyCard } from "./schema.js";
  * (D51) or only while the deck controls a unit of an aspect is dead weight in a deck that cannot meet it, and
  * no tool should rank it as live. Before this, only find_pairings and find_trios honoured a base lock.
  * @tacticalObjective Reads the lock off a card's own clause text, checks it against the leader, base and deck
- * the caller holds, and names what is unmet as `baseLocked`, `needsUnitAspect` and (D66) `nameLocked`. Pure; no clock, no model.
+ * the caller holds, and names what is unmet as `baseLocked`, `needsUnitAspect`, (D66) `nameLocked` and (D68) `needsForce` and
+ * `needsTrait`. Pure; no clock, no model.
  */
 
 export interface ClauseLock {
@@ -18,25 +19,40 @@ export interface ClauseLock {
   needsUnitAspect: string[];
   /** D66: card names a clause needs controlled ("While you control Padmé Amidala") that the leader, base and deck do not supply; present only when non-empty. */
   nameLocked?: string[];
+  /** D68: the Force needs ("use the Force", "while the Force is with you") of a card no leader, base or deck card makes the Force for; present only when non-empty. */
+  needsForce?: string[];
+  /** D68: unit traits a clause needs controlled ("another Official unit") that the deck, or the leader's played lists, does not hold; present only when non-empty. */
+  needsTrait?: string[];
 }
 
 export const NO_LOCK: ClauseLock = { baseLocked: [], needsUnitAspect: [] };
 
-export const isLocked = (lock: ClauseLock): boolean => lock.baseLocked.length > 0 || lock.needsUnitAspect.length > 0 || (lock.nameLocked ?? []).length > 0;
+const OPTIONAL_LOCKS = ["nameLocked", "needsForce", "needsTrait"] as const;
+type OptionalLock = (typeof OPTIONAL_LOCKS)[number];
+
+export const isLocked = (lock: ClauseLock): boolean =>
+  lock.baseLocked.length > 0 || lock.needsUnitAspect.length > 0 || OPTIONAL_LOCKS.some((k) => (lock[k] ?? []).length > 0);
 
 /** The output fields of a lock, empty when it holds nothing. */
-export function lockFields(lock: ClauseLock): { baseLocked?: string; needsUnitAspect?: string; nameLocked?: string } {
+export function lockFields(lock: ClauseLock): { baseLocked?: string; needsUnitAspect?: string } & Partial<Record<OptionalLock, string>> {
   return {
     ...(lock.baseLocked.length === 0 ? {} : { baseLocked: lock.baseLocked.join(", ") }),
     ...(lock.needsUnitAspect.length === 0 ? {} : { needsUnitAspect: lock.needsUnitAspect.join(", ") }),
-    ...((lock.nameLocked ?? []).length === 0 ? {} : { nameLocked: (lock.nameLocked ?? []).join(", ") }),
+    ...Object.fromEntries(OPTIONAL_LOCKS.flatMap((k) => ((lock[k] ?? []).length === 0 ? [] : [[k, (lock[k] ?? []).join(", ")]]))),
   };
 }
 
+/** The optional lock fields that hold something, so an unlocked lock keeps the two-field shape callers compare against. */
+const optionalFields = (values: Partial<Record<OptionalLock, string[]>>): Partial<Record<OptionalLock, string[]>> =>
+  Object.fromEntries(OPTIONAL_LOCKS.flatMap((k) => ((values[k] ?? []).length === 0 ? [] : [[k, values[k]]])));
+
 export function mergeLocks(locks: readonly ClauseLock[]): ClauseLock {
   const union = (pick: (l: ClauseLock) => string[]): string[] => [...new Set(locks.flatMap(pick))].sort(compareCodePoints);
-  const names = union((l) => l.nameLocked ?? []);
-  return { baseLocked: union((l) => l.baseLocked), needsUnitAspect: union((l) => l.needsUnitAspect), ...(names.length === 0 ? {} : { nameLocked: names }) };
+  return {
+    baseLocked: union((l) => l.baseLocked),
+    needsUnitAspect: union((l) => l.needsUnitAspect),
+    ...optionalFields(Object.fromEntries(OPTIONAL_LOCKS.map((k) => [k, union((l) => l[k] ?? [])]))),
+  };
 }
 
 /** "While you control Padmé Amidala", "If you control Jabba the Hutt": a capitalised card name right after "you control" (D66). */
@@ -82,19 +98,85 @@ export function aspectGateOfClause(text: string): AspectGate | null {
   return control === null ? null : { aspects: control[2].split(/, or | or |, /), another: control[1] === "another " };
 }
 
+/** "use the Force" (a cost) and "While the Force is with you" (a state the deck must create) need the Force (D68). */
+const NEEDS_FORCE = /\b(?:use the Force|(?:while|if) the Force is with you)\b/i;
+const FORCE_STATE = /\b(?:while|if) the Force is with you\b/gi;
+/** "The Force is with you (create your Force token)" makes the Force; "While the Force is with you" only reads it. */
+const MAKES_FORCE = /\bthe Force is with you\b|\bcreate (?:a|your|the) Force token\b/i;
+
+/**
+ * The Force need one clause or trigger text states ("use the Force"), or null. A clause that says "instead" upgrades an
+ * effect that happens anyway, and "or use the Force" offers another way to pay, so neither needs the Force.
+ */
+export function forceNeedOfText(text: string): string | null {
+  if (/\binstead\b/i.test(text) || /\bor use the Force\b/i.test(text)) return null;
+  const hit = NEEDS_FORCE.exec(text)?.[0];
+  return hit === undefined ? null : `${hit.charAt(0).toLowerCase()}${hit.slice(1)}`;
+}
+
+/** The trigger texts of a card's abilities, every face: a cost such as "Action [Exhaust, use the Force]" sits there, not in a clause. */
+function triggerTextsOf(card: SynergyCard): string[] {
+  return Object.values(card.faces)
+    .flat()
+    .flatMap((a) => (a.triggers ?? []).flatMap((t) => (t.text === undefined ? [] : [t.text])));
+}
+
+/** Whether a card makes the Force: one of its clauses says "The Force is with you" as an effect, not as a condition. */
+export const makesForce = (card: SynergyCard): boolean => clauseTextsOf(card).some((t) => MAKES_FORCE.test(t.replace(FORCE_STATE, "")));
+
+const CAP = "[A-Z][\\p{L}'\u2019-]*(?: [A-Z][\\p{L}'\u2019-]*)*";
+/** "While you control another Official unit", "If you control a Force unit", "another Wookiee unit or a Kashyyyk base". */
+const TRAIT_UNIT = new RegExp(`\\byou control (another |an? )(${CAP}(?: or ${CAP})*) unit(?: or an? (${CAP}) base)?`, "u");
+
+export interface TraitGate {
+  traits: string[];
+  /** The clause says "another", so the card itself cannot meet it. */
+  another: boolean;
+  /** "or a Kashyyyk base": a base of that location meets the gate as well. */
+  orBase?: string;
+}
+
+/** The unit-trait condition a clause is gated on, or null; an aspect list is the aspect gate's, and an "instead" clause gates nothing. */
+export function traitGateOfClause(text: string): TraitGate | null {
+  if (/\binstead\b/i.test(text)) return null;
+  const hit = TRAIT_UNIT.exec(text);
+  if (hit === null) return null;
+  const traits = hit[2].split(" or ");
+  if (traits.some((t) => ASPECT_NAMES.has(t))) return null;
+  return { traits, another: hit[1] === "another ", ...(hit[3] === undefined ? {} : { orBase: hit[3] }) };
+}
+
 /** What the deck supplies: its base, and for each aspect the cards (leader, base, deck units) that supply a unit of it. */
 export interface LockSupply {
   base: SynergyCard | undefined;
   suppliers: ReadonlyMap<string, ReadonlySet<string>>;
   /** D66: the titles (accent- and case-folded) of the leader, base and deck cards; without it no name lock is read. */
   names?: ReadonlySet<string>;
+  /** D68: the cards (leader, base, deck or played lists) that make the Force; without it no Force lock is read. */
+  forceMakers?: ReadonlySet<string>;
+  /** D68: for each trait the cards (leader, deck or played-list units) that supply a unit of it; without it no trait lock is read. */
+  traitUnits?: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
+/**
+ * D68: the Force and trait supply of the leader, the base and a pool of cards (the decklist, or the leader's played
+ * lists when no decklist is given). A deployed leader is a unit, so its traits count; a base is never a unit.
+ */
+export function resourceSupply(leader: SynergyCard | undefined, base: SynergyCard | undefined, pool: readonly SynergyCard[]): Required<Pick<LockSupply, "forceMakers" | "traitUnits">> {
+  const forceMakers = new Set([leader, base, ...pool].flatMap((c) => (c !== undefined && makesForce(c) ? [c.cardKey] : [])));
+  const traitUnits = new Map<string, Set<string>>();
+  for (const c of [leader, ...pool]) {
+    if (c === undefined || (c !== leader && c.type !== "Unit")) continue;
+    for (const trait of c.structured.traits) traitUnits.set(trait, (traitUnits.get(trait) ?? new Set<string>()).add(c.cardKey));
+  }
+  return { forceMakers, traitUnits };
 }
 
 /**
  * The supply of a deck: the leader's aspects (a deployed leader is a unit) and the aspects of the deck's unit cards.
  * A base is never a unit, so its aspect does not meet an "<Aspect> unit" clause (D59).
  */
-export function lockSupply(leader: SynergyCard | undefined, base: SynergyCard | undefined, deck: readonly SynergyCard[]): LockSupply {
+export function lockSupply(leader: SynergyCard | undefined, base: SynergyCard | undefined, deck: readonly SynergyCard[], played?: readonly SynergyCard[]): LockSupply {
   const suppliers = new Map<string, Set<string>>();
   const add = (card: SynergyCard): void => {
     for (const aspect of card.structured.aspects) suppliers.set(aspect, (suppliers.get(aspect) ?? new Set<string>()).add(card.cardKey));
@@ -102,14 +184,37 @@ export function lockSupply(leader: SynergyCard | undefined, base: SynergyCard | 
   if (leader !== undefined) add(leader);
   for (const card of deck) if (card.type === "Unit") add(card);
   const names = new Set([leader, base, ...deck].flatMap((c) => (c === undefined ? [] : [nameKey(c.title)])));
-  return { base, suppliers, names };
+  // D68: the decklist when given, else the leader's played lists; with neither, the Force and trait locks stay silent.
+  const pool = deck.length > 0 ? deck : played;
+  return { base, suppliers, names, ...(pool === undefined ? {} : resourceSupply(leader, base, pool)) };
 }
 
 const metGate = (gate: AspectGate, cardKey: string, supply: LockSupply): boolean =>
   gate.aspects.some((a) => [...(supply.suppliers.get(a) ?? [])].some((k) => !gate.another || k !== cardKey));
 
-/** The lock of one clause text on the card `cardKey`. */
-export function clauseTextLock(text: string, cardKey: string, supply: LockSupply): ClauseLock {
+const metTrait = (gate: TraitGate, cardKey: string, supply: LockSupply, self: SynergyCard | undefined): boolean =>
+  (gate.orBase !== undefined && baseMeets(supply.base, gate.orBase)) ||
+  gate.traits.some(
+    (t) =>
+      [...(supply.traitUnits?.get(t) ?? [])].some((k) => !gate.another || k !== cardKey) ||
+      (!gate.another && self?.type === "Unit" && self.structured.traits.includes(t)),
+  );
+
+const traitLabel = (gate: TraitGate): string => [gate.traits.join(" or "), ...(gate.orBase === undefined ? [] : [`a ${gate.orBase} base`])].join(" or ");
+
+/** D68: the Force need and the trait gate of one text that the supply does not meet; `self` (the card) meets a non-"another" trait gate and makes its own Force. */
+function resourceTextLock(text: string, cardKey: string, supply: LockSupply, self?: SynergyCard): Partial<Record<"needsForce" | "needsTrait", string[]>> {
+  const force = supply.forceMakers === undefined ? null : forceNeedOfText(text);
+  const forceMet = supply.forceMakers === undefined || supply.forceMakers.size > 0 || (self !== undefined && makesForce(self));
+  const trait = supply.traitUnits === undefined ? null : traitGateOfClause(text);
+  return {
+    ...(force === null || forceMet ? {} : { needsForce: [force] }),
+    ...(trait === null || metTrait(trait, cardKey, supply, self) ? {} : { needsTrait: [traitLabel(trait)] }),
+  };
+}
+
+/** The lock of one clause text on the card `cardKey`; `self`, when given, is that card. */
+export function clauseTextLock(text: string, cardKey: string, supply: LockSupply, self?: SynergyCard): ClauseLock {
   const name = namedBaseOfClause(text);
   const gate = aspectGateOfClause(text);
   const card = namedCardOfClause(text);
@@ -117,6 +222,7 @@ export function clauseTextLock(text: string, cardKey: string, supply: LockSupply
     baseLocked: name === null || baseMeets(supply.base, name) ? [] : [name],
     needsUnitAspect: gate === null || metGate(gate, cardKey, supply) ? [] : [gate.aspects.join(" or ")],
     ...(card === null || supply.names === undefined || supply.names.has(nameKey(card)) ? {} : { nameLocked: [card] }),
+    ...resourceTextLock(text, cardKey, supply, self),
   };
 }
 
@@ -124,7 +230,28 @@ export function clauseTextLock(text: string, cardKey: string, supply: LockSupply
 export const offerLock = (why: string, cardKey: string, supply: LockSupply): ClauseLock =>
   clauseTextLock(why.replace(/^(?:text|deployBox|epicAction): /, ""), cardKey, supply);
 
-/** Every unmet lock across a card's own clauses. */
+/** Every unmet lock across a card's own clauses, and the Force cost of its triggers (D68). */
 export function clauseLock(card: SynergyCard, supply: LockSupply): ClauseLock {
-  return mergeLocks(clauseTextsOf(card).map((text) => clauseTextLock(text, card.cardKey, supply)));
+  const triggers = triggerTextsOf(card).map((text) => ({ baseLocked: [], needsUnitAspect: [], ...resourceTextLock(text, card.cardKey, supply, card) }));
+  return mergeLocks([...clauseTextsOf(card).map((text) => clauseTextLock(text, card.cardKey, supply, card)), ...triggers]);
+}
+
+/**
+ * D68: the Force and trait locks of cards that supply each other (a pairing's subject and partner, a trio's members)
+ * beside the leader, the base and a pool (the decklist, else the leader's played lists). Only these two locks: the
+ * pairing and trio tools read the base and name locks their own way.
+ */
+export function resourceLockOfCards(
+  cards: readonly SynergyCard[],
+  leader: SynergyCard | undefined,
+  base: SynergyCard | undefined,
+  pool: readonly SynergyCard[],
+): { needsForce: string[]; needsTrait: string[] } {
+  const supply: LockSupply = { base, suppliers: new Map(), ...resourceSupply(leader, base, [...pool, ...cards]) };
+  const lock = mergeLocks(
+    cards.flatMap((c) =>
+      [...clauseTextsOf(c), ...triggerTextsOf(c)].map((text) => ({ baseLocked: [], needsUnitAspect: [], ...resourceTextLock(text, c.cardKey, supply, c) })),
+    ),
+  );
+  return { needsForce: lock.needsForce ?? [], needsTrait: lock.needsTrait ?? [] };
 }

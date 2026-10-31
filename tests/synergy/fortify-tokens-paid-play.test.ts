@@ -96,6 +96,6 @@ describe("a play that pays the card's cost is not cheat-play", () => {
     expect(edge?.rows.map((r) => r.row)).toContain("paid-play-trigger");
     expect(edge?.rows.map((r) => r.offer)).not.toContain("offers:cheat-play");
     const warrior = cards.find((c) => c.cardKey === "09010018");
-    expect(warrior && tagEvidence(warrior, "offers:paid-play")).toBe("text: Play a unit with 3 or less power from your hand (paying its cost) and give it Ambush for this phase.");
+    expect(warrior && tagEvidence(warrior, "offers:paid-play")).toBe("text: Action [1 resource, Exhaust]: Play a unit with 3 or less power from your hand (paying its cost) and give it Ambush for this phase.");
   });
 });

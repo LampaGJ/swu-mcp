@@ -28,6 +28,7 @@ const OPPO = "05010105";
 // The owner's deck: leader The Warrior, Deft Duelist, base Origin Tree (tests/fixtures/decks/warrior-chewie-raid.swudb.json), judged in session eight (#154).
 describe.skipIf(!hasData)("The Warrior / Origin Tree against the built data (#154, D63)", () => {
   const real = hasData ? loadStore(builtRun as string) : (undefined as never);
+  const LOCK_FIELDS = ["baseLocked", "nameLocked", "needsForce", "needsTrait"];
   const pairings = (extra: object = {}): Record<string, any> =>
     body(SYNERGY_TOOLS.find_pairings.handler(real, { cardKey: WARRIOR, leader: WARRIOR, base: ORIGIN_TREE, limit: 100, perLink: 100, ...extra }));
 
@@ -40,7 +41,8 @@ describe.skipIf(!hasData)("The Warrior / Origin Tree against the built data (#15
       const at = rows.findIndex((r) => r.cardKey === RITUAL_DRAGON);
       expect(at, "Ritual Dragon is a partner").toBeGreaterThanOrEqual(0);
       expect(rows[at].baseLocked).toBe("Tatooine");
-      expect(rows.slice(at).every((r) => r.baseLocked !== undefined)).toBe(true);
+      // D68: Force- and trait-locked partners share the locked tail, so it is every lock, not only the base lock, that follows.
+      expect(rows.slice(at).every((r) => LOCK_FIELDS.some((k) => r[k] !== undefined))).toBe(true);
       expect(rows.slice(0, at).every((r) => r.baseLocked === undefined)).toBe(true);
       expect(JSON.stringify(rows[at].evidence)).not.toMatch(/curated cur-\d/);
       expect(rows[at].evidence[0].offer).toContain("text:");
@@ -48,9 +50,9 @@ describe.skipIf(!hasData)("The Warrior / Origin Tree against the built data (#15
 
     it("keeps a locked partner behind the unlocked ones under the default perLink cap", () => {
       const rows: Record<string, any>[] = pairings({ ...extra, perLink: 3, limit: 100 }).pairings;
-      const firstLocked = rows.findIndex((r) => r.baseLocked !== undefined);
+      const firstLocked = rows.findIndex((r) => LOCK_FIELDS.some((k) => r[k] !== undefined));
       expect(firstLocked).toBeGreaterThanOrEqual(0);
-      expect(rows.slice(firstLocked).every((r) => r.baseLocked !== undefined)).toBe(true);
+      expect(rows.slice(firstLocked).every((r) => LOCK_FIELDS.some((k) => r[k] !== undefined))).toBe(true);
     });
 
     it("lists the leader-engine rows Boba Fett, Family Found and Oppo Rancisis", () => {

@@ -141,7 +141,7 @@ describe("defect 4: a card that names another card by title links to it", () => 
     expect(edge?.rows.map((r) => r.row)).toContain("name-reference");
     const byKey = graph.byKey;
     const ev = edgeEvidence(byKey.get("09010127")!, byKey.get("09010117")!, edge!.rows.filter((r) => r.row === "name-reference"));
-    expect(ev[0].offer).toBe("text: If attached unit is Chewbacca, resource the top card of your deck.");
+    expect(ev[0].offer).toBe("text: When Played: If attached unit is Chewbacca, resource the top card of your deck.");
     expect(ev[0].want).toBe("title: Chewbacca");
   });
   it("name-reference outranks every other row", () => {

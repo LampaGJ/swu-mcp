@@ -56,6 +56,17 @@ export const SELF_GAINS = /\bthis unit (?:gets [^.;]*? and )?gains\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 /** Keywords a card's text reads on another friendly unit (Oppo Rancisis copies these nine; Marchion Ro doubles Raid; "units with Hidden"), so a holder of one is an offer (D64). */
 const HOLDER_KEYWORDS = new Set(["Ambush", "Grit", "Hidden", "Overwhelm", "Raid", "Restore", "Saboteur", "Sentinel", "Shielded"]);
+/** "Each opponent may ready a resource": an effect that goes to an opponent, not to the card's controller (D68). */
+const OPPONENT_GAINS = /\b(?:each|an|that|the) opponent (?:may )?(?:ready|readies|draws?|heals?|creates?|gains?|plays?|search(?:es)?|returns?|puts?|takes?)\b/i;
+/**
+ * D68: a When Defeated whose every effect goes to an opponent ("Each opponent may ready a resource", or "Choose an
+ * opponent. ... they may play this unit") pays them, so defeating the card is a drawback, not a payoff.
+ */
+function paysOpponentOnly(clauses: readonly SwuClause[]): boolean {
+  const chosen = clauses.some((c) => /\bchoose an opponent\b/i.test(c.text));
+  const acting = clauses.filter((c) => c.effects.length > 0);
+  return acting.length > 0 && acting.every((c) => OPPONENT_GAINS.test(c.text) || (chosen && /\bthey may\b/i.test(c.text)));
+}
 /** "This unit gains Ambush while another friendly unit has Ambush": the card copies a keyword onto itself; the grammar also reads the condition as a grant to "another friendly unit" (D64). */
 const COPIES_KEYWORD = /\banother friendly unit has\b/i;
 const copiesKeyword = (c: SwuClause): boolean =>
@@ -120,7 +131,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
       const replayCats = !a.granted && card.type === "Unit" ? replayWorthyCats(clauses) : [];
       for (const t of a.triggers) {
         const tt = t.text ?? "";
-        if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted)) add(wants, "wants:self-defeated", `${face}: When Defeated`);
+        if (t.trigger === "when_defeated" && (card.type === "Unit" || card.type === "Leader" || a.granted) && !paysOpponentOnly([...a.clauses, ...a.options.flatMap((o) => o.clauses)]))
+          add(wants, "wants:self-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_defeated" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-defeated", `${face}: When Defeated`);
         if (t.trigger === "when_played" && card.type === "Unit" && !a.granted) add(offers, "offers:has-when-played", `${face}: When Played`);
         if (/when you use a when defeated|when defeated ability/i.test(tt)) add(wants, "wants:when-defeated-cards", tt);
