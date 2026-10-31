@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27",
+  "cardDataFiles": 2523,
+  "engineCardDataInputSha256": "7b0a1cd3726cb48642bb8f72edf1d86e6ee78e213155e0ba78c5815a177661cd",
+  "node": {
+    "required": ">=26.12.1 <27",
+    "used": "v26.4.0",
+    "satisfiesRequired": false
+  },
+  "steps": [
+    "npm install --engine-strict=false --no-audit --no-fund",
+    "npm run get-cards",
+    "npm run build"
+  ],
+  "notes": [
+    "Node: the engine's package.json requires >=26.12.1 <27 with engine-strict=true; install runs with --engine-strict=false. node.used is the Node that built and ran it; satisfiesRequired false means an unsupported combination that nonetheless built, passed the specs run and played the spike's games.",
+    "The engine runs only as a local child process or worker, never in the public npx path, because swu-mcp declares Node 22 or newer.",
+    "Card data is fetched live from https://admin.starwarsunlimited.com/api/cards by npm run get-cards and tracks the live card pool; cardDataSha256 hashes every file under test/json so a re-fetch that changed any card fails verification.",
+    "Open question: does determinism hold across machines and across Node 26.4.0 versus 26.12.1? Same machine, same Node, same commit identity is measured; a second machine or the supported Node answers it.",
+    "Card data is Fantasy Flight's: a launch-stage licensing question (noted once, proceeding)."
+  ]
+}

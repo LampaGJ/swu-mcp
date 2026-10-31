@@ -58,7 +58,7 @@ export function displayName(title: string, subtitle: string | null): string {
   return subtitle !== null && subtitle !== "" ? `${title}, ${subtitle}` : title;
 }
 
-const variantRank = (types: readonly string[]): number => {
+export const variantRank = (types: readonly string[]): number => {
   const ranks = types.map((t) => VARIANT_RANK.indexOf(t)).filter((r) => r >= 0);
   return ranks.length === 0 ? VARIANT_RANK.length : Math.min(...ranks);
 };
