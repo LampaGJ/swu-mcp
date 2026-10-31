@@ -51,6 +51,9 @@ export function slotRoles(keys: readonly string[], links: readonly PairEdge[]): 
   }));
 }
 
+/** Wants a card carries for having any When Played, On Attack or When Defeated ability; nearly every deck feeds them by accident (D86 shares them with find_trios). */
+export const GENERIC_TRIGGER_WANTS: ReadonlySet<string> = new Set(["wants:replay-when-played", "wants:extra-attacks", "wants:self-defeated"]);
+
 /** Decision D73: rows that close a trio weakly: a threshold a ramp card only speeds up, and a replay of a unit whose play trigger is small. */
 export const WEAK_CLOSING_ROWS: ReadonlySet<string> = new Set(["ramp-threshold", "bounce-replay"]);
 

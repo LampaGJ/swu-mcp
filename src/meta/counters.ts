@@ -99,6 +99,10 @@ export interface AnswerOffer {
   tag: string;
   why: string;
   effects: EffectSpec[];
+  /** D86 (#168): the effect-less clauses of the same ability that gate it ("If you control an Endor base, each opponent chooses one:"), cited as `why` is. */
+  gates?: string[];
+  /** D86 (#168): the offer is a mode an opponent picks ("each opponent chooses one:"); the clause that says so. */
+  opponentChooses?: string;
 }
 
 function walkClauses(nodes: readonly AbilityNode[], visit: (clause: z.infer<typeof clauseSchema>) => void): void {
@@ -153,8 +157,45 @@ function selectedTargetEffects(face: string, nodes: readonly AbilityNode[], into
   }
 }
 
+const OPPONENT_CHOOSER = /\bopponent\b/i;
+type ClauseNode = z.infer<typeof clauseSchema>;
+const chooserOf = (c: ClauseNode): string | undefined =>
+  (c.structure ?? []).map((s) => (s as { chooser?: unknown }).chooser).find((x): x is string => typeof x === "string");
+
+/**
+ * D86 (#168): an ability's effect-less clauses (a mode list's header, "If you control an Endor base, each opponent chooses one:")
+ * gate every other clause of it, so a lock they name locks the offer too; a mode list whose header names an opponent as the
+ * chooser is the opponent's to pick (Giant Gorax, Watto). Keyed by the clause as a tag cites it ("text: ...").
+ */
+function modeGates(face: string, nodes: readonly AbilityNode[], into: Map<string, { gates: string[]; chooser?: string }>): void {
+  for (const n of nodes) {
+    if (n.kind !== "ability") continue;
+    const heads = (n.clauses ?? []).filter((c) => c.effects.length === 0);
+    const chooser = heads.find((c) => OPPONENT_CHOOSER.test(chooserOf(c) ?? ""));
+    const add = (c: ClauseNode, opponent: boolean): void => {
+      const gates = heads.filter((h) => h !== c).map((h) => `${face}: ${h.text}`);
+      if (gates.length === 0) return;
+      const why = `${face}: ${c.text}`;
+      const prior = into.get(why);
+      into.set(why, {
+        gates: [...new Set([...(prior?.gates ?? []), ...gates])],
+        ...(prior?.chooser !== undefined ? { chooser: prior.chooser } : opponent && chooser !== undefined ? { chooser: chooser.text } : {}),
+      });
+    };
+    for (const c of n.clauses ?? []) if (c.effects.length > 0) add(c, false);
+    for (const o of n.options ?? []) for (const c of o.clauses) add(c, true);
+    for (const g of n.grantedAbilities ?? []) modeGates(face, g.abilities, into);
+  }
+}
+
 /** Every answer offer of a card: its offers: tags with the effects of the clause behind each, plus pseudo-tags. */
 export function answerOffers(card: CounterCard): AnswerOffer[] {
+  const gated = new Map<string, { gates: string[]; chooser?: string }>();
+  for (const [face, nodes] of Object.entries(card.faces)) modeGates(face, nodes, gated);
+  const withGates = (offer: AnswerOffer, cited: string): AnswerOffer => {
+    const g = gated.get(cited);
+    return g === undefined ? offer : { ...offer, gates: g.gates, ...(g.chooser === undefined ? {} : { opponentChooses: g.chooser }) };
+  };
   const byWhy = new Map<string, EffectSpec[]>();
   const quotes = new Map<string, string>();
   const resource: { why: string; effects: EffectSpec[] }[] = [];
@@ -175,14 +216,14 @@ export function answerOffers(card: CounterCard): AnswerOffer[] {
   }
   const out: AnswerOffer[] = card.tags.offers
     .filter((t) => !t.tag.startsWith("offers:is-trait-"))
-    .map((t) => ({ tag: t.tag, why: quotes.get(t.why) ?? t.why, effects: byWhy.get(t.why) ?? [] }));
+    .map((t) => withGates({ tag: t.tag, why: quotes.get(t.why) ?? t.why, effects: byWhy.get(t.why) ?? [] }, t.why));
   for (const k of [...new Set(card.keywords.filter((k) => !k.granted).map((k) => k.keyword))].sort(compareCodePoints)) {
     out.push({ tag: `keyword:${k}`, why: `printed keyword ${k}`, effects: [] });
   }
   if (card.type === "Unit" && card.structured.arenas.includes("Space")) {
     out.push({ tag: "unit:space", why: `Space unit ${card.structured.power ?? "-"}/${card.structured.hp ?? "-"}`, effects: [] });
   }
-  if (resource.length > 0) out.push({ tag: "disrupt-resources", why: resource[0].why, effects: resource[0].effects });
+  if (resource.length > 0) out.push(withGates({ tag: "disrupt-resources", why: resource[0].why, effects: resource[0].effects }, resource[0].why));
   return out;
 }
 
@@ -308,12 +349,23 @@ export function removes(effect: EffectSpec, unit: KeyUnit): boolean {
   return true;
 }
 
+/** D86 (#168): "any number of non-leader units with a total of 6 or less remaining HP" (Pre Vizsla): a pooled HP budget. */
+const TOTAL_HP = /\bwith a total of (\d+) or less remaining HP\b/i;
+const UP_TO = /^up_to_(\d+)$/;
+
 function sweeps(effect: EffectSpec, cheapHp: number | null, needReach: boolean): boolean {
   if (!(effect.cat === "defeat" || effect.cat === "damage") || !HOSTILE_SIDES.has(effect.side) || !UNIT_KINDS.has(effect.kind))
     return false;
-  if (!SWEEP_QUANTS.has(effect.quant) || conditionalTarget(effect.text.replace(/\bnot chosen\b/i, ""))) return false;
+  // D86 (#168): "each of up to 3 units" (IG-2000) is a chosen multi-target sweep, one-sided like "any number of".
+  const upTo = UP_TO.exec(effect.quant);
+  const eachOfUpTo = upTo !== null && Number(upTo[1]) >= 2 && /\beach of up to\b/i.test(effect.text);
+  if (!(SWEEP_QUANTS.has(effect.quant) || eachOfUpTo)) return false;
+  const total = TOTAL_HP.exec(effect.text);
+  if (conditionalTarget(effect.text.replace(/\bnot chosen\b/i, "").replace(TOTAL_HP, ""))) return false;
   if (!needReach) return true;
   if (cheapHp === null) return false;
+  // A pooled budget sweeps only when it takes at least two of the archetype's typical cheap units.
+  if (total !== null) return effect.cat === "defeat" && Number(total[1]) >= 2 * cheapHp;
   if (effect.cat === "damage") return typeof effect.n === "number" && effect.n >= cheapHp;
   const hp = effect.restrict.map((r) => /^hp_le_(\d+)$/.exec(r)).find((m) => m !== null);
   const blocked = effect.restrict.some((r) => !/^(hp_le_\d+|non_leader|other|non_trait:.+)$/.test(r));

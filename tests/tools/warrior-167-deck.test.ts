@@ -79,8 +79,11 @@ describe.skipIf(!hasData)("deck_audit reads the curve glut against the leader's 
     expect(fills.map((f) => f.title).join("; ")).toContain("Lightmaker");
     for (const f of fills) expect(f.deckLinks, f.title).toBeGreaterThanOrEqual(2);
     for (const cost of new Set(fills.map((f) => f.cost))) {
-      const sameCost = fills.filter((f) => f.cost === cost);
-      for (let i = 1; i < sameCost.length; i++) expect(sameCost[i].fillRank <= sameCost[i - 1].fillRank, `${sameCost[i - 1].title} before ${sameCost[i].title}`).toBe(true);
+      // D86 (#168), coordinator ruling 2026-10-31: an engine-read fill leads its cost, so fillRank orders each group (leaderEngine or not) apart.
+      for (const engine of [true, false]) {
+        const sameCost = fills.filter((f) => f.cost === cost && (f.leaderEngine === true) === engine);
+        for (let i = 1; i < sameCost.length; i++) expect(sameCost[i].fillRank <= sameCost[i - 1].fillRank, `${sameCost[i - 1].title} before ${sameCost[i].title}`).toBe(true);
+      }
     }
     for (const f of fills) {
       const share = f.leaderInclusion !== null && f.leaderInclusion >= 0.02 ? f.leaderInclusion : 0;

@@ -56,6 +56,8 @@ export interface Subject {
   countsAspect?: string;
   /** D85 (#167): the effect reaches only a unit that is already damaged ("deal 2 damage to a damaged unit", TIE Dagger Vanguard). */
   damagedOnly?: boolean;
+  /** D86 (#168): the effect reaches only a unit that has not attacked this phase ("ready a unit that didn't attack", It's Not Over Yet). */
+  unattackedOnly?: boolean;
 }
 
 /** What an upgrade or Pilot may attach to: the printed "Attach to ..." line, or a Vehicle for Piloting (CR: "attach to a friendly Vehicle unit"). */
@@ -187,6 +189,26 @@ function findOrigin(card: SynergyCard, why: string): Origin | undefined {
   return triggerHit;
 }
 
+const ONCE_EACH_ROUND = /\bonly once each round\b/i;
+
+/**
+ * D86 (#168): one feed fills the want for the whole round, so a second source adds nothing: a gate on the card being damaged
+ * ("can't attack unless it's damaged", Oggdo Bogdo) or an ability usable only once each round (Rancor Keeper). Grit and other
+ * counting wants, and an extra-attacks want, grow with every feed and never saturate.
+ */
+export function wantSaturates(card: SynergyCard, tag: string): boolean {
+  const entries = card.tags.wants.filter((t) => t.tag === tag);
+  return (
+    entries.length > 0 &&
+    entries.every((t) => {
+      const origin = findOrigin(card, t.why);
+      if (origin === undefined) return false;
+      const texts = [...(origin.ability.triggers ?? []).map((x) => x.text ?? ""), ...clausesOf(origin.ability).map((c) => c.text)];
+      return DAMAGED_GATE.test(origin.clause?.text ?? "") || texts.some((x) => ONCE_EACH_ROUND.test(x));
+    })
+  );
+}
+
 /** Effect categories that make a tag; a tag with no entry carries no effect subject. */
 const OFFER_CATS: [RegExp, string[]][] = [
   [/^offers:defeat-(?:friendly|enemy|any)-unit$/, ["defeat"]],
@@ -222,6 +244,7 @@ const UNIT_OPPONENT_CONTROLS = /\bunits? (?:that )?(?:an |that )?opponent contro
 const TRAIT_UPGRADE = /\b(?:an?|another) ([A-Z][\p{L}'\u2019-]*) upgrade\b/u;
 const UPGRADE_TOKEN = /\b(?:experience|shield|credit|advantage|weakness|force)\b/i;
 const DAMAGED_TARGET = /(?<!un)\bdamaged units?\b/i;
+const UNATTACKED_TARGET = /\b(?:didn['’]t|did not|hasn['’]t|has not) attack(?:ed)?\b/i;
 /** D85 (#167): a want gated on the card being damaged at all ("can't attack unless it's damaged", "While this unit is damaged"), not one that counts damage (Grit). */
 const DAMAGED_GATE = /\b(?:unless|while|if) (?:it['’]?s|it is|this unit is|he['’]?s|she['’]?s|he is|she is) damaged\b/i;
 
@@ -280,6 +303,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
     ...(t.quant === "any_number" || t.quant === "all" ? { many: true } : {}),
     ...(DAMAGED_TARGET.test(text) ? { damagedOnly: true } : {}),
+    ...(UNATTACKED_TARGET.test(text) ? { unattackedOnly: true } : {}),
   };
 }
 
@@ -431,11 +455,14 @@ const SPENDS_SELF = /\b(?:defeat|discard) this (?:upgrade|unit|card)\b|\breturn 
 const spendsSelf = (ability: AbilityNode): boolean => clausesOf(ability).some((c) => SPENDS_SELF.test(c.text) && !/\binstead\b/i.test(c.text));
 
 const REGROUP = /\bregroup phase\b/i;
-/** D85 (#167): the clause sits in a mode list the opponent picks from (curated structure "opponent_modal", chooser "opponent"). */
+/**
+ * D85 (#167): the clause sits in a mode list the opponent picks from (curated structure "opponent_modal", chooser "opponent").
+ * D86 (#168): any chooser naming an opponent counts ("each opponent", Giant Gorax).
+ */
 const opponentPicks = (ability: AbilityNode, clause: ClauseLite | undefined): boolean =>
   clause !== undefined &&
   (ability.options ?? []).some((o) => o.clauses.includes(clause)) &&
-  (ability.clauses ?? []).some((c) => (c.structure ?? []).some((s) => (s as { chooser?: string }).chooser === "opponent"));
+  (ability.clauses ?? []).some((c) => (c.structure ?? []).some((s) => /\bopponent\b/i.test(String((s as { chooser?: unknown }).chooser ?? ""))));
 
 const scopeOf = (text: string): TagQualifier["scope"] =>
   /\bwhile attacking\b/i.test(text) ? "attacking" : /\bwhile defending\b/i.test(text) ? "defending" : undefined;
@@ -739,6 +766,10 @@ export function conflictBetween(
   // D85 (#167): damage that only a damaged unit can take never makes an undamaged card damaged (TIE Dagger Vanguard cannot switch on Oggdo Bogdo).
   if (offer.subject.damagedOnly === true && wantTag === "wants:self-damaged" && DAMAGED_GATE.test(want.text)) {
     return "the offer reaches only a unit that is already damaged, the want needs the card to become damaged";
+  }
+  // D86 (#168): a ready that reaches only a unit that has not attacked this phase restores that unit's one attack, never a second one.
+  if (offer.subject.unattackedOnly === true && offerTag === "offers:ready-unit" && wantTag === "wants:extra-attacks") {
+    return "the offer readies only a unit that has not attacked this phase, so it gives no extra attack";
   }
   if (want.forAttackOnly && (offerTag === "offers:ready-unit" || offerTag === "offers:extra-attack")) {
     return "the wanted ability lasts for one attack only and does not carry through a ready";

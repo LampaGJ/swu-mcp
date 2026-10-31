@@ -12,7 +12,23 @@ import {
   type CounterCard,
   type RelationHit,
 } from "../meta/counters.js";
-import { archetypeEvidenceKey, aspectsEvidenceKey } from "../meta/outcomes.js";
+import {
+  cardDeckEvidence as deckEvidenceRecord,
+  CONTROL_DECKS_CAP,
+  CONTROL_SHARE,
+  evidenceClassOf,
+  evidenceIndexOf,
+  evidenceKeysOf,
+  MIN_EVIDENCE_DECKS,
+  rated,
+  thinControl,
+  thinSides,
+  type DeckEvidenceView,
+  type EvidenceClass,
+  type EvidenceIndex,
+  type EvidenceKeys,
+  type Record3,
+} from "../meta/deck-evidence.js";
 import {
   LEADER_CARDS_MAX,
   metaFileSchema,
@@ -21,12 +37,10 @@ import {
   winRatesFileSchema,
   type Archetype,
   type CounterTable,
-  type DeckEvidence,
   type MetaFile,
   type WinRatesFile,
 } from "../meta/schema.js";
 import { selectLeaderPopulation } from "../meta/leader-split.js";
-import { wilson } from "../meta/stats.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { clauseLock, isLocked, lockFields, lockSupply, mergeLocks, NO_LOCK, offerLock, type ClauseLock } from "../synergy/clause-lock.js";
 import { CANDIDATE_STATUS } from "../synergy/evidence.js";
@@ -70,7 +84,8 @@ import { deferRepeatedLinks } from "./synergy.js";
  * status: candidate. No model and no clock in the path.
  */
 
-type EvidenceGroup = DeckEvidence["groups"][number];
+// D86 (#168): the deck-evidence reading moved to src/meta/deck-evidence.ts so playable_cards shares it; re-exported for callers.
+export { CONTROL_DECKS_CAP, CONTROL_SHARE, evidenceClassOf, MIN_EVIDENCE_DECKS, thinControl, thinSides, type DeckEvidenceView, type EvidenceClass } from "../meta/deck-evidence.js";
 
 export interface MetaEnv {
   deck: DeckEnv;
@@ -78,7 +93,7 @@ export interface MetaEnv {
   winrates: WinRatesFile;
   table: CounterTable;
   cards: Map<string, { card: CounterCard; offers: AnswerOffer[] }>;
-  evidence: Map<string, { group: EvidenceGroup; cards: Map<string, EvidenceGroup["cards"][number]> }>;
+  evidence: EvidenceIndex;
 }
 
 /** Builds the env from parsed parts, so tests can pass an in-code DeckEnv and synthetic meta files. */
@@ -89,9 +104,7 @@ export function createMetaEnv(deck: DeckEnv, meta: unknown, winrates: unknown, t
     cards.set(card.cardKey, { card, offers: answerOffers(card) });
   }
   const parsed = winRatesFileSchema.parse(winrates);
-  const evidence = new Map(
-    (parsed.deckEvidence?.groups ?? []).map((group) => [group.key, { group, cards: new Map(group.cards.map((c) => [c.cardKey, c])) }]),
-  );
+  const evidence = evidenceIndexOf(parsed);
   return { deck, meta: metaFileSchema.parse(meta), winrates: parsed, table, cards, evidence };
 }
 
@@ -110,7 +123,6 @@ function metaEnvOf(store: CardStore): MetaEnv {
 }
 
 const r4 = (x: number): number => round(x, 4);
-const rate = (wins: number, n: number): number | null => (n === 0 ? null : r4(wins / n));
 
 const populationField = z
   .enum(["primary", ...POPULATIONS])
@@ -172,19 +184,6 @@ function matchupRecord(
     draws += p.draws;
   }
   return wins + losses + draws === 0 ? null : { wins, losses, draws };
-}
-
-interface Record3 {
-  wins: number;
-  losses: number;
-  draws: number;
-}
-
-/** A W-L-D record as shipped: n decisive matches, win rate wins / n (draws left out, as swumetastats does), Wilson 95% interval. */
-function rated(r: Record3): { record: string; n: number; winRate: number | null; ci95: string | null } {
-  const n = r.wins + r.losses;
-  const ci = wilson(r.wins, n);
-  return { record: `${r.wins}-${r.losses}-${r.draws}`, n, winRate: rate(r.wins, n), ci95: ci === null ? null : `${ci.low}..${ci.high}` };
 }
 
 /** A tournament matchup record with its source and window, or null when no match was recorded. */
@@ -508,14 +507,11 @@ interface Answer {
   lockedOut: boolean;
   /** Decision D65: the card answers through an open offer and also carries a locked clause. */
   partlyLocked: boolean;
+  /** D86 (#168): the clause quoting the opponent's choice of mode, when an answering offer is such a mode. */
+  opponentChooses?: string;
+  /** D86 (#168): per `relation|offer`, why a conditional answer's condition never holds in this deck (its want is unfed). */
+  unfed: Map<string, string>;
 }
-
-export type EvidenceClass = "ok" | "negative" | "unmeasured" | "thin-control";
-
-/** What a deck-evidence cell needs to be classed: the object cardDeckEvidence returns, or the reason it has none. */
-export type DeckEvidenceView =
-  | string
-  | { withCard: { n: number; decks: number; ci95?: string | null }; withoutCard: { n: number; decks: number; ci95?: string | null }; difference: number | null };
 
 /** The keys meta_answers sorts on, in the order compareAnswerRank applies them. */
 export interface AnswerRank {
@@ -536,51 +532,8 @@ export interface AnswerRank {
 }
 
 const COVERAGE_BAND = 0.05;
-const NEGATIVE_GAP = -0.05;
-/** Decision D36: a side with fewer decks than this is one deck's luck, however many matches it played. */
-export const MIN_EVIDENCE_DECKS = 10;
-
-/**
- * Decision D36 (#139): the decks without the card are a control group only when they hold at least this share of the
- * comparable decks, or CONTROL_DECKS_CAP decks, whichever is smaller. The decks with the card are not held to it: a
- * rarely played card is still measured against the field (an owner question is open on that side).
- */
-export const CONTROL_SHARE = 0.1;
-export const CONTROL_DECKS_CAP = 50;
-
-/** The without-card count and the comparable total when the without side is too small to be a control group; undefined otherwise. */
-export function thinControl(evidence: Exclude<DeckEvidenceView, string>): { decks: number; of: number } | undefined {
-  const of = evidence.withCard.decks + evidence.withoutCard.decks;
-  return evidence.withoutCard.decks < Math.min(of * CONTROL_SHARE, CONTROL_DECKS_CAP) ? { decks: evidence.withoutCard.decks, of } : undefined;
-}
-
 const thinControlText = (t: NonNullable<ReturnType<typeof thinControl>>): string =>
   `the decks without this card are ${t.decks} of ${t.of} comparable decks: not a control group`;
-
-/** What keeps a side from being measured: fewer than minN decisive matches or fewer than MIN_EVIDENCE_DECKS decks. */
-export function thinSides(evidence: Exclude<DeckEvidenceView, string>, minN: number): string[] {
-  const out: string[] = [];
-  for (const side of ["withCard", "withoutCard"] as const) {
-    const e = evidence[side];
-    if (e.decks < MIN_EVIDENCE_DECKS) out.push(`${side} has ${e.decks} decks (needs ${MIN_EVIDENCE_DECKS})`);
-    if (e.n < minN) out.push(`${side} has ${e.n} decisive matches (needs ${minN})`);
-  }
-  return out;
-}
-
-/**
- * Decision D36: unmeasured unless both sides have at least minN decisive matches. Then negative on a point gap below
- * -0.05 whatever the deck count (a thin negative still warns), else ok only when both sides also have MIN_EVIDENCE_DECKS
- * decks, else unmeasured. #139: an otherwise ok figure whose without-card side holds under the smaller of 10% of the
- * comparable decks and 50 decks is thin-control, because a handful of decks that skip a staple are not a control group.
- */
-export function evidenceClassOf(evidence: DeckEvidenceView, minN: number): EvidenceClass {
-  if (typeof evidence === "string" || evidence.difference === null) return "unmeasured";
-  if (evidence.withCard.n < minN || evidence.withoutCard.n < minN) return "unmeasured";
-  if (evidence.difference < NEGATIVE_GAP) return "negative";
-  if (thinSides(evidence, minN).length > 0) return "unmeasured";
-  return thinControl(evidence) === undefined ? "ok" : "thin-control";
-}
 
 /**
  * D75 (#161): an addition whose deck evidence is negative, thin ones included (5 decks at -13 points), ranks after every
@@ -674,31 +627,7 @@ export function primaryThreatOf(hits: readonly { archetype: Pick<Archetype, "sha
  * Deck-level evidence for one card: comparable tournament decks (our leader and base aspects, else our aspect set)
  * that include it against those that do not, by their whole-event match records. Opponents are not known.
  */
-function cardDeckEvidence(env: MetaEnv, cardKey: string, ours: { archetype: string; aspects: string; label: string; aspectText: string }) {
-  const ev = env.winrates.deckEvidence;
-  if (ev === null) return "no tournament decklists captured";
-  for (const [key, comparable] of [
-    [ours.archetype, `${ours.label} decks`],
-    [ours.aspects, `${ours.aspectText} decks (any leader)`],
-  ] as const) {
-    const hit = env.evidence.get(key);
-    const row = hit?.cards.get(cardKey);
-    if (hit === undefined || row === undefined) continue;
-    const g = hit.group;
-    const withCard = rated(row);
-    const without = rated({ wins: g.wins - row.wins, losses: g.losses - row.losses, draws: g.draws - row.draws });
-    return {
-      comparable,
-      withCard: { decks: row.decks, ...withCard },
-      withoutCard: { decks: g.decks - row.decks, ...without },
-      difference: withCard.winRate === null || without.winRate === null ? null : r4(withCard.winRate - without.winRate),
-      opponents: "unknown",
-      source: SWUMETASTATS_SOURCE,
-      window: `${ev.window.from}..${ev.window.to}`,
-    };
-  }
-  return `fewer than ${env.winrates.minN} decisive matches with or without it among comparable tournament decks in ${ev.window.from}..${ev.window.to}`;
-}
+const cardDeckEvidence = (env: MetaEnv, cardKey: string, ours: EvidenceKeys) => deckEvidenceRecord(env.winrates, env.evidence, cardKey, ours);
 
 function annotated(a: Answer, minN: number): Answer["evidence"] | (Exclude<DeckEvidenceView, string> & Record<string, string>) {
   if (typeof a.evidence === "string") return a.evidence;
@@ -764,12 +693,26 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     unitBasis.units !== null && (mainEntries.length > 0 ? unitBasis.units >= SYMMETRIC_UNIT_COUNT : unitBasis.units > SYMMETRIC_UNIT_COUNT);
   const locks = lockSupply(pair.leader.syn, pair.base.syn, partial.lines.map((l) => l.syn));
   const baseIcons = pair.base.syn.structured.aspectIcons;
-  const ourAspects = [...pair.leader.syn.structured.aspectIcons, ...baseIcons];
-  const ours = {
-    archetype: archetypeEvidenceKey(pair.leader.row.cardKey, baseIcons),
-    aspects: aspectsEvidenceKey(ourAspects),
-    label: `${cardLabel(pair.leader.row)} / ${baseIcons.join("+") || "neutral"} base`,
-    aspectText: [...ourAspects].sort(compareCodePoints).join("+") || "no-aspect",
+  const ours = evidenceKeysOf(pair.leader.row.cardKey, cardLabel(pair.leader.row), pair.leader.syn.structured.aspectIcons, baseIcons);
+  // D86 (#168): with a decklist, a conditional answer (relation id "...-conditional", Marrok's "While this unit is upgraded") whose
+  // condition is a want of the same clause that no other deck card, the leader or the base feeds never holds in this deck.
+  const graph = env.deck.ctx.graph;
+  const condSuppliers = new Set([...inDeck.keys(), pair.leader.syn.cardKey, pair.base.syn.cardKey]);
+  const unfedConditions = (cardKey: string, hits: Answer["hits"]): Map<string, string> => {
+    const out = new Map<string, string>();
+    if (mainEntries.length === 0) return out;
+    const syn = graph.byKey.get(cardKey);
+    for (const { hit } of hits) {
+      const offer = env.cards.get(cardKey)?.offers.find((o) => o.tag === hit.offer);
+      if (!hit.relation.endsWith("-conditional") || syn === undefined || offer === undefined) continue;
+      const wants = [...new Set(syn.tags.wants.filter((w) => w.why === offer.why).map((w) => w.tag))].filter((w) => !graph.genericallyFed.has(w));
+      if (wants.length === 0) continue;
+      const fed = [...graph.edges, ...graph.conditional].some(
+        (e) => e.b === cardKey && e.a !== cardKey && condSuppliers.has(e.a) && e.rows.some((r) => wants.includes(r.want)),
+      );
+      if (!fed) out.set(`${hit.relation}|${hit.offer}`, `${wants.join(", ")}: no other card of the deck, the leader or the base feeds it, so the condition never holds here`);
+    }
+    return out;
   };
 
   const answers: Answer[] = [];
@@ -780,9 +723,15 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     const penalty = singlePenalty(syn, supplied);
     if (penalty > args.maxPenalty) continue;
     // D59: an offer whose clause is locked (a base the deck lacks, an aspect unit it cannot supply) answers nothing.
-    const offerLocks = entry.offers.map((offer) => ({ offer, lock: offerLock(offer.why, syn.cardKey, locks) }));
-    const open = offerLocks.filter((o) => !isLocked(o.lock)).map((o) => o.offer);
+    // D86 (#168): the clauses that gate an offer (a mode list's "If you control an Endor base") lock it too, and a mode an opponent
+    // picks ("each opponent chooses one") answers nothing for us; both are counted like a locked offer, never as coverage.
+    const offerLocks = entry.offers.map((offer) => ({
+      offer,
+      lock: mergeLocks([offer.why, ...(offer.gates ?? [])].map((why) => offerLock(why, syn.cardKey, locks))),
+    }));
+    const open = offerLocks.filter((o) => !isLocked(o.lock) && o.offer.opponentChooses === undefined).map((o) => o.offer);
     const shut = offerLocks.filter((o) => isLocked(o.lock));
+    const picked = offerLocks.filter((o) => !isLocked(o.lock) && o.offer.opponentChooses !== undefined).map((o) => o.offer);
     // D85 (#167): every clause of the card answers: per archetype, the strongest hit of each threat it answers, so Justifier's
     // removal clause counts against key units beside its space body.
     const hitsThrough = (offers: typeof entry.offers): Answer["hits"] =>
@@ -798,8 +747,9 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
         return [...best.values()].map((hit) => ({ archetype: a, hit }));
       });
     const hits = hitsThrough(open);
-    const lockedHits = shut.length === 0 ? [] : hitsThrough(shut.map((o) => o.offer));
+    const lockedHits = shut.length + picked.length === 0 ? [] : hitsThrough([...shut.map((o) => o.offer), ...picked]);
     if (hits.length === 0 && lockedHits.length === 0) continue;
+    const opponentChooses = [...shut.map((o) => o.offer), ...picked].find((o) => o.opponentChooses !== undefined && lockedHits.some((h) => h.hit.offer === o.tag))?.opponentChooses;
     const coverage = hits.reduce((n, { archetype, hit }) => n + archetype.share * hit.weight * hit.fraction, 0);
     const lockedOut = hits.length === 0;
     // D71: the card's own locked clauses count too, whether or not an offer that answers rests on them (Ritual Dragon: printed Saboteur open, a Tatooine clause that answers nothing).
@@ -828,6 +778,8 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       lock,
       lockedOut,
       partlyLocked: !lockedOut && isLocked(lock),
+      ...(opponentChooses === undefined ? {} : { opponentChooses: opponentChooses.replace(/^\w+: /, "") }),
+      unfed: unfedConditions(syn.cardKey, hits),
     });
   }
   answers.sort(compareAnswerRank);
@@ -865,21 +817,24 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     }))
     .sort((x, y) => y.share - x.share || compareCodePoints(x.threat, y.threat));
   const addresses = (a: Answer, threat: string): boolean => a.hits.some((h) => h.hit.threat === threat);
+  // D86 (#168): a conditional answer whose condition never holds in this deck shows, but does not hold a threat's reserved slot.
+  const firmlyAddresses = (a: Answer, threat: string): boolean =>
+    a.hits.some((h) => h.hit.threat === threat && !a.unfed.has(`${h.hit.relation}|${h.hit.offer}`));
   // Decision D46: before the rank fill, each fired threat gets minPerThreat answers (staples count), the best-ranked
   // first; a threat with no answer above the floor takes its best hidden one.
   const reservedList: Answer[] = [];
   const fromHidden = new Set<Answer>();
   if (args.minPerThreat > 0) {
     for (const { threat } of threatShares) {
-      const have = (): number => [...staples, ...reservedList].filter((a) => addresses(a, threat)).length;
+      const have = (): number => [...staples, ...reservedList].filter((a) => firmlyAddresses(a, threat)).length;
       // D85 (#167): a reserved slot goes to an answer not measured negative first; a negative one only when the threat has no other.
       for (const pass of [(a: Answer) => a.evidenceClass !== "negative", (a: Answer) => a.evidenceClass === "negative"]) {
         for (const a of candidates.filter(pass)) {
           if (have() >= args.minPerThreat) break;
-          if (!reservedList.includes(a) && addresses(a, threat)) reservedList.push(a);
+          if (!reservedList.includes(a) && firmlyAddresses(a, threat)) reservedList.push(a);
         }
       }
-      const rescue = have() === 0 ? hiddenRows.find((a) => addresses(a, threat) && !inSideboard.has(a.cardKey)) : undefined;
+      const rescue = have() === 0 ? hiddenRows.find((a) => firmlyAddresses(a, threat) && !inSideboard.has(a.cardKey)) : undefined;
       if (rescue !== undefined) {
         reservedList.push(rescue);
         fromHidden.add(rescue);
@@ -929,6 +884,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       offer: g.offer,
       ...(g.symmetric ? { symmetric: true } : {}),
       ...(g.threshold === undefined ? {} : { threshold: g.threshold }),
+      ...(a.unfed.has(`${g.relation}|${g.offer}`) ? { conditionUnfed: a.unfed.get(`${g.relation}|${g.offer}`) } : {}),
       ...(args.evidence ? { evidence: g.evidence } : {}),
       archetypes: g.archetypes.join(", "),
       keyUnitsRemoved:
@@ -962,6 +918,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     ...(fromHidden.has(a) && kept.has(a) ? { hiddenByFloor: true } : {}),
     ...lockFields(a.lock),
     ...(a.lockedOut ? { lockedOut: true } : {}),
+    ...(a.opponentChooses === undefined ? {} : { opponentChooses: a.opponentChooses }),
     answers: byThreat(a),
     deckEvidence: annotated(a, env.winrates.minN),
     evidenceClass: a.evidenceClass,
@@ -1016,7 +973,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     ...(negativeLeft.length === 0 ? {} : { negativeAdditions: negativeLeft.slice(0, args.limit).map(rowOf) }),
     ...(sideboardList.length === 0 ? {} : { sideboardAnswers: sideboardList.slice(0, args.limit).map(rowOf) }),
     lockedAnswers: lockedList.slice(0, args.limit).map(rowOf),
-    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a card with an open offer and a locked clause (Sandcrawler Sales Team, Ritual Dragon: printed Saboteur open, Tatooine clause locked) ranks after every unlocked answer, also past the perThreat cap (D65); a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered, and over each threat a card answers there (its strongest answer per threat, D85), of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class reorders within a band and removes no row, with one exception for additions (D75, D85): an addition whose class is negative, a thin negative included (deckEvidence.thin), takes no addition slot and is listed apart under negativeAdditions, so a freed slot stays empty rather than go to it, and a threat's reserved slot goes to an answer not measured negative first (a negative one only when the threat has no other); a negative staple likewise follows the last ok staple (D82), and among the staples every ok row, significant or not, comes before every unmeasured one (D83); inSideboard marks an answer the swudb sideboard already holds (D83), and such an answer is listed under sideboardAnswers, never among the additions (D84); a thin-control staple follows the last significant staple (D84); an addition marked significant: true (class ok, and its with-card Wilson interval lies wholly above the without-card one) is listed before every unmeasured addition, whatever its coverage (D82); it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry, leaderData.selection)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
+    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; so is an offer whose ability's header clause is locked ("If you control an Endor base, each opponent chooses one:") and a mode an opponent picks (opponentChooses, D86); with a decklist, a conditional answer (relation ...-conditional) whose condition no other deck card, the leader or the base feeds carries conditionUnfed and holds no threat's reserved slot alone (D86); a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a card with an open offer and a locked clause (Sandcrawler Sales Team, Ritual Dragon: printed Saboteur open, Tatooine clause locked) ranks after every unlocked answer, also past the perThreat cap (D65); a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered, and over each threat a card answers there (its strongest answer per threat, D85), of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class reorders within a band and removes no row, with one exception for additions (D75, D85): an addition whose class is negative, a thin negative included (deckEvidence.thin), takes no addition slot and is listed apart under negativeAdditions, so a freed slot stays empty rather than go to it, and a threat's reserved slot goes to an answer not measured negative first (a negative one only when the threat has no other); a negative staple likewise follows the last ok staple (D82), and among the staples every ok row, significant or not, comes before every unmeasured one (D83); inSideboard marks an answer the swudb sideboard already holds (D83), and such an answer is listed under sideboardAnswers, never among the additions (D84); a thin-control staple follows the last significant staple (D84); an addition marked significant: true (class ok, and its with-card Wilson interval lies wholly above the without-card one) is listed before every unmeasured addition, whatever its coverage (D82); it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry, leaderData.selection)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
   });
 }
 
@@ -1128,7 +1085,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Each threat a card answers adds its strongest answer for each archetype: every clause counts, and a curated select-then-act clause (Chimaera, A Frightening Reality: choose an enemy non-leader unit, then defeat it) is read with its act (D85). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers, and one with an open offer and a locked clause ranks after the unlocked answers, whether or not an answering offer rests on that clause (D71). When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and leaderSource.populationNote names the counts and the dominant base. An addition with negative deck evidence, a thin negative included, takes no addition slot and is listed under negativeAdditions (D75, D85), and a negative staple follows the last ok staple; an addition that hands the opponent a card, a resource or a free replay (Stolen AT-Hauler) carries drawback, the clause quoted (D85); an addition measured with a significant gain (significant: true: class ok and the with-card Wilson interval wholly above the without-card one) is listed before every unmeasured addition; a choose-one answer quotes its whole mode (D82). Among the staples every ok row, significant or not, comes before every unmeasured one; or give the whole deck as swudb, the SWUDB JSON interchange document (ids like HMW_018), instead of decklist, leader and base, and an answer its sideboard holds carries inSideboard (copies) (D83) and is listed under sideboardAnswers, never among the additions; a thin-control staple follows the last significant staple (D84).",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Each threat a card answers adds its strongest answer for each archetype: every clause counts, and a curated select-then-act clause (Chimaera, A Frightening Reality: choose an enemy non-leader unit, then defeat it) is read with its act (D85). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers, and one with an open offer and a locked clause ranks after the unlocked answers, whether or not an answering offer rests on that clause (D71). When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and leaderSource.populationNote names the counts and the dominant base. An addition with negative deck evidence, a thin negative included, takes no addition slot and is listed under negativeAdditions (D75, D85), and a negative staple follows the last ok staple; an addition that hands the opponent a card, a resource or a free replay (Stolen AT-Hauler) carries drawback, the clause quoted (D85); an addition measured with a significant gain (significant: true: class ok and the with-card Wilson interval wholly above the without-card one) is listed before every unmeasured addition; a choose-one answer quotes its whole mode (D82). Among the staples every ok row, significant or not, comes before every unmeasured one; or give the whole deck as swudb, the SWUDB JSON interchange document (ids like HMW_018), instead of decklist, leader and base, and an answer its sideboard holds carries inSideboard (copies) (D83) and is listed under sideboardAnswers, never among the additions; a thin-control staple follows the last significant staple (D84). An offer gated by its ability's header clause (\"If you control an Endor base, each opponent chooses one:\") takes that clause's lock, and a mode an opponent picks answers nothing, so a card with no other answer is listed under lockedAnswers at coverage 0 with opponentChooses quoted (Giant Gorax); with a decklist, a conditional answer whose condition no other deck card, the leader or the base feeds carries conditionUnfed and holds no threat's reserved slot alone (Marrok); one-sided go-wide removal counts as a sweeper (\"any number of units with a total of N or less remaining HP\" when N covers two of the archetype's typical cheap units, \"each of up to N units\") (D86).",
     { ...metaAnswersShape, swudb: swudbField },
     (env: MetaEnv, input: unknown): ToolResult => {
       const expanded = expandSwudb(input);
