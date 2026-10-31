@@ -107,6 +107,8 @@ function ignoreClauseOf(source: RemovalCard): IgnoreClause | null {
 export interface PenaltyRemovalReader {
   /** What removes the penalty of this card, or null when nothing in the leader, base and deck does. */
   noteFor(card: SynergyCard, supplied: readonly string[]): RemovalNote | null;
+  /** D84 (#166): the icon lender that frees this card and the deck units it may sit on for that (cardKeys), or null; no ignore clause covers the card. */
+  lentFor(card: SynergyCard, supplied: readonly string[]): { lender: string; carriers: string[] } | null;
   /** Every remover found, for the section note. */
   removers: { card: string; kind: "icon-lender" | "ignore-clause"; detail: string }[];
 }
@@ -129,8 +131,37 @@ export function readPenaltyRemovers(leader: RemovalCard, base: RemovalCard, deck
     ...lenders.map((l) => ({ card: cardLabel(l.syn), kind: "icon-lender" as const, detail: "the attached unit provides its aspect icons while you pay costs" })),
     ...ignorers.map((i) => ({ card: cardLabel(i.source.syn), kind: "ignore-clause" as const, detail: i.clause })),
   ];
+  type Lent = { lender: RemovalCard; carriers: RemovalCard[]; n: number; free: boolean };
+  const lendingOf = (card: SynergyCard, supplied: readonly string[], missing: readonly string[]): Lent | null => {
+    // D82 (#164): a carrier that pays an aspect penalty of its own frees nothing before it is in play. D83 (#165): it frees the
+    // cards played after it, so the carriers (Qimir, Darth Traya, Marchion Ro) are a sequence: the first pays, the later ones do not.
+    const taxed = (d: RemovalCard): boolean => missingIcons(d.syn, supplied).length > 0 && !ignorers.some((i) => i.covers(d.syn));
+    const bestOf = (free: boolean): { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null => {
+      let best: { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null = null;
+      for (const lender of lenders) {
+        const options = deck
+          .filter((d) => d.syn.cardKey !== card.cardKey && carrierOk(lender, d) && taxed(d) !== free)
+          .map((d) => ({ d, n: covered(missing, d.syn) }))
+          .filter((o) => o.n > 0);
+        const n = Math.max(0, ...options.map((o) => o.n));
+        if (n === 0 || (best !== null && n <= best.n)) continue;
+        const carriers = options.filter((o) => o.n === n).map((o) => o.d).sort((a, b) => compareCodePoints(cardLabel(a.syn), cardLabel(b.syn)));
+        best = { lender, carriers, n };
+      }
+      return best;
+    };
+    const free = bestOf(true);
+    const best = free ?? bestOf(false);
+    return best === null ? null : { ...best, free: free !== null };
+  };
   return {
     removers,
+    lentFor(card, supplied) {
+      const missing = missingIcons(card, supplied);
+      if (missing.length === 0 || ignorers.some((i) => i.covers(card))) return null;
+      const best = lendingOf(card, supplied, missing);
+      return best === null ? null : { lender: best.lender.syn.cardKey, carriers: best.carriers.map((c) => c.syn.cardKey) };
+    },
     noteFor(card, supplied) {
       const missing = missingIcons(card, supplied);
       if (missing.length === 0) return null;
@@ -138,30 +169,12 @@ export function readPenaltyRemovers(leader: RemovalCard, base: RemovalCard, deck
       if (ignoring !== undefined) {
         return { by: `${cardLabel(ignoring.source.syn)}: "${ignoring.clause}"`, effectivePenaltyEach: 0 };
       }
-      // D82 (#164): a carrier that pays an aspect penalty of its own frees nothing before it is in play. D83 (#165): it frees the
-      // cards played after it, so the carriers (Qimir, Darth Traya, Marchion Ro) are a sequence: the first pays, the later ones do not.
-      const taxed = (d: RemovalCard): boolean => missingIcons(d.syn, supplied).length > 0 && !ignorers.some((i) => i.covers(d.syn));
-      const bestOf = (free: boolean): { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null => {
-        let best: { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null = null;
-        for (const lender of lenders) {
-          const options = deck
-            .filter((d) => d.syn.cardKey !== card.cardKey && carrierOk(lender, d) && taxed(d) !== free)
-            .map((d) => ({ d, n: covered(missing, d.syn) }))
-            .filter((o) => o.n > 0);
-          const n = Math.max(0, ...options.map((o) => o.n));
-          if (n === 0 || (best !== null && n <= best.n)) continue;
-          const carriers = options.filter((o) => o.n === n).map((o) => o.d).sort((a, b) => compareCodePoints(cardLabel(a.syn), cardLabel(b.syn)));
-          best = { lender, carriers, n };
-        }
-        return best;
-      };
-      const free = bestOf(true);
-      const best = free ?? bestOf(false);
+      const best = lendingOf(card, supplied, missing);
       if (best === null) return null;
       const names = best.carriers.slice(0, CARRIER_LIMIT).map((c) => cardLabel(c.syn));
       const more = best.carriers.length > CARRIER_LIMIT ? `, +${best.carriers.length - CARRIER_LIMIT} more` : "";
       const by = `${cardLabel(best.lender.syn)} attached to ${names.join(" or ")}${more}`;
-      if (free === null)
+      if (!best.free)
         return {
           by: `${by} (taxed carriers: the first one you play pays its own aspect penalty; cards played while ${cardLabel(best.lender.syn)} stays on it pay the figure shown)`,
           effectivePenaltyEach: UNCOVERED_ICON_PENALTY * (missing.length - best.n),

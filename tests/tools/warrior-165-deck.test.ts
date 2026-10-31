@@ -112,7 +112,8 @@ describe.skipIf(!hasData)("deck_legality_check checks sideboard cards against th
 describe.skipIf(!hasData)("meta_answers takes the swudb document and marks what the sideboard holds (#165 item 16, D83)", () => {
   it("Exploit Confidence, two copies in the owner's sideboard, carries inSideboard: 2", () => {
     const out = body(META_TOOLS.meta_answers.handler(real, { swudb: OWNER_SWUDB, limit: 10, archetypes: 6 }));
-    const rows: Record<string, any>[] = [...out.staples, ...out.additions];
+    // D84 (#166) flipped where the row sits: a sideboard answer is listed under sideboardAnswers, never among the additions.
+    const rows: Record<string, any>[] = [...out.staples, ...out.additions, ...(out.sideboardAnswers ?? [])];
     const exploit = rows.find((r) => r.cardKey === EXPLOIT_CONFIDENCE);
     expect(exploit, rows.map((r) => r.title).join("; ")).toBeDefined();
     expect(exploit?.inSideboard).toBe(2);

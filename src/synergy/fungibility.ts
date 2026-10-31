@@ -520,6 +520,8 @@ export interface KeepCut {
   playShare: number | null;
   /** How many other deck cards have a mechanical pair edge into or out of the card: the fewer, the less the deck relies on it. */
   deckLinks: number;
+  /** D84 (#166): the deck cards linked to this one only through an icon lender it carries or is carried by (The Darksaber), titles, and the lender's title. */
+  carrier?: { lender: string; cards: readonly string[] };
   /** The cardKeys of the compared cards (the original and the candidates) this card has a mechanical pair edge into; a card that feeds one of the two in play is never the cut. */
   feeds: readonly string[];
 }
@@ -553,6 +555,11 @@ function keepCompare(a: KeepEntry, b: KeepEntry): [number, KeepStep] {
 const champion = (entries: readonly KeepEntry[]): KeepEntry =>
   entries.slice(1).reduce((best, next) => (keepCompare(best, next)[0] > 0 ? next : best), entries[0] as KeepEntry);
 
+const cutLinks = (cut: KeepCut): string =>
+  cut.carrier === undefined || cut.carrier.cards.length === 0
+    ? `${cut.deckLinks} pair ${cut.deckLinks === 1 ? "link" : "links"} to other deck cards`
+    : `${cut.deckLinks} ${cut.deckLinks === 1 ? "link" : "links"} to other deck cards, carrier links through ${cut.carrier.lender} included: ${cut.carrier.cards.join("; ")}`;
+
 /** D69: the first entry is the card already in the deck, so it wins every tie. Built from the numbers only. */
 export function recommendKeep(entries: readonly KeepEntry[], deckCards: readonly KeepCut[] = []): KeepVerdict {
   const win = champion(entries);
@@ -570,7 +577,7 @@ export function recommendKeep(entries: readonly KeepEntry[], deckCards: readonly
       ? [...deckCards].filter((c) => c.cardKey !== win.cardKey && c.cardKey !== next.cardKey && !c.feeds.includes(win.cardKey) && !c.feeds.includes(next.cardKey)).sort(cutOrder)[0]
       : undefined;
   const cutClause =
-    cut === undefined ? "" : ` To make room for ${next.label}, cut ${cut.label} (${cut.penalty === null ? "" : `penalty ${cut.penalty}, `}${share(cut)}, ${cut.deckLinks} pair ${cut.deckLinks === 1 ? "link" : "links"} to other deck cards).`;
+    cut === undefined ? "" : ` To make room for ${next.label}, cut ${cut.label} (${cut.penalty === null ? "" : `penalty ${cut.penalty}, `}${share(cut)}, ${cutLinks(cut)}).`;
   const gap = `the feeder gap is under ${FEEDER_GAP} (${win.fedBy} against ${next.fedBy})`;
   const sentence = {
     deckFeeders: `Keep ${win.label}: ${win.fedBy} cards already in the deck feed it against ${next.fedBy} for ${next.label}, a gap of at least ${FEEDER_GAP}${win.penalty !== null && next.penalty !== null && win.penalty > next.penalty ? ` that outweighs its penalty ${win.penalty}` : ""}${partnerClause}.`,

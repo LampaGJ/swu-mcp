@@ -83,8 +83,9 @@ describe.skipIf(!hasData)("fungible_substitutes splits partners from stand-ins f
     expect(rec.keep).toBe(OPPO);
     expect(rec.decidedBy).toBe("deckFeeders");
     expect(rec.verdict).toBe(
-      `Keep Oppo Rancisis, Ancient Councilor: ${oppo.fedByDeck} cards already in the deck feed it against 0 for Anakin Skywalker, Force Prodigy, a gap of at least 4 that outweighs its penalty 2, and Anakin Skywalker, Force Prodigy is a partner worth a slot elsewhere because it feeds Oppo Rancisis, Ancient Councilor. To make room for Anakin Skywalker, Force Prodigy, cut ${rec.cutForCandidate.title} (penalty ${rec.cutForCandidate.penalty}, unplayed, ${rec.cutForCandidate.deckLinks} pair links to other deck cards).`,
+      `Keep Oppo Rancisis, Ancient Councilor: ${oppo.fedByDeck} cards already in the deck feed it against 0 for Anakin Skywalker, Force Prodigy, a gap of at least 4 that outweighs its penalty 2, and Anakin Skywalker, Force Prodigy is a partner worth a slot elsewhere because it feeds Oppo Rancisis, Ancient Councilor. To make room for Anakin Skywalker, Force Prodigy, cut ${rec.cutForCandidate.title} (penalty ${rec.cutForCandidate.penalty}, unplayed, ${rec.cutForCandidate.deckLinks} links to other deck cards, carrier links through The Darksaber included: ${rec.cutForCandidate.carrierLinks}).`,
     );
+    // D84 (#166) flipped this expectation: a Darksaber carrier link counts as a deck link and the verdict names it.
     expect(call().note).toContain("recommendation (D69)");
   });
 

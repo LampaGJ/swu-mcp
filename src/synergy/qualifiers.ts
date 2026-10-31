@@ -17,7 +17,7 @@ import type { SynergyCard } from "./schema.js";
  */
 
 type Side = "friendly" | "enemy";
-type Kind = "unit" | "upgrade" | "base" | "token" | "resource" | "card";
+type Kind = "unit" | "upgrade" | "base" | "token" | "resource" | "card" | "leader";
 type Arena = "ground" | "space";
 
 /** What an effect or watcher touches, as far as the features state it. */
@@ -32,6 +32,8 @@ export interface Subject {
   minCost?: number;
   /** Power bound stated by the target ("the next unit you play with 1 or less power"), checked against the fed card's printed power (D58). */
   maxPower?: number;
+  /** D84 (#166): "a non-leader unit with 6 or more power" (Exploit Confidence). */
+  minPower?: number;
   nonLeader?: boolean;
   /** The aspect a target must have ("a Heroism unit"). */
   aspect?: string;
@@ -208,10 +210,18 @@ const MODIFIERS = new Set([
   "damaged", "undamaged", "exhausted", "ready", "ground", "space", "unique", "non", "leader", "non-leader", "non-unique", "or", "more", "less", "and", "one", "two", "three",
 ]);
 const HEADS: Record<string, Kind> = { unit: "unit", units: "unit", upgrade: "upgrade", upgrades: "upgrade", base: "base", bases: "base", resource: "resource", resources: "resource", card: "card", cards: "card", token: "token", tokens: "token" };
+const NON_UNIT_LEADER = /\bnon[-\u2011]unit leaders?\b/i;
+const MIN_POWER = /\bwith (\d+) or more power\b/i;
+/** "choose a non-leader unit that opponent controls" (Beguile): the side sits in a relative clause the grammar leaves as residue. */
+const UNIT_OPPONENT_CONTROLS = /\bunits? (?:that )?(?:an |that )?opponent controls\b/i;
+/** "While you control a Force unit or a Force upgrade" (Padawan Starfighter): the trait the wanted upgrade must carry. */
+const TRAIT_UPGRADE = /\b(?:an?|another) ([A-Z][\p{L}'\u2019-]*) upgrade\b/u;
 const UPGRADE_TOKEN = /\b(?:experience|shield|credit|advantage|weakness|force)\b/i;
 
 /** The head noun of a target phrase ("a unit that costs 3 resources" is a unit), because the parsed kind follows the first noun it sees. */
 function headKind(text: string, parsed: string | undefined): Kind | undefined {
+  // D84 (#166): "ready a non-unit leader" (Darth Traya) acts on the leader card, which is no unit.
+  if (NON_UNIT_LEADER.test(text)) return "leader";
   for (const raw of text.split(/\s+/)) {
     const word = raw.replace(/[^\p{L}\p{N}'\u2011-]/gu, "");
     const low = word.toLowerCase();
@@ -257,6 +267,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     maxCost: bound("cost_le"),
     minCost: bound("cost_ge"),
     maxPower: bound("power_le"),
+    ...(MIN_POWER.test(text) ? { minPower: Number(MIN_POWER.exec(text)?.[1]) } : {}),
     nonLeader: restrict.includes("non_leader") || restrict.includes("non-leader") || undefined,
     aspect,
     ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
@@ -453,6 +464,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     const multiplied = supplies === undefined ? multipliedTokens(clause, tokenTraits, tokenAspects) : undefined;
     subject = { side: "friendly", traits: [], notTraits: [], ...(supplies !== undefined ? { supplies } : multiplied !== undefined ? { supplies: multiplied, anyToken: true } : {}) };
   }
+  if (side === "offers" && subject.side === undefined && UNIT_OPPONENT_CONTROLS.test(text)) subject = { ...subject, side: "enemy" };
   if (side === "wants" && subject === EMPTY) {
     const watcher = watcherSubject(`${text} ${triggerText}`);
     if (watcher !== EMPTY && watcher.traits.length + Number(watcher.arena !== undefined) > 0) subject = watcher;
@@ -565,7 +577,7 @@ export function hostAdmits(bound: AttachBound | undefined, unit: SynergyCard): b
   return bound.base !== true && boundAdmitsSubject(bound, cardSubject(unit));
 }
 
-const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
+const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card", "leader"]);
 
 /** The card can be the subject: kind, traits, cost, power and arena all fit (D64). */
 export function admits(subject: Subject, c: SynergyCard): boolean {
@@ -606,6 +618,9 @@ export function conflictBetween(
   if (offer.viaCat !== undefined && wantTag === "wants:replay-when-played") return `the offer is a ${offer.viaCat}, not a return to hand`;
   const token = DEFEATS_UNIT.test(offerTag) && offer.subject.kind === "token" ? NON_UNIT_TOKEN.exec(offer.text)?.[1] : undefined;
   if (token !== undefined) return `the offer defeats a ${token} token, which is not a unit`;
+  if (touched.kind === "leader" && b.type !== "Leader") return "the offer acts on a non-unit leader, the wanting card is not a leader";
+  // D84 (#166): a want on the card itself is a want of your own unit, which an offer aimed at what an opponent controls never reaches.
+  if (wantConcrete !== undefined && offer.subject.side === "enemy") return "the offer acts on what an opponent controls, the want is on the wanting card itself";
   if (touched.kind !== undefined && NON_UNIT.has(touched.kind) && needed.kind === "unit" && wantConcrete !== undefined) {
     return `the offer touches a ${touched.kind}, the want needs a unit`;
   }
@@ -663,9 +678,10 @@ export function conflictBetween(
     return "the offer acts only on the tokens it creates, the wanting card is not one";
   }
   if (wantConcrete !== undefined) {
-    const { maxCost, minCost, maxPower, nonLeader, aspect } = offer.subject;
+    const { maxCost, minCost, maxPower, minPower, nonLeader, aspect } = offer.subject;
     const { cost, power } = wantConcrete;
     if (maxPower !== undefined && typeof power === "number" && power > maxPower) return `the offer reaches units with ${maxPower} or less power, the wanting card has ${power}`;
+    if (minPower !== undefined && typeof power === "number" && power < minPower) return `the offer reaches units with ${minPower} or more power, the wanting card has ${power}`;
     if (maxCost !== undefined && typeof cost === "number" && cost > maxCost) return `the offer reaches units costing ${maxCost} or less, the wanting card costs ${cost}`;
     if (minCost !== undefined && typeof cost === "number" && cost < minCost) return `the offer reaches units costing ${minCost} or more, the wanting card costs ${cost}`;
     if (nonLeader === true && wantConcrete.isLeader === true) return "the offer reaches non-leader units, the wanting card is a leader";
@@ -700,6 +716,11 @@ export function conflictBetween(
   }
   if (want.scope !== undefined && !STATE_WANTS.has(wantTag) && offer.triggers.length > 0 && !offer.triggers.some((t) => ATTACK_TRIGGERS.has(t)) && !/\battack/i.test(offer.text)) {
     return `the want triggers only ${want.scope}, the offer does not happen in combat`;
+  }
+  // D84 (#166): "a Force upgrade" is met by an upgrade of that trait; an Experience or Shield token carries no trait.
+  const upgradeTrait = wantTag === "wants:upgrades-attached" ? TRAIT_UPGRADE.exec(want.text)?.[1] : undefined;
+  if (upgradeTrait !== undefined && (offerTag.startsWith("offers:give-") || (offerTag === "offers:upgrade-to-attach" && !a.structured.traits.includes(upgradeTrait)))) {
+    return `the want needs a ${upgradeTrait} upgrade, the offer does not supply one`;
   }
   if (want.forAttackOnly && (offerTag === "offers:ready-unit" || offerTag === "offers:extra-attack")) {
     return "the wanted ability lasts for one attack only and does not carry through a ready";

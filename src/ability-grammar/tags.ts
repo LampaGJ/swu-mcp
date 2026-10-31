@@ -48,6 +48,8 @@ const givesItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolea
   /\bthis unit\b/i.test(c.text) &&
   !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
 const THIS_UPGRADE = /\bdefeat this upgrade\b/i;
+/** D84 (#166): "This unit can't attack unless it's damaged" (Oggdo Bogdo): damage on the card is what lets it attack. */
+const ATTACKS_ONLY_DAMAGED = /\bcan['\u2019]?t attack unless (?:it['\u2019]?s|it is|he['\u2019]?s|she['\u2019]?s|this unit is) damaged\b/i;
 /** The bounce's object is the card ("this unit", or a pronoun) and no other unit is named in the clause or its trigger. */
 const returnsOnlyItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolean =>
   (SELF_OBJECT.test(e.target?.text ?? "") || PRONOUN.test(e.target?.text ?? "")) &&
@@ -231,6 +233,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
           add(wants, w, `curated ${c.curatedId}`);
         }
         const clauseWhy = `${face}: ${c.text}`;
+        if (ATTACKS_ONLY_DAMAGED.test(c.text)) add(wants, "wants:self-damaged", clauseWhy);
         if (/when played ability/i.test(c.text)) add(wants, "wants:when-played-cards", clauseWhy);
         if (/\b(?:dealt damage to an enemy base this phase|enemy base was damaged this phase)/i.test(c.text)) add(wants, "wants:enemy-base-damaged", clauseWhy);
         if (/\benemy (?:[\w-]+ )*unit with an? weakness token/i.test(c.text)) add(wants, "wants:enemy-weakened", clauseWhy);

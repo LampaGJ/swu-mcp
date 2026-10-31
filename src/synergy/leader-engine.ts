@@ -254,8 +254,10 @@ export function roleKeepOf(slot: SynergyCard, supplied: ReadonlySet<string>, off
   const families: { name: string; tags: string[]; job?: string; has: (c: SynergyCard) => boolean }[] = [];
   if (readiesLeader(slot)) families.push({ name: "ready-leader", tags: ["offers:ready-unit"], has: readiesLeader });
   // D65: with offerJobs, a unit also keeps the job its offers name; a card that readies a leader already keeps the stricter ready-leader job.
-  if (offerJobs && slot.type === "Unit") {
+  if (offerJobs && (slot.type === "Unit" || slot.type === "Event")) {
     for (const { name, job, tags } of OFFER_JOBS) {
+      // D84 (#166): an event keeps only the removal job ("Take control of a non-leader unit, then defeat it"); D65 keeps the rest for units.
+      if (slot.type === "Event" && name !== "removal") continue;
       if (name === "ready" && readiesLeader(slot)) continue;
       if (!slot.tags.offers.some((o) => (tags as readonly string[]).includes(o.tag))) continue;
       families.push({ name, tags: [...tags], job, has: (c) => c.tags.offers.some((o) => (tags as readonly string[]).includes(o.tag)) });

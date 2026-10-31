@@ -127,9 +127,13 @@ describe.skipIf(!hasData)("fungible_substitutes counts job feeders and suggests 
       aspects: "Cunning+Villainy",
       penalty: 2,
       playShare: "unplayed",
-      deckLinks: 0,
+      // D84 (#166) flipped deckLinks 0: Qimir carries The Darksaber for Darth Traya and Marchion Ro, and the lender links to its carrier.
+      deckLinks: 3,
+      carrierLinks: "Darth Traya, Lord of Betrayal; Marchion Ro, Eye of the Nihil; The Darksaber, Icon of Leadership",
     });
-    expect(rec().verdict).toContain("To make room for Anakin Skywalker, Force Prodigy, cut Qimir, Everyone Has a Weakness (penalty 2, unplayed, 0 pair links to other deck cards).");
+    expect(rec().verdict).toContain(
+      "To make room for Anakin Skywalker, Force Prodigy, cut Qimir, Everyone Has a Weakness (penalty 2, unplayed, 3 links to other deck cards, carrier links through The Darksaber included: Darth Traya, Lord of Betrayal; Marchion Ro, Eye of the Nihil; The Darksaber, Icon of Leadership).",
+    );
   });
 });
 

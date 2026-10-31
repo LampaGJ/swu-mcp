@@ -765,7 +765,9 @@ describe("side-aware pair reasons (#121)", () => {
 
   it("words an enemy-target damage offer as a finisher setup, not as Grit", () => {
     expect(reasonOf("E", "K")).toBe("Damage on an enemy unit sets up a finisher that wants a damaged target.");
-    expect(reasonOf("E", "G")).not.toContain("your own unit");
+    // D84 (#166) flipped this expectation: an offer aimed at an enemy unit never reaches a want on your own card, so E feeds no Grit unit at all.
+    const payoffs = body(findPairings(sideCtx, { cardKey: "E", direction: "payoffs", withAlternatives: false })).pairings as { cardKey: string }[];
+    expect(payoffs.map((p) => p.cardKey)).not.toContain("G");
   });
 
   it("keeps the own-unit wording when the offer lands on a friendly unit", () => {
