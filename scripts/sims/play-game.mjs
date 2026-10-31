@@ -7,11 +7,13 @@
  * (default: uniformly random legal choice) until a base falls. Returns the result, a final-board summary and a
  * sha256 of the choice trace. Exposes a Session so a caller can pause at a decision and branch.
  *
- * Usage: node scripts/sims/play-game.mjs --deck1 <json> --deck2 <json> [--games N] [--seed S] [--forceteki <dir>] [--trace] [--policy1 random|greedy] [--policy2 random|greedy] [--undo]
+ * Usage: node scripts/sims/play-game.mjs --deck1 <json> --deck2 <json> [--games N] [--seed S] [--forceteki <dir>] [--trace] [--policy1 random|greedy] [--policy2 random|greedy] [--undo] [--no-memo]
  */
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
@@ -31,6 +33,55 @@ export function loadEngine(root = DEFAULT_FORCETEKI) {
   const getter = new UnitTestCardDataGetter(path.join(root, "test/json"));
   return { Game, Deck, getter, getUserWithDefaultsSet, UndoMode, SnapshotType, seedrandom };
 }
+
+/**
+ * ActionWindow.continue() sweeps every card for legal actions twice per prompt with unchanged game state: once in
+ * activePromptInternal (via setPrompt) and once in highlightSelectableCards. This reuses the first result for the
+ * second call, inside one continue() only. Prototype patch at runtime; the clone's files are not touched.
+ */
+export function installSelectableCardsMemo(root = DEFAULT_FORCETEKI) {
+  const { ActionWindow } = require(path.join(root, "build/server/game/core/gameSteps/ActionWindow.js"));
+  const proto = ActionWindow.prototype;
+  const sweep = proto.getSelectableCards;
+  const cont = proto.continue;
+  if (typeof sweep !== "function" || typeof cont !== "function") throw new Error("ActionWindow shape changed; memo not installed");
+  if (proto.__selectableMemo) return;
+  proto.__selectableMemo = true;
+  proto.getSelectableCards = function () {
+    if (this._memo !== undefined) return this._memo;
+    const r = sweep.call(this);
+    if (this._inContinue) this._memo = r;
+    return r;
+  };
+  proto.continue = function () {
+    this._inContinue = true;
+    this._memo = undefined;
+    try {
+      return cont.call(this);
+    } finally {
+      this._inContinue = false;
+      this._memo = undefined;
+    }
+  };
+}
+
+/** Logical CPUs in the highest-performance class (perflevel0); the class name and count differ across M-series parts. */
+export const topCoreClassSize = () => {
+  try {
+    const n = Number(execFileSync("sysctl", ["-n", "hw.perflevel0.logicalcpu"], { encoding: "utf8" }).trim());
+    if (Number.isInteger(n) && n > 0) return n;
+  } catch {
+    // sysctl absent or unparsable: the fixed fallback below applies
+  }
+  return os.availableParallelism();
+};
+
+/**
+ * Worker heap caps. Without them V8 lets 12 idle-looking workers grow to 3.4 to 3.6 GB RSS in a warm pool; the live heap
+ * after a full GC is about 46 MB per worker (measured), so 128 MB of old space leaves headroom. Measured on 12 workers,
+ * greedy, 100 games per batch: 1.45 to 1.5 GB RSS at the same batch time.
+ */
+export const WORKER_RESOURCE_LIMITS = { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 24 };
 
 const scheduler = {
   setTimeout: () => ({ cancel: () => undefined }),
@@ -299,6 +350,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
       forceteki: { type: "string", default: DEFAULT_FORCETEKI },
       trace: { type: "boolean", default: false },
       undo: { type: "boolean", default: false },
+      "no-memo": { type: "boolean", default: false },
       policy1: { type: "string", default: "random" },
       policy2: { type: "string", default: "random" },
     },
@@ -306,6 +358,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   if (!values.deck1 || !values.deck2) throw new Error("--deck1 and --deck2 are required");
   const tLoad = performance.now();
   const engine = loadEngine(values.forceteki);
+  if (!values["no-memo"]) installSelectableCardsMemo(values.forceteki);
   const loadMs = Math.round(performance.now() - tLoad);
   const d1 = readDeck(values.deck1);
   const d2 = readDeck(values.deck2);
