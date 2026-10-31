@@ -142,17 +142,16 @@ describe.skipIf(!hasData)("deck_audit glut fills count specific links, the leade
     expect(gree?.leaderEngine, shown).toBe(true);
   });
 
-  it("engine-read fills lead their cost, ordered by fillRank among themselves; deckLinks counts specific links only (Life Wind Sage 5, then Gree, then Kelleran Beq)", () => {
+  // D87 (#169) flips this: an engine-read fill leads only within its fillRank band and is listed past the cap, so Kelleran Beq (3.806)
+  // leads Life Wind Sage (engine, 3), and Commander Gree (engine, 1.5) follows the three ranked fills.
+  it("engine-read fills lead within their fillRank band; deckLinks counts specific links only (Kelleran Beq, then Life Wind Sage 5, Gree listed)", () => {
     const fills = glut().fills as Record<string, any>[];
     const shown = fills.map((f) => `${f.title} (${f.deckLinks}, ${f.fillRank}${f.leaderEngine === true ? ", engine" : ""})`).join("; ");
-    for (const cost of new Set(fills.map((f) => f.cost))) {
-      const engine = fills.filter((f) => f.cost === cost).map((f) => f.leaderEngine === true);
-      const firstOther = engine.indexOf(false);
-      if (firstOther >= 0) expect(engine.slice(firstOther).some(Boolean), `cost ${cost}: ${shown}`).toBe(false);
-    }
     const fours = fills.filter((f) => f.cost === 4);
-    expect(fours.map((f) => f.cardKey), shown).toEqual([LIFE_WIND_SAGE, GREE, KELLERAN]);
-    expect(fours[0]?.deckLinks, shown).toBe(5);
+    expect(fours[0]?.cardKey, shown).toBe(KELLERAN);
+    expect(fours[1]?.cardKey, shown).toBe(LIFE_WIND_SAGE);
+    expect(fours[1]?.deckLinks, shown).toBe(5);
+    expect(fours.map((f) => f.cardKey), shown).toContain(GREE);
   });
   it("a fill linked only through generic wants (extra attacks) has no deck links from them: T-6 Shuttle and Black Squadron leave, no tie at 7", () => {
     const fills = glut().fills as Record<string, any>[];
@@ -177,10 +176,11 @@ describe.skipIf(!hasData)("playable_cards rows carry evidenceClass, a measured n
     expect(rows.filter((r) => [AHSOKA_WHISPERS, DEPA, LIBERTY].includes(r.cardKey)).length).toBeGreaterThan(0);
   });
 
-  it("within each cost every negative row follows every row that is not negative", () => {
+  // D87 (#169) flips this: a negative card 50% or more of the leader's lists play (Lightmaker) keeps its place; every other negative row follows.
+  it("within each cost every negative row the leader's lists play under 50% follows every row that is not negative", () => {
     const rows = cards().filter((r) => r.cardKey !== null);
     for (const cost of new Set(rows.map((r) => r.cost))) {
-      const same = rows.filter((r) => r.cost === cost).map((r) => r.evidenceClass === "negative");
+      const same = rows.filter((r) => r.cost === cost && !(r.evidenceClass === "negative" && (r.leaderInclusion ?? 0) >= 0.5)).map((r) => r.evidenceClass === "negative");
       const firstNegative = same.indexOf(true);
       if (firstNegative >= 0) expect(same.slice(firstNegative).every(Boolean), `cost ${cost}: ${rows.filter((r) => r.cost === cost).map((r) => `${r.title} ${r.evidenceClass}`).join("; ")}`).toBe(true);
     }

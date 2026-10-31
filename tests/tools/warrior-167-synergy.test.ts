@@ -123,7 +123,8 @@ describe.skipIf(!hasData)("a keyword the deck already supplies three times over 
 
 describe.skipIf(!hasData)("trio substitutes pay no more aspect penalty than the member (#167 item 5, D85)", () => {
   it("Ahsoka Tano + Insurgent Camp + The Chieftain: slot C lists no Hunting Assassin Droid, Oppo Rancisis or Captain Pellaeon", () => {
-    const out = trios({ leader: WARRIOR, base: ORIGIN_TREE, decklist: DECKLIST, limit: 10, withAlternatives: true });
+    // D87 (#169): a trio that is no variant now keeps its own row and the Chieftain trio left the first 10, so the call names the card.
+    const out = trios({ leader: WARRIOR, base: ORIGIN_TREE, decklist: DECKLIST, limit: 10, withAlternatives: true, cardKey: CHIEFTAIN });
     let slots = 0;
     for (const t of out.trios as Record<string, any>[]) {
       for (const alt of (t.alternatives ?? []) as Record<string, any>[]) {

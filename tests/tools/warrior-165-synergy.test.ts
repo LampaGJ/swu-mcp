@@ -76,7 +76,8 @@ describe.skipIf(!hasData)("trio filler that clashes with the leader or whose rid
   });
 
   it("Familiar Strategem's +2 needs a unit sharing a trait with Chewbacca, the deck's only Wookiee: riderUnmet", () => {
-    const familiarChewie = unweighted({ cardKey: FAMILIAR }).filter((t) => keysOf(t).includes(CHEWBACCA));
+    // D87 (#169): a trio that is no variant now keeps its own row, so the unlocked Familiar trios fill a 50-row page; each shape is read apart.
+    const familiarChewie = ["chain", "convergent-different-wants", "convergent-same-want"].flatMap((shape) => unweighted({ cardKey: FAMILIAR, shape })).filter((t) => keysOf(t).includes(CHEWBACCA));
     expect(familiarChewie.length).toBeGreaterThan(0);
     for (const t of familiarChewie) expect(t.riderUnmet, t.cards).toContain("shares a Trait");
   });

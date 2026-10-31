@@ -64,7 +64,8 @@ describe.skipIf(!hasData)("a variant passes the member's rider and gate checks (
       expect(variantTitles(t).join("; "), t.cards).not.toContain("C-3PO, Translation Protocol");
       if (keysOf(t).includes(C3PO_TP) && keysOf(t).includes(MARROK)) expect(t.riderUnmet, t.cards).toContain("shares a Trait with a friendly leader");
     }
-    const withC3po = cadStep14({ cardKey: C3PO_TP, minPlayed: 0 }).trios as Record<string, any>[];
+    // D87 (#169): a trio that is no variant now keeps its own row, so the unlocked C-3PO trios fill a 50-row page; each shape is read apart.
+    const withC3po = ["chain", "convergent-same-want"].flatMap((shape) => cadStep14({ cardKey: C3PO_TP, minPlayed: 0, shape }).trios as Record<string, any>[]);
     const onMarrok = withC3po.filter((t) => keysOf(t).includes(MARROK) && String(t.reasons).includes("C-3PO, Translation Protocol -> Marrok"));
     expect(onMarrok.length).toBeGreaterThan(0);
     for (const t of onMarrok) expect(t.riderUnmet, t.cards).toContain("C-3PO, Translation Protocol");

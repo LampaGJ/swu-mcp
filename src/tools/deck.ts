@@ -494,6 +494,8 @@ const numberOr = (value: number | null | undefined, fallback: number): number =>
 export const LEADER_INCLUSION_FLOOR = 0.02;
 /** Decision D50: a card in at least 60% of the leader's decklists is a staple, listed past perCost. */
 export const LEADER_STAPLE_INCLUSION = 0.6;
+/** D87 (#169): a card measured negative that this share of the leader's lists still play stays listed in playable_cards. */
+const NEGATIVE_KEPT_INCLUSION = 0.5;
 /** Decision D50: with emptyCostsOnly, a cost counts as used when the leader's lists hold this many mean copies there. */
 export const LEADER_COST_MIN_COPIES = 0.5;
 
@@ -639,6 +641,23 @@ function wideBoardNeed(syn: SynergyCard): number {
   return WIDE_BOARD_DEFAULT_UNITS;
 }
 
+/**
+ * D86 (#168): the tournament deck evidence meta_answers reads (same comparable decks), so a card it measures negative is flagged in
+ * playable_cards and deck_audit too. D87 (#169): evidenceGap is on every row (null unless negative), so one negative row does not
+ * turn a TOON table into a list.
+ */
+function pairEvidence(env: DeckEnv, pair: { leader: Piece; base: Piece }) {
+  const evidence = deckEvidenceOf(env.store);
+  const ours = evidenceKeysOf(pair.leader.row.cardKey, cardLabel(pair.leader.row), pair.leader.syn.structured.aspectIcons, pair.base.syn.structured.aspectIcons);
+  const evidenceFields = (cardKey: string): { evidenceClass?: EvidenceClass; evidenceGap?: number | null } => {
+    if (evidence === null) return {};
+    const record = cardDeckEvidence(evidence.winrates, evidence.index, cardKey, ours);
+    const evidenceClass = evidenceClassOf(record, evidence.winrates.minN);
+    return { evidenceClass, evidenceGap: evidenceClass === "negative" && typeof record !== "string" && record.difference !== null ? record.difference : null };
+  };
+  return { evidence, evidenceFields };
+}
+
 export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const args = z.object(deckAuditShape).parse(input);
   const pair = resolvePair(env, args.leader, args.base);
@@ -647,6 +666,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   if (lines.length === 0) return noCards(unresolved);
   const supplied = suppliedBy(pair);
   const locks = lockSupply(pair.leader.syn, pair.base.syn, lines.map((l) => l.syn));
+  const { evidenceFields } = pairEvidence(env, pair);
 
   const byType = new Map<string, number>();
   for (const l of lines) byType.set(l.row.type, (byType.get(l.row.type) ?? 0) + l.count);
@@ -780,6 +800,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
       return kind !== undefined && kind !== "plays";
     };
     const deckLinksOf = (syn: SynergyCard): number => (neighbours.get(syn.cardKey) ?? new Set<string>()).size;
+    const fillBand = (rank: number): number => Math.round(rank * 2);
     // Coordinator ruling 2026-10-31: (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor), so a card in more than half the
     // leader's lists outranks an unplayed card with many deck links; without leader data, 1 + deckLinks.
     const fillRankOf = (syn: SynergyCard, links: number): number => {
@@ -796,15 +817,16 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
         .map((syn) => ({ syn, links: deckLinksOf(syn), rank: fillRankOf(syn, deckLinksOf(syn)), engine: engineReads(syn) }))
         .sort(
           (a, b) =>
-            // D86 (#168), coordinator ruling 2026-10-31: a fill the leader's engine reads (the leader is in play every game) ranks first
-            // within its cost, before fillRank; fillRank orders the rest and the engine fills among themselves.
+            // D87 (#169, refines D86): a fill the leader's engine reads leads only within its fillRank band (fillRank to the nearest
+            // half), so an unplayed engine fill at 3 no longer leads a played fill at 3.806; past the cap it is still listed (below).
+            fillBand(b.rank) - fillBand(a.rank) ||
             Number(b.engine) - Number(a.engine) ||
             b.rank - a.rank ||
             numberOr(inclusion(b.syn.cardKey), -1) - numberOr(inclusion(a.syn.cardKey), -1) ||
             numberOr(env.scores.get(b.syn.cardKey)?.playCalibrated, -Infinity) - numberOr(env.scores.get(a.syn.cardKey)?.playCalibrated, -Infinity) ||
             compareCodePoints(a.syn.cardKey, b.syn.cardKey),
         )
-        .slice(0, GLUT_FILLS_PER_COST)
+        .filter((x, i) => i < GLUT_FILLS_PER_COST || x.engine)
         .map(({ syn, links, rank, engine: read }) => ({
           cardKey: syn.cardKey,
           title: cardLabel(syn),
@@ -817,6 +839,8 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
           ...(read ? { leaderEngine: true } : {}),
           ...(leaderData === null ? {} : { leaderInclusion: inclusion(syn.cardKey) }),
           playCalibrated: env.scores.get(syn.cardKey)?.playCalibrated ?? null,
+          // D87 (#169): the same evidence playable_cards prints, so the audit does not recommend a card the other tools flag.
+          ...evidenceFields(syn.cardKey),
         })),
     );
     // D85 (#167): a leader whose Action plays a unit of limited power for an extra resource (The Warrior: 1 plus the unit's cost) turns a
@@ -846,7 +870,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
       share: r2(glut.cards / costedCards),
       thinCosts,
       ...(leaderAction === undefined ? {} : { leaderAction }),
-      note: `${glut.cards} of ${costedCards} costed cards cost ${glut.cost}, more than ${CURVE_GLUT_SHARE * 100}%; the costs from 2 to 6 that hold under ${CURVE_THIN_SHARE * 100}% are thin, and fills lists up to ${GLUT_FILLS_PER_COST} cards per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, ranked by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor; 1 without leader data), where deckLinks counts the deck cards and the leader sharing a specific mechanical pair edge with the fill (a row into a generic want, the genericWants rule, does not count), then by play-calibrated score; a fill the leader's own engine reads (leaderEngine: true) comes first within its cost, before fillRank (D84, D85, D86).`,
+      note: `${glut.cards} of ${costedCards} costed cards cost ${glut.cost}, more than ${CURVE_GLUT_SHARE * 100}%; the costs from 2 to 6 that hold under ${CURVE_THIN_SHARE * 100}% are thin, and fills lists up to ${GLUT_FILLS_PER_COST} cards per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, ranked by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor; 1 without leader data), where deckLinks counts the deck cards and the leader sharing a specific mechanical pair edge with the fill (a row into a generic want, the genericWants rule, does not count), then by play-calibrated score; a fill the leader's own engine reads (leaderEngine: true) comes first within its fillRank band (fillRank to the nearest 0.5), never ahead of a fill of a higher band, and is listed even past the ${GLUT_FILLS_PER_COST} per cost (D84, D85, D86, D87).`,
       fills,
     };
   })();
@@ -858,7 +882,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
           .map(([w, cards]) => `${w} (${cards.length} ${cards.length === 1 ? "card" : "cards"}): ${cards.join("; ")}`)
           .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card. Wants every deck feeds by playing cards at all (${[...fedByAnyDeck].sort(compareCodePoints).join(", ") || "none"}) are never listed.`;
 
-  const leaderComparison = leaderComparisonOf(env, lines, leaderData, supplied);
+  const leaderComparison = leaderComparisonOf(env, lines, leaderData, supplied, evidenceFields);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData, locks);
   const sideboardEntries = sideboardInput.parse(input).sideboard;
   const sideboard = sideboardEntries === undefined ? undefined : sideboardRows(env, sideboardEntries, supplied, leaderData, locks);
@@ -1007,7 +1031,13 @@ const RARE_INCLUSION = 0.05;
 type LeaderData = NonNullable<ReturnType<LeaderCardsIndex["get"]>> & { selection?: LeaderSelection };
 
 /** The deck against the leader's own decklists (D43): staples it lacks and cards those lists rarely play. */
-function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: LeaderData | null, supplied: readonly string[]): unknown {
+function leaderComparisonOf(
+  env: DeckEnv,
+  lines: readonly DeckLine[],
+  data: LeaderData | null,
+  supplied: readonly string[],
+  evidenceFields: (cardKey: string) => { evidenceClass?: EvidenceClass; evidenceGap?: number | null },
+): unknown {
   if (data === null) return { note: "no leader decklist data in this package for this leader, so the deck is not compared with real lists" };
   const { entry, byCard } = data;
   const byTitle = new Map(entry.cards.map((c) => [lower(c.title), c]));
@@ -1023,7 +1053,18 @@ function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: Lead
       if (heldTitles.has(lower(card))) return [];
       const penalty = syn === undefined ? 0 : singlePenalty(syn, supplied);
       // A penalised staple is marked, never hidden (D60); a penalty-free row keeps the old shape.
-      return [{ card, cardKey: c.cardKey, inclusion: r4(c.inclusion), meanCopies: r2(c.meanCopies), cost: syn?.structured.cost ?? env.store.byKey.get(c.cardKey)?.cost ?? null, ...(penalty > 0 ? { penalty, penalised: true } : {}) }];
+      return [
+        {
+          card,
+          cardKey: c.cardKey,
+          inclusion: r4(c.inclusion),
+          meanCopies: r2(c.meanCopies),
+          cost: syn?.structured.cost ?? env.store.byKey.get(c.cardKey)?.cost ?? null,
+          ...(penalty > 0 ? { penalty, penalised: true } : {}),
+          // D87 (#169): flagged as playable_cards flags it.
+          ...evidenceFields(c.cardKey),
+        },
+      ];
     })
     .sort((a, b) => b.inclusion - a.inclusion || compareCodePoints(a.card, b.card));
   const rarelyPlayed = lines.flatMap((l) => {
@@ -1036,7 +1077,7 @@ function leaderComparisonOf(env: DeckEnv, lines: readonly DeckLine[], data: Lead
     window: `${entry.window.from}..${entry.window.to}`,
     ...(data.selection === undefined ? {} : selectionFields(data.selection)),
     source: leaderSourceText(entry, data.selection),
-    note: `missingStaples: cards in at least ${STAPLE_INCLUSION * 100}% of this leader's decklists that the deck lacks (penalty and penalised: true mark a staple that pays an aspect penalty under this leader and base; a row without them pays none); rarelyPlayed: deck cards in fewer than ${RARE_INCLUSION * 100}% of them, inclusion null = never in the leader's top ${entry.cards.length} cards. Inclusion is placement-weighted (D38).`,
+    note: `missingStaples: cards in at least ${STAPLE_INCLUSION * 100}% of this leader's decklists that the deck lacks (penalty and penalised: true mark a staple that pays an aspect penalty under this leader and base; a row without them pays none); rarelyPlayed: deck cards in fewer than ${RARE_INCLUSION * 100}% of them, inclusion null = never in the leader's top ${entry.cards.length} cards. Inclusion is placement-weighted (D38). A missing staple and a curve-glut fill carry evidenceClass and evidenceGap as playable_cards prints them (D87).`,
     missingStaples,
     rarelyPlayed,
   };
@@ -1422,16 +1463,12 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const leaderData = leaderDataFor(env, pair);
   const rankedBy = leaderData !== null && args.rankBy !== "score" ? "leader" : "score";
   const inclusionOf = (cardKey: string): number | null => leaderData?.byCard.get(cardKey)?.inclusion ?? null;
-  // D86 (#168): the tournament deck evidence meta_answers reads (same comparable decks), so a card it measures negative is flagged here too.
-  const evidence = deckEvidenceOf(env.store);
-  const ours = evidenceKeysOf(pair.leader.row.cardKey, cardLabel(pair.leader.row), pair.leader.syn.structured.aspectIcons, pair.base.syn.structured.aspectIcons);
-  const evidenceFields = (cardKey: string): { evidenceClass?: EvidenceClass; evidenceGap?: number } => {
-    if (evidence === null) return {};
-    const record = cardDeckEvidence(evidence.winrates, evidence.index, cardKey, ours);
-    const evidenceClass = evidenceClassOf(record, evidence.winrates.minN);
-    return { evidenceClass, ...(evidenceClass === "negative" && typeof record !== "string" && record.difference !== null ? { evidenceGap: record.difference } : {}) };
-  };
-  const negativeRank = (r: { evidenceClass?: EvidenceClass }): number => Number(r.evidenceClass === "negative");
+  const { evidence, evidenceFields } = pairEvidence(env, pair);
+  // D87 (#169): a negative card the decklist holds or the leader's lists play at NEGATIVE_KEPT_INCLUSION or more is a card the
+  // builder weighs anyway: it keeps its place and is always listed, flagged, rather than falling past perCost.
+  const negativeKept = (r: { cardKey: string | null; evidenceClass?: EvidenceClass }): boolean =>
+    r.evidenceClass === "negative" && r.cardKey !== null && ((held.get(r.cardKey) ?? 0) > 0 || (rankedBy === "leader" && (inclusionOf(r.cardKey) ?? 0) >= NEGATIVE_KEPT_INCLUSION));
+  const negativeRank = (r: { cardKey: string; evidenceClass?: EvidenceClass }): number => Number(r.evidenceClass === "negative" && !negativeKept(r));
   // D60: a staple the maxPenalty filter drops is listed apart with its penalty, never silently hidden.
   const penalisedStaples: { cardKey: string; title: string; cost: number; aspects: string; penalty: number; leaderInclusion: number }[] = [];
 
@@ -1514,12 +1551,16 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     .sort((a, b) => a.cost - b.cost);
   const perCost = new Map<number, number>();
   let others = 0;
-  // Decision D51: a staple is always listed and spends neither perCost nor limit; limit caps the other rows.
+  let negativeHidden = 0;
+  // Decision D51: a staple is always listed and spends neither perCost nor limit; limit caps the other rows. D87: so is a kept negative card.
   const shown = rows.filter((r) => {
-    if (r.staple === true) return true;
+    if (r.staple === true || negativeKept(r)) return true;
     const n = perCost.get(r.cost) ?? 0;
     perCost.set(r.cost, n + 1);
-    if (n >= args.perCost || others >= args.limit) return false;
+    if (n >= args.perCost || others >= args.limit) {
+      if ((r as { evidenceClass?: EvidenceClass }).evidenceClass === "negative") negativeHidden++;
+      return false;
+    }
     others++;
     return true;
   });
@@ -1538,6 +1579,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed, leaderData?.selection),
     matched: played.length,
     shown: shown.length,
+    ...(evidence === null ? {} : { negativeHidden }),
     cards: shown,
     ...(penalisedStaples.length === 0
       ? {}
@@ -1553,7 +1595,7 @@ const ENABLED_NOTE =
   "baseEnabled: <Location> with baseEnabledClause marks a card whose own clause names a base location that the given base meets (D73); it ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the floor (leaderInclusion null).";
 
 const EVIDENCE_NOTE =
-  "evidenceClass: the card's tournament deck evidence as meta_answers classes it (comparable decks of this leader and base aspects, else this aspect set; with the card against without it; swumetastats): ok, negative (win rate more than 5 points lower with the card; evidenceGap gives the difference), unmeasured or thin-control. A negative card comes last within its cost, before every other sort key (D86).";
+  "evidenceClass: the card's tournament deck evidence as meta_answers classes it (comparable decks of this leader and base aspects, else this aspect set; with the card against without it; swumetastats): ok, negative (win rate more than 5 points lower with the card; evidenceGap gives the difference, null on every other row), unmeasured or thin-control. A negative card comes last within its cost, before every other sort key (D86), unless the decklist holds it or 50% or more of the leader's lists play it: that card keeps its place and is always listed, flagged, spending neither perCost nor limit; negativeHidden counts the negative rows perCost and limit removed (D87).";
 
 const floorText = (cost: number): string => `no tournament-played card (>= ${LEADER_INCLUSION_FLOOR * 100}%) at cost ${cost}`;
 
@@ -2393,7 +2435,7 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier (D82): the first one played pays its penalty and later ones pay effectivePenaltyEach while the Darksaber stays on it (sequenced: true), and aspect.sequence gives the best-case and worst-case totals of those cards (D83). A cost holding more than 40% of the costed cards is named under curveGlut with the thin costs (2 to 6, under 10% each) and up to 3 fills per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, most played by this leader's lists first (D84). The fills rank by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor), where deckLinks counts the deck cards and the leader sharing a specific mechanical pair edge with the fill (a row into a generic want such as extra attacks or any When Played does not count), and a fill the leader's own engine reads (leaderEngine: true, Commander Gree under The Warrior) comes first within its cost, before fillRank (D86); when the leader's Action plays a unit of limited power for extra resources (The Warrior: 1 plus the unit's cost) and such units are at least half of the glut, curveGlut.leaderAction says the cluster sits in the Action's band (D85).",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier (D82): the first one played pays its penalty and later ones pay effectivePenaltyEach while the Darksaber stays on it (sequenced: true), and aspect.sequence gives the best-case and worst-case totals of those cards (D83). A cost holding more than 40% of the costed cards is named under curveGlut with the thin costs (2 to 6, under 10% each) and up to 3 fills per thin cost that pay no aspect penalty, need nothing the leader, base and deck lack, and are not in the deck, most played by this leader's lists first (D84). The fills rank by fillRank = (1 + deckLinks) x (0.5 + 3 x leaderInclusion, 0.5 under the 2% floor), where deckLinks counts the deck cards and the leader sharing a specific mechanical pair edge with the fill (a row into a generic want such as extra attacks or any When Played does not count), and a fill the leader's own engine reads (leaderEngine: true, Commander Gree under The Warrior) comes first within its cost, before fillRank (D86); when the leader's Action plays a unit of limited power for extra resources (The Warrior: 1 plus the unit's cost) and such units are at least half of the glut, curveGlut.leaderAction says the cluster sits in the Action's band (D85). D87: a leader-engine fill leads only within its fillRank band (fillRank to the nearest 0.5), never ahead of a fill of a higher band, and is listed even past the 3 per cost; a want for any When Played ability is generic and links no fill; fills and missingStaples carry evidenceClass and evidenceGap (null unless negative) as playable_cards prints them.",
     deckAuditShape,
     deckAudit,
   ),
@@ -2411,7 +2453,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty. A card whose own clause names a base location that the given base meets carries baseEnabled: <Location> and baseEnabledClause (the clause quoted), ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the 2% floor (D73). Each card row carries evidenceClass from the tournament deck evidence meta_answers reads (evidenceGap when negative), and a measured-negative card comes last within its cost (D86).",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty. A card whose own clause names a base location that the given base meets carries baseEnabled: <Location> and baseEnabledClause (the clause quoted), ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the 2% floor (D73). Each card row carries evidenceClass from the tournament deck evidence meta_answers reads (evidenceGap when negative), and a measured-negative card comes last within its cost (D86). evidenceGap is on every row (null unless negative), so the rows stay one table; a negative card the decklist holds or 50% or more of the leader's lists play keeps its place and is always listed, spending neither perCost nor limit, and negativeHidden counts the negative rows perCost and limit removed (D87).",
     playableCardsShape,
     playableCards,
   ),

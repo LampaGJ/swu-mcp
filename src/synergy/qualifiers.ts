@@ -209,6 +209,17 @@ export function wantSaturates(card: SynergyCard, tag: string): boolean {
   );
 }
 
+const SCALES = /\b(?:doubled?|for each)\b/i;
+
+/**
+ * D87 (#169): a want whose clause counts or doubles what feeds it ("Each friendly unit's Raid is doubled", Marchion Ro; "for each")
+ * grows with every supplier, so another supplier is never redundant.
+ */
+export function wantScales(card: SynergyCard, tag: string): boolean {
+  const entries = card.tags.wants.filter((t) => t.tag === tag);
+  return entries.length > 0 && entries.some((t) => SCALES.test(findOrigin(card, t.why)?.clause?.text ?? t.why));
+}
+
 /** Effect categories that make a tag; a tag with no entry carries no effect subject. */
 const OFFER_CATS: [RegExp, string[]][] = [
   [/^offers:defeat-(?:friendly|enemy|any)-unit$/, ["defeat"]],
