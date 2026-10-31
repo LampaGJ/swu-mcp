@@ -39,6 +39,19 @@ export interface Subject {
   supplies?: { token: string; traits: string[] }[];
   /** The effect acts only on the tokens the same clause creates ("create 2 Beast tokens and ready 1 of them"). */
   tokensOnly?: boolean;
+  /** Keywords the target must have ("friendly units with Hidden"). */
+  keywords?: string[];
+}
+
+/** What an upgrade or Pilot may attach to: the printed "Attach to ..." line, or a Vehicle for Piloting (CR: "attach to a friendly Vehicle unit"). */
+export interface AttachBound {
+  /** The target phrase, used in the conflict text. */
+  label: string;
+  traits: string[];
+  /** The traits are alternatives ("a Capital Ship or Transport unit"). */
+  anyTrait: boolean;
+  notTraits: string[];
+  arena?: Arena;
 }
 
 export interface TagQualifier {
@@ -58,6 +71,10 @@ export interface TagQualifier {
   text: string;
   /** The want is an ability of the unit that only works while that unit is upgraded. */
   hostAbility?: boolean;
+  /** Where an upgrade-to-attach offer may attach. */
+  attach?: AttachBound;
+  /** The wanting card is the one that receives the upgrade or token ("while this unit is upgraded"), so the offer's target restriction binds it. */
+  receives?: boolean;
 }
 
 interface TargetLite {
@@ -78,6 +95,7 @@ interface ClauseLite {
   effects: EffectLite[];
   conditions?: { cat?: string; state?: string }[];
   modifiers?: { cat?: string }[];
+  structure?: { cat?: string; target?: TargetLite }[];
 }
 interface AbilityNode {
   kind: string;
@@ -198,6 +216,7 @@ function subjectOf(t: TargetLite | undefined): Subject {
     return hit == null ? undefined : Number(hit[1]);
   };
   const aspect = restrict.find((r) => r.startsWith("aspect:"))?.slice(7);
+  const keywords = restrict.filter((r) => r.startsWith("keyword:")).map((r) => r.slice(8));
   return {
     side,
     kind,
@@ -208,8 +227,42 @@ function subjectOf(t: TargetLite | undefined): Subject {
     minCost: bound("cost_ge"),
     nonLeader: restrict.includes("non_leader") || restrict.includes("non-leader") || undefined,
     aspect,
+    ...(keywords.length === 0 ? {} : { keywords: [...new Set(keywords)].sort(cmp) }),
   };
 }
+
+const PILOTING_BOUND: AttachBound = { label: "a Vehicle unit", traits: ["Vehicle"], anyTrait: false, notTraits: [] };
+
+/** Where the card attaches as an upgrade: an Upgrade's "Attach to ..." restriction, or a Vehicle for a non-Upgrade with Piloting. */
+function attachBound(card: SynergyCard): AttachBound | undefined {
+  if (card.type !== "Upgrade") {
+    const listed = (card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? [];
+    return listed.some((k) => k.keyword === "Piloting" && k.granted !== true) ? PILOTING_BOUND : undefined;
+  }
+  for (const face of Object.keys(card.faces).sort(cmp)) {
+    for (const { ability } of abilitiesOf(card.faces[face])) {
+      for (const clause of clausesOf(ability)) {
+        const target = (clause.structure ?? []).find((x) => x.cat === "attach_restriction")?.target;
+        if (target === undefined) continue;
+        const { traits, notTraits, arena } = subjectOf(target);
+        const label = target.text ?? "";
+        if (traits.length + notTraits.length === 0 && arena === undefined) return undefined;
+        return { label, traits, anyTrait: traits.length > 1 && /\bor\b/.test(label), notTraits, arena };
+      }
+    }
+  }
+  return undefined;
+}
+
+/** Printed keywords of a card: `structured.keywordsField` and the non-granted entries of `keywords`. */
+function printedKeywords(card: SynergyCard): string[] {
+  const field = ((card.structured.keywordsField as unknown[] | undefined) ?? []).filter((k): k is string => typeof k === "string");
+  const listed = ((card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? []).flatMap((k) => (typeof k.keyword === "string" && k.granted !== true ? [k.keyword] : []));
+  return [...new Set([...field, ...listed])];
+}
+
+const RECEIVING_WANTS = new Set(["wants:upgrades-attached", "wants:pilot-attached"]);
+const ON_THIS_UNIT = /\b(?:this unit is upgraded|upgrades? (?:on|attach(?:es)? to) (?:this unit|him|her)\b|upgrade on this unit)/i;
 
 /** Token name to printed traits, from the Token Unit cards in the set. */
 export type TokenTraits = ReadonlyMap<string, readonly string[]>;
@@ -250,7 +303,8 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   if (origin === undefined) {
     const onSelf = side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(FACE_PREFIX.exec(why)?.[2] ?? why));
     const subject = side === "wants" && tag === "wants:sac-fodder" ? outletSubject(card) : EMPTY;
-    return { subject, triggers: [], forAttackOnly: false, onSelf, text: "" };
+    const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
+    return { subject, triggers: [], forAttackOnly: false, onSelf, text: "", ...(attach === undefined ? {} : { attach }) };
   }
   const { ability, clause, forAttackOnly } = origin;
   const triggers = (ability.triggers ?? []).flatMap((t) => (t.trigger === undefined ? [] : [t.trigger]));
@@ -279,6 +333,9 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     const watcher = watcherSubject(`${text} ${triggerText}`);
     if (watcher !== EMPTY && watcher.traits.length + Number(watcher.arena !== undefined) > 0) subject = watcher;
   }
+  const hostAbility = side === "wants" && (clause?.conditions ?? []).some((k) => k.cat === "self_state" && k.state === "upgraded");
+  const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
+  const receives = side === "wants" && RECEIVING_WANTS.has(tag) && (hostAbility || ON_THIS_UNIT.test(`${text} ${triggerText}`));
   return {
     subject,
     triggers,
@@ -287,7 +344,9 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     viaCat,
     onSelf: side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:heal" && /\bthis unit\b/i.test(triggerText)) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(payload)),
     text,
-    hostAbility: side === "wants" && (clause?.conditions ?? []).some((k) => k.cat === "self_state" && k.state === "upgraded"),
+    hostAbility,
+    ...(attach === undefined ? {} : { attach }),
+    ...(receives ? { receives } : {}),
   };
 }
 
@@ -360,6 +419,23 @@ export function conflictBetween(
   }
   if (touched.side !== undefined && needed.side !== undefined && touched.side !== needed.side) {
     return `the offer acts on ${touched.side} things, the want is ${needed.side}`;
+  }
+  if (want.receives === true) {
+    const host = cardSubject(b);
+    const bound = offer.attach;
+    if (bound !== undefined) {
+      const traitsOk = bound.traits.length === 0 || (bound.anyTrait ? bound.traits.some((t) => host.traits.includes(t)) : bound.traits.every((t) => host.traits.includes(t)));
+      const arenaOk = bound.arena === undefined || host.arena === undefined || bound.arena === host.arena;
+      if (!traitsOk || !arenaOk || bound.notTraits.some((t) => host.traits.includes(t))) return `the offer attaches to ${bound.label} only, the wanting card is not one`;
+    }
+    if (offerTag.startsWith("offers:give-")) {
+      const missing = offer.subject.traits.find((t) => !host.traits.includes(t));
+      if (missing !== undefined) return `the offer gives to ${missing} units only, the wanting card is not one`;
+      const excluded = offer.subject.notTraits.find((t) => host.traits.includes(t));
+      if (excluded !== undefined) return `the offer excludes ${excluded}`;
+      const keyword = (offer.subject.keywords ?? []).find((k) => !printedKeywords(b).includes(k));
+      if (keyword !== undefined) return `the offer gives to units with ${keyword} only, the wanting card has no ${keyword}`;
+    }
   }
   if (offerConcrete !== undefined) {
     const missing = want.subject.traits.find((t) => !offerConcrete.traits.includes(t));

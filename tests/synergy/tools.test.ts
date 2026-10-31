@@ -11,6 +11,7 @@ import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrio
 import { offerTargetSide } from "../../src/synergy/qualifiers.js";
 import type { SynergyCard } from "../../src/synergy/schema.js";
 import { indexLeaderCards } from "../../src/meta/schema.js";
+import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
 import { COMMITTED_TABLE, mk, table } from "./fixtures.js";
 
@@ -658,7 +659,7 @@ describe("find_trios with a leader", () => {
     expect(out.trios[0].leaderInclusion).toEqual([0.5, 0.5, 0.9]);
     const delta = out.trios.find((t: any) => t.cardKeys === "1|2|4");
     expect(delta.leaderInclusion).toEqual([0.5, 0.5, null]);
-    expect(delta.rank).toBeCloseTo(delta.score * 1 * 1 * 0.5, 3);
+    expect(delta.rank).toBeCloseTo(delta.score * Math.cbrt(1 * 1 * 0.5), 3);
   });
 
   it("defaults the leader aspects to the leader's icons and names the population and window", () => {
@@ -907,5 +908,104 @@ describe("a Leader cardKey defaults the leader weighting (#121)", () => {
 
   it("find_trios from a non-Leader cardKey adds no leader", () => {
     expect(body(findTrios(trioCtx, { cardKey: "1" }))).not.toHaveProperty("leader");
+  });
+});
+
+/** Feature-record excerpts shaped like data/runs/2026-10-30/features/features.json, so the matcher reads the clause targets. */
+const featureRec = (cardKey: string, title: string, type: string, traits: string[], aspects: string[], faces: Record<string, unknown[]>, offers: [string, string][], wants: [string, string][]) =>
+  synergyCardsSchema.parse([
+    {
+      cardKey,
+      title,
+      subtitle: null,
+      type,
+      structured: { cost: 3, aspects, aspectIcons: aspects, traits },
+      faces,
+      tags: { offers: offers.map(([tag, why]) => ({ tag, why })), wants: wants.map(([tag, why]) => ({ tag, why })) },
+    },
+  ])[0];
+const eventText = (text: string, effects: unknown[]) => ({
+  text: [{ kind: "ability", triggers: [{ trigger: "event_resolve" }], clauses: [{ text, effects, conditions: [], modifiers: [] }], options: [], grantedAbilities: [] }],
+});
+const upgradedText = (text: string) => ({
+  text: [{ kind: "ability", triggers: [{ trigger: "constant" }], clauses: [{ text, effects: [], conditions: [{ cat: "self_state", state: "upgraded" }], modifiers: [] }], options: [], grantedAbilities: [] }],
+});
+const defeatFriendly = (cardKey: string, title: string, aspects: string[], restrict: string[], text: string) =>
+  featureRec(cardKey, title, "Event", ["Innate"], aspects, eventText(text, [{ cat: "defeat", n: 1, target: { side: "friendly", kind: "unit", arena: "any", restrict, text: text.slice(7, -1) } }]), [["offers:defeat-friendly-unit", `text: ${text}`]], []);
+const LAST_WORDS_TEXT = "If a friendly unit was defeated this phase, give 2 Experience tokens to a unit.";
+const lastWords = featureRec("LW", "Last Words", "Event", ["Learned"], ["Command"], eventText(LAST_WORDS_TEXT, [{ cat: "give_token", n: 2, target: { side: "any", kind: "unit", arena: "any", restrict: [], text: "a unit" } }]), [["offers:give-experience", `text: ${LAST_WORDS_TEXT}`]], [["wants:friendly-unit-defeated", `text: ${LAST_WORDS_TEXT}`]]);
+const UPGRADED = "While this unit is upgraded, it gets +1/+0.";
+const host = (cardKey: string, title: string, traits: string[]) =>
+  featureRec(cardKey, title, "Unit", traits, ["Command"], upgradedText(UPGRADED), [], [["wants:upgrades-attached", `text: ${UPGRADED}`]]);
+
+describe("slot alternatives keep the slot's link and the Premier pool (#119)", () => {
+  const outlet = defeatFriendly("OUT", "Plain Outlet", ["Command"], [], "Defeat a friendly unit.");
+  const fish = defeatFriendly("FISH", "Always a Bigger Fish", ["Cunning"], ["trait:Creature"], "Defeat a friendly Creature unit.");
+  const twin = defeatFriendly("TWIN", "Outlet Twin", ["Aggression"], [], "Defeat a friendly unit.");
+  const pieces = [mk("LC", "Command Leader", { type: "Leader", icons: ["Command", "Heroism"] }), mk("BK", "Cunning Base", { type: "Base", icons: ["Cunning"] })];
+  const trooperCtx = createSynergyContext([...pieces, outlet, fish, twin, lastWords, host("TRP", "Trooper Host", ["Trooper"])], COMMITTED_TABLE);
+  const creatureCtx = createSynergyContext([...pieces, outlet, fish, twin, lastWords, host("BST", "Creature Host", ["Creature"])], COMMITTED_TABLE);
+  const slotA = (c: typeof trooperCtx, last: string, inPool?: (k: string) => boolean) => {
+    const out = body(findTrios(c, { cardKey: "OUT", shape: "chain", evidence: false, maxTotalCost: 20 }, inPool));
+    const trio = out.trios.find((t: any) => t.cardKeys === `OUT|LW|${last}`);
+    expect(trio).toBeDefined();
+    return (trio.alternatives[0].substitutes as string[]).join(" ");
+  };
+
+  it("find_trios: Always a Bigger Fish is no slot-A alternative in a trio with no Creature", () => {
+    expect(slotA(trooperCtx, "TRP")).toContain("Outlet Twin");
+    expect(slotA(trooperCtx, "TRP")).not.toContain("Always a Bigger Fish");
+  });
+
+  it("find_trios: Always a Bigger Fish stays a slot-A alternative when the trio holds a Creature (positive control)", () => {
+    expect(slotA(creatureCtx, "BST")).toContain("Always a Bigger Fish");
+  });
+
+  it("find_trios: a card outside the Premier pool is no alternative", () => {
+    expect(slotA(trooperCtx, "TRP", (k) => k !== "TWIN")).not.toContain("Outlet Twin");
+  });
+
+  it("find_pairings: a partner alternative must still link with the card; Always a Bigger Fish does not feed Last Words", () => {
+    const out = body(findPairings(trooperCtx, { cardKey: "LW", direction: "enablers", evidence: false }));
+    const alt = (out.pairings.find((p: any) => p.cardKey === "OUT").alternatives as string[]).join(" ");
+    expect(alt).toContain("Outlet Twin");
+    expect(alt).not.toContain("Always a Bigger Fish");
+    const pooled = body(findPairings(trooperCtx, { cardKey: "LW", direction: "enablers", evidence: false }, (k) => k !== "TWIN"));
+    expect((pooled.pairings.find((p: any) => p.cardKey === "OUT").alternatives as string[]).join(" ")).not.toContain("Outlet Twin");
+  });
+
+  it("fungible_substitutes: a card outside the Premier pool is no substitute", () => {
+    const keys = (inPool?: (k: string) => boolean) =>
+      body(fungibleSubstitutes(trooperCtx, { cardKey: "OUT", tag: "offers:defeat-friendly-unit", evidence: false }, new Map(), inPool)).roles[0].substitutes.flatMap((g: any) => g.cards.map((c: any) => c.cardKey));
+    expect(keys()).toContain("TWIN");
+    expect(keys((k) => k !== "TWIN")).not.toContain("TWIN");
+  });
+});
+
+describe("find_trios with a leader ranks by the geometric mean of the member factors (#119)", () => {
+  // Unweighted, 1|2|4 (score 2.888) leads 1|2|3 (2.613). Charlie alone is played (10%): the product of factors
+  // (0.5 x 0.5 x 0.6 = 0.15 against 0.125) lets that one card lift two unplayed ones above the better trio; the
+  // geometric mean (0.531 against 0.5) does not.
+  const trioCards = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Command"], cost: 3 }),
+    mk("4", "Delta", { wants: ["wants:y"], aspects: ["Command"], cost: 1 }),
+  ];
+  const trioTable = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const ctxG = createSynergyContext(trioCards, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["3", 0.1]]));
+
+  it("one played card does not carry two unplayed ones past a better-scored trio", () => {
+    const out = body(findTrios(ctxG, { leader: "L", withAlternatives: false, evidence: false }));
+    expect(out.trios.map((t: any) => t.cardKeys)).toEqual(["1|2|4", "1|2|3"]);
+    const charlie = out.trios[1];
+    expect(charlie.leaderInclusion).toEqual([null, null, 0.1]);
+    expect(charlie.rank).toBeCloseTo(charlie.score * Math.cbrt(0.5 * 0.5 * 0.6), 3);
+    expect(out.trios[0].rank).toBeCloseTo(out.trios[0].score * 0.5, 3);
+    expect(out.leader.note).toContain("cube root");
   });
 });

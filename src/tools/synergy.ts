@@ -22,7 +22,7 @@ import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { DEFAULT_TRIO_KEEP, TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
 import { ok, fail } from "./common.js";
-import { leaderSourceText } from "./deck.js";
+import { inPremierPool, leaderSourceText } from "./deck.js";
 import { valueData } from "./value.js";
 
 /**
@@ -276,7 +276,7 @@ function leaderBlock(
       ? "inside an aspect group, substitutes sort by leaderInclusion (unplayed last), then play-calibrated score"
       : unit === "partner"
       ? "rank = the unweighted rank x (0.5 + leaderInclusion) when the leader's decks play the partner, x 0.5 when they do not"
-      : "rank = score x, for each member, (0.5 + leaderInclusion) when the leader's decks play it, 0.5 when they do not";
+      : "rank = score x the cube root of the product of the member factors (their geometric mean), each (0.5 + leaderInclusion) when the leader's decks play the member and 0.5 when they do not";
   return {
     ...head,
     population: entry.population,
@@ -335,6 +335,7 @@ export function fungibleSubstitutes(
   ctx: SynergyContext,
   input: unknown,
   scores: ReadonlyMap<string, { playCalibrated: number | null }> = new Map(),
+  inPool?: (cardKey: string) => boolean,
 ): ToolResult {
   const args = z.object(fungibleSubstitutesShape).parse(input);
   const resolved = resolve(ctx, [args.cardKey]);
@@ -358,6 +359,7 @@ export function fungibleSubstitutes(
     maxCost: args.maxCost,
     perGroup: args.limit,
     order: substituteOrder(leader, scores),
+    keep: inPool,
   };
   const roles = tags.flatMap((tag) => {
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
@@ -389,6 +391,32 @@ export function fungibleSubstitutes(
   });
   if (roles.length === 0) return fail(`${slot.cardKey} has no role for tag ${args.tag}`);
   return ok({ status: CANDIDATE_STATUS, card: brief(slot), ...(leader === undefined ? {} : { leader: leaderBlock(leader, "substitute") }), roles });
+}
+
+/** The link e with `from` swapped for `to`, when the graph holds it through one of e's own rows; a conditional link needs one of `others` to supply its traits. */
+function keepsLink(ctx: SynergyContext, e: PairEdge, from: string, to: string, others: readonly string[]): boolean {
+  const key = e.a === from ? `${to}>${e.b}` : `${e.a}>${to}`;
+  const rows = new Set(primaryRows(e).map((r) => r.row));
+  const sameRow = (x: PairEdge | undefined): boolean => x !== undefined && x.rows.some((r) => rows.has(r.row));
+  const direct = ctx.graph.edgeByKey.get(key);
+  if (sameRow(direct)) return true;
+  const conditional = ctx.graph.conditionalByKey.get(key);
+  if (!sameRow(conditional)) return false;
+  const ends = new Set([e.a === from ? to : e.a, e.b === from ? to : e.b]);
+  return others.some((k) => !ends.has(k) && (conditional?.needs ?? []).every((t) => ctx.graph.boardTraits(k).includes(t)));
+}
+
+/**
+ * Decision D46: an alternative for a slot is in the Premier pool and keeps every link the slot card holds in the
+ * combo, so a substitute cannot bypass a trait binding (D42, D43) that the slot card satisfied.
+ */
+function slotKeep(ctx: SynergyContext, slot: string, links: readonly PairEdge[], members: readonly string[], inPool: ((cardKey: string) => boolean) | undefined): (cardKey: string) => boolean {
+  const touching = links.filter((e) => e.a === slot || e.b === slot);
+  return (k) => {
+    if (inPool !== undefined && !inPool(k)) return false;
+    const others = members.map((m) => (m === slot ? k : m));
+    return touching.every((e) => keepsLink(ctx, e, slot, k, others));
+  };
 }
 
 function deckMembers(ctx: SynergyContext, members: readonly string[], includeLeaders: boolean): readonly string[] {
@@ -429,7 +457,7 @@ export function deferRepeatedLinks<T>(
   return { ordered: [...kept, ...later], deferred: later.length };
 }
 
-export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
+export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (cardKey: string) => boolean): ToolResult {
   const args = z.object(findPairingsShape).parse(input);
   const resolved = resolve(ctx, [args.cardKey]);
   if (typeof resolved === "string") return fail(resolved);
@@ -500,6 +528,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
           preferAspects: aspects,
           perGroup: 2,
           maxCost: args.maxCost,
+          keep: slotKeep(ctx, partner.cardKey, [e], [card.cardKey, partner.cardKey], inPool),
         }),
         4,
       );
@@ -533,7 +562,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
   });
 }
 
-export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
+export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey: string) => boolean): ToolResult {
   const args = z.object(findTriosShape).parse(input);
   let subject: SynergyCard | undefined;
   if (args.cardKey !== undefined) {
@@ -557,7 +586,9 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
     accept: (keys, cost) => cost <= args.maxTotalCost && (args.cardKey === undefined || keys.includes(args.cardKey)),
   });
   const shapes = args.shape === undefined ? TRIO_SHAPES : [args.shape];
-  const rankOf = (t: TrioRecord): number => (weight === undefined ? t.score : r3(t.score * [t.cardA, t.cardB, t.cardC].reduce((f, k) => f * leaderFactor(weight, k), 1)));
+  // The geometric mean of the member factors, so one played card cannot carry two unplayed ones (D46).
+  const rankOf = (t: TrioRecord): number =>
+    weight === undefined ? t.score : r3(t.score * Math.cbrt([t.cardA, t.cardB, t.cardC].reduce((f, k) => f * leaderFactor(weight, k), 1)));
   const merged: TrioRecord[] = shapes
     .flatMap((s) => search.trios[s])
     .sort(weight === undefined ? trioOrder : (x, y) => rankOf(y) - rankOf(x) || trioOrder(x, y))
@@ -586,13 +617,21 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
       );
     }
     if (args.withAlternatives) {
-      const roles = slotRoles(keys, trioLinks(ctx.graph, t));
+      const links = trioLinks(ctx.graph, t);
+      const roles = slotRoles(keys, links);
       out.alternatives = roles.map((r, i) => {
         const common = commonMembers(ctx.fungibility, r.cardKey, [...r.offers, ...r.wants]);
         return {
           slot: "ABC"[i],
           roles: [...r.offers, ...r.wants].join(", "),
-          substitutes: groupText(substitutesFor(ctx.fungibility, deckMembers(ctx, common.members, args.includeLeaders), r.cardKey, { preferAspects: prefer, perGroup: 2 }), 4),
+          substitutes: groupText(
+            substitutesFor(ctx.fungibility, deckMembers(ctx, common.members, args.includeLeaders), r.cardKey, {
+              preferAspects: prefer,
+              perGroup: 2,
+              keep: slotKeep(ctx, r.cardKey, links, keys, inPool),
+            }),
+            4,
+          ),
         };
       });
     }
@@ -732,23 +771,23 @@ export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Substitutes are Premier-pool cards only (a Premier-legal printing). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
     shape: fungibleSubstitutesShape,
-    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store))),
+    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store), inPremierPool(store))),
   },
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base is given; the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect (only Premier-pool cards that still link with the card through the same row) and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base is given; the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
-    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input)),
+    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input, inPremierPool(store))),
   },
   find_trios: {
     title: "Find trios",
     description:
-      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Trios hold only cards a deck's 50 can hold; includeLeaders: true admits Leader and Base cards (partnerFilter states which applied). Give leader (cardKey or exact title) to weight each trio by the leader's tournament decklists: every member carries leaderInclusion (null when unplayed), rank multiplies the member factors, leaderAspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and baseAspects default to its icons and the leader block names the base; with a leader alone the base is not fixed and the leader block says so. A Leader cardKey with no leader argument defaults the leader (and its most-played tournament base) the same way, with defaulted: true in the leader block; weighting: none turns that off. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot (only Premier-pool cards that keep the slot's links with the other members, so a substitute never bypasses a trait restriction the slot card met), with the clause text behind each link (status: candidate). Trios hold only cards a deck's 50 can hold; includeLeaders: true admits Leader and Base cards (partnerFilter states which applied). Give leader (cardKey or exact title) to weight each trio by the leader's tournament decklists: every member carries leaderInclusion (null when unplayed), rank is the score times the geometric mean (cube root of the product) of the member factors so one played card cannot carry two unplayed ones, leaderAspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and baseAspects default to its icons and the leader block names the base; with a leader alone the base is not fixed and the leader block says so. A Leader cardKey with no leader argument defaults the leader (and its most-played tournament base) the same way, with defaulted: true in the leader block; weighting: none turns that off. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findTriosShape,
-    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input)),
+    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input, inPremierPool(store))),
   },
   explain_synergy: {
     title: "Explain synergy",

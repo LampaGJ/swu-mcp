@@ -219,6 +219,8 @@ export interface SubstituteOptions {
   maxCost?: number;
   /** Replaces the cost-then-cardKey order inside each group. */
   order?: SubstituteOrder;
+  /** Admits a candidate: the Premier pool, and for a pair or trio slot the slot's links (D46). */
+  keep?: (cardKey: string) => boolean;
 }
 
 /** Class id the card holds for a tag, if any (a card has at most one signature per tag). */
@@ -252,6 +254,7 @@ export function substitutesFor(
   for (const key of members) {
     const c = index.byKey.get(key) as SynergyCard;
     if (key === slotCardKey || c.title === slot.title) continue;
+    if (options.keep !== undefined && !options.keep(key)) continue;
     if (options.maxCost !== undefined && (c.structured.cost === null || c.structured.cost > options.maxCost)) continue;
     const g = aspectGroup(c);
     if (options.crossAspectOnly && g === slotGroup) continue;

@@ -20,6 +20,7 @@ import {
   deckEnvOf,
   deckLegalityCheck,
   fungibleInDeck,
+  inPremierPool,
   leaderCardsOf,
   ownedVsNeeded,
   playValueVsPrice,
@@ -972,6 +973,31 @@ describe("budget_alternatives", () => {
 
   it("needs a leader and base together", () => {
     expect(budgetAlternatives(env, { decklist: lines(["P1", 1]), leader: "L1" }).isError).toBe(true);
+  });
+
+  it("lists no substitute outside the Premier pool: neither a rotated card nor one whose sets are not verified legal (#119)", () => {
+    const cheap = (key: string, title: string, sets: string): Spec => ({ key, title, cost: 3, icons: ["Aggression"], sets, offers: ["offers:damage-friendly-unit"], price: { normal: 0.1 } });
+    const poolEnv = buildEnv([...SPECS, cheap("R3", "Retired Pinger", "SOR"), cheap("PR2", "Promo Pinger", "PRO"), cheap("RP", "Reprinted Pinger", "SOR|SEC")]);
+    const keys = body(budgetAlternatives(poolEnv, { decklist: lines(["P1", 1]), minSaving: 0.1, perSlot: 10 })).slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey);
+    expect(keys).not.toContain("R3");
+    expect(keys).not.toContain("PR2");
+    expect(keys).toContain("RP");
+    expect(keys).toContain("P2");
+  });
+});
+
+describe("inPremierPool (#119)", () => {
+  it("admits a card with a Premier-legal printing and nothing else", () => {
+    const pool = inPremierPool(env.store);
+    expect(pool("P1")).toBe(true);
+    expect(pool("R1")).toBe(false);
+    expect(pool("PR1")).toBe(false);
+    expect(pool("nope")).toBe(false);
+  });
+
+  it("checks nothing when the package has no expansion index", () => {
+    const bare = { ...env.store, facets: new Map() };
+    expect(inPremierPool(bare)("R1")).toBe(true);
   });
 });
 

@@ -327,6 +327,15 @@ export function cardScope(store: CardStore, row: CardRow): CardScope {
   return sets.length > 0 && sets.every((s) => scope.rotated.has(s)) ? "rotated" : "unverified";
 }
 
+/** Decision D46: substitutes and alternatives come from the Premier pool, a card with a Premier-legal printing. A package with no expansion index checks nothing. */
+export function inPremierPool(store: CardStore): (cardKey: string) => boolean {
+  if (premierScope(store) === null) return () => true;
+  return (cardKey) => {
+    const row = store.byKey.get(cardKey);
+    return row !== undefined && cardScope(store, row) === "legal";
+  };
+}
+
 interface WeightedCover {
   penalty: number;
   uncovered: { card: string; cardKey: string; count: number; icons: string; penaltyEach: number; penaltyTotal: number }[];
@@ -385,7 +394,7 @@ interface Candidate {
   fills: number;
 }
 
-/** Fungible substitutes of one deck card as a flat list: not in the deck, not rotated out of Premier. */
+/** Fungible substitutes of one deck card as a flat list: not in the deck, in the Premier pool (D46). */
 function substituteCandidates(
   env: DeckEnv,
   slotCard: DeckLine,
@@ -398,12 +407,13 @@ function substituteCandidates(
     perGroup: 100,
   });
   const out: Candidate[] = [];
+  const pool = inPremierPool(env.store);
   for (const group of groups) {
     for (const sub of group.cards) {
       if (exclude.has(sub.cardKey)) continue;
       const row = env.store.byKey.get(sub.cardKey);
       const syn = env.ctx.graph.byKey.get(sub.cardKey);
-      if (row === undefined || syn === undefined || cardScope(env.store, row) === "rotated") continue;
+      if (row === undefined || syn === undefined || !pool(sub.cardKey)) continue;
       out.push({ syn, row, cost: sub.cost, fills: slot.fills.get(sub.cardKey) as number });
     }
   }
@@ -1169,7 +1179,7 @@ export function fungibleInDeck(env: DeckEnv, input: unknown): ToolResult {
     suppliedIcons: iconText(supplied),
     unresolved,
     noRole,
-    note: "substitutes fill the same offers/wants role (tag, type, timing, magnitude, cost band); the least aspect penalty comes first, then the most roles filled (fills counts the card's roles the substitute also fills), then the closest cost. Cards already in the deck and rotated cards are left out.",
+    note: "substitutes fill the same offers/wants role (tag, type, timing, magnitude, cost band); the least aspect penalty comes first, then the most roles filled (fills counts the card's roles the substitute also fills), then the closest cost. Cards already in the deck and cards outside the Premier pool (no Premier-legal printing) are left out.",
     slots,
   });
 }

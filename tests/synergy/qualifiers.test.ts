@@ -249,3 +249,117 @@ describe("an offer's trait restriction binds the card it feeds, or the trio's su
     expect(trios.trios.chain.map(members)).toContainEqual(["09010195", "09010099", "05010263"]);
   });
 });
+
+/** A feature record with printed keywords, trimmed like `rec` (data/runs/2026-10-30/features/features.json). */
+const kwRec = (cardKey: string, title: string, type: string, traits: string[], keywords: string[], faces: Record<string, unknown[]>, offers: [string, string][], wants: [string, string][]): SynergyCard =>
+  synergyCardsSchema.parse([
+    {
+      cardKey,
+      title,
+      subtitle: null,
+      type,
+      keywords: keywords.map((keyword) => ({ keyword, granted: false })),
+      structured: { cost: 3, aspects: [], aspectIcons: [], traits, keywordsField: keywords },
+      faces,
+      tags: { offers: offers.map(([tag, why]) => ({ tag, why })), wants: wants.map(([tag, why]) => ({ tag, why })) },
+    },
+  ])[0];
+const hostAbility = (text: string) => ({
+  kind: "ability",
+  triggers: [{ trigger: "constant" }],
+  clauses: [{ text, effects: [], conditions: [{ cat: "self_state", state: "upgraded" }], modifiers: [] }],
+  options: [],
+  grantedAbilities: [],
+});
+const attachTo = (text: string, target: Record<string, unknown>) => ({
+  kind: "ability",
+  triggers: [{ trigger: "constant" }],
+  clauses: [{ text, effects: [], conditions: [], modifiers: [], structure: [{ rule: "attach_to", cat: "attach_restriction", target }] }],
+  options: [],
+  grantedAbilities: [],
+});
+const PILOT_OFFER: [string, string] = ["offers:upgrade-to-attach", "is an upgrade or Pilot"];
+const MARROK_TEXT = "While this unit is upgraded, he loses Sentinel and gains Saboteur.";
+const MARROK = kwRec("08010030", "Marrok", "Unit", ["Force", "Inquisitor"], ["Saboteur", "Sentinel"], { text: [hostAbility(MARROK_TEXT)] }, [], [["wants:upgrades-attached", `text: ${MARROK_TEXT}`]]);
+const SPACER = kwRec("04010255", "Sullustan Spacer", "Unit", ["Fringe", "Pilot"], ["Piloting"], { epicAction: [{ kind: "keyword", keywords: [{ keyword: "Piloting" }], granted: false }] }, [PILOT_OFFER], []);
+const CONSCRIPT = kwRec("04010236", "Indoctrinated Conscript", "Unit", ["First Order", "Pilot"], ["Piloting"], { epicAction: [{ kind: "keyword", keywords: [{ keyword: "Piloting" }], granted: false }] }, [PILOT_OFFER], []);
+const FIGHTER_TEXT = "While this unit is upgraded, it gets +1/+0.";
+const FIGHTER = kwRec("x0000010", "Upgraded Fighter", "Unit", ["Vehicle", "Fighter"], [], { text: [hostAbility(FIGHTER_TEXT)] }, [], [["wants:upgrades-attached", `text: ${FIGHTER_TEXT}`]]);
+const SHADOWS_TEXT = "Give an Experience token to each of up to 3 friendly units with Hidden.";
+const SHADOWS = kwRec("05010241", "In the Shadows", "Event", ["Plan"], [], {
+  text: [ability("event_resolve", [clause(SHADOWS_TEXT, [{ cat: "give_token", target: { side: "friendly", kind: "unit", arena: "any", restrict: ["keyword:Hidden"], text: "each of up to 3 friendly units with Hidden" } }])])],
+}, [["offers:give-experience", `text: ${SHADOWS_TEXT}`]], []);
+const HIDDEN_TEXT = "While this unit is upgraded, she gets +1/+1.";
+const HIDDEN_UNIT = kwRec("x0000011", "Hidden Host", "Unit", ["Underworld"], ["Hidden"], { text: [hostAbility(HIDDEN_TEXT)] }, [], [["wants:upgrades-attached", `text: ${HIDDEN_TEXT}`]]);
+const SABER = kwRec("x0000012", "Plain Lightsaber", "Upgrade", ["Item", "Weapon", "Lightsaber"], [], {
+  text: [attachTo("Attach to a non-Vehicle unit.", { side: "any", kind: "unit", arena: "any", restrict: ["non_trait:Vehicle"], text: "a non-Vehicle unit" })],
+}, [PILOT_OFFER], []);
+const TURRET = kwRec("x0000013", "Plain Turret", "Upgrade", ["Item", "Weapon"], [], {
+  text: [attachTo("Attach to a Vehicle unit.", { side: "any", kind: "unit", arena: "any", restrict: ["trait:Vehicle"], text: "a Vehicle unit" })],
+}, [PILOT_OFFER], []);
+const CANNON = kwRec("x0000014", "Plain Cannon", "Upgrade", ["Item", "Weapon"], [], {
+  text: [attachTo("Attach to a Capital Ship or Transport unit.", { side: "any", kind: "unit", arena: "any", restrict: ["trait:Capital Ship", "trait:Transport"], text: "a Capital Ship or Transport unit" })],
+}, [PILOT_OFFER], []);
+const TRANSPORT_TEXT = "While this unit is upgraded, it gains Sentinel.";
+const TRANSPORT = kwRec("x0000015", "Upgraded Transport", "Unit", ["Vehicle", "Transport"], [], { text: [hostAbility(TRANSPORT_TEXT)] }, [], [["wants:upgrades-attached", `text: ${TRANSPORT_TEXT}`]]);
+const CREATURE_XP_TEXT = "Give an Experience token to a friendly Creature unit.";
+const CREATURE_XP = kwRec("x0000016", "Creature Training", "Event", [], [], {
+  text: [ability("event_resolve", [clause(CREATURE_XP_TEXT, [{ cat: "give_token", target: { side: "friendly", kind: "unit", arena: "any", restrict: ["trait:Creature"], text: "a friendly Creature unit" } }])])],
+}, [["offers:give-experience", `text: ${CREATURE_XP_TEXT}`]], []);
+const BEAST_HOST = kwRec("x0000017", "Upgraded Beast", "Unit", ["Creature"], [], { text: [hostAbility(HIDDEN_TEXT)] }, [], [["wants:upgrades-attached", `text: ${HIDDEN_TEXT}`]]);
+const EXECUTOR_TEXT = "This unit gets +1/+0 for each upgrade on other friendly units.";
+const EXECUTOR = kwRec("x0000018", "Upgrade Counter", "Unit", ["Vehicle", "Capital Ship"], [], {
+  text: [{ kind: "ability", triggers: [{ trigger: "constant" }], clauses: [{ text: EXECUTOR_TEXT, effects: [], conditions: [{ cat: "scaling", per: "upgrade on other friendly units" }], modifiers: [] }], options: [], grantedAbilities: [] }],
+}, [], [["wants:upgrades-attached", `text: ${EXECUTOR_TEXT}`]]);
+
+describe("an attach or give offer carries the receiving card's restriction (#119)", () => {
+  const g = buildPairGraph([MARROK, SPACER, CONSCRIPT, FIGHTER, SHADOWS, HIDDEN_UNIT, SABER, TURRET, CANNON, TRANSPORT, CREATURE_XP, BEAST_HOST, EXECUTOR], COMMITTED_TABLE);
+  const links = (a: string, b: string): boolean => (g.edgeByKey.get(`${a}>${b}`)?.rows.some((r) => r.row === "upgrade-stacking") ?? false) || g.conditionalByKey.has(`${a}>${b}`);
+  const qOf = (c: SynergyCard, side: "offers" | "wants", tag: string) => qualifierOf(c, side, tag, c.tags[side].find((t) => t.tag === tag)?.why ?? "");
+
+  it("a Pilot (Piloting attaches to a friendly Vehicle unit) does not feed Marrok, a non-Vehicle unit", () => {
+    expect(links("04010255", "08010030")).toBe(false);
+    expect(links("04010236", "08010030")).toBe(false);
+  });
+
+  it("names the Vehicle restriction in the conflict", () => {
+    const why = conflictBetween(SPACER, "offers:upgrade-to-attach", qOf(SPACER, "offers", "offers:upgrade-to-attach"), MARROK, "wants:upgrades-attached", qOf(MARROK, "wants", "wants:upgrades-attached"));
+    expect(why).toBe("the offer attaches to a Vehicle unit only, the wanting card is not one");
+  });
+
+  it("a Pilot still feeds a Vehicle that wants to be upgraded (positive control)", () => {
+    expect(links("04010255", "x0000010")).toBe(true);
+  });
+
+  it("'Attach to a Vehicle unit' does not feed Marrok; 'Attach to a non-Vehicle unit' does not feed a Vehicle", () => {
+    expect(links("x0000013", "08010030")).toBe(false);
+    expect(links("x0000012", "x0000010")).toBe(false);
+  });
+
+  it("'Attach to a non-Vehicle unit' still feeds Marrok and 'Attach to a Vehicle unit' still feeds a Vehicle (positive controls)", () => {
+    expect(links("x0000012", "08010030")).toBe(true);
+    expect(links("x0000013", "x0000010")).toBe(true);
+  });
+
+  it("'Attach to a Capital Ship or Transport unit' needs one of the two traits, not both", () => {
+    expect(links("x0000014", "x0000015")).toBe(true);
+    expect(links("x0000014", "x0000010")).toBe(false);
+  });
+
+  it("In the Shadows ('friendly units with Hidden') does not feed Marrok, who has no Hidden", () => {
+    expect(links("05010241", "08010030")).toBe(false);
+  });
+
+  it("In the Shadows still feeds a Hidden unit that wants to be upgraded (positive control)", () => {
+    expect(links("05010241", "x0000011")).toBe(true);
+  });
+
+  it("'Give an Experience token to a friendly Creature unit' does not feed Marrok, even as a trio link, and still feeds a Creature host", () => {
+    expect(links("x0000016", "08010030")).toBe(false);
+    expect(links("x0000016", "x0000017")).toBe(true);
+  });
+
+  it("a want that counts upgrades on other units is not the receiving card, so a Pilot still feeds it", () => {
+    expect(links("04010255", "x0000018")).toBe(true);
+  });
+});
