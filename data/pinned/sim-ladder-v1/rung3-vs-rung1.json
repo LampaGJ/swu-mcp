@@ -1,0 +1,231 @@
+{
+ "schemaVersion": 1,
+ "step": "rung3-vs-rung1",
+ "label": "bot play (forceteki, typed driver), not human results",
+ "candidate": {
+  "spec": "rung3:k=8",
+  "id": "rung3-lookahead",
+  "version": "1",
+  "rung": 3,
+  "params": {
+   "k": 8,
+   "horizon": 1,
+   "wBase": 1.5,
+   "wBoard": 1,
+   "wHand": 1,
+   "wResources": 1,
+   "wReady": 1,
+   "wScore": 0,
+   "maxTrialDecisions": 400,
+   "vVersion": 1
+  },
+  "paramsSha256": "15de7a05de373f65de29a3ccd4de4c691422b47176b5f80065ed546d5efbc856",
+  "driverPolicy": "rung3:k=8"
+ },
+ "baseline": {
+  "spec": "rung1",
+  "id": "rung1-rules",
+  "version": "1",
+  "rung": 1,
+  "params": {
+   "mu": 0,
+   "lambda": 0,
+   "handWeight": 0.5,
+   "protectThreshold": 1,
+   "tempo": 0.5,
+   "mulliganCheap": 2,
+   "resourceCap": 7
+  },
+  "paramsSha256": "587af70cb95bb0e4512c2a0154955f47d1ee0f0d9ce65c71194918ada9c46a07",
+  "driverPolicy": "rung1"
+ },
+ "driver": {
+  "name": "typed (src/sims)",
+  "codeCommit": "a37740cd993a6e8697b1664518977b61fcc720b7-dirty",
+  "botScheme": "sha256-counter-v1",
+  "recordMode": "none"
+ },
+ "engine": {
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "inputs": {
+  "scoresSha256": "edbc91eb4b7d18d3e5fe76c4e31ac2092697047c033cb3da58b9885bd00b4284",
+  "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "featuresSha256": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "leaderCardsSha256": "6f828e4f54941acaff7691db4ded2ea5a236b4c2de87226a319dc322a1b726eb",
+  "pairsSha256": null,
+  "pairPrecisionSha256": null,
+  "complementaritySha256": null
+ },
+ "run": "2026-10-31",
+ "panel": [
+  {
+   "archetype": "t001-a98697",
+   "archetypeName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "share": 0.0754,
+   "file": "melee-5681125d-f7a1-4c75-87ca-b4bc0160f8a6.json",
+   "placement": 1,
+   "field": 72,
+   "date": "2026-09-06",
+   "sha256": "a94a1f812a931cdc081e752bb3bc115618cddd980d45127bb4e30d82d635cf3b"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "archetypeName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "share": 0.0716,
+   "file": "melee-2162c700-3b5a-424d-95cb-b4920028faa5.json",
+   "placement": 1,
+   "field": 545,
+   "date": "2026-07-25",
+   "sha256": "6fffe102c14b889b8fbb59aab8416e6f7216ab7d28d40226f813e21374281cc6"
+  },
+  {
+   "archetype": "t003-75e861",
+   "archetypeName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "share": 0.051,
+   "file": "melee-46ae29fa-01b5-4a84-8a78-b4d101228caf.json",
+   "placement": 1,
+   "field": 97,
+   "date": "2026-09-27",
+   "sha256": "bd507aa9298d16e212de6a7bc40ff68914f3e9e65c7b144187d264071c2b0d53"
+  },
+  {
+   "archetype": "t004-15109d",
+   "archetypeName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "share": 0.0478,
+   "file": "melee-94acf967-5ed2-4f3f-9b7c-b4c90186712e.json",
+   "placement": 1,
+   "field": 42,
+   "date": "2026-09-19",
+   "sha256": "6750dc1aa20b17a8a8d23be4bfef84c3c7ec905a04a9a51c92e37b53a1f51323"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "archetypeName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "share": 0.0385,
+   "file": "melee-56969b6a-395c-41f9-91cb-b4ad00fe690f.json",
+   "placement": 1,
+   "field": 24,
+   "date": "2026-08-23",
+   "sha256": "50dfdf3d84b841de1d18e555b1267b5ba4ac0e45c8aa705c1bab6e7290f6dc0e"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "archetypeName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "share": 0.0365,
+   "file": "melee-4ae98532-3303-470b-b77d-b4d1002ee4ac.json",
+   "placement": 1,
+   "field": 74,
+   "date": "2026-09-26",
+   "sha256": "62784817ef64f28396b388843e5a5a1509a4b0e57bf9a91745b2e5594493fdbe"
+  }
+ ],
+ "codeCommit": "a37740cd993a6e8697b1664518977b61fcc720b7-dirty",
+ "seeds": {
+  "range": "evaluation",
+  "from": 2000000,
+  "to": 2000199,
+  "scheme": "engine seed engine:<seed>; bot draws sha256-counter-v1 bot|<seed>|<seat>|<k>|<j>; both games of a pair share the seed"
+ },
+ "design": {
+  "orderedDeckPairs": 36,
+  "mirrorsIncluded": true,
+  "alpha": 0.01,
+  "plannedPairs": 200,
+  "escalated": false
+ },
+ "summary": {
+  "pairs": 200,
+  "games": 400,
+  "nonDecisive": 1,
+  "nonDecisiveShare": 0.0025,
+  "budgetGames": 94,
+  "pooled": {
+   "wins": 331,
+   "n": 399,
+   "share": 0.8296,
+   "low": 0.7896,
+   "high": 0.8633
+  },
+  "discordant": {
+   "candidate2to0": 131,
+   "baseline2to0": 0,
+   "pValue": 7.347e-40
+  },
+  "perDeck": {
+   "t001-a98697": {
+    "wins": 48,
+    "n": 70,
+    "share": 0.6857,
+    "low": 0.5697,
+    "high": 0.7824
+   },
+   "t002-6d0fc3": {
+    "wins": 60,
+    "n": 70,
+    "share": 0.8571,
+    "low": 0.7566,
+    "high": 0.9205
+   },
+   "t003-75e861": {
+    "wins": 64,
+    "n": 69,
+    "share": 0.9275,
+    "low": 0.8413,
+    "high": 0.9687
+   },
+   "t004-15109d": {
+    "wins": 62,
+    "n": 65,
+    "share": 0.9538,
+    "low": 0.8729,
+    "high": 0.9842
+   },
+   "t005-46ed7e": {
+    "wins": 51,
+    "n": 62,
+    "share": 0.8226,
+    "low": 0.7096,
+    "high": 0.8979
+   },
+   "t006-beda5a": {
+    "wins": 46,
+    "n": 63,
+    "share": 0.7302,
+    "low": 0.6097,
+    "high": 0.8242
+   }
+  },
+  "pass": true,
+  "passDetail": {
+   "signTest": true,
+   "decksAbove": 6,
+   "decksWhollyBelow": 0
+  }
+ },
+ "health": {
+  "candidateCoverage": {
+   "decisions": 25084,
+   "fallback": 2,
+   "fallbackShare": 0.0001
+  },
+  "opponentCoverage": {
+   "decisions": 23972,
+   "fallback": 2,
+   "fallbackShare": 0.0001
+  },
+  "endConditions": {
+   "base_destroyed": 399,
+   "error": 1
+  },
+  "errors": [
+   "Contract assertion failure: Null-like object value: null"
+  ],
+  "meanRounds": 6.9,
+  "meanDecisions": 122.6,
+  "tracesSha256": "d68562b12a5b6f8ad669b6c018c7aca752f6a77c6caa79a8a5eeaa0df86296ea"
+ }
+}
