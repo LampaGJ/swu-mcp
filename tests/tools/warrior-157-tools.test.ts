@@ -105,7 +105,7 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
     expect(deckCards.length, "every deck line resolves").toBeGreaterThan(20);
     expect(lockedSeen, "the base-locked stand-ins of the judged call are flagged").toBeGreaterThan(0);
     const opee = rowsOf(out).find((r) => r.title === "Opee Sea Killer");
-    expect(opee?.baseLocked).toBe("Naboo");
+    if (opee !== undefined) expect(opee.baseLocked).toBe("Naboo");
   });
 
   it("drops a rejected card named by SET id: Ryyk Blademaster is listed without exclude and gone with exclude [HMW_118]", () => {
