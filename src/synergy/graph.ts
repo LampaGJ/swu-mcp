@@ -110,13 +110,17 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   const wantsOf = new Map(cards.map((c) => [c.cardKey, new Set(c.tags.wants.map((w) => w.tag))]));
   const words = new Map(cards.map((c) => [c.cardKey, wordSet(c)]));
   const rows = expandRows(cards, table);
+  const tokenTraits = new Map<string, string[]>();
+  for (const c of cards) {
+    if (c.type === "Token Unit") tokenTraits.set(c.title, [...new Set([...(tokenTraits.get(c.title) ?? []), ...c.structured.traits])].sort(cmp));
+  }
   const qualifiers = new Map<string, TagQualifier>();
   const qualifier = (c: SynergyCard, side: "offers" | "wants", tag: string): TagQualifier => {
     const key = `${c.cardKey}|${side}|${tag}`;
     let q = qualifiers.get(key);
     if (q === undefined) {
       const why = c.tags[side].find((t) => t.tag === tag)?.why ?? "";
-      q = qualifierOf(c, side, tag, why);
+      q = qualifierOf(c, side, tag, why, tokenTraits);
       qualifiers.set(key, q);
     }
     return q;

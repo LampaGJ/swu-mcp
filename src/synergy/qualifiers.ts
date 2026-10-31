@@ -35,6 +35,10 @@ export interface Subject {
   cost?: number | null;
   isLeader?: boolean;
   aspects?: string[];
+  /** The token units the offer creates and hands over, with their printed traits; set only when every token's card is known. */
+  supplies?: { token: string; traits: string[] }[];
+  /** The effect acts only on the tokens the same clause creates ("create 2 Beast tokens and ready 1 of them"). */
+  tokensOnly?: boolean;
 }
 
 export interface TagQualifier {
@@ -65,6 +69,7 @@ interface TargetLite {
 }
 interface EffectLite {
   cat?: string;
+  token?: string;
   target?: TargetLite;
 }
 interface ClauseLite {
@@ -206,6 +211,27 @@ function subjectOf(t: TargetLite | undefined): Subject {
   };
 }
 
+/** Token name to printed traits, from the Token Unit cards in the set. */
+export type TokenTraits = ReadonlyMap<string, readonly string[]>;
+
+/** The token units a clause creates, or undefined when none is created or one has no known card. */
+function suppliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined): Subject["supplies"] {
+  const names = (clause?.effects ?? []).filter((e) => e.cat === "create_token" && e.token !== undefined).map((e) => e.token as string);
+  if (names.length === 0 || tokenTraits === undefined || !names.every((n) => tokenTraits.has(n))) return undefined;
+  return [...new Set(names)].sort(cmp).map((token) => ({ token, traits: [...(tokenTraits.get(token) ?? [])] }));
+}
+
+/**
+ * The trait bounds of the card's own defeat outlet. The sac-fodder want is derived from that offer, so its
+ * `why` names no clause and the restriction ("Defeat a friendly Creature unit") is read from the outlet.
+ */
+function outletSubject(card: SynergyCard): Subject {
+  const why = card.tags.offers.find((t) => t.tag === "offers:defeat-friendly-unit")?.why;
+  const clause = why === undefined ? undefined : findOrigin(card, why)?.clause;
+  const { traits, notTraits } = subjectOf(clause?.effects.find((e) => e.cat === "defeat")?.target);
+  return traits.length + notTraits.length === 0 ? EMPTY : { traits, notTraits };
+}
+
 const WATCHED = /\bfriendly (?:([A-Z][\w']*(?: [A-Z][\w']*)*) )?(?:(space|ground) )?units?\b/;
 
 /** The traits and arena a watcher names in its trigger or condition text ("a friendly Rebel unit"). */
@@ -219,11 +245,12 @@ const scopeOf = (text: string): TagQualifier["scope"] =>
   /\bwhile attacking\b/i.test(text) ? "attacking" : /\bwhile defending\b/i.test(text) ? "defending" : undefined;
 
 /** The qualifiers of one tag on one card; a tag whose origin is not in the feature record carries none. */
-export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: string, why: string): TagQualifier {
+export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: string, why: string, tokenTraits?: TokenTraits): TagQualifier {
   const origin = findOrigin(card, why);
   if (origin === undefined) {
     const onSelf = side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(FACE_PREFIX.exec(why)?.[2] ?? why));
-    return { subject: EMPTY, triggers: [], forAttackOnly: false, onSelf, text: "" };
+    const subject = side === "wants" && tag === "wants:sac-fodder" ? outletSubject(card) : EMPTY;
+    return { subject, triggers: [], forAttackOnly: false, onSelf, text: "" };
   }
   const { ability, clause, forAttackOnly } = origin;
   const triggers = (ability.triggers ?? []).flatMap((t) => (t.trigger === undefined ? [] : [t.trigger]));
@@ -236,10 +263,17 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   const cats = catsFor(side === "offers" ? OFFER_CATS : WANT_CATS, tag);
   if (clause !== undefined && cats.length > 0) {
     const hit = clause.effects.find((e) => cats.includes(e.cat ?? ""));
-    if (hit !== undefined) subject = subjectOf(hit.target);
-    else if (clause.effects.some((e) => e.cat === "tuck")) viaCat = "tuck";
+    if (hit !== undefined) {
+      subject = subjectOf(hit.target);
+      // A ready aimed back at "them" readies only the tokens the clause just made; give-* offers stay open because an upgrade on a token still counts as an upgrade.
+      if (tag === "offers:ready-unit" && hit.target?.kind === "ref" && clause.effects.some((e) => e.cat === "create_token")) {
+        const supplies = suppliedTokens(clause, tokenTraits);
+        subject = { ...subject, tokensOnly: true, ...(supplies === undefined ? {} : { supplies }) };
+      }
+    } else if (clause.effects.some((e) => e.cat === "tuck")) viaCat = "tuck";
   } else if (side === "offers" && CREATE_OFFERS.has(tag)) {
-    subject = { side: "friendly", traits: [], notTraits: [] };
+    const supplies = suppliedTokens(clause, tokenTraits);
+    subject = { side: "friendly", traits: [], notTraits: [], ...(supplies === undefined ? {} : { supplies }) };
   }
   if (side === "wants" && subject === EMPTY) {
     const watcher = watcherSubject(`${text} ${triggerText}`);
@@ -324,6 +358,18 @@ export function conflictBetween(
     if (missing !== undefined) return `the offer needs a ${missing}, the wanting card is not`;
     const excluded = offer.subject.notTraits.find((t) => wantConcrete.traits.includes(t));
     if (excluded !== undefined) return `the offer excludes ${excluded}`;
+  }
+  const supplies = offer.subject.supplies;
+  if (supplies !== undefined && want.subject.traits.length + want.subject.notTraits.length > 0) {
+    const fits = supplies.some((s) => want.subject.traits.every((t) => s.traits.includes(t)) && !want.subject.notTraits.some((t) => s.traits.includes(t)));
+    if (!fits) {
+      const first = supplies[0];
+      const missing = want.subject.traits.find((t) => !first.traits.includes(t));
+      return missing !== undefined ? `the offer supplies a ${first.token} token, the want needs a ${missing}` : `the offer supplies a ${first.token} token, the want excludes it`;
+    }
+  }
+  if (offer.subject.tokensOnly === true && wantConcrete !== undefined && !/\btoken\b/i.test(b.type)) {
+    return "the offer acts only on the tokens it creates, the wanting card is not one";
   }
   if (wantConcrete !== undefined) {
     const { maxCost, minCost, nonLeader, aspect } = offer.subject;

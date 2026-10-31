@@ -111,3 +111,69 @@ describe("fungible classes separate by target (#12)", () => {
     expect(idOf("06010235", "offers:exhaust-enemy")).toContain("|tresource");
   });
 });
+
+/** Feature-record excerpts of the cards in the judge finding (data/runs/2026-10-30/features/features.json), trimmed to the fields the matcher reads. */
+const clause = (text: string, effects: unknown[]) => ({ text, effects, conditions: [], modifiers: [] });
+const ability = (trigger: string, clauses: unknown[]) => ({ kind: "ability", triggers: [{ trigger }], clauses, options: [], grantedAbilities: [] });
+const rec = (cardKey: string, title: string, type: string, traits: string[], faces: Record<string, unknown[]>, offers: [string, string][], wants: [string, string][]): SynergyCard =>
+  synergyCardsSchema.parse([
+    {
+      cardKey,
+      title,
+      subtitle: null,
+      type,
+      structured: { cost: 3, aspects: [], aspectIcons: [], traits },
+      faces,
+      tags: { offers: offers.map(([tag, why]) => ({ tag, why })), wants: wants.map(([tag, why]) => ({ tag, why })) },
+    },
+  ])[0];
+
+const GAR = rec("08010047", "Gar Saxon", "Unit", ["Mandalorian", "Trooper"], {
+  text: [ability("reactive_you", [clause("You may create a Mandalorian token.", [{ cat: "create_token", token: "Mandalorian", n: 1 }])])],
+}, [["offers:create-token-units", "text: You may create a Mandalorian token."]], []);
+const FISH = rec("09010099", "Always a Bigger Fish", "Event", ["Innate"], {
+  text: [ability("event_resolve", [clause("Defeat a friendly Creature unit.", [{ cat: "defeat", n: 1, target: { side: "friendly", kind: "unit", arena: "any", restrict: ["trait:Creature"], text: "a friendly Creature unit" } }])])],
+}, [["offers:defeat-friendly-unit", "text: Defeat a friendly Creature unit."]], [["wants:sac-fodder", "defeats your own units"]]);
+const SCENT = rec("09010195", "Catch the Scent", "Event", ["Innate"], {
+  text: [ability("event_resolve", [clause("Create 2 Beast tokens and ready 1 of them.", [
+    { cat: "create_token", token: "Beast", n: 2 },
+    { cat: "ready", n: 1, target: { side: "any", kind: "ref", arena: "any", restrict: [], text: "1 of them" } },
+  ])])],
+}, [["offers:create-token-units", "text: Create 2 Beast tokens and ready 1 of them."], ["offers:ready-unit", "text: Create 2 Beast tokens and ready 1 of them."]], []);
+const CAD = rec("08010011", "Cad Bane", "Leader", ["Bounty Hunter", "Underworld"], { text: [] }, [], [["wants:extra-attacks", "deployBox: on_attack"]]);
+const MANDO_TOKEN = rec("08010t01", "Mandalorian", "Token Unit", ["Mandalorian"], { text: [] }, [], []);
+const BEAST_TOKEN = rec("09010t03", "Beast", "Token Unit", ["Creature"], { text: [] }, [], []);
+
+describe("a want's trait restriction binds the subject the offer supplies (judge finding, find_trios)", () => {
+  const g = buildPairGraph([GAR, FISH, SCENT, CAD, MANDO_TOKEN, BEAST_TOKEN], COMMITTED_TABLE);
+  const rows = (a: string, b: string): string[] => g.edgeByKey.get(`${a}>${b}`)?.rows.map((r) => r.row) ?? [];
+
+  it("a Mandalorian token is not fodder for 'Defeat a friendly Creature unit'", () => {
+    expect(rows("08010047", "09010099")).not.toContain("fodder-for-outlet");
+  });
+
+  it("a Beast token (trait Creature) is still fodder for the same outlet", () => {
+    expect(rows("09010195", "09010099")).toContain("fodder-for-outlet");
+  });
+
+  it("'ready 1 of them' readies only the tokens just created, not the leader that wants extra attacks", () => {
+    expect(rows("09010195", "08010011")).not.toContain("ready-reuse");
+  });
+
+  it("reads the sac-fodder want's trait from the card's own defeat outlet", () => {
+    expect(qualifierOf(FISH, "wants", "wants:sac-fodder", "defeats your own units").subject.traits).toEqual(["Creature"]);
+  });
+
+  it("names the token's printed traits in the conflict", () => {
+    const tokens = new Map([["Mandalorian", ["Mandalorian"]]]);
+    const oq = qualifierOf(GAR, "offers", "offers:create-token-units", "text: You may create a Mandalorian token.", tokens);
+    const wq = qualifierOf(FISH, "wants", "wants:sac-fodder", "defeats your own units", tokens);
+    expect(conflictBetween(GAR, "offers:create-token-units", oq, FISH, "wants:sac-fodder", wq)).toBe("the offer supplies a Mandalorian token, the want needs a Creature");
+  });
+
+  it("fails open on a token whose printed card is not in the set", () => {
+    const oq = qualifierOf(GAR, "offers", "offers:create-token-units", "text: You may create a Mandalorian token.");
+    const wq = qualifierOf(FISH, "wants", "wants:sac-fodder", "defeats your own units");
+    expect(conflictBetween(GAR, "offers:create-token-units", oq, FISH, "wants:sac-fodder", wq)).toBeNull();
+  });
+});
