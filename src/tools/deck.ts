@@ -21,6 +21,7 @@ import { similarityData } from "./similarity.js";
 import { synergyContextOf } from "./synergy.js";
 import { dataVersion, valueData } from "./value.js";
 import { ok, fail, lower, round } from "./common.js";
+import { expandSwudb, hasPrintingColumns, isSwudbId, swudbCandidates, swudbField } from "./swudb.js";
 
 /**
  * @displayName Deck tools
@@ -130,14 +131,20 @@ const deckLineSchema = z.strictObject({
   card: z
     .string()
     .min(1)
-    .describe("A cardKey (for example 0101033) or an exact card title; 'Title, Subtitle' picks one of several cards that share a title"),
+    .describe(
+      "A cardKey (for example 0101033), a SWUDB printing id (SET_NNN, for example HMW_018) or an exact card title; 'Title, Subtitle' picks one of several cards that share a title",
+    ),
   count: z.number().int().min(1).max(99).default(1),
 });
 
 const cardList = (what: string) => z.array(deckLineSchema).min(1).max(250).describe(what);
 export const decklistField = cardList("Cards as {card, count}; the same card listed twice is added up");
-export const leaderField = z.string().min(1).describe("The leader: a cardKey or an exact title (with subtitle if the title is shared)");
-export const baseField = z.string().min(1).describe("The base: a cardKey or an exact title");
+export const leaderField = z.string().min(1).describe("The leader: a cardKey, a SET_NNN id or an exact title (with subtitle if the title is shared)");
+export const baseField = z.string().min(1).describe("The base: a cardKey, a SET_NNN id or an exact title");
+
+/** The SWUDB document's sideboard, carried beside the registered arguments by expandSwudb; never an argument of its own. */
+const sideboardInput = z.object({ sideboard: cardList("Sideboard cards as {card, count}").optional() });
+const MAX_SIDEBOARD = 10;
 
 const normalise = (text: string): string =>
   text.normalize("NFKC").toLowerCase().replace(/[‘’`]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
@@ -193,7 +200,31 @@ function missDetail(store: CardStore, ref: string): string {
   return `not in the data: this name is not a card from Jump to Lightspeed onward (the Premier pool), so it is either a card from a rotated set${rotated.length === 0 ? "" : ` (${rotated.join(", ")})`} or a misspelling`;
 }
 
+/** A SET_NNN id names a printing: placed by the card table's expansion, cardNumber and sets columns, and never guessed past them. */
+function resolveSwudbRef(store: CardStore, ref: string, kind: Kind): Resolution {
+  const id = ref.trim();
+  const found = swudbCandidates(store, id);
+  if (found.length === 0)
+    return {
+      ok: false,
+      reason: "unknown",
+      detail: hasPrintingColumns(store)
+        ? `no card is printed as ${id}: no card has that expansion and card number, and none lists that set with that number`
+        : `${id} cannot be placed: this package's card table has no expansion and cardNumber columns`,
+    };
+  const fits = found.filter((row) => kindFits(row.type, kind));
+  // A token takes its parent's card number (LOF_002 is Mother Talzin and a Shield token); a deck holds no token.
+  const real = fits.filter((row) => !row.type.startsWith("Token"));
+  const pick = real.length > 0 ? real : fits;
+  if (pick.length === 1) return { ok: true, row: pick[0] };
+  const list = (pick.length === 0 ? found : pick).map(describeRow).sort(compareCodePoints);
+  if (pick.length === 0)
+    return { ok: false, reason: "wrong type", detail: `${id} is not a ${kind === "main" ? "main-deck card" : kind}: ${list.join("; ")}` };
+  return { ok: false, reason: "ambiguous", detail: `${id} matches ${pick.length} cards, pass the cardKey: ${list.join("; ")}` };
+}
+
 export function resolveRef(store: CardStore, ref: string, kind: Kind): Resolution {
+  if (isSwudbId(ref)) return resolveSwudbRef(store, ref, kind);
   const direct = store.byKey.get(ref.trim());
   const found = direct !== undefined ? [direct] : (nameIndex(store).get(normalise(ref)) ?? []);
   if (found.length === 0) return { ok: false, reason: "unknown", detail: missDetail(store, ref) };
@@ -601,6 +632,8 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
   const leaderComparison = leaderComparisonOf(env, lines, leaderData);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);
+  const sideboardEntries = sideboardInput.parse(input).sideboard;
+  const sideboard = sideboardEntries === undefined ? undefined : sideboardRows(env, sideboardEntries, supplied, leaderData);
 
   return ok({
     dataVersion: env.dataVersion,
@@ -633,7 +666,29 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
     orphanWants,
     genericWants,
     clusterGaps,
+    ...(sideboard === undefined ? {} : { sideboard }),
   });
+}
+
+/** The sideboard listed beside the 50, never merged into it (#143): one row per card with the figures a swap decision reads. */
+function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSchema>[], supplied: readonly string[], data: LeaderData | null) {
+  const { lines, unresolved, copies } = resolveList(env, entries, "main");
+  return {
+    note: "the sideboard is not part of the deck counts above; penalty is per copy under this leader and base; leaderInclusion is the share of the leader's decklists that play the card, null = never in the leader's top cards",
+    cards: copies,
+    rows: lines.map((l) => ({
+      card: cardLabel(l.syn),
+      cardKey: l.syn.cardKey,
+      count: l.count,
+      type: l.row.type,
+      cost: l.syn.structured.cost,
+      penalty: singlePenalty(l.syn, supplied),
+      scoreTotal: env.scores.get(l.syn.cardKey)?.total ?? null,
+      playCalibrated: env.scores.get(l.syn.cardKey)?.playCalibrated ?? null,
+      leaderInclusion: data === null ? null : (data.byCard.get(l.syn.cardKey)?.inclusion ?? null),
+    })),
+    unresolved,
+  };
 }
 
 /** A card the leader's lists play in at least this share of decks, and the deck lacks, is a missing staple. */
@@ -791,6 +846,8 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
 
   const { lines, unresolved } = resolveList(env, args.decklist, "any");
   const listedCopies = sumBy(args.decklist, (entry) => entry.count);
+  const sideboardEntries = sideboardInput.parse(input).sideboard;
+  const sideboardCopies = sideboardEntries === undefined ? undefined : sumBy(sideboardEntries, (entry) => entry.count);
   for (const u of unresolved)
     failures.push({ rule: CR.deckContents, check: "unresolved card", detail: `"${u.card}" x${u.count}: ${u.reason}, ${u.detail}` });
 
@@ -805,6 +862,17 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     } else if (!MAIN_TYPES.has(l.row.type)) {
       failures.push({ rule: CR.tokens, check: "token in deck", detail: `${describeRow(l.row)} is a token; tokens are not part of a deck` });
     } else main.push(l);
+  }
+
+  if (sideboardEntries !== undefined) {
+    const side = resolveList(env, sideboardEntries, "any");
+    for (const u of side.unresolved)
+      failures.push({ rule: CR.sideboard, check: "unresolved sideboard card", detail: `"${u.card}" x${u.count}: ${u.reason}, ${u.detail}` });
+    for (const l of side.lines)
+      if (!MAIN_TYPES.has(l.row.type))
+        failures.push({ rule: CR.sideboard, check: "sideboard card type", detail: `${describeRow(l.row)} is not a unit, event or upgrade card; a sideboard holds deck cards` });
+    if ((sideboardCopies as number) > MAX_SIDEBOARD)
+      failures.push({ rule: CR.sideboard, check: "sideboard size", detail: `${sideboardCopies} sideboard cards; at most ${MAX_SIDEBOARD}` });
   }
 
   const shift = base === undefined ? 0 : baseDeckSizeShift(base.row.text);
@@ -866,7 +934,9 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
   const dataLimits = [
     "No ban or suspension ledger is loaded, so a banned or suspended card is not detected.",
     "asOf dates are not supported: legality is judged against this data version only.",
-    "The sideboard (up to 10 cards, CR 9.2.2.c) is not checked.",
+    sideboardEntries === undefined
+      ? "The sideboard (up to 10 cards, CR 9.2.2.c) is not checked: none was given."
+      : "The sideboard is checked for its 10-card limit, unresolved cards and non-deck card types (CR 9.2.2.c); its copies are not added to the 3-copy count, and its cards are not checked against the Premier cardpool.",
     premier
       ? "Premier cardpool comes from the expansion definitions in the package (sets marked Premier legal or rotated), not from rotation symbols on cards (CR 9.2.2.d)."
       : "Eternal accepts every released card (CR 9.2.2.d); no set check is made.",
@@ -884,7 +954,7 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     rulesVersion: verified.rulesVersion,
     leader: leader === undefined ? null : head(leader.row),
     base: base === undefined ? null : head(base.row),
-    counts: { mainDeck: mainCopies, minimum, maxCopies: MAX_COPIES, distinct: main.length, listedCopies },
+    counts: { mainDeck: mainCopies, minimum, maxCopies: MAX_COPIES, distinct: main.length, listedCopies, ...(sideboardCopies === undefined ? {} : { sideboard: sideboardCopies }) },
     failures,
     warnings,
     dataLimits,
@@ -1727,16 +1797,27 @@ const tool = (title: string, description: string, shape: z.ZodRawShape, run: (en
   handler: (store: CardStore, input: unknown): ToolResult => withEnv(store, (env) => run(env, input)),
 });
 
+/** A tool that takes a deck: the swudb argument stands in for decklist, leader and base, which then turn optional in the registered shape. */
+const deckTool = (title: string, description: string, shape: z.ZodRawShape, run: (env: DeckEnv, input: unknown) => ToolResult) => {
+  const relaxed = Object.fromEntries(Object.entries(shape).map(([key, field]) => [key, key in FORM_FIELDS ? (field as z.ZodType).optional() : field]));
+  const accepting = (env: DeckEnv, input: unknown): ToolResult => {
+    const expanded = expandSwudb(input);
+    return "error" in expanded ? fail(expanded.error) : run(env, expanded.input);
+  };
+  return tool(title, description, { ...relaxed, swudb: swudbField }, accepting);
+};
+const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: true };
+
 export const DECK_TOOLS = {
-  deck_audit: tool(
+  deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed.",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
     deckAuditShape,
     deckAudit,
   ),
-  deck_legality_check: tool(
+  deck_legality_check: deckTool(
     "Deck legality check",
-    `Checks a list against Comprehensive Rules v8.0 deck construction: exactly 1 leader and 1 base and at least 50 other cards (CR ${CR.deckContents}), at most 3 copies of a card (CR ${CR.premierCopies}, ${CR.copyLimit}), no tokens (CR ${CR.tokens}), base text that changes the minimum deck size (CR ${CR.baseOverride}) and the Premier cardpool (CR ${CR.cardpool}). Lists failing cards with the section id. Data limits: no ban or suspension ledger, no asOf date, sideboard not checked.`,
+    `Checks a list against Comprehensive Rules v8.0 deck construction: exactly 1 leader and 1 base and at least 50 other cards (CR ${CR.deckContents}), at most 3 copies of a card (CR ${CR.premierCopies}, ${CR.copyLimit}), no tokens (CR ${CR.tokens}), base text that changes the minimum deck size (CR ${CR.baseOverride}) and the Premier cardpool (CR ${CR.cardpool}). Lists failing cards with the section id. Data limits: no ban or suspension ledger, no asOf date; a sideboard (swudb) is checked for its 10-card limit only.${" Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base."}`,
     deckLegalityShape,
     deckLegalityCheck,
   ),
@@ -1746,21 +1827,21 @@ export const DECK_TOOLS = {
     suggestLeaderBaseShape,
     suggestLeaderBase,
   ),
-  playable_cards: tool(
+  playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist.",
     playableCardsShape,
     playableCards,
   ),
-  fungible_in_deck: tool(
+  fungible_in_deck: deckTool(
     "Fungible substitutes in a deck",
-    "For each card of a decklist, cards that fill the same offers/wants role (same tag, type, timing, magnitude and cost band), ordered by least aspect penalty under the given leader and base. Cards already in the deck are left out; slots whose card has no role are listed.",
+    "For each card of a decklist, cards that fill the same offers/wants role (same tag, type, timing, magnitude and cost band), ordered by least aspect penalty under the given leader and base. Cards already in the deck are left out; slots whose card has no role are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
     fungibleInDeckShape,
     fungibleInDeck,
   ),
-  budget_alternatives: tool(
+  budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),
@@ -1776,9 +1857,9 @@ export const DECK_TOOLS = {
     tradeBalanceShape,
     tradeBalance,
   ),
-  owned_vs_needed: tool(
+  owned_vs_needed: deckTool(
     "Owned versus needed",
-    "Diffs a decklist against an owned list: missing copies with the cheapest-printing price of each, the cost to complete, and owned spare cards that fill the same role as each missing card. Both lists are arguments and are not stored.",
+    "Diffs a decklist against an owned list: missing copies with the cheapest-printing price of each, the cost to complete, and owned spare cards that fill the same role as each missing card. Both lists are arguments and are not stored. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), for decklist, leader and base; owned stays a list.",
     ownedVsNeededShape,
     ownedVsNeeded,
   ),

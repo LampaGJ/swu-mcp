@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -101,6 +101,15 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
     }
     expect(failures).toEqual([]);
   }, 120_000);
+
+  it("takes the SWUDB interchange document in place of decklist, leader and base (#143)", async () => {
+    const swudb: unknown = JSON.parse(readFileSync(path.join(REPO_ROOT, "tests/fixtures/decks/warrior-chewie-raid.swudb.json"), "utf8"));
+    const result = await client.callTool({ name: "deck_legality_check", arguments: { swudb } });
+    const text = (result.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+    expect(result.isError, text.slice(0, 200)).toBeUndefined();
+    expect(text).toContain("Deft Duelist");
+    expect(text).toContain("Origin Tree");
+  }, 60_000);
 
   it("returns candidate status and clause evidence from the pairing tools, and drops it on request", async () => {
     const call = async (name: string, args: Record<string, unknown>) => {
