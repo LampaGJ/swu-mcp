@@ -328,6 +328,67 @@ export function substitutesFor(
   );
 }
 
+/** D74 (#161): the keyword a role holds on the board, lower case: a printed keyword role, a holder offer, or a self-gain offer. */
+const KEYWORD_JOB = /^(?:keyword:(.+)|offers:has-keyword-(.+)|offers:gain-(.+)-self)$/;
+const keywordJobOf = (tag: string): string | null => {
+  const m = KEYWORD_JOB.exec(tag);
+  return m === null ? null : (m[1] ?? m[2] ?? m[3]).toLowerCase();
+};
+const GATED = /^(?:while|if|as long as)\b/i;
+const FOR_A_TIME = /\bfor this (?:phase|attack|round)\b/i;
+/** Ability timings that hold without an event, so a gain in them lasts as long as the unit is in play. */
+const STANDING_TRIGGERS: ReadonlySet<string> = new Set(["constant", "static"]);
+
+/** How the card holds the keyword: printed, gained by its own text with no condition, gained only under a condition, or not at all. */
+function keywordHold(card: SynergyCard, keyword: string): { how: "printed" | "unconditional" | "conditional"; tag: string } | null {
+  const printed = printedKeywords(card).find((k) => k.toLowerCase() === keyword);
+  if (printed !== undefined) return { how: "printed", tag: `keyword:${printed}` };
+  const offer = card.tags.offers.find((t) => keywordJobOf(t.tag) === keyword);
+  if (offer === undefined) return null;
+  const body = offer.why.replace(/^\w+: /, "");
+  for (const a of Object.values(card.faces).flatMap((face) => [...abilitiesOf(face)])) {
+    const clause = [...(a.clauses ?? []), ...(a.options ?? []).flatMap((o) => o.clauses)].find((c) => c.text === body);
+    if (clause === undefined) continue;
+    const standing = (a.triggers ?? []).every((t) => STANDING_TRIGGERS.has(t.trigger ?? ""));
+    const gated = !standing || GATED.test(clause.text) || FOR_A_TIME.test(clause.text) || (clause.conditions ?? []).length > 0;
+    return { how: gated ? "conditional" : "unconditional", tag: offer.tag };
+  }
+  return { how: "conditional", tag: offer.tag };
+}
+
+export interface KeywordJobMembers {
+  members: string[];
+  /** Cards added from another class of the same keyword job, with the role they hold there ("keyword:Saboteur"). */
+  via: Map<string, string>;
+}
+
+/**
+ * D74 (#161): since D70 a printed keyword and a keyword a unit gives itself sit in different classes, so Marrok (gains
+ * Saboteur while upgraded) found no printer of Saboteur. For substitute matching a keyword-job class also takes the cards
+ * of the other classes of the same keyword, type, arena and cost band that print it or gain it with no condition; the class
+ * itself and its label stay as they are. A slot card that wants the keyword on another unit copies it (Oppo Rancisis, D64):
+ * its job is the copy, which no printer does, so its class is not joined.
+ */
+export function keywordJobMembers(index: FungibilityIndex, slotClass: RoleClass, slotCardKey: string): KeywordJobMembers {
+  const keyword = keywordJobOf(slotClass.tag);
+  const via = new Map<string, string>();
+  const slot = index.byKey.get(slotCardKey);
+  const copies = slot?.tags.wants.some((w) => w.tag === `wants:keyword-${keyword}`) ?? false;
+  if (keyword === null || copies || slot === undefined) return { members: slotClass.members, via };
+  // A printer's class already holds the printers of its stats band (D44), so it takes only self-gainers; a self-gainer's takes both.
+  const slotPrints = slotClass.tag.startsWith("keyword:") || keywordHold(slot, keyword)?.how === "printed";
+  const own = new Set(slotClass.members);
+  for (const c of index.classes) {
+    if (c.id === slotClass.id || keywordJobOf(c.tag) !== keyword || c.typeGroup !== slotClass.typeGroup || c.arena !== slotClass.arena || c.costBand !== slotClass.costBand) continue;
+    for (const k of c.members) {
+      if (own.has(k) || via.has(k)) continue;
+      const hold = keywordHold(index.byKey.get(k) as SynergyCard, keyword);
+      if (hold !== null && (hold.how === "unconditional" || (hold.how === "printed" && !slotPrints))) via.set(k, hold.tag);
+    }
+  }
+  return { members: [...slotClass.members, ...[...via.keys()].sort(cmp)], via };
+}
+
 export type Widening = "cost band" | "cost band + magnitude" | "cost band + stats band";
 
 export interface WidenedSubstitutes {

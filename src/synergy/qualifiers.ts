@@ -495,14 +495,21 @@ export function offerTargetSide(card: SynergyCard, tag: string): "enemy" | "own"
   return stated === undefined ? "any" : stated === "friendly" ? "own" : "enemy";
 }
 
+/** D74 (#161): "While attached unit is attacking, it gains: ... and loses all other abilities" (Condemn) parses with the loss as residue, not as a blank effect. */
+const LOSES_ALL = /\battached unit\b[^.]*\bloses all (?:other )?abilities\b/i;
+
 /** True when the card is an upgrade that strips the abilities of the unit it attaches to. */
-function blanksHost(c: SynergyCard): boolean {
+export function blanksHost(c: SynergyCard): boolean {
   return Object.keys(c.faces).some((f) =>
     [...abilitiesOf(c.faces[f])].some(({ ability }) =>
-      clausesOf(ability).some((cl) => cl.effects.some((e) => e.cat === "blank" && /\battached\b/i.test(e.target?.text ?? ""))),
+      clausesOf(ability).some((cl) => cl.effects.some((e) => e.cat === "blank" && /\battached\b/i.test(e.target?.text ?? "")) || LOSES_ALL.test(cl.text)),
     ),
   );
 }
+
+/** D74 (#161): a token that is not a unit (CR: Credit, Force, Experience, Shield and Advantage tokens are no units), named by a defeat offer. */
+const NON_UNIT_TOKEN = /\b(Credit|Force|Experience|Shield|Advantage) tokens?\b/i;
+const DEFEATS_UNIT = /^offers:defeat-(?:any|friendly|enemy)-unit$/;
 
 const cardArena = (c: SynergyCard): Arena | undefined => {
   const arenas = c.structured.arenas as string[] | undefined;
@@ -518,6 +525,20 @@ const cardSubject = (c: SynergyCard): Subject => ({
   isLeader: c.type === "Leader",
   aspects: c.structured.aspects,
 });
+
+/** Whether a unit with these traits and arena meets an attach bound's traits and arena (a Fortify bound is checked apart, by the caller). */
+function boundAdmitsSubject(bound: AttachBound, host: Subject): boolean {
+  const traitsOk = bound.traits.length === 0 || (bound.anyTrait ? bound.traits.some((t) => host.traits.includes(t)) : bound.traits.every((t) => host.traits.includes(t)));
+  const arenaOk = bound.arena === undefined || host.arena === undefined || bound.arena === host.arena;
+  return traitsOk && arenaOk && !bound.notTraits.some((t) => host.traits.includes(t));
+}
+
+/** D74 (#161): whether the unit is a legal host for an upgrade with this bound; a Fortify upgrade sits on a base, never a unit. */
+export function hostAdmits(bound: AttachBound | undefined, unit: SynergyCard): boolean {
+  if (unit.type !== "Unit") return false;
+  if (bound === undefined) return true;
+  return bound.base !== true && boundAdmitsSubject(bound, cardSubject(unit));
+}
 
 const NON_UNIT: ReadonlySet<Kind> = new Set(["upgrade", "base", "token", "resource", "card"]);
 
@@ -558,6 +579,8 @@ export function conflictBetween(
   const needed = wantConcrete ?? want.subject;
 
   if (offer.viaCat !== undefined && wantTag === "wants:replay-when-played") return `the offer is a ${offer.viaCat}, not a return to hand`;
+  const token = DEFEATS_UNIT.test(offerTag) && offer.subject.kind === "token" ? NON_UNIT_TOKEN.exec(offer.text)?.[1] : undefined;
+  if (token !== undefined) return `the offer defeats a ${token} token, which is not a unit`;
   if (touched.kind !== undefined && NON_UNIT.has(touched.kind) && needed.kind === "unit" && wantConcrete !== undefined) {
     return `the offer touches a ${touched.kind}, the want needs a unit`;
   }
@@ -576,11 +599,7 @@ export function conflictBetween(
   if (want.receives === true) {
     const host = cardSubject(b);
     const bound = offer.attach;
-    if (bound !== undefined) {
-      const traitsOk = bound.traits.length === 0 || (bound.anyTrait ? bound.traits.some((t) => host.traits.includes(t)) : bound.traits.every((t) => host.traits.includes(t)));
-      const arenaOk = bound.arena === undefined || host.arena === undefined || bound.arena === host.arena;
-      if (!traitsOk || !arenaOk || bound.notTraits.some((t) => host.traits.includes(t))) return `the offer attaches to ${bound.label} only, the wanting card is not one`;
-    }
+    if (bound !== undefined && !boundAdmitsSubject(bound, host)) return `the offer attaches to ${bound.label} only, the wanting card is not one`;
     if (offerTag.startsWith("offers:give-")) {
       const missing = offer.subject.traits.find((t) => !host.traits.includes(t));
       if (missing !== undefined) return `the offer gives to ${missing} units only, the wanting card is not one`;

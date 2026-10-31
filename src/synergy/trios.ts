@@ -2,7 +2,7 @@ import { STAT_WANT } from "../ability-grammar/tags.js";
 import { makeBestCover, type CoverCombo } from "./cover.js";
 import { edgeScore, mechanicalRows, type PairGraph } from "./graph.js";
 import { cardLabel, cmp, r3 } from "./order.js";
-import { admits } from "./qualifiers.js";
+import { admits, blanksHost, hostAdmits, type AttachBound } from "./qualifiers.js";
 import type { PairEdge, SynergyCard, TraitsMode, TrioRecord, TrioShape } from "./schema.js";
 import { TRIO_SHAPES } from "./schema.js";
 
@@ -23,6 +23,10 @@ const COUNTING_WANTS: ReadonlySet<string> = new Set(["wants:wide-board"]);
 /** "for each other friendly Pilot unit and upgrade", "control 3 or more units": the clause counts units, upgrades, cards or tokens; "for each exhausted resource" counts none of them. */
 const COUNTS_FEEDERS = /\bfor each (?:other )?(?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b|\b(?:\d+|X) or more (?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b/i;
 export const DEFAULT_TRIO_KEEP = 100;
+const ATTACH_OFFER = "offers:upgrade-to-attach";
+const RECEIVING_WANTS: ReadonlySet<string> = new Set(["wants:upgrades-attached", "wants:pilot-attached"]);
+/** An upgrade's want that counts what sits on its own host ("For each upgrade on attached unit"), so its feeder shares that host. */
+const ON_ATTACHED_UNIT = /\battached unit\b/i;
 
 export interface TrioSearchOptions {
   /** Trios kept per shape. */
@@ -185,6 +189,73 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     if (spent(x) && spent(y)) return wantSignature(x) === wantSignature(y);
     return rowSignature(x) === rowSignature(y) && !linkRows(x).some((r) => counting(x.b, r.want));
   };
+  /**
+   * D74 (#161): members joined by an attach link sit on one unit: an upgrade (or Pilot) feeding a unit's upgrade want sits on
+   * that unit, and one feeding an upgrade that counts its own host's upgrades shares that upgrade's host. A group is
+   * playable only when one unit meets every attach restriction in it (Piloting a Vehicle, "Attach to a Force unit", never a
+   * Fortify upgrade), the host member when the trio holds one, else some unit in the pool; and an upgrade that strips its host's
+   * abilities (Condemn) cannot sit on a member whose upgrade want is its own ability.
+   */
+  const attachRowsOf = new Map<PairEdge, PairEdge["rows"]>();
+  const attachRows = (e: PairEdge): PairEdge["rows"] => {
+    let rows = attachRowsOf.get(e);
+    if (rows === undefined) {
+      rows = linkRows(e).filter((r) => r.offer === ATTACH_OFFER && RECEIVING_WANTS.has(r.want));
+      attachRowsOf.set(e, rows);
+    }
+    return rows;
+  };
+  const boundOf = (k: string): AttachBound | undefined => graph.qualifier(k, "offers", ATTACH_OFFER)?.attach;
+  const units = [...byKey.values()].filter((c) => c.type === "Unit");
+  const anyHost = new Map<string, boolean>();
+  const someUnitAdmits = (bounds: readonly (AttachBound | undefined)[]): boolean => {
+    const id = JSON.stringify(bounds.filter((b) => b !== undefined));
+    let found = anyHost.get(id);
+    if (found === undefined) {
+      found = units.some((u) => bounds.every((b) => hostAdmits(b, u)));
+      anyHost.set(id, found);
+    }
+    return found;
+  };
+  const oneHost = (links: readonly PairEdge[]): boolean => {
+    const joins = links.filter((e) => attachRows(e).length > 0);
+    if (joins.length === 0) return true;
+    const parent = new Map<string, string>();
+    const find = (k: string): string => {
+      const p = parent.get(k) ?? k;
+      return p === k ? k : find(p);
+    };
+    const hostUnits = new Set<string>();
+    for (const e of joins) {
+      const wanting = member(e.b);
+      const rows = attachRows(e);
+      if (wanting.type === "Unit") {
+        if (!rows.some((r) => graph.qualifier(e.b, "wants", r.want)?.receives === true)) continue;
+        hostUnits.add(e.b);
+      } else if (!rows.some((r) => ON_ATTACHED_UNIT.test(graph.qualifier(e.b, "wants", r.want)?.text ?? ""))) continue;
+      parent.set(find(e.a), find(e.b));
+    }
+    const groups = new Map<string, string[]>();
+    for (const k of new Set(joins.flatMap((e) => [e.a, e.b]))) {
+      const root = find(k);
+      groups.set(root, [...(groups.get(root) ?? []), k]);
+    }
+    for (const group of groups.values()) {
+      if (group.length < 2) continue;
+      const hosts = group.filter((k) => hostUnits.has(k));
+      if (hosts.length > 1) return false;
+      const host = hosts[0];
+      const riders = group.filter((k) => k !== host);
+      const bounds = riders.map(boundOf);
+      if (host === undefined) {
+        if (!someUnitAdmits(bounds)) return false;
+        continue;
+      }
+      if (!bounds.every((b) => hostAdmits(b, member(host)))) return false;
+      if (riders.some((k) => member(k).type === "Upgrade" && blanksHost(member(k)))) return false;
+    }
+    return true;
+  };
   const sameName = (...ks: string[]): boolean => new Set(ks.map((k) => member(k).title)).size < ks.length;
   const costOf = (...ks: string[]): number => ks.reduce((s, k) => s + (member(k).structured.cost ?? 0), 0);
 
@@ -194,7 +265,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const outs = outAdj.get(b) ?? [];
     for (const e1 of ins) {
       for (const e2 of outs) {
-        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b]) || !relayReaches(e1, e2)) continue;
+        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b]) || !relayReaches(e1, e2) || !oneHost([e1, e2])) continue;
         counts.chain++;
         const keys: [string, string, string] = [e1.a, b, e2.b];
         if (accept(keys, costOf(...keys))) keepTop(trios.chain, record("chain", keys, [e1, e2]));
@@ -204,7 +275,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       for (let j = i + 1; j < ins.length; j++) {
         const e1 = ins[i];
         const e2 = ins[j];
-        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, e2.a, b])) continue;
+        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, e2.a, b]) || !oneHost([e1, e2])) continue;
         const [x, y] = cmp(e1.a, e2.a) < 0 ? [e1, e2] : [e2, e1];
         const wantsHit = new Set([...linkRows(x), ...linkRows(y)].map((r) => r.want));
         const shape: TrioShape = wantsHit.size > 1 ? "convergent-different-wants" : "convergent-same-want";
@@ -224,7 +295,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         const a = e3.b;
         if (a === b || a === c) continue;
         const e1 = edgeByKey.get(`${a}>${b}`);
-        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c]) || !playableLoop([e1, e2, e3])) continue;
+        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c]) || !playableLoop([e1, e2, e3]) || !oneHost([e1, e2, e3])) continue;
         counts.loop++;
         const keys: [string, string, string] = [a, b, c];
         if (accept(keys, costOf(...keys))) keepTop(trios.loop, record("loop", keys, [e1, e2, e3]));

@@ -1,4 +1,5 @@
 import { SELF_GAINS } from "../ability-grammar/tags.js";
+import { evidenceSpan } from "./evidence.js";
 import type { AbilityLite, SynergyCard } from "./schema.js";
 
 /**
@@ -63,7 +64,7 @@ export function leaderEngineOf(card: SynergyCard): LeaderEngine | null {
   return { clause: clauseText, playsUnitMaxPower: maxPower, grantsKeywords: [...keywords].sort() };
 }
 
-export type EngineHitKind = "pays-off" | "attack-payoff" | "grants-held-keyword" | "repeats-action" | "plays";
+export type EngineHitKind = "pays-off" | "readies-played" | "attack-payoff" | "grants-held-keyword" | "repeats-action" | "plays";
 export interface EngineHit {
   kind: EngineHitKind;
   keyword: string | null;
@@ -83,6 +84,23 @@ function textsOf(card: SynergyCard): string[] {
   return Object.values(card.faces)
     .flat()
     .flatMap((ability) => [...(ability.triggers ?? []).map((t) => t.text ?? ""), ...clausesOf(ability).map((c) => c.text)]);
+}
+
+/** "When you play a unit [with N or less power]" (a reactive trigger on your own play); group 1 is the power limit, absent for any unit. */
+const PLAY_TRIGGER = /^when you play a unit(?: with (\d+) or less power)?$/i;
+
+/**
+ * D74 (#161): the clause of a card that readies the unit you just played ("When you play a unit with 3 or less power: ...
+ * ready that unit"), quoted with its trigger, when its limit admits every unit this leader plays; null otherwise.
+ */
+function readiesPlayedClause(card: SynergyCard, maxPower: number): string | null {
+  for (const ability of card.faces.text ?? []) {
+    const limit = (ability.triggers ?? []).map((t) => PLAY_TRIGGER.exec((t.text ?? "").trim())).find((m) => m !== null);
+    if (limit === undefined || (limit[1] !== undefined && Number(limit[1]) < maxPower)) continue;
+    const ready = clausesOf(ability).find((c) => effectsOf(c).some((e) => e.rule === "ready" && (e.target as Loose | undefined)?.side === "ref"));
+    if (ready !== undefined) return evidenceSpan(card, `text: ${ready.text}`).replace(/^text: /, "");
+  }
+  return null;
 }
 
 /** Keywords that act only while the unit attacks (CR); a unit that gives one to itself pays off every attack. Mirrors the tag builder's list (src/ability-grammar/tags.ts). */
@@ -130,7 +148,8 @@ export function leaderActionOf(card: SynergyCard): string | null {
  * using Ambush", D72). attack-payoff (D65): the leader gives the played unit an
  * attack on entry (Ambush) and the unit gives itself an attack keyword (Raid, Overwhelm, Saboteur, Restore) that pays per
  * attack. grants-held-keyword (D67): the leader gives a keyword to the unit it plays, so that unit holds the keyword, and the
- * partner wants friendly holders of it (`wants:keyword-<k>`, Oppo Rancisis copies the keywords on the board). repeats-action (D65): the partner readies a leader and the leader has an Action that exhausts it. plays: the
+ * partner wants friendly holders of it (`wants:keyword-<k>`, Oppo Rancisis copies the keywords on the board). readies-played (D74): the
+ * leader plays a unit with an attack on entry (Ambush) and the partner readies the unit you play (Insurgent Camp), so the unit attacks twice. repeats-action (D65): the partner readies a leader and the leader has an Action that exhausts it. plays: the
  * partner is a unit the leader's action can play (power at or under its limit). Null when none holds, in that order.
  */
 export function engineHitOf(engine: LeaderEngine | null, partner: SynergyCard, action: string | null = null): EngineHit | null {
@@ -145,6 +164,17 @@ export function engineHitOf(engine: LeaderEngine | null, partner: SynergyCard, a
       const usedBy = texts.find((t) => using.test(t));
       if (usedBy !== undefined) return { kind: "pays-off", keyword, how: `its text pays off a friendly unit using ${keyword}, which this leader gives`, partnerText: usedBy };
     }
+  }
+  const entry = engine?.grantsKeywords.find((k) => ATTACK_ON_ENTRY.has(k));
+  if (engine !== null && engine.playsUnitMaxPower !== null && entry !== undefined) {
+    const ready = readiesPlayedClause(partner, engine.playsUnitMaxPower);
+    if (ready !== null)
+      return {
+        kind: "readies-played",
+        keyword: entry,
+        how: `it readies the unit this leader plays (its limit admits every unit of ${engine.playsUnitMaxPower} or less power), so after the ${entry} attack that unit is ready to attack again, a base included`,
+        partnerText: ready,
+      };
   }
   const power = powerOf(partner);
   const playable = engine !== null && engine.playsUnitMaxPower !== null && partner.type === "Unit" && power !== null && power <= engine.playsUnitMaxPower;

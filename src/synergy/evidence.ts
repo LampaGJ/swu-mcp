@@ -44,6 +44,18 @@ export function evidenceSpan(card: SynergyCard, why: string): string {
   const body = flat(face === undefined ? why : (prefix as RegExpExecArray)[2]);
   const head = face === undefined ? "" : `${face}: `;
   const abilities = face === undefined ? Object.values(card.faces).flat() : card.faces[face];
+  const span = spanIn(abilities, body);
+  return span === null ? why : `${head}${span}`;
+}
+
+const isAbility = (x: unknown): x is AbilityLite => typeof x === "object" && x !== null && typeof (x as { kind?: unknown }).kind === "string";
+
+/**
+ * The span of `body` in these abilities, or null. D74 (#161): a trigger inside a granted ability ("Attached unit gains:
+ * \u201cOn Attack: ...\u201d") is cited by its kind ("on_attack") and was returned raw, so a granted ability is searched
+ * too and quoted inside the clause that grants it, the placeholder \u27e6G<n>\u27e7 replaced by the granted text.
+ */
+function spanIn(abilities: readonly AbilityLite[], body: string): string | null {
   for (const a of abilities) {
     const trigger = (a.triggers ?? []).flatMap((t) => (t.text === undefined || t.text === "" ? [] : [flat(t.text)])).join("/");
     const lead = trigger === "" ? "" : `${trigger}: `;
@@ -52,14 +64,22 @@ export function evidenceSpan(card: SynergyCard, why: string): string {
       if (at < 0) continue;
       let from = at;
       while (from > 0 && DEPENDENT.test(flat(seq[from]))) from--;
-      return `${head}${lead}${seq.slice(from, at + 1).map(flat).join(" ")}`;
+      return `${lead}${seq.slice(from, at + 1).map(flat).join(" ")}`;
     }
     const byKind = TRIGGER_WHY[body];
     const cited = (a.triggers ?? []).some((t) => (t.text !== undefined && flat(t.text) === body) || (byKind?.(t) ?? false) || t.trigger === body);
     const clauses = sequencesOf(a).flat();
-    if (cited && clauses.length > 0) return `${head}${trigger === "" ? body : trigger}: ${clauses.map(flat).join(" ")}`;
+    if (cited && clauses.length > 0) return `${trigger === "" ? body : trigger}: ${clauses.map(flat).join(" ")}`;
+    for (const [i, granted] of (a.grantedAbilities ?? []).entries()) {
+      const inner = spanIn(granted.abilities.filter(isAbility), body);
+      if (inner === null) continue;
+      const index = typeof granted.index === "number" ? granted.index : i;
+      const placeholder = `\u27e6G${index}\u27e7`;
+      const host = clauses.find((c) => c.includes(placeholder));
+      return host === undefined ? inner : flat(host.replace(placeholder, `\u201c${inner}\u201d`));
+    }
   }
-  return why;
+  return null;
 }
 
 export function tagEvidence(card: SynergyCard, tag: string): string {
