@@ -7,8 +7,17 @@ import { SWUMETASTATS_SOURCE } from "../../src/meta/schema.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
-import type { DeckEnv } from "../../src/tools/deck.js";
-import { createMetaEnv, metaAnswers, metaArchetypes, metaThreats } from "../../src/tools/meta.js";
+import { deckAudit, playableCards, type DeckEnv } from "../../src/tools/deck.js";
+import {
+  compareAnswerRank,
+  costBand,
+  createMetaEnv,
+  evidenceClassOf,
+  metaAnswers,
+  metaArchetypes,
+  metaThreats,
+  type AnswerRank,
+} from "../../src/tools/meta.js";
 import { COMMITTED_TABLE, mk } from "../synergy/fixtures.js";
 import { COUNTER_CARDS, deck } from "./fixtures.js";
 
@@ -16,6 +25,8 @@ const ENEMY_LEADER = mk("EL", "Enemy Leader", { type: "Leader", icons: ["Aggress
 const OUR_LEADER = mk("OL", "Our Leader", { type: "Leader", icons: ["Vigilance", "Heroism"], cost: 6, subtitle: "Defender" });
 const OUR_BASE = mk("OB", "Our Base", { type: "Base", icons: ["Command"], cost: null });
 const ENEMY_BASE = mk("EB", "Enemy Base", { type: "Base", icons: ["Cunning"], cost: null });
+const AGGRESSION_BASE = mk("AB", "Aggression Base", { type: "Base", icons: ["Aggression"], cost: null });
+const ENEMY_BASE_2 = mk("EB2", "Other Enemy Base", { type: "Base", icons: ["Cunning"], cost: null });
 
 function featureRecord(card: ReturnType<typeof mk>, stats: { power: number | null; hp: number | null; arenas: string[] }) {
   return { ...card, structured: { ...card.structured, ...stats }, keywords: [] };
@@ -26,6 +37,8 @@ const extra = [
   featureRecord(OUR_LEADER, { power: 3, hp: 6, arenas: ["Ground"] }),
   featureRecord(OUR_BASE, { power: null, hp: 25, arenas: [] }),
   featureRecord(ENEMY_BASE, { power: null, hp: 25, arenas: [] }),
+  featureRecord(ENEMY_BASE_2, { power: null, hp: 25, arenas: [] }),
+  featureRecord(AGGRESSION_BASE, { power: null, hp: 25, arenas: [] }),
 ];
 const features = [...COUNTER_CARDS, ...extra];
 const synergy = synergyCardsSchema.parse(features);
@@ -67,7 +80,7 @@ const deckEnv: DeckEnv = {
 
 const RUSH_UNIT = "0101250"; // Corellian Freighter, a 4/4 space unit, stands in as the enemy's key unit.
 const enemyDecks = Array.from({ length: 6 }, (_, i) =>
-  deck(`e${i}`, { leader: "EL", base: "EB", cards: [[RUSH_UNIT, 3]], placement: i + 1, field: 16 }),
+  deck(`e${i}`, { leader: "EL", base: i < 4 ? "EB" : "EB2", cards: [[RUSH_UNIT, 3]], placement: i + 1, field: 16 }),
 );
 const facts = cardFacts(features);
 const meta = buildMeta(enemyDecks, facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 });
@@ -136,6 +149,18 @@ describe("meta_archetypes", () => {
       window: "2026-07-19..2026-10-17",
     });
   });
+
+  it("carries the most-played base as topBase, and that title resolves as the base of the next call", () => {
+    const archetype = meta.archetypes[0];
+    expect(archetype.bases.map((b) => b.decks)).toEqual([4, 2]);
+    const out = body(metaArchetypes(env, {}));
+    expect(out.rows[0].topBase).toEqual({ cardKey: archetype.bases[0].cardKey, title: archetype.bases[0].title });
+    expect(out.rows[0].topBase).toEqual({ cardKey: "EB", title: "Enemy Base" });
+    const base = out.rows[0].topBase.title;
+    expect(body(playableCards(deckEnv, { leader: "OL", base, maxPenalty: 4 })).base.cardKey).toBe("EB");
+    expect(body(deckAudit(deckEnv, { decklist: [{ card: "05010264", count: 1 }], leader: "OL", base })).base.cardKey).toBe("EB");
+    expect(body(metaAnswers(env, { leader: "OL", base, maxPenalty: 4 })).base.cardKey).toBe("EB");
+  });
 });
 
 describe("meta_threats", () => {
@@ -146,6 +171,120 @@ describe("meta_threats", () => {
     expect(out.keyUnits[0]).toMatchObject({ cardKey: RUSH_UNIT, power: 4, hp: 4, arenas: "Space" });
     expect(body(metaThreats(env, { archetype: "Enemy Leader" })).archetype.id).toBe(id);
     expect(metaThreats(env, { archetype: "nope" }).isError).toBe(true);
+  });
+});
+
+describe("meta_answers ordering", () => {
+  // Our leader plus an Aggression base supplies every icon of It's Worse (7, neutral) and Charged with Treason (4,
+  // Aggression), so both are penalty-free and answer the same threat with coverage 1; Corellian Freighter (5) and Profundity (9) cover 0.5.
+  const IT_IS_WORSE = "05010264";
+  const CHARGED = "06010182";
+  const FREIGHTER = "0101250";
+  const PROFUNDITY = "04010154"; // Aggression, cost 9, coverage 0.5 like the Freighter
+  const withCards = (cards: { cardKey: string; decks: number; wins: number; losses: number; draws: number }[]) =>
+    createMetaEnv(
+      deckEnv,
+      meta,
+      {
+        ...winrates,
+        deckEvidence: {
+          ...winrates.deckEvidence,
+          groups: [
+            {
+              level: "archetype",
+              key: "OL|Aggression",
+              leader: "OL",
+              baseAspects: ["Aggression"],
+              aspects: ["Aggression", "Heroism", "Vigilance"],
+              decks: 100,
+              wins: 500,
+              losses: 500,
+              draws: 0,
+              cards,
+            },
+          ],
+        },
+      },
+      loadCounterTable(),
+      features,
+    );
+  const order = (e: typeof env) => {
+    const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+    return {
+      keys: out.answers.map((a: { cardKey: string }) => a.cardKey),
+      classes: Object.fromEntries(out.answers.map((a: { cardKey: string; evidenceClass: string }) => [a.cardKey, a.evidenceClass])),
+      note: out.note as string,
+    };
+  };
+
+  it("puts an answer with a clearly worse deck record after an unmeasured one of the same coverage, whatever its cost", () => {
+    const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 10, losses: 30, draws: 0 }]));
+    expect(got.keys).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
+    expect(got.classes).toEqual({ [IT_IS_WORSE]: "ok", [CHARGED]: "negative", [FREIGHTER]: "ok", [PROFUNDITY]: "ok" });
+    expect(got.note).toContain("evidenceClass");
+    expect(got.note).toContain("-0.05");
+    expect(got.note).toContain("association, not effect");
+  });
+
+  it("orders two ok answers of the same coverage by cost band, including one with a positive record", () => {
+    const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 30, losses: 10, draws: 0 }]));
+    expect(got.keys).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(got.classes[CHARGED]).toBe("ok");
+  });
+
+  it("classes a gap measured on fewer than minN decisive matches as ok", () => {
+    const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 2, losses: 6, draws: 0 }]));
+    expect(got.keys).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(got.classes[CHARGED]).toBe("ok");
+  });
+
+  it("classes an unmeasured answer as ok", () => {
+    const got = order(withCards([]));
+    expect(got.keys).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(Object.values(got.classes)).toEqual(["ok", "ok", "ok", "ok"]);
+  });
+});
+
+describe("answer rank", () => {
+  const rank = (spec: Partial<AnswerRank> & { cardKey: string }): AnswerRank => ({
+    penalty: 0,
+    coverage: 0.3927,
+    evidenceClass: "ok",
+    cost: 5,
+    threatCount: 1,
+    ...spec,
+  });
+  const sorted = (list: AnswerRank[]) => [...list].sort(compareAnswerRank).map((a) => a.cardKey);
+
+  it("bands cost as 0-2, 3-4, 5-6 and 7+, with an unknown cost last", () => {
+    expect([0, 2, 3, 4, 5, 6, 7, 11].map(costBand)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
+    expect(costBand(null)).toBe(4);
+  });
+
+  it("sorts on penalty, coverage band, evidence class, cost band, coverage, threats, then card key", () => {
+    expect(sorted([rank({ cardKey: "b", penalty: 2 }), rank({ cardKey: "a", penalty: 0, evidenceClass: "negative", coverage: 0.01 })])).toEqual(["a", "b"]);
+    // 0.3927 and 0.40 share the 0.40 band; 0.3499 falls in the 0.35 band below it.
+    expect(sorted([rank({ cardKey: "low", coverage: 0.3499 }), rank({ cardKey: "high", coverage: 0.3927 })])).toEqual(["high", "low"]);
+    expect(sorted([rank({ cardKey: "neg", cost: 2, evidenceClass: "negative" }), rank({ cardKey: "ok", cost: 11 })])).toEqual(["ok", "neg"]);
+    expect(sorted([rank({ cardKey: "seven", cost: 7 }), rank({ cardKey: "six", cost: 6 }), rank({ cardKey: "three", cost: 3 })])).toEqual(["three", "six", "seven"]);
+    expect(sorted([rank({ cardKey: "b", cost: 5, coverage: 0.3925 }), rank({ cardKey: "a", cost: 6, coverage: 0.3927 })])).toEqual(["a", "b"]);
+    expect(sorted([rank({ cardKey: "a", cost: 5 }), rank({ cardKey: "b", cost: 6, threatCount: 2 })])).toEqual(["b", "a"]);
+    expect(sorted([rank({ cardKey: "b" }), rank({ cardKey: "a" })])).toEqual(["a", "b"]);
+  });
+
+  it("calls a difference below -0.05 negative only when both sides reach minN decisive matches", () => {
+    const evidence = (difference: number | null, withN: number, withoutN: number) => ({
+      withCard: { n: withN },
+      withoutCard: { n: withoutN },
+      difference,
+    });
+    expect(evidenceClassOf(evidence(-0.1154, 45, 13217), 10)).toBe("negative");
+    expect(evidenceClassOf(evidence(-0.0443, 45, 13217), 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(-0.05, 45, 13217), 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(-0.3, 9, 13217), 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(-0.3, 45, 9), 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(null, 45, 9000), 10)).toBe("ok");
+    expect(evidenceClassOf("no tournament decklists captured", 10)).toBe("ok");
   });
 });
 

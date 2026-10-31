@@ -339,7 +339,52 @@ interface Answer {
   penalty: number;
   inDeck: number;
   coverage: number;
+  threatCount: number;
+  evidence: DeckEvidenceView;
+  evidenceClass: EvidenceClass;
   hits: { archetype: Archetype; hit: RelationHit }[];
+}
+
+export type EvidenceClass = "ok" | "negative";
+
+/** What a deck-evidence cell needs to be classed: the object cardDeckEvidence returns, or the reason it has none. */
+export type DeckEvidenceView = string | { withCard: { n: number }; withoutCard: { n: number }; difference: number | null };
+
+/** The keys meta_answers sorts on, in the order compareAnswerRank applies them. */
+export interface AnswerRank {
+  cardKey: string;
+  penalty: number;
+  coverage: number;
+  evidenceClass: EvidenceClass;
+  cost: number | null;
+  threatCount: number;
+}
+
+const COVERAGE_BAND = 0.05;
+const NEGATIVE_GAP = -0.05;
+
+/** Decision D36: negative only on a point gap below -0.05 with at least minN decisive matches on both sides. */
+export function evidenceClassOf(evidence: DeckEvidenceView, minN: number): EvidenceClass {
+  if (typeof evidence === "string" || evidence.difference === null) return "ok";
+  return evidence.difference < NEGATIVE_GAP && evidence.withCard.n >= minN && evidence.withoutCard.n >= minN ? "negative" : "ok";
+}
+
+/** Decision D36: 0-2, 3-4, 5-6, 7+ and, last, an unknown cost. */
+export function costBand(cost: number | null): number {
+  if (cost === null) return 4;
+  return cost <= 2 ? 0 : cost <= 4 ? 1 : cost <= 6 ? 2 : 3;
+}
+
+export function compareAnswerRank(x: AnswerRank, y: AnswerRank): number {
+  return (
+    x.penalty - y.penalty ||
+    Math.round(y.coverage / COVERAGE_BAND) - Math.round(x.coverage / COVERAGE_BAND) ||
+    (x.evidenceClass === y.evidenceClass ? 0 : x.evidenceClass === "ok" ? -1 : 1) ||
+    costBand(x.cost) - costBand(y.cost) ||
+    r4(y.coverage) - r4(x.coverage) ||
+    y.threatCount - x.threatCount ||
+    compareCodePoints(x.cardKey, y.cardKey)
+  );
 }
 
 /**
@@ -426,6 +471,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       coverage += a.share * best.weight * best.fraction;
     }
     if (hits.length === 0) continue;
+    const evidence = cardDeckEvidence(env, syn.cardKey, ours);
     answers.push({
       cardKey: syn.cardKey,
       title: cardLabel(syn),
@@ -434,18 +480,13 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       penalty,
       inDeck: inDeck.get(syn.cardKey) ?? 0,
       coverage,
+      threatCount: new Set(hits.map((h) => h.hit.threat)).size,
+      evidence,
+      evidenceClass: evidenceClassOf(evidence, env.winrates.minN),
       hits,
     });
   }
-  const threatCount = (a: Answer): number => new Set(a.hits.map((h) => h.hit.threat)).size;
-  answers.sort(
-    (x, y) =>
-      x.penalty - y.penalty ||
-      r4(y.coverage) - r4(x.coverage) ||
-      threatCount(y) - threatCount(x) ||
-      (x.cost ?? 99) - (y.cost ?? 99) ||
-      compareCodePoints(x.cardKey, y.cardKey),
-  );
+  answers.sort(compareAnswerRank);
   const shown = answers.slice(0, args.limit);
 
   const byThreat = (a: Answer) => {
@@ -506,12 +547,13 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       inDeck: a.inDeck,
       coverage: r4(a.coverage),
       archetypesAnswered: a.hits.length,
-      threatsAnswered: threatCount(a),
+      threatsAnswered: a.threatCount,
       status: CANDIDATE_STATUS,
       answers: byThreat(a),
-      deckEvidence: cardDeckEvidence(env, a.cardKey, ours),
+      deckEvidence: a.evidence,
+      evidenceClass: a.evidenceClass,
     })),
-    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
+    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok before negative), then cost band (0-2, 3-4, 5-6, 7+), then exact coverage. evidenceClass = negative when deckEvidence shows a difference below -0.05 with at least minN decisive matches with and without the card; ok covers a positive, a small or an unmeasured difference. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
   });
 }
 
@@ -549,7 +591,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown). Takes a leader and base, or a decklist.",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (ok or negative). Within a coverage band, ok answers rank before negative ones, then cheaper cost bands first. Takes a leader and base, or a decklist.",
     metaAnswersShape,
     metaAnswers,
   ),
