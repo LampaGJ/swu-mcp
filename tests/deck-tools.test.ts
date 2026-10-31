@@ -25,6 +25,7 @@ import {
   playValueVsPrice,
   playableCards,
   priceList,
+  resolveRef,
   scoreVsPlay,
   suggestLeaderBase,
   tradeBalance,
@@ -272,20 +273,48 @@ describe("name resolution", () => {
     expect(out.leader.title).toBe("Aggro Leader, The Hunter");
   });
 
-  it("tells a title miss that an earlier-set card is out of the Premier pool, and keeps the cardKey wording for a cardKey miss", () => {
+  it("tells a title miss that the name may be a rotated-set card, and keeps the cardKey wording for a cardKey miss", () => {
     const out = body(deckAudit(env, { decklist: lines(["Vanquish", 1], ["ZZ99", 1], ["P1", 1]), leader: "L1", base: "BC" }));
     const detail = Object.fromEntries(out.unresolved.map((u: { card: string; detail: string }) => [u.card, u.detail]));
     expect(detail.Vanquish).toBe(
-      "not found: no card with this title in the Premier pool (sets from Jump to Lightspeed onward); a card from an earlier set is out of the pool, otherwise check the spelling",
+      "not in the data: this name is not a card from Jump to Lightspeed onward (the Premier pool), so it is either a card from a rotated set (Spark of Rebellion) or a misspelling",
     );
+    expect(detail.Vanquish).not.toContain("check the spelling");
     expect(detail.ZZ99).toBe("no card with this cardKey or title");
+  });
+
+  it("reads the rotated set names from the expansion index in main-set order, leaving out legal sets and Weekly Play sets", () => {
+    const expansion = (value: string, definition: string) => ({ value, cards: 0, definition, cardKeys: [] });
+    const store: CardStore = {
+      ...env.store,
+      facets: new Map([
+        [
+          "expansion",
+          [
+            expansion("TWI", "Twilight of the Republic. Main set 3. Premier rotated it out when LAW released."),
+            expansion("LAW", "A Lawless Time. Main set 7. Premier legal as of 2026-10-07."),
+            expansion("SOR", "Spark of Rebellion. Main set 1. Premier rotated it out."),
+            expansion("SORP", "Spark of Rebellion Weekly Play: the Weekly Play promo cards that go with main set 1 (SOR). Premier rotated."),
+            expansion("SHD", "Shadows of the Galaxy. Main set 2. Premier rotated it out when LAW released."),
+          ],
+        ],
+      ]),
+    };
+    const miss = resolveRef(store, "Vanquish", "main");
+    expect(miss).toMatchObject({ ok: false, reason: "unknown" });
+    expect(miss.ok ? "" : miss.detail).toContain("(Spark of Rebellion, Shadows of the Galaxy, Twilight of the Republic)");
+    const none = resolveRef({ ...env.store, facets: new Map() }, "Vanquish", "main");
+    expect(none.ok ? "" : none.detail).toBe(
+      "not in the data: this name is not a card from Jump to Lightspeed onward (the Premier pool), so it is either a card from a rotated set or a misspelling",
+    );
   });
 
   it("carries the pool wording into deck_legality_check's unresolved-card failure", () => {
     const out = body(deckLegalityCheck(env, { decklist: [{ card: "Vanquish", count: 1 }, { card: "P1", count: 1 }], leader: "L1", base: "BC" }));
     const failure = out.failures.find((f: { check: string }) => f.check === "unresolved card");
-    expect(failure.detail).toContain('"Vanquish" x1: unknown, not found: no card with this title in the Premier pool');
-    expect(failure.detail).toContain("sets from Jump to Lightspeed onward");
+    expect(failure.detail).toContain('"Vanquish" x1: unknown, not in the data: this name is not a card from Jump to Lightspeed onward');
+    expect(failure.detail).toContain("a card from a rotated set (Spark of Rebellion) or a misspelling");
+    expect(failure.detail).not.toContain("check the spelling");
   });
 
   it("refuses to guess between cards that share a title", () => {
@@ -621,7 +650,7 @@ describe("playable_cards, leader-aware", () => {
   const keys = (out: Record<string, any>) => out.cards.map((c: { cardKey: string }) => c.cardKey);
 
   it("ranks within a cost by the leader's tournament inclusion, then play-calibrated score, and shows leaderInclusion", () => {
-    const out = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5 }));
+    const out = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, includeUnplayed: true }));
     expect(keys(out)).toEqual(["W1", "P2", "P1"]);
     expect(out.cards.map((c: { leaderInclusion: number | null }) => c.leaderInclusion)).toEqual([0.8, 0.4, null]);
     expect(out.rankedBy).toBe("leader");
@@ -650,7 +679,48 @@ describe("playable_cards, leader-aware", () => {
     writeFileSync(path.join(pkg, "meta/leader-cards.json"), `${JSON.stringify(file)}\n`);
     const withFile: DeckEnv = { ...env, store: { ...env.store, dataDir: path.join(pkg, "llm") } };
     expect(leaderCardsOf(withFile)?.get("L1")?.byCard.get("W1")?.inclusion).toBe(0.8);
-    expect(keys(body(playableCards(withFile, { leader: "L1", base: "BC", costs: [3], perCost: 5 })))).toEqual(["W1", "P2", "P1"]);
+    expect(keys(body(playableCards(withFile, { leader: "L1", base: "BC", costs: [3], perCost: 5 })))).toEqual(["W1", "P2"]);
+  });
+
+  it("drops cards the leader's decks do not play unless includeUnplayed is true, and names a cost left with no played card", () => {
+    const dropped = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5 }));
+    expect(keys(dropped)).toEqual(["W1", "P2"]);
+    expect(dropped.matched).toBe(2);
+    expect(dropped.emptyCosts).toBe("none");
+    expect(dropped.note).toContain("includeUnplayed: true lists them");
+
+    const all = body(playableCards(leaderEnv, { leader: "L1", base: "BC", perCost: 5, limit: 100 }));
+    expect(all.cards.every((c: { cost: number; leaderInclusion: number | null }) => c.cost === 3 && c.leaderInclusion !== null)).toBe(true);
+    expect(all.emptyCosts).toBe("2: no tournament-played card at this cost; includeUnplayed: true lists score-ranked cards");
+
+    const withUnplayed = body(playableCards(leaderEnv, { leader: "L1", base: "BC", perCost: 3, limit: 100, includeUnplayed: true }));
+    expect(withUnplayed.emptyCosts).toBe("none");
+    expect(withUnplayed.cards.some((c: { cost: number }) => c.cost === 2)).toBe(true);
+    expect(withUnplayed.note).toContain("includeUnplayed: true lists the unplayed cards after the played ones in each cost");
+
+    expect(body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [9] })).emptyCosts).toContain("9: no tournament-played card");
+  });
+
+  it("answers emptyCostsOnly for a cost the leader's decks never play with an explicit row, not a score-ranked card", () => {
+    const pile = lines(["P1", 1]);
+    const out = body(playableCards(leaderEnv, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50 }));
+    expect(out.cards).toHaveLength(1);
+    expect(out.cards[0]).toMatchObject({
+      cardKey: null,
+      cost: 2,
+      title: "no tournament-played card at cost 2; includeUnplayed: true lists score-ranked cards",
+      leaderInclusion: null,
+    });
+    expect(out.emptyCosts).toContain("2: no tournament-played card");
+    const listed = body(playableCards(leaderEnv, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50, includeUnplayed: true }));
+    expect(listed.cards.every((c: { cost: number; cardKey: string | null }) => c.cost === 2 && c.cardKey !== null)).toBe(true);
+    expect(listed.cards).toHaveLength(3);
+  });
+
+  it("is unaffected by includeUnplayed when ranking by score", () => {
+    const byScore = body(playableCards(leaderEnv, { leader: "L1", base: "BC", costs: [3], perCost: 5, rankBy: "score" }));
+    expect(keys(byScore)).toEqual(["P1", "P2", "W1"]);
+    expect(byScore.emptyCosts).toBe("none");
   });
 });
 

@@ -47,6 +47,7 @@ import {
   type DeckEnv,
 } from "./deck.js";
 import { fail, ok, round } from "./common.js";
+import { deferRepeatedLinks } from "./synergy.js";
 
 /**
  * @displayName Meta defense tools
@@ -332,6 +333,13 @@ export const metaAnswersShape = {
   maxPenalty: z.number().int().min(0).default(0).describe("Highest aspect penalty to allow; 0 keeps cards our leader and base fully cover"),
   evidence: z.boolean().default(true).describe("Include the clause text behind each answer; false drops it"),
   limit: z.number().int().min(1).max(60).default(15),
+  perThreat: z
+    .number()
+    .int()
+    .min(1)
+    .max(60)
+    .default(4)
+    .describe("At most this many answers per primary threat are ranked first; further answers to the same threat follow in rank order (60 turns the cap off)"),
 };
 
 interface Answer {
@@ -343,6 +351,8 @@ interface Answer {
   inDeck: number;
   coverage: number;
   threatCount: number;
+  /** The threat that contributes most share-weighted coverage to this answer. */
+  primaryThreat: string;
   evidence: DeckEvidenceView;
   evidenceClass: EvidenceClass;
   hits: { archetype: Archetype; hit: RelationHit }[];
@@ -409,6 +419,21 @@ export function compareAnswerRank(x: AnswerRank, y: AnswerRank): number {
     y.threatCount - x.threatCount ||
     compareCodePoints(x.cardKey, y.cardKey)
   );
+}
+
+/** The threat whose hits add the most coverage (share x weight x fraction); a tie goes to the lower code-point id. */
+export function primaryThreatOf(hits: readonly { archetype: Pick<Archetype, "share">; hit: Pick<RelationHit, "threat" | "weight" | "fraction"> }[]): string {
+  const by = new Map<string, number>();
+  for (const { archetype, hit } of hits) by.set(hit.threat, (by.get(hit.threat) ?? 0) + archetype.share * hit.weight * hit.fraction);
+  let best = "";
+  let bestValue = -1;
+  for (const [threat, value] of [...by].sort((x, y) => compareCodePoints(x[0], y[0]))) {
+    if (value > bestValue) {
+      best = threat;
+      bestValue = value;
+    }
+  }
+  return best;
 }
 
 /**
@@ -518,13 +543,24 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       inDeck: inDeck.get(syn.cardKey) ?? 0,
       coverage,
       threatCount: new Set(hits.map((h) => h.hit.threat)).size,
+      primaryThreat: primaryThreatOf(hits),
       evidence,
       evidenceClass: evidenceClassOf(evidence, env.winrates.minN),
       hits,
     });
   }
   answers.sort(compareAnswerRank);
-  const shown = answers.slice(0, args.limit);
+  const { ordered, deferred } = deferRepeatedLinks(answers, (a) => a.primaryThreat, args.perThreat);
+  const shown = ordered.slice(0, args.limit);
+  const threatsCovered = [...new Set(targets.flatMap((a) => [...(threatsOf.get(a.id) as Set<string>)]))]
+    .map((threat) => ({
+      threat,
+      share: r4(targets.filter((a) => (threatsOf.get(a.id) as Set<string>).has(threat)).reduce((s, a) => s + a.share, 0)),
+      shown: shown.filter((a) => a.hits.some((h) => h.hit.threat === threat)).length,
+    }))
+    .sort((x, y) => y.share - x.share || compareCodePoints(x.threat, y.threat))
+    .map((t) => `${t.threat} ${t.shown} (share ${t.share})`)
+    .join("; ");
 
   const byThreat = (a: Answer) => {
     const groups = new Map<
@@ -575,6 +611,8 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     consideredShare: r4(consideredShare),
     matched: answers.length,
     shown: shown.length,
+    capped: deferred,
+    threatsCovered,
     answers: shown.map((a) => ({
       cardKey: a.cardKey,
       title: a.title,
@@ -585,12 +623,13 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       coverage: r4(a.coverage),
       archetypesAnswered: a.hits.length,
       threatsAnswered: a.threatCount,
+      primaryThreat: a.primaryThreat,
       status: CANDIDATE_STATUS,
       answers: byThreat(a),
       deckEvidence: annotated(a, env.winrates.minN),
       evidenceClass: a.evidenceClass,
     })),
-    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured; deckEvidence.unmeasured names the thin side. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
+    note: `Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured; deckEvidence.unmeasured names the thin side. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (capped counts them; perThreat 60 turns the cap off). threatsCovered lists each threat the defended archetypes pose with the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no shown answer addresses it. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
   });
 }
 
@@ -676,7 +715,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first. Takes a leader and base, or a decklist.",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first. perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat, and threatsCovered counts the shown answers per threat so a threat nobody answers shows 0. Takes a leader and base, or a decklist.",
     metaAnswersShape,
     metaAnswers,
   ),

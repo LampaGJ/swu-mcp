@@ -17,6 +17,7 @@ import {
   metaAnswers,
   metaArchetypes,
   metaThreats,
+  primaryThreatOf,
   type AnswerRank,
 } from "../../src/tools/meta.js";
 import { COMMITTED_TABLE, mk } from "../synergy/fixtures.js";
@@ -283,6 +284,60 @@ describe("meta_answers ordering", () => {
     expect(charged.evidenceClass).toBe("negative");
     expect(charged.deckEvidence.unmeasured).toBeUndefined();
     expect(charged.deckEvidence.thin).toBeUndefined();
+  });
+});
+
+describe("meta_answers per-threat diversity", () => {
+  // The fixture archetype fires only key-units and space-heavy. A table copy that also fires shields and go-wide (meanCost
+  // is always read, so min 0 always holds) lets Insurgent Saboteurs and System Shock (defeat-upgrade) answer shields,
+  // while no penalty-free card in the pool is a sweeper for go-wide.
+  const SYSTEM_SHOCK = "04010175";
+  const table = loadCounterTable();
+  const alwaysOn = { ...table, threats: table.threats.map((t) => (t.id === "shields" || t.id === "go-wide" ? { ...t, metrics: ["meanCost"], min: 0 } : t)) };
+  const wide = createMetaEnv(deckEnv, meta, winrates, alwaysOn, features);
+  const run = (extra: object) => body(metaAnswers(wide, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, ...extra }));
+
+  it("names the primary threat of an answer as the one adding the most share-weighted coverage, a tie going to the lower id", () => {
+    const hit = (threat: string, weight: number, fraction = 1) => ({ archetype: { share: 0.5 }, hit: { threat, weight, fraction } });
+    expect(primaryThreatOf([hit("shields", 1), hit("key-units", 0.5)])).toBe("shields");
+    expect(primaryThreatOf([hit("shields", 0.5), hit("key-units", 0.5)])).toBe("key-units");
+    expect(primaryThreatOf([hit("shields", 1, 0.2), hit("key-units", 0.5), hit("key-units", 0.5)])).toBe("key-units");
+  });
+
+  it("moves an answer to a threat the page lacks ahead of a second answer to a threat it already lists", () => {
+    // Uncapped rank: System Shock (shields), Charged with Treason (key-units), Insurgent Saboteurs (shields),
+    // It's Worse (key-units), Rebel Pathfinder (shields), Corellian Freighter (space-heavy), Profundity (space-heavy).
+    const uncapped = run({ perThreat: 60, limit: 3 });
+    expect(uncapped.capped).toBe(0);
+    expect(uncapped.answers.map((a: { primaryThreat: string }) => a.primaryThreat)).toEqual(["shields", "key-units", "shields"]);
+
+    const capped = run({ perThreat: 1, limit: 3 });
+    expect(capped.answers.map((a: { cardKey: string; primaryThreat: string }) => [a.cardKey, a.primaryThreat])).toEqual([
+      [SYSTEM_SHOCK, "shields"],
+      ["06010182", "key-units"],
+      ["0101250", "space-heavy"],
+    ]);
+    expect(capped.capped).toBe(4);
+    expect(capped.note).toContain("perThreat 1");
+  });
+
+  it("defers the rows past the cap in rank order behind the kept ones, and drops none", () => {
+    const out = run({ perThreat: 1 });
+    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([SYSTEM_SHOCK, "06010182", "0101250", "04010168", "05010264", "0101239", "04010154"]);
+    expect(out.shown).toBe(out.matched);
+    expect(run({ perThreat: 2 }).capped).toBe(1);
+  });
+
+  it("lists every fired threat with its shown-answer count, 0 for a threat nothing answers", () => {
+    const out = run({ perThreat: 1, limit: 3 });
+    expect(out.threatsCovered).toMatch(/key-units [1-9]\d* \(share 1\)/);
+    expect(out.threatsCovered).toMatch(/shields [1-9]\d* \(share 1\)/);
+    expect(out.threatsCovered).toContain("go-wide 0 (share 1)");
+  });
+
+  it("rejects a perThreat outside 1-60", () => {
+    expect(() => metaAnswers(wide, { leader: "OL", base: "AB", perThreat: 0 })).toThrow();
+    expect(() => metaAnswers(wide, { leader: "OL", base: "AB", perThreat: 61 })).toThrow();
   });
 });
 

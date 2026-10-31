@@ -176,16 +176,27 @@ type Resolution = { ok: true; row: CardRow } | { ok: false; reason: "unknown" | 
 /** A cardKey is one alphanumeric token with a digit (0101033, 08010011); anything else, a title, can be a card from a set before the pool. */
 const CARD_KEY_SHAPE = /^[A-Za-z]*\d[A-Za-z0-9]*$/;
 
-function missDetail(ref: string): string {
-  return CARD_KEY_SHAPE.test(ref.trim())
-    ? "no card with this cardKey or title"
-    : "not found: no card with this title in the Premier pool (sets from Jump to Lightspeed onward); a card from an earlier set is out of the pool, otherwise check the spelling";
+/** Names of the main sets the expansion index marks rotated, in main-set order ("Spark of Rebellion. Main set 1. Premier rotated it out." gives Spark of Rebellion). */
+function rotatedSetNames(store: CardStore): string[] {
+  const named = (store.facets.get("expansion") ?? []).flatMap((e) => {
+    const definition = e.definition ?? "";
+    const number = /\bMain set (\d+)\b/.exec(definition)?.[1];
+    const name = /^(.+?)\.\s/.exec(definition)?.[1];
+    return /rotated/i.test(definition) && number !== undefined && name !== undefined ? [{ order: Number(number), name }] : [];
+  });
+  return named.sort((a, b) => a.order - b.order || compareCodePoints(a.name, b.name)).map((n) => n.name);
+}
+
+function missDetail(store: CardStore, ref: string): string {
+  if (CARD_KEY_SHAPE.test(ref.trim())) return "no card with this cardKey or title";
+  const rotated = rotatedSetNames(store);
+  return `not in the data: this name is not a card from Jump to Lightspeed onward (the Premier pool), so it is either a card from a rotated set${rotated.length === 0 ? "" : ` (${rotated.join(", ")})`} or a misspelling`;
 }
 
 export function resolveRef(store: CardStore, ref: string, kind: Kind): Resolution {
   const direct = store.byKey.get(ref.trim());
   const found = direct !== undefined ? [direct] : (nameIndex(store).get(normalise(ref)) ?? []);
-  if (found.length === 0) return { ok: false, reason: "unknown", detail: missDetail(ref) };
+  if (found.length === 0) return { ok: false, reason: "unknown", detail: missDetail(store, ref) };
   const fits = found.filter((row) => kindFits(row.type, kind));
   if (fits.length === 1) return { ok: true, row: fits[0] };
   const list = (fits.length === 0 ? found : fits).map(describeRow).sort(compareCodePoints);
@@ -829,6 +840,10 @@ export const playableCardsShape = {
     .describe("A partial pile: cards already at 3 copies are skipped, and emptyCostsOnly looks at its curve"),
   costs: z.array(z.number().int().min(0).max(20)).max(21).optional().describe("Only these costs"),
   emptyCostsOnly: z.boolean().default(false).describe("Only costs the partial pile holds no card at"),
+  includeUnplayed: z
+    .boolean()
+    .default(false)
+    .describe("Ranked by leader: also list cards the leader's decks do not play (leaderInclusion null), after the played ones in each cost; default false drops them"),
   tag: z.string().min(1).optional().describe("Only cards carrying this offers: or wants: tag, for example offers:draw"),
   maxPenalty: z.number().int().min(0).default(0).describe("Highest aspect penalty to allow; 0 means every icon is supplied"),
   perCost: z.number().int().min(1).max(20).default(3),
@@ -853,7 +868,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const rankedBy = leaderData !== null && args.rankBy !== "score" ? "leader" : "score";
   const inclusionOf = (cardKey: string): number | null => leaderData?.byCard.get(cardKey)?.inclusion ?? null;
 
-  const rows = env.ctx.cards.flatMap((syn) => {
+  const eligible = env.ctx.cards.flatMap((syn) => {
     const cost = syn.structured.cost;
     const row = env.store.byKey.get(syn.cardKey);
     if (row === undefined || cost === null || !MAIN_TYPES.has(syn.type) || cardScope(env.store, row) === "rotated") return [];
@@ -879,7 +894,9 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       },
     ];
   });
-  rows.sort(
+  const dropUnplayed = rankedBy === "leader" && !args.includeUnplayed;
+  const played = dropUnplayed ? eligible.filter((r) => inclusionOf(r.cardKey) !== null) : eligible;
+  played.sort(
     (a, b) =>
       a.cost - b.cost ||
       (rankedBy === "leader" ? numberOr(inclusionOf(b.cardKey), -1) - numberOr(inclusionOf(a.cardKey), -1) : 0) ||
@@ -887,6 +904,11 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       a.penalty - b.penalty ||
       compareCodePoints(a.cardKey, b.cardKey),
   );
+  const playedCosts = new Set(played.map((r) => r.cost));
+  const emptyCosts = dropUnplayed
+    ? [...new Set([...(args.costs ?? []), ...eligible.map((r) => r.cost)])].filter((c) => !playedCosts.has(c)).sort((a, b) => a - b)
+    : [];
+  const rows = args.emptyCostsOnly ? [...played, ...emptyCosts.map(noPlayedRow)].sort((a, b) => a.cost - b.cost) : played;
   const perCost = new Map<number, number>();
   const shown = rows
     .filter((r) => {
@@ -906,21 +928,41 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       leaderData === null
         ? null
         : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}` },
-    note: playableNote(leaderData?.entry ?? null, rankedBy),
-    matched: rows.length,
+    emptyCosts: emptyCosts.length === 0 ? "none" : `${emptyCosts.join(", ")}: no tournament-played card at ${emptyCosts.length === 1 ? "this cost" : "these costs"}; includeUnplayed: true lists score-ranked cards`,
+    note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed),
+    matched: played.length,
     shown: shown.length,
     cards: shown,
   });
 }
 
-function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score"): string {
+/** The row that stands in for a cost the leader's decks never play, so a gap reads as a gap and not as a filled cost. */
+function noPlayedRow(cost: number) {
+  return {
+    cardKey: null,
+    title: `no tournament-played card at cost ${cost}; includeUnplayed: true lists score-ranked cards`,
+    type: null,
+    cost,
+    aspects: null,
+    penalty: null,
+    playCalibrated: null,
+    leaderInclusion: null,
+    price: null,
+    remainingCopies: null,
+  };
+}
+
+function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "score", includeUnplayed: boolean): string {
   const score = "play-calibrated score (fitted to Premier inclusion; rank-meaningful only)";
   if (entry === null) return `ranked within each cost by ${score}. Not leader-specific: this package holds no leader-cards data for this leader. Rotated cards are left out.`;
   const capped = entry.cards.length >= LEADER_CARDS_MAX ? ` or below the ${LEADER_CARDS_MAX}-card cap of the leader index` : "";
   const unplayed = `leaderInclusion null = unplayed in this leader's decks${capped}`;
   const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry)})`;
+  const unplayedRule = includeUnplayed
+    ? "includeUnplayed: true lists the unplayed cards after the played ones in each cost"
+    : "cards the leader's decks do not play are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card";
   return rankedBy === "leader"
-    ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}. Rotated cards are left out.`
+    ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}; ${unplayedRule}. Rotated cards are left out.`
     : `ranked within each cost by ${score} (rankBy score); leaderInclusion = ${source}; ${unplayed}. Rotated cards are left out.`;
 }
 
@@ -1515,7 +1557,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: tool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card the leader's decks do not play is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card (with emptyCostsOnly it gets an explicit row). Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
     playableCardsShape,
     playableCards,
   ),
