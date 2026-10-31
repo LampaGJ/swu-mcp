@@ -474,6 +474,13 @@ export function parseClause(clause: string): ClauseParse {
       if (prev) e.target = structuredClone(prev);
     }
   });
+  accepted.effect.forEach((e, i) => {
+    if (e.rule !== "defeat_self" || !/^defeat (?:it|him|her)$/i.test(clause.slice(e.span[0], e.span[1]))) return;
+    const antecedent = accepted.effect.slice(0, i).reverse().find((x) => x.target && x.target.side !== "self" && x.target.kind === "unit");
+    if (antecedent?.target) {
+      Object.assign(e, { rule: "defeat_ref", cat: "defeat", target: structuredClone(antecedent.target) });
+    }
+  });
   for (const f of [...accepted.effect, ...accepted.condition]) {
     if (f.target?.side !== "ref" || !/\bits controller's\b/i.test(f.target.text)) continue;
     const before = clause.slice(0, f.span[0]).toLowerCase();

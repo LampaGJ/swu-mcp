@@ -263,3 +263,33 @@ describe("known precision bugs from the prototype", () => {
     expect(parseClause(text).accepted.effect[0]).toMatchObject({ cat: "stat_mod", sign: "debuff" });
   });
 });
+
+describe("a pronoun defeat resolves to the clause's earlier unit target (#60)", () => {
+  it("takes control of a non-leader unit, then defeats that same unit", () => {
+    const effects = parseClause("Take control of a non-leader unit, then defeat it.").accepted.effect;
+    expect(effects.map((e) => [e.rule, e.cat])).toEqual([
+      ["take_control", "take_control"],
+      ["defeat_ref", "defeat"],
+    ]);
+    expect(effects[1]).toMatchObject({ n: 1, target: effects[0].target });
+    expect(effects[1].target).not.toBe(effects[0].target);
+  });
+
+  it.each(["Defeat it.", "Defeat him.", "Defeat her."])("%s has no earlier target and stays a self-defeat", (clause) => {
+    expect(parseClause(clause).accepted.effect.map((e) => e.rule)).toEqual(["defeat_self"]);
+  });
+
+  it("never rewrites defeat this unit, even after an earlier unit target", () => {
+    const effects = parseClause("Deal 1 damage to a unit, then defeat this unit.").accepted.effect;
+    expect(effects.map((e) => e.rule)).toEqual(["damage", "defeat_self"]);
+  });
+
+  it.each([
+    "After completing this attack, defeat it.",
+    "If it costs 3 or less, defeat it.",
+    "At the start of the next regroup phase, defeat it.",
+    "Then, defeat it.",
+  ])("%s stays a self-defeat", (clause) => {
+    expect(parseClause(clause).accepted.effect.map((e) => e.rule)).toContain("defeat_self");
+  });
+});

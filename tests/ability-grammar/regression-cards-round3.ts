@@ -2,6 +2,7 @@ import type { CardSpec } from "./helpers.js";
 
 /** Real card rows from the 2026-10-16 run, text verbatim, for the #15 tag follow-up regressions. */
 export const CARDS_R3 = {
+  "04010043": {"cardKey":"04010043","title":"No Glory, Only Results","type":"Event","traits":"Tactic","text":"Take control of a non-leader unit, then defeat it."},
   "04010139": {"cardKey":"04010139","title":"Dengar","type":"Unit","traits":"Underworld|Bounty Hunter|Pilot","keywords":"Piloting","epicAction":"Piloting [2 resources Aggression Villainy]\nAttached unit gains: “On Attack: Deal 2 indirect damage to a player. If this unit is an Underworld unit, deal 3 indirect damage instead.”"},
   "04010195": {"cardKey":"04010195","title":"Cat and Mouse","type":"Event","traits":"Tactic","text":"Exhaust an enemy unit. If you do, ready a friendly unit in the same arena with power equal to or less than that enemy unit."},
   "05010018": {"cardKey":"05010018","title":"Anakin Skywalker","type":"Leader","traits":"Force|Jedi|Republic","text":"Action [Exhaust, use the Force (lose your Force token)]: Play a Villainy non-unit card from your hand, ignoring its aspect penalties.","deployBox":"Action [use the Force]: Play a Villainy non-unit card from your hand, ignoring its aspect penalties.","epicAction":"Epic Action: If you control 5 or more resources, deploy this leader."},
