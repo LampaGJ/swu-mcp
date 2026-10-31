@@ -139,6 +139,8 @@ function sourcesNote(env: MetaEnv, population: string): Record<string, unknown> 
   };
 }
 
+const leaderDataOf = (env: DeckEnv, leaderKey: string) => leaderCardsOf(env)?.get(leaderKey) ?? null;
+
 const archetypesIn = (env: MetaEnv, population: string): Archetype[] => env.meta.archetypes.filter((a) => a.population === population);
 
 /** Tournament match record of a leader and base aspect against the field, or against one other archetype. */
@@ -239,26 +241,74 @@ export const metaThreatsShape = {
     .string()
     .min(1)
     .describe(
-      "An archetype id from meta_archetypes (for example t001-b32174, or just its rank part t001), or a leader cardKey or exact title (its largest archetype)",
+      "An archetype id from meta_archetypes (for example t001-b32174, or just its rank part t001), or a leader cardKey or exact title (its largest archetype; add base for the archetype with that base). A leader with no tournament archetype in the window falls back to its community lists, labelled in leaderSource",
     ),
+  base: baseField
+    .optional()
+    .describe("With a leader in archetype: profile the leader's archetype whose bases share this base's aspects, not the leader's largest one"),
   population: populationField,
   coreLimit: z.number().int().min(1).max(40).default(15),
 };
 
-function findArchetype(env: MetaEnv, ref: string, population: string): Archetype | string {
+interface FoundArchetype {
+  archetype: Archetype;
+  /** The leader has no archetype in the wanted population, so this is its community one. */
+  fallback: boolean;
+  leaderKey: string;
+}
+
+const sameIcons = (a: readonly string[], b: readonly string[]): boolean => [...a].sort(compareCodePoints).join("+") === [...b].sort(compareCodePoints).join("+");
+
+/** Decks a leader has in the window, per population: its leader-cards entry when that is the population, else the sum of its archetypes. */
+function leaderDeckCounts(env: MetaEnv, leaderKey: string): { tournament: number; community: number } {
+  const entry = leaderDataOf(env.deck, leaderKey)?.entry;
+  const viaArchetypes = (population: string): number =>
+    archetypesIn(env, population)
+      .filter((a) => a.leader.cardKey === leaderKey)
+      .reduce((n, a) => n + a.decks, 0);
+  return {
+    tournament: entry?.population === "tournament" ? entry.decks : viaArchetypes("tournament"),
+    community: entry?.population === "community" ? entry.decks : viaArchetypes("community"),
+  };
+}
+
+function findArchetype(env: MetaEnv, ref: string, population: string, baseRef: string | undefined): FoundArchetype | string {
   const id = ref.trim();
   const byId = env.meta.archetypes.find((a) => a.id === id || a.id.startsWith(`${id}-`));
-  if (byId !== undefined) return byId;
+  if (byId !== undefined) {
+    return baseRef === undefined ? { archetype: byId, fallback: false, leaderKey: byId.leader.cardKey } : "base goes with a leader in archetype, not with an archetype id";
+  }
   const leader = resolveRef(env.deck.store, ref, "leader");
   if (!leader.ok) return `no archetype id "${ref}", and as a leader: ${leader.reason}, ${leader.detail}`;
-  const hit = archetypesIn(env, population).find((a) => a.leader.cardKey === leader.row.cardKey);
-  return hit ?? `no ${population} archetype with leader ${cardLabel(leader.row)} in ${env.meta.window.from}..${env.meta.window.to}`;
+  const leaderKey = leader.row.cardKey;
+  let baseKey: string | undefined;
+  let baseIcons: readonly string[] | undefined;
+  if (baseRef !== undefined) {
+    const base = resolveRef(env.deck.store, baseRef, "base");
+    if (!base.ok) return `base "${baseRef}": ${base.reason}, ${base.detail}`;
+    baseKey = base.row.cardKey;
+    baseIcons = env.deck.ctx.graph.byKey.get(baseKey)?.structured.aspectIcons ?? [];
+  }
+  const matching = (pop: string): Archetype | undefined => {
+    const hits = archetypesIn(env, pop).filter((a) => a.leader.cardKey === leaderKey && (baseIcons === undefined || sameIcons(a.baseAspects, baseIcons)));
+    return hits.find((a) => baseKey !== undefined && a.bases.some((b) => b.cardKey === baseKey)) ?? hits[0];
+  };
+  const hit = matching(population);
+  if (hit !== undefined) return { archetype: hit, fallback: false, leaderKey };
+  const community = population === "community" ? undefined : matching("community");
+  if (community !== undefined) return { archetype: community, fallback: true, leaderKey };
+  const counts = leaderDeckCounts(env, leaderKey);
+  const baseText = baseIcons === undefined ? "" : ` and a base with ${baseIcons.join("+") || "no"} aspects`;
+  return `no ${population} or community archetype with leader ${cardLabel(leader.row)}${baseText}: ${counts.tournament} tournament decks, ${counts.community} community decks in ${env.meta.window.from}..${env.meta.window.to}`;
 }
 
 export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
   const args = z.object(metaThreatsShape).parse(input);
-  const a = findArchetype(env, args.archetype, populationOf(env, args.population));
-  if (typeof a === "string") return fail(a);
+  const found = findArchetype(env, args.archetype, populationOf(env, args.population), args.base);
+  if (typeof found === "string") return fail(found);
+  const a = found.archetype;
+  const leaderData = found.fallback ? leaderDataOf(env.deck, found.leaderKey) : null;
+  const communityDecks = leaderDeckCounts(env, found.leaderKey).community;
   const others = archetypesIn(env, a.population)
     .filter((o) => o.id !== a.id && !(o.leader.cardKey === a.leader.cardKey && o.baseAspects.join("+") === a.baseAspects.join("+")))
     .slice(0, 10);
@@ -269,6 +319,14 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
   return ok({
     dataVersion: env.deck.dataVersion,
     sources: sourcesNote(env, a.population),
+    leaderSource: found.fallback
+      ? {
+          population: "community",
+          fallback: true,
+          decks: communityDecks,
+          window: leaderData === null ? `${env.meta.window.from}..${env.meta.window.to}` : `${leaderData.entry.window.from}..${leaderData.entry.window.to}`,
+        }
+      : null,
     archetype: {
       id: a.id,
       name: a.name,
@@ -316,7 +374,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     })),
     core: a.core.slice(0, args.coreLimit),
     tournamentRecordVs: vs,
-    note: "Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).",
+    note: `${found.fallback ? "The leader has no tournament archetype in the window, so this is its largest community archetype (leaderSource: the leader's community lists, never pooled with tournament decks); the record against the field is still tournament data for the leader and base aspect. " : ""}Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).`,
   });
 }
 
@@ -523,7 +581,6 @@ function leaderUnitMean(env: MetaEnv, leaderKey: string, population: string, lea
   return own.length === 0 ? null : own[0].profile.units;
 }
 
-const leaderDataOf = (env: DeckEnv, leaderKey: string) => leaderCardsOf(env)?.get(leaderKey) ?? null;
 
 export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
   const args = z.object(metaAnswersShape).parse(input);
@@ -834,7 +891,7 @@ export const META_TOOLS = {
   ),
   meta_threats: tool(
     "Meta threats",
-    "One archetype in depth: leader and bases, threat profile (arena split, curve, keywords, upgrade and token reliance), key units with cost, power and HP, core cards with inclusion rates, the threats it poses and its tournament record against the other large archetypes.",
+    "One archetype in depth: leader and bases, threat profile (arena split, curve, keywords, upgrade and token reliance), key units with cost, power and HP, core cards with inclusion rates, the threats it poses and its tournament record against the other large archetypes. A leader with no tournament archetype in the window falls back to its largest community archetype (leaderSource: population community, fallback true, decks); an error names both deck counts only when neither population holds a deck. Give base with a leader to profile the archetype with that base's aspects.",
     metaThreatsShape,
     metaThreats,
   ),

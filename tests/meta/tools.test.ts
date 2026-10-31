@@ -182,6 +182,65 @@ describe("meta_threats", () => {
   });
 });
 
+describe("meta_threats falls back to the leader's community decks (#144)", () => {
+  // Casual Leader (CL) has three community lists and no tournament deck; Our Leader (OL) has none in either population.
+  const communityDecks = Array.from({ length: 3 }, (_, i) =>
+    deck(`c${i}`, { leader: "CL", base: "OB", cards: [[RUSH_UNIT, 3]], population: "community", source: "swudb", event: null, placement: null }),
+  );
+  const mixed = buildMeta([...enemyDecks, ...communityDecks], facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 });
+  const casualFile = leaderCardsFileSchema.parse({
+    schemaVersion: 1,
+    window: { from: "2026-07-04", to: "2026-10-01", days: 90 },
+    weighting: "test weighting",
+    baseline: "test baseline",
+    maxCards: 150,
+    leaders: [
+      {
+        leader: { cardKey: "CL", title: "Casual Leader", aspects: ["Cunning"] },
+        population: "community",
+        fallback: true,
+        decks: 3,
+        weight: 3,
+        window: { from: "2026-07-04", to: "2026-10-01" },
+        topBase: null,
+        cards: [{ cardKey: RUSH_UNIT, title: RUSH_UNIT, inclusion: 1, meanCopies: 3, baselineInclusion: 0.1, lift: 0.9 }],
+      },
+    ],
+  });
+  const withCommunity = createMetaEnv({ ...deckEnv, leaderCards: indexLeaderCards(casualFile) }, mixed, winrates, loadCounterTable(), features);
+
+  it("builds the profile from the community archetype and labels it population community, fallback true, with the leader's deck count", () => {
+    expect(mixed.archetypes.filter((a) => a.leader.cardKey === "CL").map((a) => a.population)).toEqual(["community"]);
+    const out = body(metaThreats(withCommunity, { archetype: "CL", coreLimit: 8 }));
+    expect(out.archetype.population).toBe("community");
+    expect(out.archetype.decks).toBe(3);
+    expect(out.leaderSource).toEqual({ population: "community", fallback: true, decks: 3, window: "2026-07-04..2026-10-01" });
+    expect(out.sources.population).toBe("community");
+    expect(out.note).toContain("community");
+    expect(out.keyUnits[0]).toMatchObject({ cardKey: RUSH_UNIT });
+  });
+
+  it("keeps the tournament archetype, with no fallback label, for a leader that has one", () => {
+    const out = body(metaThreats(withCommunity, { archetype: "EL" }));
+    expect(out.archetype.population).toBe("tournament");
+    expect(out.leaderSource).toBeNull();
+  });
+
+  it("profiles the leader's archetype with the given base when the leader is a cardKey, and errors for a base it has no list with", () => {
+    expect(body(metaThreats(withCommunity, { archetype: "CL", base: "OB" })).archetype.population).toBe("community");
+    const miss = metaThreats(withCommunity, { archetype: "CL", base: "AB" });
+    expect(miss.isError).toBe(true);
+    expect(miss.content[0].text).toContain("Aggression");
+    expect(metaThreats(withCommunity, { archetype: meta.archetypes[0].id, base: "OB" }).isError).toBe(true);
+  });
+
+  it("errors only when neither population holds a deck for the leader, naming both counts and the window", () => {
+    const none = metaThreats(withCommunity, { archetype: "OL" });
+    expect(none.isError).toBe(true);
+    expect(none.content[0].text).toContain(`0 tournament decks, 0 community decks in ${mixed.window.from}..${mixed.window.to}`);
+  });
+});
+
 describe("meta_answers ordering", () => {
   // Our leader plus an Aggression base supplies every icon of It's Worse (7, neutral) and Charged with Treason (4,
   // Aggression), so both are penalty-free and answer the same threat with coverage 1; Corellian Freighter (5) and Profundity (9) cover 0.5.

@@ -111,6 +111,15 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
     expect(text).toContain("Origin Tree");
   }, 60_000);
 
+  it("profiles a leader with no tournament archetype from its community decks (#144)", async () => {
+    const result = await client.callTool({ name: "meta_threats", arguments: { archetype: "09010018", coreLimit: 8 } });
+    const text = (result.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+    expect(result.isError, text.slice(0, 200)).toBeUndefined();
+    expect(text).toContain("leaderSource");
+    expect(text).toContain("community");
+    expect(text).toContain("fallback: true");
+  }, 60_000);
+
   it("returns candidate status and clause evidence from the pairing tools, and drops it on request", async () => {
     const call = async (name: string, args: Record<string, unknown>) => {
       const result = await client.callTool({ name, arguments: args });
