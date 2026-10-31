@@ -190,6 +190,7 @@ const CONDITIONAL =
 /** A target the matcher can only satisfy under a condition it cannot check ("a unit that dealt damage to a base"). */
 export const conditionalTarget = (text: string): boolean => CONDITIONAL.test(text.replace(READ_LIMITS, ""));
 const SWEEP_QUANTS = new Set(["all", "any_number", "any"]);
+const ALL_QUANTS = new Set(["all", "each"]);
 const LIMIT = /^(cost|hp|power)_(le|lt|ge)_(\d+)$/;
 
 /** Whether every stated limit on the target holds for the unit; a limit the matcher cannot read fails. */
@@ -238,6 +239,18 @@ function sweeps(effect: EffectSpec, cheapHp: number | null, needReach: boolean):
   return !blocked && (hp === undefined || Number(hp[1]) >= cheapHp);
 }
 
+/**
+ * Decision D46: the offer hits our units as well as theirs. Every defeat or damage effect it has on units that reaches
+ * an opponent's side ("side any") takes all or each of them, with no choice of target; "any number of" and "up to N"
+ * leave the choice to the player, so they are not symmetric.
+ */
+export function symmetricOffer(offer: AnswerOffer): boolean {
+  const onUnits = offer.effects.filter(
+    (e) => (e.cat === "defeat" || e.cat === "damage") && HOSTILE_SIDES.has(e.side) && UNIT_KINDS.has(e.kind),
+  );
+  return onUnits.length > 0 && onUnits.every((e) => e.side === "any" && ALL_QUANTS.has(e.quant));
+}
+
 export interface RelationHit {
   relation: string;
   threat: string;
@@ -248,6 +261,8 @@ export interface RelationHit {
   answers: string[];
   /** Share of the archetype's key-unit copies removed (removal), else 1. */
   fraction: number;
+  /** Decision D46: the offer is a sweep that also hits our own units (see symmetricOffer). */
+  symmetric: boolean;
 }
 
 /** How one relation applies to a card against one archetype profile, or null when it does not. */
@@ -294,6 +309,7 @@ export function relationHit(
       evidence: clip(offer.why),
       answers,
       fraction: Math.round(fraction * 1e4) / 1e4,
+      symmetric: symmetricOffer(offer),
     };
     if (best === null || hit.weight * hit.fraction > best.weight * best.fraction) best = hit;
   }

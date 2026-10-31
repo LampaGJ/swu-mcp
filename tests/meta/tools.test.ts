@@ -136,6 +136,8 @@ const body = (result: ToolResult): any => {
   expect(result.isError, result.content[0].text).not.toBe(true);
   return decode(result.content[0].text);
 };
+/** meta_answers lists its rows as staples then additions (D46); the rank tests read them as one page. */
+const pageOf = (out: { staples: any[]; additions: any[] }): any[] => [...out.staples, ...out.additions];
 
 describe("meta_archetypes", () => {
   it("lists archetypes with share, window, threats, tournament record and the sources it rests on", () => {
@@ -217,8 +219,8 @@ describe("meta_answers ordering", () => {
   const order = (e: typeof env) => {
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
     return {
-      keys: out.answers.map((a: { cardKey: string }) => a.cardKey),
-      classes: Object.fromEntries(out.answers.map((a: { cardKey: string; evidenceClass: string }) => [a.cardKey, a.evidenceClass])),
+      keys: pageOf(out).map((a: { cardKey: string }) => a.cardKey),
+      classes: Object.fromEntries(pageOf(out).map((a: { cardKey: string; evidenceClass: string }) => [a.cardKey, a.evidenceClass])),
       note: out.note as string,
     };
   };
@@ -254,14 +256,14 @@ describe("meta_answers ordering", () => {
     // 92 of the group's 100 decks include the card, so 8 do not; both sides still have more than minN decisive matches.
     const e = withCards([{ cardKey: CHARGED, decks: 92, wins: 460, losses: 400, draws: 0 }]);
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
-    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === CHARGED);
     expect(charged.deckEvidence.withoutCard.decks).toBe(8);
     expect(charged.deckEvidence.withoutCard.n).toBeGreaterThanOrEqual(10);
     expect(charged.deckEvidence.difference).toBeGreaterThan(-0.05);
     expect(charged.evidenceClass).toBe("unmeasured");
     expect(charged.deckEvidence.unmeasured).toContain("withoutCard has 8 decks");
     expect(charged.deckEvidence.unmeasured).toContain("needs 10");
-    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(pageOf(out).map((a: { cardKey: string }) => a.cardKey)).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
     expect(out.note).toContain("unmeasured");
   });
 
@@ -269,18 +271,18 @@ describe("meta_answers ordering", () => {
     // 5 decks with the card, 15 decisive matches, win rate 0.2 against about 0.5 without it.
     const e = withCards([{ cardKey: CHARGED, decks: 5, wins: 3, losses: 12, draws: 0 }]);
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
-    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === CHARGED);
     expect(charged.evidenceClass).toBe("negative");
     expect(charged.deckEvidence.withCard.decks).toBe(5);
     expect(charged.deckEvidence.thin).toBe("(thin: 5 decks with the card)");
     expect(charged.deckEvidence.unmeasured).toBeUndefined();
-    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
+    expect(pageOf(out).map((a: { cardKey: string }) => a.cardKey)).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
   });
 
   it("keeps the class when both sides have 10 decks and minN decisive matches", () => {
     const e = withCards([{ cardKey: CHARGED, decks: 90, wins: 100, losses: 400, draws: 0 }]);
     const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
-    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    const charged = pageOf(out).find((a: { cardKey: string }) => a.cardKey === CHARGED);
     expect(charged.evidenceClass).toBe("negative");
     expect(charged.deckEvidence.unmeasured).toBeUndefined();
     expect(charged.deckEvidence.thin).toBeUndefined();
@@ -307,12 +309,12 @@ describe("meta_answers per-threat diversity", () => {
   it("moves an answer to a threat the page lacks ahead of a second answer to a threat it already lists", () => {
     // Uncapped rank: System Shock (shields), Charged with Treason (key-units), Insurgent Saboteurs (shields),
     // It's Worse (key-units), Rebel Pathfinder (shields), Corellian Freighter (space-heavy), Profundity (space-heavy).
-    const uncapped = run({ perThreat: 60, limit: 3 });
+    const uncapped = run({ perThreat: 60, limit: 3, minPerThreat: 0 });
     expect(uncapped.capped).toBe(0);
-    expect(uncapped.answers.map((a: { primaryThreat: string }) => a.primaryThreat)).toEqual(["shields", "key-units", "shields"]);
+    expect(pageOf(uncapped).map((a: { primaryThreat: string }) => a.primaryThreat)).toEqual(["shields", "key-units", "shields"]);
 
     const capped = run({ perThreat: 1, limit: 3 });
-    expect(capped.answers.map((a: { cardKey: string; primaryThreat: string }) => [a.cardKey, a.primaryThreat])).toEqual([
+    expect(pageOf(capped).map((a: { cardKey: string; primaryThreat: string }) => [a.cardKey, a.primaryThreat])).toEqual([
       [SYSTEM_SHOCK, "shields"],
       ["06010182", "key-units"],
       ["0101250", "space-heavy"],
@@ -323,7 +325,7 @@ describe("meta_answers per-threat diversity", () => {
 
   it("defers the rows past the cap in rank order behind the kept ones, and drops none", () => {
     const out = run({ perThreat: 1 });
-    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([SYSTEM_SHOCK, "06010182", "0101250", "04010168", "05010264", "0101239", "04010154"]);
+    expect(pageOf(out).map((a: { cardKey: string }) => a.cardKey)).toEqual([SYSTEM_SHOCK, "06010182", "0101250", "04010168", "05010264", "0101239", "04010154"]);
     expect(out.shown).toBe(out.matched);
     expect(run({ perThreat: 2 }).capped).toBe(1);
   });
@@ -424,9 +426,9 @@ describe("meta_answers", () => {
   it("returns penalty-free answers first with clause evidence, candidate status, coverage and win rate with n", () => {
     const out = body(metaAnswers(env, { leader: "OL", base: "OB", maxPenalty: 4, limit: 20 }));
     expect(out.defendingAgainst[0].ourTournamentRecord).toMatchObject({ record: "7-5-0", n: 12, winRate: 0.5833, source: SWUMETASTATS_SOURCE });
-    const penalties = out.answers.map((a: { penalty: number }) => a.penalty);
+    const penalties = pageOf(out).map((a: { penalty: number }) => a.penalty);
     expect(penalties).toEqual([...penalties].sort((a, b) => a - b));
-    const itsWorse = out.answers.find((a: { cardKey: string }) => a.cardKey === "05010264");
+    const itsWorse = pageOf(out).find((a: { cardKey: string }) => a.cardKey === "05010264");
     expect(itsWorse.status).toBe("candidate");
     expect(itsWorse.coverage).toBe(1);
     expect(itsWorse.answers[0]).toMatchObject({
@@ -443,9 +445,9 @@ describe("meta_answers", () => {
       source: SWUMETASTATS_SOURCE,
       window: "2026-07-20..2026-10-17",
     });
-    const noEvidence = out.answers.find((a: { cardKey: string; deckEvidence: unknown }) => typeof a.deckEvidence === "string");
+    const noEvidence = pageOf(out).find((a: { cardKey: string; deckEvidence: unknown }) => typeof a.deckEvidence === "string");
     expect(noEvidence.deckEvidence).toContain("fewer than 10 decisive matches");
-    const allClear = out.answers.find((a: { cardKey: string }) => a.cardKey === "04010055");
+    const allClear = pageOf(out).find((a: { cardKey: string }) => a.cardKey === "04010055");
     expect(allClear).toBeUndefined();
   });
 
@@ -462,8 +464,8 @@ describe("meta_answers", () => {
       }),
     );
     expect(out.leader.cardKey).toBe("OL");
-    expect(out.answers.find((a: { cardKey: string }) => a.cardKey === "05010264").inDeck).toBe(2);
-    expect(out.answers.flatMap((a: { answers: object[] }) => a.answers).filter((x: object) => "evidence" in x)).toEqual([]);
+    expect(pageOf(out).find((a: { cardKey: string }) => a.cardKey === "05010264").inDeck).toBe(2);
+    expect(pageOf(out).flatMap((a: { answers: object[] }) => a.answers).filter((x: object) => "evidence" in x)).toEqual([]);
   });
 
   it("asks for a leader and base when neither is given", () => {
@@ -507,12 +509,12 @@ describe("meta_answers respects what the leader plays (D45)", () => {
     features,
   );
   const run = (extra: object = {}) => body(metaAnswers(played, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, perThreat: 60, ...extra }));
-  const keys = (out: any): string[] => out.answers.map((a: { cardKey: string }) => a.cardKey);
+  const keys = (out: any): string[] => pageOf(out).map((a: { cardKey: string }) => a.cardKey);
 
   it("keeps on the page only answers the leader's decks play at 2% or more, and counts the rest in capped", () => {
     const out = run();
     expect(keys(out)).toEqual([IT_IS_WORSE, FREIGHTER]);
-    expect(out.answers.map((a: { leaderInclusion: number | null }) => a.leaderInclusion)).toEqual([0.3, 0.025]);
+    expect(pageOf(out).map((a: { leaderInclusion: number | null }) => a.leaderInclusion)).toEqual([0.3, 0.025]);
     expect(out.matched).toBe(4);
     expect(out.shown).toBe(2);
     expect(out.capped).toBe(2);
@@ -524,7 +526,7 @@ describe("meta_answers respects what the leader plays (D45)", () => {
   it("lists every answer with leaderInclusion null for an unplayed card when includeUnplayed is true", () => {
     const out = run({ includeUnplayed: true });
     expect(new Set(keys(out))).toEqual(new Set([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]));
-    const byKey = Object.fromEntries(out.answers.map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion]));
+    const byKey = Object.fromEntries(pageOf(out).map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion]));
     expect(byKey).toEqual({ [IT_IS_WORSE]: 0.3, [CHARGED]: 0.01, [FREIGHTER]: 0.025, [PROFUNDITY]: null });
     expect(out.capped).toBe(0);
   });
@@ -545,7 +547,7 @@ describe("meta_answers respects what the leader plays (D45)", () => {
   it("does not filter when the package has no decklist data for the leader", () => {
     const out = body(metaAnswers(env, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, perThreat: 60 }));
     expect(keys(out)).toHaveLength(4);
-    expect(out.answers[0].leaderInclusion).toBeNull();
+    expect(pageOf(out)[0].leaderInclusion).toBeNull();
     expect(out.leaderSource).toBeNull();
   });
 
@@ -553,7 +555,7 @@ describe("meta_answers respects what the leader plays (D45)", () => {
     const sentinel = { ...loadCounterTable(), threats: loadCounterTable().threats.map((t) => (t.id === "sentinel-wall" ? { ...t, metrics: ["meanCost"], min: 0 } : t)) };
     const walled = createMetaEnv(deckEnv, meta, winrates, sentinel, features);
     const out = body(metaAnswers(walled, { leader: "OL", base: "AB", maxPenalty: 4, limit: 60, perThreat: 60 }));
-    const marrok = out.answers.find((a: { cardKey: string }) => a.cardKey === "08010030");
+    const marrok = pageOf(out).find((a: { cardKey: string }) => a.cardKey === "08010030");
     expect(marrok.answers).toContainEqual(
       expect.objectContaining({ threat: "sentinel-wall", relation: "sentinel-bypass-conditional", offer: "offers:gain-saboteur-self" }),
     );
@@ -566,6 +568,196 @@ describe("meta_answers respects what the leader plays (D45)", () => {
     const out = run({ perThreat: 1 });
     expect(keys(out)).toEqual([IT_IS_WORSE, FREIGHTER]);
     expect(out.capped).toBe(2);
+  });
+});
+
+describe("meta_answers reserves a slot per threat, marks symmetric sweeps, and separates staples from additions (D46)", () => {
+  const IT_IS_WORSE = "05010264";
+  const CHARGED = "06010182";
+  const FREIGHTER = "0101250";
+  const PROFUNDITY = "04010154";
+  const REACTOR = "00SYM"; // "Defeat all units.", cost 2: undemoted it would lead its coverage band.
+
+  const itsWorse = COUNTER_CARDS.find((c) => (c as { cardKey: string }).cardKey === IT_IS_WORSE) as any;
+  const reactor = {
+    ...itsWorse,
+    cardKey: REACTOR,
+    title: "Reactor Ignition",
+    structured: { ...itsWorse.structured, cost: 2 },
+    faces: {
+      text: [
+        {
+          ...itsWorse.faces.text[0],
+          clauses: [
+            {
+              ...itsWorse.faces.text[0].clauses[0],
+              text: "Defeat all units.",
+              effects: [
+                { rule: "defeat_all", cat: "defeat", n: "all", target: { side: "any", kind: "unit", arena: "any", quant: "all", restrict: [], text: "all units" } },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    tags: { offers: [{ tag: "offers:defeat-any-unit", why: "text: Defeat all units." }], wants: [] },
+  };
+  const sweepFeatures = [...features, reactor];
+  const sweepSynergy = synergyCardsSchema.parse(sweepFeatures);
+  const sweepRows: CardRow[] = sweepSynergy.map((s) => ({ ...(rows.find((r) => r.cardKey === s.cardKey) ?? rows[0]), cardKey: s.cardKey, title: s.title, subtitle: s.subtitle, type: s.type, cost: s.structured.cost, aspects: s.structured.aspectIcons.join("|") || null }));
+  const sweepStore: CardStore = { ...store, cards: sweepRows, byKey: new Map(sweepRows.map((r) => [r.cardKey, r])) };
+  const sweepDeck: DeckEnv = { ...deckEnv, store: sweepStore, ctx: createSynergyContext(sweepSynergy, COMMITTED_TABLE) };
+
+  const UNITS = ["0101239", "0101250", "04010033", "04010154", "04010168", "05010101", "05010185", "08010030"];
+  const leaderEnv = (rowsIn: [string, number, number?][], base: DeckEnv = sweepDeck, feats: unknown[] = sweepFeatures) =>
+    createMetaEnv(
+      {
+        ...base,
+        leaderCards: indexLeaderCards(
+          leaderCardsFileSchema.parse({
+            schemaVersion: 1,
+            window: { from: "2026-07-04", to: "2026-10-01", days: 90 },
+            weighting: "test weighting",
+            baseline: "test baseline",
+            maxCards: 150,
+            leaders: [
+              {
+                leader: { cardKey: "OL", title: "Our Leader", aspects: ["Vigilance", "Heroism"] },
+                population: "tournament",
+                fallback: false,
+                decks: 12,
+                weight: 18,
+                window: { from: "2026-07-04", to: "2026-10-01" },
+                topBase: null,
+                cards: rowsIn.map(([cardKey, inclusion, meanCopies]) => ({ cardKey, title: cardKey, inclusion, meanCopies: meanCopies ?? 2, baselineInclusion: 0.1, lift: inclusion - 0.1 })),
+              },
+            ],
+          }),
+        ),
+      },
+      meta,
+      winrates,
+      loadCounterTable(),
+      feats,
+    );
+  const heavy: [string, number, number][] = UNITS.map((u) => [u, 0.05, 4]); // eight units x 4 copies = 32 units
+  const light: [string, number, number][] = UNITS.map((u) => [u, 0.05, 1]); // 8 units
+  const run = (e: ReturnType<typeof leaderEnv>, extra: object = {}) => body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20, perThreat: 60, ...extra }));
+  const keys = (rowsIn: { cardKey: string }[]): string[] => rowsIn.map((a) => a.cardKey);
+
+  describe("minPerThreat", () => {
+    // The leader plays It's Worse and Charged with Treason (key-units) and the Freighter at 2.5% (space-heavy).
+    const e = leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3], [FREIGHTER, 0.025]]);
+
+    it("puts the best answer of an uncovered threat on a short page and marks it reserved", () => {
+      const off = run(e, { limit: 2, minPerThreat: 0 });
+      expect(keys(off.additions)).toEqual([CHARGED, IT_IS_WORSE]);
+      expect(off.threatsCovered).toContain("space-heavy 0 (share 1)");
+      const on = run(e, { limit: 2 });
+      expect(keys(on.additions)).toEqual([CHARGED, FREIGHTER]);
+      expect(on.additions[1]).toMatchObject({ reserved: true });
+      expect(on.additions[1].hiddenByFloor).toBeUndefined();
+      expect(on.additions[0].reserved).toBeUndefined();
+      expect(on.threatsCovered).toMatch(/space-heavy 1 \(share 1\)/);
+      expect(on.threatsCovered).toMatch(/key-units 1 \(share 1\)/);
+    });
+
+    it("defaults to 1 and takes up to 5 per threat", () => {
+      expect(keys(run(e, { limit: 2 }).additions)).toEqual(keys(run(e, { limit: 2, minPerThreat: 1 }).additions));
+      expect(keys(run(e, { limit: 3, minPerThreat: 2 }).additions)).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER]);
+      expect(() => metaAnswers(e, { leader: "OL", base: "AB", minPerThreat: 6 })).toThrow();
+      expect(() => metaAnswers(e, { leader: "OL", base: "AB", minPerThreat: -1 })).toThrow();
+    });
+
+    it("includes the best hidden answer for a threat whose every answer fails the leader-inclusion floor, flagged hiddenByFloor", () => {
+      const noSpace = leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3]]);
+      const out = run(noSpace, { limit: 2 });
+      expect(keys(out.additions)).toEqual([CHARGED, FREIGHTER]);
+      expect(out.additions[1]).toMatchObject({ reserved: true, hiddenByFloor: true, leaderInclusion: null });
+      expect(out.threatsCovered).toMatch(/space-heavy 1 \(share 1\)/);
+      expect(out.capped).toBe(2); // Reactor Ignition and Profundity stay left out; the Freighter is on the page
+      expect(out.note).toContain("minPerThreat");
+      expect(run(noSpace, { limit: 2, minPerThreat: 0 }).threatsCovered).toContain("space-heavy 0 (share 1)");
+      const all = run(noSpace, { limit: 20, includeUnplayed: true });
+      expect(all.additions.some((a: { hiddenByFloor?: boolean }) => a.hiddenByFloor)).toBe(false);
+    });
+
+    it("counts a staple toward the threat, so no addition is reserved for it", () => {
+      const out = run(e, { limit: 1, decklist: [{ card: "OL", count: 1 }, { card: "AB", count: 1 }, { card: FREIGHTER, count: 1 }] });
+      expect(keys(out.staples)).toEqual([FREIGHTER]);
+      expect(keys(out.additions)).toEqual([CHARGED]);
+      expect(out.additions[0].reserved).toBeUndefined();
+    });
+  });
+
+  describe("symmetric sweeps", () => {
+    it("marks an all-units offer symmetric and sorts it after the non-symmetric answers of its band when the leader's lists run more than 30 units", () => {
+      const out = run(leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3], [REACTOR, 0.3], ...heavy]));
+      const order = keys(out.additions);
+      expect(order.indexOf(REACTOR)).toBeGreaterThan(order.indexOf(IT_IS_WORSE));
+      expect(order.indexOf(REACTOR)).toBeGreaterThan(order.indexOf(CHARGED));
+      const flagged = out.additions.filter((a: { symmetric?: boolean }) => a.symmetric).map((a: { cardKey: string }) => a.cardKey);
+      expect(flagged).toEqual([REACTOR]);
+      expect(out.symmetricSweeps).toMatchObject({ demoted: true, units: 32 });
+      expect(out.note).toContain("symmetric");
+    });
+
+    it("marks it but keeps rank when the leader's lists run 30 units or fewer", () => {
+      const out = run(leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3], [REACTOR, 0.3], ...light]));
+      const order = keys(out.additions);
+      expect(order.indexOf(REACTOR)).toBeLessThan(order.indexOf(CHARGED));
+      expect(out.additions.find((a: { cardKey: string }) => a.cardKey === REACTOR).symmetric).toBe(true);
+      expect(out.symmetricSweeps).toMatchObject({ demoted: false, units: 8 });
+    });
+
+    it("reads the unit count of a decklist: 30 or more demotes, 29 does not", () => {
+      const e = leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3], [REACTOR, 0.3], ...light]);
+      const withUnits = (n: number) => ({ decklist: [{ card: "OL", count: 1 }, { card: "AB", count: 1 }, { card: FREIGHTER, count: n }] });
+      const thirty = run(e, withUnits(30));
+      expect(thirty.symmetricSweeps).toMatchObject({ demoted: true, units: 30 });
+      expect(keys(thirty.additions).indexOf(REACTOR)).toBeGreaterThan(keys(thirty.additions).indexOf(CHARGED));
+      const short = run(e, withUnits(29));
+      expect(short.symmetricSweeps).toMatchObject({ demoted: false, units: 29 });
+      expect(keys(short.additions).indexOf(REACTOR)).toBeLessThan(keys(short.additions).indexOf(CHARGED));
+    });
+
+    it("does not mark a single-target removal", () => {
+      const out = run(leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.3], [REACTOR, 0.3], ...heavy]));
+      expect(out.additions.find((a: { cardKey: string }) => a.cardKey === IT_IS_WORSE).symmetric).toBeUndefined();
+    });
+
+    it("keeps the rank order when the package has no unit count to read", () => {
+      const out = run(createMetaEnv(sweepDeck, meta, winrates, loadCounterTable(), sweepFeatures));
+      expect(out.symmetricSweeps).toMatchObject({ demoted: false, units: null });
+    });
+  });
+
+  describe("staples and additions", () => {
+    const e = leaderEnv([[IT_IS_WORSE, 0.3], [CHARGED, 0.6], [FREIGHTER, 0.3], [PROFUNDITY, 0.1]]);
+
+    it("lists inDeck cards and cards the leader plays at 50% or more as staples, the rest as additions", () => {
+      const out = run(e, { decklist: [{ card: "OL", count: 1 }, { card: "AB", count: 1 }, { card: PROFUNDITY, count: 1 }] });
+      expect(new Set(keys(out.staples))).toEqual(new Set([CHARGED, PROFUNDITY]));
+      expect(keys(out.additions)).toEqual([IT_IS_WORSE, FREIGHTER]);
+      expect(out.answers).toBeUndefined();
+      expect(out.shown).toBe(4);
+      expect(out.staples[0]).toHaveProperty("evidenceClass");
+      expect(out.note).toContain("staples");
+    });
+
+    it("applies limit to the additions only, and threatsCovered counts both lists", () => {
+      const out = run(e, { limit: 1, minPerThreat: 0 });
+      expect(keys(out.staples)).toEqual([CHARGED]);
+      expect(keys(out.additions)).toHaveLength(1);
+      expect(out.shown).toBe(2);
+      expect(out.threatsCovered).toMatch(/key-units 2 \(share 1\)/);
+    });
+
+    it("keeps staples out of the perThreat cap that spreads the additions", () => {
+      const out = run(e, { perThreat: 1, limit: 20, minPerThreat: 0 });
+      expect(keys(out.additions)).toEqual([IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+      expect(out.capped).toBe(2); // Profundity repeats space-heavy (deferred) and Reactor Ignition is unplayed (left out); Charged with Treason, a staple, took no key-units slot
+    });
   });
 });
 
