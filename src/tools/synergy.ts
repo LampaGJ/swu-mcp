@@ -15,7 +15,7 @@ import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "
 import { cardLabel, cmp } from "../synergy/order.js";
 import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
-import { trioOrder } from "../synergy/trios.js";
+import { TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
 import { ok, fail } from "./common.js";
 
@@ -43,6 +43,18 @@ const traitsMode = z
   );
 
 const cardKey = z.string().min(1);
+
+const includeLeaders = z
+  .boolean()
+  .default(false)
+  .describe("List Leader and Base cards as partners too. They never sit in a deck's 50 cards, so the default leaves them out");
+
+/** Types that can sit in a deck's 50 cards; a Leader or Base partner is only listed on request. */
+const DECK_CARD_TYPES: ReadonlySet<string> = TRIO_MEMBER_TYPES;
+const partnerFilterNote = (included: boolean): string =>
+  included
+    ? "includeLeaders: Leader and Base partners are included; they cannot be one of a deck's 50 cards"
+    : "Leader and Base cards are left out as partners because they cannot be one of a deck's 50 cards; includeLeaders: true lists them";
 
 export const fungibleSubstitutesShape = {
   cardKey: cardKey.describe("The card whose slot to fill, for example 0101033"),
@@ -72,6 +84,7 @@ export const findPairingsShape = {
   traits: traitsMode,
   tribalLimit: z.number().int().min(0).max(50).default(5).describe("Most trait-only (tribal) pairs listed in the separate tribal section when traits is bonus"),
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for the partner slot, by aspect"),
+  includeLeaders,
   perLink: z
     .number()
     .int()
@@ -95,6 +108,7 @@ export const findTriosShape = {
   baseAspects: z.array(z.string().min(1)).max(1).optional().describe("Fix the base's aspect icon; give [] for a neutral base"),
   traits: traitsMode,
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for each slot, by aspect"),
+  includeLeaders,
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(50).default(10),
 };
@@ -189,6 +203,10 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
   return ok({ status: CANDIDATE_STATUS, card: brief(slot), roles });
 }
 
+function deckMembers(ctx: SynergyContext, members: readonly string[], includeLeaders: boolean): readonly string[] {
+  return includeLeaders ? members : members.filter((k) => DECK_CARD_TYPES.has((ctx.graph.byKey.get(k) as SynergyCard).type));
+}
+
 function penaltyFor(
   ctx: SynergyContext,
   members: SynergyCard[],
@@ -230,7 +248,9 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     if (partner === undefined) return false;
     if (e.a === card.cardKey && args.direction === "enablers") return false;
     if (e.b === card.cardKey && args.direction === "payoffs") return false;
-    const cost = (ctx.graph.byKey.get(partner) as SynergyCard).structured.cost;
+    const partnerCard = ctx.graph.byKey.get(partner) as SynergyCard;
+    if (!args.includeLeaders && !DECK_CARD_TYPES.has(partnerCard.type)) return false;
+    const cost = partnerCard.structured.cost;
     return args.maxCost === undefined || (cost !== null && cost <= args.maxCost);
   });
   const ranked = (edges: readonly PairEdge[], mode: TraitsMode) => {
@@ -278,7 +298,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
       const tags = slotRoles([partner.cardKey], [e])[0];
       const common = commonMembers(ctx.fungibility, partner.cardKey, [...tags.offers, ...tags.wants]);
       out.alternatives = groupText(
-        substitutesFor(ctx.fungibility, common.members, partner.cardKey, {
+        substitutesFor(ctx.fungibility, deckMembers(ctx, common.members, args.includeLeaders), partner.cardKey, {
           preferAspects: args.aspects,
           perGroup: 2,
           maxCost: args.maxCost,
@@ -292,6 +312,7 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     card: brief(card),
     source: args.source,
     traits: args.traits,
+    partnerFilter: partnerFilterNote(args.includeLeaders),
     total: rows.length,
     shown: shown.length,
     capped: deferred,
@@ -323,6 +344,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
   const search = ctx.trios({
     combos: fixed ? fixedCombo(args.leaderAspects, args.baseAspects) : undefined,
     traits: args.traits,
+    ...(args.includeLeaders ? { memberTypes: new Set([...DECK_CARD_TYPES, "Leader", "Base"]) } : {}),
     accept: (keys, cost) => cost <= args.maxTotalCost && (args.cardKey === undefined || keys.includes(args.cardKey)),
   });
   const shapes = args.shape === undefined ? TRIO_SHAPES : [args.shape];
@@ -359,7 +381,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
         return {
           slot: "ABC"[i],
           roles: [...r.offers, ...r.wants].join(", "),
-          substitutes: groupText(substitutesFor(ctx.fungibility, common.members, r.cardKey, { preferAspects: prefer, perGroup: 2 }), 4),
+          substitutes: groupText(substitutesFor(ctx.fungibility, deckMembers(ctx, common.members, args.includeLeaders), r.cardKey, { preferAspects: prefer, perGroup: 2 }), 4),
         };
       });
     }
@@ -369,6 +391,7 @@ export function findTrios(ctx: SynergyContext, input: unknown): ToolResult {
     counts: { chain: search.counts.chain, convergent: search.counts.convergent, loop: search.counts.loop },
     maxTotalCost: args.maxTotalCost,
     traits: args.traits,
+    partnerFilter: partnerFilterNote(args.includeLeaders),
     shown: trios.length,
     trios,
   });
@@ -495,14 +518,14 @@ export const SYNERGY_TOOLS = {
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input)),
   },
   find_trios: {
     title: "Find trios",
     description:
-      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Three-card combos built from the pair graph: chains A->B->C, two enablers into one payoff, and loops. Built from mechanical links by default; a trait the linked cards share is a small bonus, and traits: include admits trait-only links but every trio keeps at least one mechanical link. Ranked with a bonus for low total cost (default cap 9) and aspect cover; reports total cost, the cheapest leader+base aspect pair, its penalty (+2 resources per uncovered icon) and fungible alternatives per slot, with the clause text behind each link (status: candidate). Trios hold only cards a deck's 50 can hold; includeLeaders: true admits Leader and Base cards (partnerFilter states which applied). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findTriosShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findTrios(ctx, input)),
   },

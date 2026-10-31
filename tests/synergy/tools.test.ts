@@ -229,6 +229,63 @@ describe("find_trios", () => {
   });
 });
 
+describe("leader and base partners", () => {
+  const lbCtx = createSynergyContext(
+    [
+      mk("L", "Cover Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+      mk("Z", "Cover Base", { type: "Base", icons: ["Command"] }),
+      mk("LX", "Feeding Leader", { type: "Leader", aspects: ["Command"], cost: 1, offers: ["offers:x"] }),
+      mk("BX", "Wanting Base", { type: "Base", aspects: ["Command"], cost: 0, wants: ["wants:y"] }),
+      mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+      mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+      mk("4", "Delta", { wants: ["wants:y"], aspects: ["Command"], cost: 1 }),
+    ],
+    table([
+      { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+      { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+    ]),
+  );
+  const pairKeys = (out: Record<string, any>) => out.pairings.map((p: any) => p.cardKey).sort();
+
+  it("find_pairings leaves Leader and Base partners out by default and says so", () => {
+    const enablers = body(findPairings(lbCtx, { cardKey: "2", direction: "enablers", withAlternatives: false }));
+    expect(pairKeys(enablers)).toEqual(["1"]);
+    expect(enablers.partnerFilter).toContain("Leader and Base");
+    expect(enablers.partnerFilter).toContain("includeLeaders");
+    const payoffs = body(findPairings(lbCtx, { cardKey: "2", direction: "payoffs", withAlternatives: false }));
+    expect(pairKeys(payoffs)).toEqual(["4"]);
+    expect(body(findPairings(lbCtx, { cardKey: "2", withAlternatives: false })).total).toBe(2);
+  });
+
+  it("find_pairings lists them when includeLeaders is true", () => {
+    const out = body(findPairings(lbCtx, { cardKey: "2", includeLeaders: true, withAlternatives: false }));
+    expect(pairKeys(out)).toEqual(["1", "4", "BX", "LX"]);
+    expect(out.partnerFilter).toContain("included");
+    expect(out.pairings.find((p: any) => p.cardKey === "LX")).toMatchObject({ type: "Leader", partnerIs: "enabler" });
+  });
+
+  it("find_pairings from a Leader still lists its Unit partners", () => {
+    const out = body(findPairings(lbCtx, { cardKey: "LX", withAlternatives: false }));
+    expect(pairKeys(out)).toEqual(["2"]);
+  });
+
+  it("find_pairings keeps Leader and Base cards out of the partner alternatives", () => {
+    const out = body(findPairings(lbCtx, { cardKey: "2", direction: "enablers" }));
+    expect(out.pairings[0].alternatives.join(" ")).not.toContain("Feeding Leader");
+  });
+
+  it("find_trios never builds a trio around a Leader or Base unless includeLeaders is true", () => {
+    const hasLeader = (out: Record<string, any>) => out.trios.some((t: any) => /LX|BX/.test(t.cardKeys));
+    const out = body(findTrios(lbCtx, {}));
+    expect(out.trios.length).toBeGreaterThan(0);
+    expect(hasLeader(out)).toBe(false);
+    expect(out.partnerFilter).toContain("Leader and Base");
+    const open = body(findTrios(lbCtx, { includeLeaders: true }));
+    expect(hasLeader(open)).toBe(true);
+    expect(open.partnerFilter).toContain("included");
+  });
+});
+
 describe("explain_synergy", () => {
   it("explains a link with rows, tags, the text behind each tag and the non-obviousness terms", () => {
     const out = body(explainSynergy(ctx, { cardKeys: ["1", "4"] }));

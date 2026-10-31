@@ -26,6 +26,8 @@ export interface TrioSearchOptions {
   accept?: (keys: readonly [string, string, string], totalCost: number) => boolean;
   /** How shared traits count (default "bonus"). Only "include" admits trait-only links, and then a trio still needs one mechanical link. */
   traits?: TraitsMode;
+  /** Card types a trio member may have; defaults to TRIO_MEMBER_TYPES (what a deck's 50 can hold). */
+  memberTypes?: ReadonlySet<string>;
 }
 
 export interface TrioSearchResult {
@@ -48,11 +50,12 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   const order = (x: PairEdge, y: PairEdge): number => edgeScore(y, traits) - edgeScore(x, traits) || cmp(x.a, y.a) || cmp(x.b, y.b);
   const mechanical = (links: readonly PairEdge[]): boolean => links.some((e) => !e.traitOnly);
   const { byKey } = graph;
+  const memberTypes = options.memberTypes ?? TRIO_MEMBER_TYPES;
   const bestCover = makeBestCover(options.combos ?? combos);
   const member = (k: string): SynergyCard => byKey.get(k) as SynergyCard;
 
   const trioEdges = graph.edges.filter(
-    (e) => (traits === "include" || !e.traitOnly) && TRIO_MEMBER_TYPES.has(member(e.a).type) && TRIO_MEMBER_TYPES.has(member(e.b).type),
+    (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type),
   );
   const outAdj = new Map<string, PairEdge[]>();
   const inAdj = new Map<string, PairEdge[]>();
