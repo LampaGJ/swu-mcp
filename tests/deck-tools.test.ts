@@ -65,6 +65,8 @@ interface Spec {
   keywords?: string[];
   /** Tag -> the clause text behind it. */
   why?: Record<string, string>;
+  /** Clause texts the card carries, one ability each; the clause locks read them (D75). */
+  clauses?: string[];
   price?: { normal: number | null; foil?: number | null; printings?: number[] };
   play?: { included: number; wins?: number };
   score?: { total: number | null; play: number | null; expectedStats?: number };
@@ -165,6 +167,7 @@ function buildEnv(specs: readonly Spec[] = SPECS, clusters: ClustersFile | null 
       wants: s.wants,
       keywords: s.keywords,
       why: s.why,
+      abilities: s.clauses?.map((text) => ({ repeat: "static", text })),
     }),
   );
   const priced = specs.filter((s) => s.price !== undefined);
@@ -966,6 +969,57 @@ describe("budget_alternatives, leader-aware", () => {
       ["P3", 0.5],
       ["P2", null],
     ]);
+  });
+});
+
+describe("budget_alternatives, clause locks (#161, D75)", () => {
+  const damage = "offers:lock-test-removal";
+  const FORCE = "When Played: You may use the Force. If you do, deal 2 damage to a unit.";
+  const cheap = (key: string, title: string, normal: number, clauses?: string[], extra: Partial<Spec> = {}): Spec => ({
+    key,
+    title,
+    cost: 3,
+    icons: ["Aggression"],
+    offers: [damage],
+    price: { normal },
+    ...(clauses === undefined ? {} : { clauses }),
+    ...extra,
+  });
+  const slotCard = cheap("CP", "Costly Pinger", 5);
+  const lockEnv = buildEnv([...SPECS, slotCard, cheap("OP", "Open Pinger", 0.3), cheap("FP", "Forced Pinger", 0.05, [FORCE])]);
+  const run = (e: DeckEnv, extra: object = {}, deck = lines(["CP", 1])) => body(budgetAlternatives(e, { decklist: deck, leader: "L1", base: "BC", minSaving: 0.1, perSlot: 5, ...extra }));
+  const row = (out: ReturnType<typeof run>, key: string) => out.slots[0].alternatives.find((a: { cardKey: string }) => a.cardKey === key);
+
+  it("flags a substitute that needs the Force when the leader, base and decklist make none, and ranks it after the open one though it saves more", () => {
+    const out = run(lockEnv);
+    expect(out.slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["OP", "FP"]);
+    expect(row(out, "FP").needsForce).toBe("use the Force");
+    expect(row(out, "FP").saved).toBeGreaterThan(row(out, "OP").saved);
+    expect(row(out, "OP").needsForce).toBeUndefined();
+  });
+
+  it("drops the locked substitute first when the per-slot cap is reached", () => {
+    expect(run(lockEnv, { perSlot: 1 }).slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["OP"]);
+  });
+
+  it("raises no flag when the decklist makes the Force, and then ranks by saving as before", () => {
+    const withMaker = buildEnv([...SPECS, slotCard, cheap("OP", "Open Pinger", 0.3), cheap("FP", "Forced Pinger", 0.05, [FORCE]), { key: "FM", title: "Force Maker", cost: 2, clauses: ["The Force is with you."] }]);
+    const out = run(withMaker, {}, lines(["CP", 1], ["FM", 1]));
+    expect(row(out, "FP").needsForce).toBeUndefined();
+    expect(out.slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["FP", "OP"]);
+  });
+
+  it("flags a base-location clause under another base, and reads no lock without a leader and base", () => {
+    const tat = buildEnv([...SPECS, slotCard, cheap("OP", "Open Pinger", 0.3), cheap("TP", "Dune Pinger", 0.05, ["While you control a Tatooine base, this unit gets +2/+0."])]);
+    expect(row(run(tat), "TP").baseLocked).toBe("Tatooine");
+    const noPair = body(budgetAlternatives(lockEnv, { decklist: lines(["CP", 1]), minSaving: 0.1, perSlot: 5 }));
+    expect(noPair.slots[0].alternatives.map((a: { cardKey: string }) => a.cardKey)).toEqual(["FP", "OP"]);
+    expect(noPair.slots[0].alternatives[0].needsForce).toBeUndefined();
+  });
+
+  it("flags a named candidate's lock too", () => {
+    const out = run(lockEnv, { candidates: ["FP"] });
+    expect(out.candidates[0].needsForce).toBe("use the Force");
   });
 });
 
