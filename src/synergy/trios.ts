@@ -1,3 +1,4 @@
+import { STAT_WANT } from "../ability-grammar/tags.js";
 import { makeBestCover, type CoverCombo } from "./cover.js";
 import { edgeScore, mechanicalRows, type PairGraph } from "./graph.js";
 import { cardLabel, cmp, r3 } from "./order.js";
@@ -169,9 +170,9 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       });
     });
   const rowSignature = (e: PairEdge): string => [...new Set(linkRows(e).map((r) => `${r.offer}>${r.want}`))].sort(cmp).join("|");
-  /** A want that counts its feeders ("for each ... unit and upgrade", "3 or more units", a board-width or trait count), so two of them add up (D64). */
+  /** A want that counts its feeders ("for each ... unit and upgrade", "3 or more units", a board-width, trait or printed-stat count), so two of them add up (D64, D72). */
   const counting = (cardKey: string, want: string): boolean =>
-    COUNTING_WANTS.has(want) || want.startsWith("wants:trait-") || COUNTS_FEEDERS.test(graph.qualifier(cardKey, "wants", want)?.text ?? "");
+    COUNTING_WANTS.has(want) || want.startsWith("wants:trait-") || STAT_WANT.test(want) || COUNTS_FEEDERS.test(graph.qualifier(cardKey, "wants", want)?.text ?? "");
   const wantSignature = (e: PairEdge): string => [...new Set(linkRows(e).map((r) => r.want))].sort(cmp).join("|");
   /** D66: the third member defeats or returns itself after its effect, so it pays off once and a second feeder adds nothing. */
   const spent = (e: PairEdge): boolean => linkRows(e).length > 0 && linkRows(e).every((r) => graph.qualifier(e.b, "wants", r.want)?.spendsSelf === true);

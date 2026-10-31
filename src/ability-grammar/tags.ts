@@ -95,6 +95,18 @@ const copiesKeyword = (c: SwuClause): boolean =>
   COPIES_KEYWORD.test(c.text) || c.conditions.some((k) => COPIES_KEYWORD.test(`${typeof k.w === "string" ? k.w : ""} ${typeof k.what === "string" ? k.what : ""}`));
 /** "for each other friendly Tusken unit": the capitalised words before "unit" name the trait counted (D64). */
 const COUNTED_TRAIT = /\bfriendly ((?:[A-Z][\w'-]*\s)*[A-Z][\w'-]*) units?\b/;
+/** "for each other unit with 0 power", "unit with 3 or less power", "unit that costs 5 or more": a count of units by a printed stat (D72). */
+const STAT_COUNT = /\bunits? (?:with (\d+) (?:or (less|more) )?(power|cost)\b|that costs? (\d+)(?: or (less|more))?\b)/i;
+/** The want a stat count makes: `wants:unit-power-0`, `wants:unit-power-3-or-less`, `wants:unit-cost-5-or-more`. */
+export const STAT_WANT = /^wants:unit-(power|cost)-(\d+)(?:-or-(less|more))?$/;
+function statCountWant(per: string): string | null {
+  const m = STAT_COUNT.exec(per);
+  if (m === null || (/\benemy\b/i.test(per) && !/\bfriendly\b/i.test(per))) return null;
+  const [stat, n, dir] = m[1] === undefined ? ["cost", m[4], m[5]] : [m[3].toLowerCase(), m[1], m[2]];
+  return `wants:unit-${stat}-${n}${dir === undefined ? "" : `-or-${dir.toLowerCase()}`}`;
+}
+/** "Friendly units can attack bases while using Ambush": the clause pays off friendly units that use the keyword (D72). */
+const KEYWORD_USERS = /\bfriendly units?\b[^.;]*\bwhile using (\w+)\b/i;
 const SEARCH_OFFER: Record<string, string> = {
   deck_top: "offers:tutor-to-deck",
   play: "offers:tutor-to-play",
@@ -201,6 +213,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (/\b(?:dealt damage to an enemy base this phase|enemy base was damaged this phase)/i.test(c.text)) add(wants, "wants:enemy-base-damaged", clauseWhy);
         if (/\benemy (?:[\w-]+ )*unit with an? weakness token/i.test(c.text)) add(wants, "wants:enemy-weakened", clauseWhy);
         if (/\bexhausted enemy\b|\benemy (?:[\w-]+ )*units? (?:is|are) exhausted\b/i.test(c.text)) add(wants, "wants:exhausted-enemy", clauseWhy);
+        const users = KEYWORD_USERS.exec(c.text)?.[1];
+        if (users !== undefined && HOLDER_KEYWORDS.has(users)) add(wants, `wants:keyword-${users.toLowerCase()}`, clauseWhy);
         const createsToken = c.effects.some((x) => x.cat === "create_token");
         for (const e of c.effects) {
           const target = e.target;
@@ -366,6 +380,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (/(?:other )?friendly .*units?|unit you control/.test(per)) add(wants, "wants:wide-board", why);
             const counted = COUNTED_TRAIT.exec(k.per ?? "");
             if (counted !== null) add(wants, `wants:trait-${counted[1]}`, why);
+            const statWant = statCountWant(k.per ?? "");
+            if (statWant !== null) add(wants, statWant, why);
             // "For each exhausted resource" counts resources already paid, not resources controlled, so it wants no ramp (D58).
             if (/exhausted/.test(per)) add(wants, /resource/.test(per) ? "wants:exhausted-resources" : "wants:exhausted-own", why);
             else if (/resource/.test(per)) add(wants, "wants:resource-ramp", why);

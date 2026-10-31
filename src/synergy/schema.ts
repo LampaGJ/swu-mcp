@@ -29,10 +29,13 @@ export type ReasonBySide = z.infer<typeof reasonBySideSchema>;
 
 export const complementarityRowSchema = z.strictObject({
   id: z.string().min(1),
-  /** "trait": expanded per trait; "name": links a card to the cards its text names by title (D62), never matched by tag. */
-  family: z.enum(["trait", "name"]).optional(),
+  /**
+   * "trait": expanded per trait; "name": links a card to the cards its text names by title (D62), never matched by tag;
+   * "stat": expanded per stat-count want (`wants:unit-power-0`), fed by every Unit whose printed stat meets it (D72), never matched by tag.
+   */
+  family: z.enum(["trait", "name", "stat"]).optional(),
   offers: tagWeights,
-  // The trait family row lists its wants as bare tag patterns; it is expanded per trait and never read as a record.
+  // The trait and stat family rows list their wants as bare tag patterns; they are expanded and never read as a record.
   wants: z.union([tagWeights, z.array(z.string())]),
   strength: z.number().positive(),
   reason: z.string().min(1),
@@ -103,7 +106,7 @@ export interface PairRowHit {
   want: string;
   weight: number;
   reason: string;
-  /** Evidence a row reads off the card text rather than a tag (the name family): the naming clause and the named title. */
+  /** Evidence a row reads off the card rather than a tag (the name and stat families): the naming clause and the named title, or the printed stat. */
   offerWhy?: string;
   wantWhy?: string;
 }

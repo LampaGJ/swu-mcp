@@ -477,7 +477,7 @@
     "wants:keyword-ambush": 1
    },
    "strength": 0.6,
-   "reason": "A unit that has Ambush (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Ambush while another friendly unit has it. (D64)",
+   "reason": "A unit that has Ambush (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Ambush while another friendly unit has it, and Fett's Firespray, Settling the Score lets friendly units attack bases while using Ambush. (D64, D72)",
    "example": null
   },
   {
@@ -543,6 +543,20 @@
    },
    "strength": 0.6,
    "reason": "A unit that has Saboteur (printed, given by its own text, or granted) feeds a card that reads the keyword on another friendly unit: Oppo Rancisis gains Saboteur while another friendly unit has it. (D64)",
+   "example": null
+  },
+  {
+   "id": "stat-count",
+   "family": "stat",
+   "offers": {
+    "offers:printed-stat": 1
+   },
+   "wants": [
+    "wants:unit-power-*",
+    "wants:unit-cost-*"
+   ],
+   "strength": 0.6,
+   "reason": "A unit whose printed stat meets a count feeds the card that counts it: Kelleran Beq gets +1/+0 for each other unit with 0 power, so every 0-power unit grows him. Matched on the printed stat, so a modifier in play is not read. (D72)",
    "example": null
   },
   {

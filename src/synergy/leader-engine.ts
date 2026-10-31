@@ -126,7 +126,8 @@ export function leaderActionOf(card: SynergyCard): string | null {
 
 /**
  * How a partner meets the leader's clause. pays-off: the partner's own text keys on a friendly unit with a keyword the
- * leader grants ("When a friendly unit with Ambush enters play"). attack-payoff (D65): the leader gives the played unit an
+ * leader grants ("When a friendly unit with Ambush enters play"), or on one using it ("Friendly units can attack bases while
+ * using Ambush", D72). attack-payoff (D65): the leader gives the played unit an
  * attack on entry (Ambush) and the unit gives itself an attack keyword (Raid, Overwhelm, Saboteur, Restore) that pays per
  * attack. grants-held-keyword (D67): the leader gives a keyword to the unit it plays, so that unit holds the keyword, and the
  * partner wants friendly holders of it (`wants:keyword-<k>`, Oppo Rancisis copies the keywords on the board). repeats-action (D65): the partner readies a leader and the leader has an Action that exhausts it. plays: the
@@ -139,6 +140,10 @@ export function engineHitOf(engine: LeaderEngine | null, partner: SynergyCard, a
       const pattern = new RegExp(`\\bfriendly units? (?:with|that has|that have|has|have) (?:an? )?${keyword}\\b`, "i");
       const text = texts.find((t) => pattern.test(t));
       if (text !== undefined) return { kind: "pays-off", keyword, how: `its text keys on a friendly unit with ${keyword}, which this leader gives`, partnerText: text };
+      // D72: "Friendly units can attack bases while using Ambush" pays off the keyword in use, the same tag rule as src/ability-grammar/tags.ts (KEYWORD_USERS).
+      const using = new RegExp(`\\bfriendly units?\\b[^.;]*\\bwhile using ${keyword}\\b`, "i");
+      const usedBy = texts.find((t) => using.test(t));
+      if (usedBy !== undefined) return { kind: "pays-off", keyword, how: `its text pays off a friendly unit using ${keyword}, which this leader gives`, partnerText: usedBy };
     }
   }
   const power = powerOf(partner);

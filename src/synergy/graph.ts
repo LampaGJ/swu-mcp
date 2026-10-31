@@ -1,3 +1,4 @@
+import { STAT_WANT } from "../ability-grammar/tags.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import { cmp, r3 } from "./order.js";
 import { nameReferences } from "./names.js";
@@ -68,9 +69,10 @@ export function edgeScore(e: PairEdge, mode: TraitsMode): number {
 
 const COLOUR_FREE = (aspects: readonly string[]): string[] => aspects.filter((x) => x !== "Heroism" && x !== "Villainy");
 
-/** Every row, with the trait family expanded to one row per trait found on the cards. */
+/** Every row, with the trait family expanded to one row per trait found on the cards and the stat family to one row per stat-count want. */
 export function expandRows(cards: readonly SynergyCard[], table: ComplementarityTable): ExpandedRow[] {
   const traitNames = [...new Set(cards.flatMap((c) => c.structured.traits))].sort(compareCodePoints);
+  const statWants = [...new Set(cards.flatMap((c) => c.tags.wants.map((w) => w.tag)).filter((t) => STAT_WANT.test(t)))].sort(compareCodePoints);
   const rows: ExpandedRow[] = [];
   for (const row of table.rows) {
     if (row.family === "trait") {
@@ -83,10 +85,15 @@ export function expandRows(cards: readonly SynergyCard[], table: Complementarity
           baseId: row.id,
         });
       }
+    } else if (row.family === "stat") {
+      for (const want of statWants) {
+        const stat = (STAT_WANT.exec(want) as RegExpExecArray)[1];
+        rows.push({ ...row, id: `stat-count:${want.slice("wants:unit-".length)}`, offers: { [`offers:printed-${stat}`]: 1 }, wants: { [want]: 1 }, baseId: row.id });
+      }
     } else if (!Array.isArray(row.wants)) {
       rows.push({ ...row, wants: row.wants, baseId: row.id });
     } else {
-      throw new Error(`complementarity row ${row.id}: array wants are only valid on the trait family`);
+      throw new Error(`complementarity row ${row.id}: array wants are only valid on the trait and stat families`);
     }
   }
   return rows;
@@ -206,6 +213,34 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
         named++;
       }
       rowCounts[row.baseId] = (rowCounts[row.baseId] ?? 0) + named;
+      continue;
+    }
+    if (row.family === "stat") {
+      // D72: a count of units by printed stat is fed by every Unit whose printed stat meets it; no offer tag carries the stat.
+      const want = wantTags[0];
+      const [, stat, bound, dir] = STAT_WANT.exec(want) as RegExpExecArray;
+      const limit = Number(bound);
+      const meets = (v: number): boolean => (dir === "less" ? v <= limit : dir === "more" ? v >= limit : v === limit);
+      const printed = (c: SynergyCard): number | null => {
+        const v = (c.structured as Record<string, unknown>)[stat];
+        return typeof v === "number" ? v : null;
+      };
+      const weight = r3(row.strength * row.offers[offerTags[0]] * row.wants[want]);
+      const wanters = cards.filter((c) => wantsOf.get(c.cardKey)?.has(want));
+      let linked = 0;
+      for (const a of cards) {
+        const v = printed(a);
+        if (a.type !== "Unit" || v === null || !meets(v)) continue;
+        for (const b of wanters) {
+          if (a.cardKey === b.cardKey || a.title === b.title) continue;
+          const e = edgeFor(edges, a.cardKey, b.cardKey);
+          e.rows.push({ row: row.id, baseId: row.baseId, offer: `offers:printed-${stat}-${v}`, want, weight, reason: row.reason, offerWhy: `printed ${stat} ${v}` });
+          e.mechanicalLink = r3(e.mechanicalLink + weight);
+          edges.set(`${a.cardKey}>${b.cardKey}`, e);
+          linked++;
+        }
+      }
+      rowCounts[row.baseId] = (rowCounts[row.baseId] ?? 0) + linked;
       continue;
     }
     const offerers = cards.filter((c) => offerTags.some((t) => offersOf.get(c.cardKey)?.has(t)));
