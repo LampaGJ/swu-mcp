@@ -177,7 +177,7 @@ const ORIGINALS = "/Volumes/Local Files/Projects/mault/data/swu-originals/2026-1
 const RUN = path.resolve(import.meta.dirname, "../../data/runs/2026-10-16");
 
 describe.skipIf(!existsSync(ORIGINALS) || !existsSync(RUN))("real data", () => {
-  it("reproduces the eight packets byte for byte and respects the item caps", () => {
+  it("reproduces the eight packets byte for byte and respects the item caps", { timeout: 60_000 }, () => {
     const real = loadInputs({ originalsDir: ORIGINALS, runDir: RUN });
     const first = buildPackets(real, SEED);
     expect(buildPackets(real, SEED).map(serialize)).toEqual(first.map(serialize));

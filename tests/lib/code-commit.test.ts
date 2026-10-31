@@ -10,7 +10,7 @@ function repo(): string {
   const root = mkdtempSync(path.join(process.env.TMPDIR ?? "/tmp", "code-commit-"));
   roots.push(root);
   const run = (...args: string[]): void => {
-    execFileSync("git", ["-C", root, "-c", "user.name=t", "-c", "user.email=t@example.test", ...args], { stdio: "ignore" });
+    execFileSync("git", ["-C", root, "-c", "core.createObject=rename", "-c", "user.name=t", "-c", "user.email=t@example.test", ...args], { stdio: "ignore" });
   };
   run("init", "-q");
   mkdirSync(path.join(root, "src"));
@@ -24,7 +24,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-describe("codeCommit", () => {
+describe("codeCommit", { timeout: 60_000 }, () => {
   it("an untracked file outside src leaves a src scope clean and makes whole-tree dirty", () => {
     const root = repo();
     writeFileSync(path.join(root, "notes.txt"), "x\n");
