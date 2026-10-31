@@ -270,6 +270,22 @@ describe("name resolution", () => {
     expect(out.leader.title).toBe("Aggro Leader, The Hunter");
   });
 
+  it("tells a title miss that an earlier-set card is out of the Premier pool, and keeps the cardKey wording for a cardKey miss", () => {
+    const out = body(deckAudit(env, { decklist: lines(["Vanquish", 1], ["ZZ99", 1], ["P1", 1]), leader: "L1", base: "BC" }));
+    const detail = Object.fromEntries(out.unresolved.map((u: { card: string; detail: string }) => [u.card, u.detail]));
+    expect(detail.Vanquish).toBe(
+      "not found: no card with this title in the Premier pool (sets from Jump to Lightspeed onward); a card from an earlier set is out of the pool, otherwise check the spelling",
+    );
+    expect(detail.ZZ99).toBe("no card with this cardKey or title");
+  });
+
+  it("carries the pool wording into deck_legality_check's unresolved-card failure", () => {
+    const out = body(deckLegalityCheck(env, { decklist: [{ card: "Vanquish", count: 1 }, { card: "P1", count: 1 }], leader: "L1", base: "BC" }));
+    const failure = out.failures.find((f: { check: string }) => f.check === "unresolved card");
+    expect(failure.detail).toContain('"Vanquish" x1: unknown, not found: no card with this title in the Premier pool');
+    expect(failure.detail).toContain("sets from Jump to Lightspeed onward");
+  });
+
   it("refuses to guess between cards that share a title", () => {
     const result = deckAudit(env, { decklist: lines(["P1", 1]), leader: "L1", base: "Twin Base" });
     expect(result.isError).toBe(true);

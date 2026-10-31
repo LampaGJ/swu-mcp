@@ -151,10 +151,19 @@ const describeRow = (row: CardRow): string => `${row.cardKey} ${cardLabel(row)} 
 
 type Resolution = { ok: true; row: CardRow } | { ok: false; reason: "unknown" | "ambiguous" | "wrong type"; detail: string };
 
+/** A cardKey is one alphanumeric token with a digit (0101033, 08010011); anything else, a title, can be a card from a set before the pool. */
+const CARD_KEY_SHAPE = /^[A-Za-z]*\d[A-Za-z0-9]*$/;
+
+function missDetail(ref: string): string {
+  return CARD_KEY_SHAPE.test(ref.trim())
+    ? "no card with this cardKey or title"
+    : "not found: no card with this title in the Premier pool (sets from Jump to Lightspeed onward); a card from an earlier set is out of the pool, otherwise check the spelling";
+}
+
 export function resolveRef(store: CardStore, ref: string, kind: Kind): Resolution {
   const direct = store.byKey.get(ref.trim());
   const found = direct !== undefined ? [direct] : (nameIndex(store).get(normalise(ref)) ?? []);
-  if (found.length === 0) return { ok: false, reason: "unknown", detail: "no card with this cardKey or title" };
+  if (found.length === 0) return { ok: false, reason: "unknown", detail: missDetail(ref) };
   const fits = found.filter((row) => kindFits(row.type, kind));
   if (fits.length === 1) return { ok: true, row: fits[0] };
   const list = (fits.length === 0 ? found : fits).map(describeRow).sort(compareCodePoints);

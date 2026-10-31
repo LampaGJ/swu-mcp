@@ -220,7 +220,7 @@ describe("meta_answers ordering", () => {
   it("puts an answer with a clearly worse deck record after an unmeasured one of the same coverage, whatever its cost", () => {
     const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 10, losses: 30, draws: 0 }]));
     expect(got.keys).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
-    expect(got.classes).toEqual({ [IT_IS_WORSE]: "ok", [CHARGED]: "negative", [FREIGHTER]: "ok", [PROFUNDITY]: "ok" });
+    expect(got.classes).toEqual({ [IT_IS_WORSE]: "unmeasured", [CHARGED]: "negative", [FREIGHTER]: "unmeasured", [PROFUNDITY]: "unmeasured" });
     expect(got.note).toContain("evidenceClass");
     expect(got.note).toContain("-0.05");
     expect(got.note).toContain("association, not effect");
@@ -232,16 +232,52 @@ describe("meta_answers ordering", () => {
     expect(got.classes[CHARGED]).toBe("ok");
   });
 
-  it("classes a gap measured on fewer than minN decisive matches as ok", () => {
+  it("classes a gap measured on fewer than minN decisive matches as unmeasured, still sorted with ok", () => {
     const got = order(withCards([{ cardKey: CHARGED, decks: 20, wins: 2, losses: 6, draws: 0 }]));
     expect(got.keys).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
-    expect(got.classes[CHARGED]).toBe("ok");
+    expect(got.classes[CHARGED]).toBe("unmeasured");
   });
 
-  it("classes an unmeasured answer as ok", () => {
+  it("classes an answer with no deck evidence as unmeasured, still sorted with ok", () => {
     const got = order(withCards([]));
     expect(got.keys).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
-    expect(Object.values(got.classes)).toEqual(["ok", "ok", "ok", "ok"]);
+    expect(Object.values(got.classes)).toEqual(["unmeasured", "unmeasured", "unmeasured", "unmeasured"]);
+  });
+
+  it("classes a card with 8 decks on one side as unmeasured however many matches they played, and says which side is thin", () => {
+    // 92 of the group's 100 decks include the card, so 8 do not; both sides still have more than minN decisive matches.
+    const e = withCards([{ cardKey: CHARGED, decks: 92, wins: 460, losses: 400, draws: 0 }]);
+    const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    expect(charged.deckEvidence.withoutCard.decks).toBe(8);
+    expect(charged.deckEvidence.withoutCard.n).toBeGreaterThanOrEqual(10);
+    expect(charged.deckEvidence.difference).toBeGreaterThan(-0.05);
+    expect(charged.evidenceClass).toBe("unmeasured");
+    expect(charged.deckEvidence.unmeasured).toContain("withoutCard has 8 decks");
+    expect(charged.deckEvidence.unmeasured).toContain("needs 10");
+    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([CHARGED, IT_IS_WORSE, FREIGHTER, PROFUNDITY]);
+    expect(out.note).toContain("unmeasured");
+  });
+
+  it("keeps a clearly negative gap negative on a thin deck count, demoted and marked thin", () => {
+    // 5 decks with the card, 15 decisive matches, win rate 0.2 against about 0.5 without it.
+    const e = withCards([{ cardKey: CHARGED, decks: 5, wins: 3, losses: 12, draws: 0 }]);
+    const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    expect(charged.evidenceClass).toBe("negative");
+    expect(charged.deckEvidence.withCard.decks).toBe(5);
+    expect(charged.deckEvidence.thin).toBe("(thin: 5 decks with the card)");
+    expect(charged.deckEvidence.unmeasured).toBeUndefined();
+    expect(out.answers.map((a: { cardKey: string }) => a.cardKey)).toEqual([IT_IS_WORSE, CHARGED, FREIGHTER, PROFUNDITY]);
+  });
+
+  it("keeps the class when both sides have 10 decks and minN decisive matches", () => {
+    const e = withCards([{ cardKey: CHARGED, decks: 90, wins: 100, losses: 400, draws: 0 }]);
+    const out = body(metaAnswers(e, { leader: "OL", base: "AB", maxPenalty: 0, limit: 20 }));
+    const charged = out.answers.find((a: { cardKey: string }) => a.cardKey === CHARGED);
+    expect(charged.evidenceClass).toBe("negative");
+    expect(charged.deckEvidence.unmeasured).toBeUndefined();
+    expect(charged.deckEvidence.thin).toBeUndefined();
   });
 });
 
@@ -272,19 +308,36 @@ describe("answer rank", () => {
     expect(sorted([rank({ cardKey: "b" }), rank({ cardKey: "a" })])).toEqual(["a", "b"]);
   });
 
-  it("calls a difference below -0.05 negative only when both sides reach minN decisive matches", () => {
-    const evidence = (difference: number | null, withN: number, withoutN: number) => ({
-      withCard: { n: withN },
-      withoutCard: { n: withoutN },
+  it("calls a difference below -0.05 negative on minN decisive matches per side, and ok only with 10 decks per side too", () => {
+    const evidence = (difference: number | null, withN: number, withoutN: number, withDecks = 40, withoutDecks = 4000) => ({
+      withCard: { n: withN, decks: withDecks },
+      withoutCard: { n: withoutN, decks: withoutDecks },
       difference,
     });
     expect(evidenceClassOf(evidence(-0.1154, 45, 13217), 10)).toBe("negative");
     expect(evidenceClassOf(evidence(-0.0443, 45, 13217), 10)).toBe("ok");
     expect(evidenceClassOf(evidence(-0.05, 45, 13217), 10)).toBe("ok");
-    expect(evidenceClassOf(evidence(-0.3, 9, 13217), 10)).toBe("ok");
-    expect(evidenceClassOf(evidence(-0.3, 45, 9), 10)).toBe("ok");
-    expect(evidenceClassOf(evidence(null, 45, 9000), 10)).toBe("ok");
-    expect(evidenceClassOf("no tournament decklists captured", 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(-0.3, 9, 13217), 10)).toBe("unmeasured");
+    expect(evidenceClassOf(evidence(-0.3, 45, 9), 10)).toBe("unmeasured");
+    expect(evidenceClassOf(evidence(-0.3, 45, 13217, 40, 8), 10)).toBe("negative");
+    expect(evidenceClassOf(evidence(-0.1154, 45, 13217, 9, 2140), 10)).toBe("negative");
+    expect(evidenceClassOf(evidence(0.3, 45, 13217, 9, 4000), 10)).toBe("unmeasured");
+    expect(evidenceClassOf(evidence(-0.0443, 45, 13217, 40, 8), 10)).toBe("unmeasured");
+    expect(evidenceClassOf(evidence(-0.3, 9, 13217, 40, 4000), 10)).toBe("unmeasured");
+    expect(evidenceClassOf(evidence(0.3, 45, 13217, 10, 10), 10)).toBe("ok");
+    expect(evidenceClassOf(evidence(null, 45, 9000), 10)).toBe("unmeasured");
+    expect(evidenceClassOf("no tournament decklists captured", 10)).toBe("unmeasured");
+  });
+
+  it("sorts unmeasured with ok and only negative behind them", () => {
+    expect(
+      sorted([
+        rank({ cardKey: "neg", cost: 2, evidenceClass: "negative" }),
+        rank({ cardKey: "unm", cost: 11, evidenceClass: "unmeasured" }),
+        rank({ cardKey: "ok", cost: 11 }),
+      ]),
+    ).toEqual(["ok", "unm", "neg"]);
+    expect(sorted([rank({ cardKey: "unm", cost: 5, evidenceClass: "unmeasured" }), rank({ cardKey: "ok", cost: 7 })])).toEqual(["unm", "ok"]);
   });
 });
 

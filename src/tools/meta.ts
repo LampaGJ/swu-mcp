@@ -345,10 +345,12 @@ interface Answer {
   hits: { archetype: Archetype; hit: RelationHit }[];
 }
 
-export type EvidenceClass = "ok" | "negative";
+export type EvidenceClass = "ok" | "negative" | "unmeasured";
 
 /** What a deck-evidence cell needs to be classed: the object cardDeckEvidence returns, or the reason it has none. */
-export type DeckEvidenceView = string | { withCard: { n: number }; withoutCard: { n: number }; difference: number | null };
+export type DeckEvidenceView =
+  | string
+  | { withCard: { n: number; decks: number }; withoutCard: { n: number; decks: number }; difference: number | null };
 
 /** The keys meta_answers sorts on, in the order compareAnswerRank applies them. */
 export interface AnswerRank {
@@ -362,11 +364,30 @@ export interface AnswerRank {
 
 const COVERAGE_BAND = 0.05;
 const NEGATIVE_GAP = -0.05;
+/** Decision D36: a side with fewer decks than this is one deck's luck, however many matches it played. */
+export const MIN_EVIDENCE_DECKS = 10;
 
-/** Decision D36: negative only on a point gap below -0.05 with at least minN decisive matches on both sides. */
+/** What keeps a side from being measured: fewer than minN decisive matches or fewer than MIN_EVIDENCE_DECKS decks. */
+export function thinSides(evidence: Exclude<DeckEvidenceView, string>, minN: number): string[] {
+  const out: string[] = [];
+  for (const side of ["withCard", "withoutCard"] as const) {
+    const e = evidence[side];
+    if (e.decks < MIN_EVIDENCE_DECKS) out.push(`${side} has ${e.decks} decks (needs ${MIN_EVIDENCE_DECKS})`);
+    if (e.n < minN) out.push(`${side} has ${e.n} decisive matches (needs ${minN})`);
+  }
+  return out;
+}
+
+/**
+ * Decision D36: unmeasured unless both sides have at least minN decisive matches. Then negative on a point gap below
+ * -0.05 whatever the deck count (a thin negative still warns), else ok only when both sides also have MIN_EVIDENCE_DECKS
+ * decks, else unmeasured.
+ */
 export function evidenceClassOf(evidence: DeckEvidenceView, minN: number): EvidenceClass {
-  if (typeof evidence === "string" || evidence.difference === null) return "ok";
-  return evidence.difference < NEGATIVE_GAP && evidence.withCard.n >= minN && evidence.withoutCard.n >= minN ? "negative" : "ok";
+  if (typeof evidence === "string" || evidence.difference === null) return "unmeasured";
+  if (evidence.withCard.n < minN || evidence.withoutCard.n < minN) return "unmeasured";
+  if (evidence.difference < NEGATIVE_GAP) return "negative";
+  return thinSides(evidence, minN).length > 0 ? "unmeasured" : "ok";
 }
 
 /** Decision D36: 0-2, 3-4, 5-6, 7+ and, last, an unknown cost. */
@@ -379,7 +400,7 @@ export function compareAnswerRank(x: AnswerRank, y: AnswerRank): number {
   return (
     x.penalty - y.penalty ||
     Math.round(y.coverage / COVERAGE_BAND) - Math.round(x.coverage / COVERAGE_BAND) ||
-    (x.evidenceClass === y.evidenceClass ? 0 : x.evidenceClass === "ok" ? -1 : 1) ||
+    Number(x.evidenceClass === "negative") - Number(y.evidenceClass === "negative") ||
     costBand(x.cost) - costBand(y.cost) ||
     r4(y.coverage) - r4(x.coverage) ||
     y.threatCount - x.threatCount ||
@@ -415,6 +436,19 @@ function cardDeckEvidence(env: MetaEnv, cardKey: string, ours: { archetype: stri
     };
   }
   return `fewer than ${env.winrates.minN} decisive matches with or without it among comparable tournament decks in ${ev.window.from}..${ev.window.to}`;
+}
+
+function annotated(a: Answer, minN: number): Answer["evidence"] | (Exclude<DeckEvidenceView, string> & Record<string, string>) {
+  if (typeof a.evidence === "string") return a.evidence;
+  if (a.evidenceClass === "unmeasured") return { ...a.evidence, unmeasured: unmeasuredWhy(a.evidence, minN) };
+  if (a.evidenceClass === "negative" && a.evidence.withCard.decks < MIN_EVIDENCE_DECKS)
+    return { ...a.evidence, thin: `(thin: ${a.evidence.withCard.decks} decks with the card)` };
+  return a.evidence;
+}
+
+function unmeasuredWhy(evidence: Exclude<DeckEvidenceView, string>, minN: number): string {
+  const thin = thinSides(evidence, minN);
+  return thin.length > 0 ? `unmeasured: ${thin.join("; ")}` : "unmeasured: one side has no recorded decisive match, so there is no difference";
 }
 
 export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
@@ -550,10 +584,10 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       threatsAnswered: a.threatCount,
       status: CANDIDATE_STATUS,
       answers: byThreat(a),
-      deckEvidence: a.evidence,
+      deckEvidence: annotated(a, env.winrates.minN),
       evidenceClass: a.evidenceClass,
     })),
-    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok before negative), then cost band (0-2, 3-4, 5-6, 7+), then exact coverage. evidenceClass = negative when deckEvidence shows a difference below -0.05 with at least minN decisive matches with and without the card; ok covers a positive, a small or an unmeasured difference. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
+    note: "Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured; deckEvidence.unmeasured names the thin side. The class only reorders within a band and removes no row; it is association, not effect, because opponents are unknown. Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.",
   });
 }
 
@@ -591,7 +625,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (ok or negative). Within a coverage band, ok answers rank before negative ones, then cheaper cost bands first. Takes a leader and base, or a decklist.",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first. Takes a leader and base, or a decklist.",
     metaAnswersShape,
     metaAnswers,
   ),
