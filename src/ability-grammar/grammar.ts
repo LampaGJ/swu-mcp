@@ -43,8 +43,10 @@ export function parseTarget(raw: string | undefined): SwuTarget {
   const t: SwuTarget = { side: "any", kind: "ref", arena: "any", quant: "one", restrict: [], text: "" };
   // "your" inside a relative clause ("a unit that attacked your base") does not make the target friendly.
   const noun = l.split(/\s(?:that|which|who)\s/)[0];
-  if (/\bfriendly\b|\byou (?:control|play)\b/.test(l) || /\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b/.test(noun)) t.side = "friendly";
-  if (/\benemy\b|\bopponent'?s?'?\b|\bthe defender\b|\bthe attacker\b|\bdefending unit\b|\bthey control\b/.test(l)) {
+  // D76: a count ("cost equal to or less than the number of Villainy aspect icons among friendly units") bounds the target, it names no side.
+  const sided = l.replace(/\bthe number of\b.*$/, "");
+  if (/\bfriendly\b|\byou (?:control|play)\b/.test(sided) || /\byour (?:units?|bases?|leader|hand|deck|discard|resources)\b/.test(noun)) t.side = "friendly";
+  if (/\benemy\b|\bopponent'?s?'?\b|\bthe defender\b|\bthe attacker\b|\bdefending unit\b|\bthey control\b/.test(sided)) {
     t.side = t.side === "friendly" ? "mixed" : "enemy";
   }
   // "its controller's base" belongs to whoever controls the referent; parseClause resolves it from the words before it.
@@ -479,7 +481,10 @@ export function parseClause(clause: string): ClauseParse {
     if (e.rule !== "defeat_self" || !/^defeat (?:it|him|her)$/i.test(clause.slice(e.span[0], e.span[1]))) return;
     const antecedent = accepted.effect.slice(0, i).reverse().find((x) => x.target && x.target.side !== "self" && x.target.kind === "unit");
     if (antecedent?.target) {
-      Object.assign(e, { rule: "defeat_ref", cat: "defeat", target: structuredClone(antecedent.target) });
+      const target = structuredClone(antecedent.target);
+      // D76: "Take control of a non-leader unit, then defeat it" defeats the unit taken from an opponent; your own needs no taking.
+      if (antecedent.cat === "take_control" && antecedent.toOpponent !== true && target.side === "any") target.side = "enemy";
+      Object.assign(e, { rule: "defeat_ref", cat: "defeat", target });
     }
   });
   for (const f of [...accepted.effect, ...accepted.condition]) {

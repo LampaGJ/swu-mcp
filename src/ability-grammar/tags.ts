@@ -36,6 +36,17 @@ const SELF_OBJECT = /^this (?:card|unit|upgrade)$/i;
 type ClauseEffect = SwuClause["effects"][number];
 const isSelfGated = (c: SwuClause, e: ClauseEffect): boolean =>
   e.conditional === true && (pol(e.target) === "self" || pol(e.target) === "ref") && c.conditions.some((k) => k.cat === "self_state");
+/**
+ * D76: "If no resources were paid to play this unit, give an Experience token to it": the pronoun's only antecedent is the card
+ * itself, as no other unit is named in the clause or its trigger and the clause creates no token the pronoun could mean.
+ */
+const PRONOUN = /^(?:it|him|her)$/i;
+const givesItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolean =>
+  pol(e.target) === "ref" &&
+  PRONOUN.test(e.target?.text ?? "") &&
+  !c.effects.some((x) => x.cat === "create_token") &&
+  /\bthis unit\b/i.test(c.text) &&
+  !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
 const returnsItself = (c: SwuClause, e: ClauseEffect): boolean =>
   e.cat === "recursion" && (SELF_OBJECT.test(e.target?.text ?? "") || isSelfGated(c, e));
 const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
@@ -278,18 +289,20 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
               else add(offers, `offers:create-${token.toLowerCase()}-token`, why);
               break;
             }
-            case "give_token":
+            case "give_token": {
+              const toItself = !a.granted && (card.type === "Unit" || card.type === "Leader") && givesItself(c, e, a.triggers.map((x) => x.text ?? "").join(" "));
               for (const [tok] of e.tokens ?? []) {
-                const tp = p === "enemy" ? "enemy" : p === "self" ? "self" : "friendly";
+                const tp = p === "enemy" ? "enemy" : p === "self" || toItself ? "self" : "friendly";
                 if (tok === "Experience") add(offers, `offers:give-experience${tp === "friendly" ? "" : `-${tp}`}`, why);
                 else if (tok === "Shield") add(offers, `offers:give-shield${tp === "friendly" ? "" : `-${tp}`}`, why);
                 else if (tok === "Weakness") {
                   const opponentPicks = p === "ref" && clauses.some((x) => /\bopponent chooses\b/i.test(x.text));
-                  add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : p === "self" ? "offers:give-weakness-self" : p === "friendly" ? "offers:give-weakness-own" : "offers:give-weakness", why);
+                  add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : tp === "self" ? "offers:give-weakness-self" : p === "friendly" ? "offers:give-weakness-own" : "offers:give-weakness", why);
                 }
                 else add(offers, `offers:give-${tok.toLowerCase()}`, why);
               }
               break;
+            }
             case "gain_force": add(offers, "offers:the-force", why); break;
             case "ready": if (p !== "enemy" && p !== "self" && (!target || isUnitKind(target))) add(offers, "offers:ready-unit", why); break;
             case "exhaust": add(offers, p === "friendly" ? "offers:exhaust-own" : p === "enemy" ? "offers:exhaust-enemy" : "offers:exhaust-any", why); break;

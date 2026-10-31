@@ -81,9 +81,9 @@ describe("a granted When Defeated is not an on-demand defeat", () => {
 });
 
 describe("a pronoun defeat after a unit target defeats that unit, not the source (#60)", () => {
-  it("04010043 No Glory, Only Results: offers defeat-any-unit, not defeat-self", () => {
+  it("04010043 No Glory, Only Results: offers defeat-enemy-unit, not defeat-self", () => {
     const tags = offerTags(featuresOf(CARDS["04010043"]));
-    expect(tags).toContain("offers:defeat-any-unit");
+    expect(tags).toContain("offers:defeat-enemy-unit");
     expect(tags).not.toContain("offers:defeat-self");
   });
 });

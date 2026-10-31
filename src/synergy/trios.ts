@@ -20,6 +20,9 @@ export const TRIO_FANOUT = 30;
 const CONSUMING_OFFERS: ReadonlySet<string> = new Set(["offers:defeat-friendly-unit", "offers:defeat-any-unit"]);
 export const TRIO_MEMBER_TYPES: ReadonlySet<string> = new Set(["Unit", "Event", "Upgrade"]);
 const COUNTING_WANTS: ReadonlySet<string> = new Set(["wants:wide-board"]);
+/** Wants that need one of your own units defeated. */
+const OWN_DEFEAT_WANTS: ReadonlySet<string> = new Set(["wants:self-defeated", "wants:friendly-unit-defeated"]);
+const FRIENDLY_DEFEATED = "wants:friendly-unit-defeated";
 /** "for each other friendly Pilot unit and upgrade", "control 3 or more units": the clause counts units, upgrades, cards or tokens; "for each exhausted resource" counts none of them. */
 const COUNTS_FEEDERS = /\bfor each (?:other )?(?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b|\b(?:\d+|X) or more (?:[\w'-]+ ){0,4}?(?:units?|upgrades?|cards?|tokens?)\b/i;
 export const DEFAULT_TRIO_KEEP = 100;
@@ -65,8 +68,16 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   const bestCover = makeBestCover(options.combos ?? combos);
   const member = (k: string): SynergyCard => byKey.get(k) as SynergyCard;
 
+  /**
+   * D76 (#162): a single-target "defeat a unit" is removal a player aims at an enemy, so a trio never spends it on its own unit;
+   * a pair keeps the weak link (pairs-v1 labels it correct). A sweep ("defeat each", "any number of") hits your units too.
+   */
+  const aimedRemoval = (e: PairEdge): boolean => {
+    const rows = linkRows(e);
+    return rows.length > 0 && rows.every((r) => r.offer === "offers:defeat-any-unit" && OWN_DEFEAT_WANTS.has(r.want) && graph.qualifier(e.a, "offers", r.offer)?.subject.many !== true);
+  };
   const trioEdges = [...graph.edges, ...graph.conditional].filter(
-    (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type),
+    (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type) && !aimedRemoval(e),
   );
   const outAdj = new Map<string, PairEdge[]>();
   const inAdj = new Map<string, PairEdge[]>();
@@ -131,13 +142,13 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   const supplied = (links: readonly PairEdge[], keys: readonly string[]): boolean =>
     links.every((e) => e.needs === undefined || keys.some((k) => k !== e.a && k !== e.b && e.needs?.every((t) => graph.boardTraits(k).includes(t))));
   /** The subject a loop link needs its outlet to consume: the wanting unit, or the host an upgrade sits on through the next link. */
-  const consumedFor = (out: PairEdge, next: PairEdge): string | undefined => {
+  const consumedFor = (out: PairEdge, next?: PairEdge): string | undefined => {
     const rows = linkRows(out);
     const self = rows.every((r) => CONSUMING_OFFERS.has(r.offer) && graph.qualifier(out.b, "wants", r.want)?.onSelf === true);
     if (rows.length === 0 || !self) return undefined;
     const wanting = member(out.b);
     if (wanting.type === "Unit") return `card:${out.b}`;
-    const attaches = linkRows(next).length > 0 && linkRows(next).every((r) => r.offer === "offers:upgrade-to-attach");
+    const attaches = next !== undefined && linkRows(next).length > 0 && linkRows(next).every((r) => r.offer === "offers:upgrade-to-attach");
     return wanting.type === "Upgrade" && attaches ? `card:${next.b}` : undefined;
   };
   /** The subject a fodder link hands its outlet: the tokens the feeding card creates (Subject.supplies, D42). */
@@ -158,6 +169,25 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       const supplied = suppliedTo(links[(i + 2) % 3]);
       return consumed === undefined || supplied === undefined || consumed === supplied || consumesMany(out);
     });
+  /** D76 (#162): a chain whose single-target outlet B eats the token A feeds it cannot also defeat C (one defeat, counted once). */
+  const playableChain = (e1: PairEdge, e2: PairEdge): boolean => {
+    const consumed = consumedFor(e2);
+    const supplied = suppliedTo(e1);
+    return consumed === undefined || supplied === undefined || consumed === supplied || consumesMany(e2);
+  };
+  /**
+   * D76 (#162): a token made only after a friendly unit was defeated (Koska Reeves) comes after that defeat, so a link that hands
+   * it on needs another member to defeat a friendly unit first, through a link into the token maker; the outlet it feeds cannot be it.
+   */
+  const afterDefeat = (e: PairEdge): boolean => {
+    const rows = linkRows(e);
+    if (rows.length === 0 || !rows.every((r) => r.offer === "offers:create-token-units")) return false;
+    const c = member(e.a);
+    const why = c.tags.offers.find((t) => t.tag === "offers:create-token-units")?.why;
+    return why !== undefined && c.tags.wants.some((t) => t.tag === FRIENDLY_DEFEATED && t.why === why);
+  };
+  const ordered = (links: readonly PairEdge[]): boolean =>
+    links.every((e) => !afterDefeat(e) || links.some((f) => f !== e && f.b === e.a && f.a !== e.b && linkRows(f).some((r) => r.want === FRIENDLY_DEFEATED)));
   /**
    * D64: when B's offer acts on the unit its own watcher saw ("ready that unit") and A is what feeds that watcher, C must be
    * the unit A puts into play. A chain whose C cannot be that unit acts on two different objects and never fires.
@@ -266,6 +296,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     for (const e1 of ins) {
       for (const e2 of outs) {
         if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b]) || !relayReaches(e1, e2) || !oneHost([e1, e2])) continue;
+        if (!playableChain(e1, e2) || !ordered([e1, e2])) continue;
         counts.chain++;
         const keys: [string, string, string] = [e1.a, b, e2.b];
         if (accept(keys, costOf(...keys))) keepTop(trios.chain, record("chain", keys, [e1, e2]));
@@ -275,7 +306,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       for (let j = i + 1; j < ins.length; j++) {
         const e1 = ins[i];
         const e2 = ins[j];
-        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, e2.a, b]) || !oneHost([e1, e2])) continue;
+        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, e2.a, b]) || !oneHost([e1, e2]) || !ordered([e1, e2])) continue;
         const [x, y] = cmp(e1.a, e2.a) < 0 ? [e1, e2] : [e2, e1];
         const wantsHit = new Set([...linkRows(x), ...linkRows(y)].map((r) => r.want));
         const shape: TrioShape = wantsHit.size > 1 ? "convergent-different-wants" : "convergent-same-want";
@@ -295,7 +326,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         const a = e3.b;
         if (a === b || a === c) continue;
         const e1 = edgeByKey.get(`${a}>${b}`);
-        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c]) || !playableLoop([e1, e2, e3]) || !oneHost([e1, e2, e3])) continue;
+        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c]) || !playableLoop([e1, e2, e3]) || !oneHost([e1, e2, e3]) || !ordered([e1, e2, e3])) continue;
         counts.loop++;
         const keys: [string, string, string] = [a, b, c];
         if (accept(keys, costOf(...keys))) keepTop(trios.loop, record("loop", keys, [e1, e2, e3]));

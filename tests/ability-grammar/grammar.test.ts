@@ -271,7 +271,7 @@ describe("a pronoun defeat resolves to the clause's earlier unit target (#60)", 
       ["take_control", "take_control"],
       ["defeat_ref", "defeat"],
     ]);
-    expect(effects[1]).toMatchObject({ n: 1, target: effects[0].target });
+    expect(effects[1]).toMatchObject({ n: 1, target: { ...effects[0].target, side: "enemy" } });
     expect(effects[1].target).not.toBe(effects[0].target);
   });
 
