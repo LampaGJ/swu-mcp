@@ -41,7 +41,14 @@
     "bench:extract-sims": "tsx scripts/bench/extract-sims.ts",
     "bench:real-play": "tsx scripts/bench/real-play.ts",
     "bench:meta-defense": "tsx scripts/bench/meta-defense.ts",
-    "release:data": "tsx scripts/release-data.ts"
+    "release:data": "tsx scripts/release-data.ts",
+    "sims:pin": "tsx scripts/sims/pin-engine.ts",
+    "sims:bridge-coverage": "tsx scripts/sims/bridge-coverage.ts",
+    "sims:play": "tsx scripts/sims/play.ts",
+    "sims:batch": "tsx scripts/sims/run-batch.ts",
+    "sims:replay": "tsx scripts/sims/replay.ts",
+    "sims:replay-gate": "tsx scripts/sims/replay-gate.ts",
+    "sims:branch-probe": "tsx scripts/sims/branch-probe.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",
