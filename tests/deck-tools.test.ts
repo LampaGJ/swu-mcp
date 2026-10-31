@@ -315,6 +315,27 @@ describe("deck_audit", () => {
     expect(fed.orphanWants).toEqual([]);
   });
 
+  it("names the best three feeders an orphan's leader and base can play: penalty-free first, rotated and out-of-pool cards never", () => {
+    const rotatedFeeder: Spec = { key: "R2", title: "Retired Pinger", cost: 3, icons: ["Aggression"], sets: "SOR", offers: ["offers:damage-friendly-unit"] };
+    const withRotated = buildEnv([...SPECS, rotatedFeeder]);
+    const out = body(deckAudit(withRotated, { decklist: lines(["W1", 2], ["F01", 3]), leader: "L1", base: "BC" }));
+    expect(out.orphanWants).toHaveLength(1);
+    expect(out.orphanWants[0].feeders).toBe("Pinger Red (3); Pinger Green (3); Pinger Blue (3, +2)");
+    expect(out.orphanWants[0].feeders).not.toContain("Retired Pinger");
+    expect(out.orphanWants[0].feedersInCardPool).toBe(4);
+  });
+
+  it("keeps only three feeders, dropping the penalised one once three penalty-free feeders exist, and leaves the string empty when none qualify", () => {
+    const fourth: Spec = { key: "P4", title: "Pinger Gold", cost: 4, icons: ["Aggression"], offers: ["offers:damage-friendly-unit"] };
+    const crowded = body(deckAudit(buildEnv([...SPECS, fourth]), { decklist: lines(["W1", 2], ["F01", 3]), leader: "L1", base: "BC" }));
+    expect(crowded.orphanWants[0].feeders).toBe("Pinger Red (3); Pinger Green (3); Pinger Gold (4)");
+    const none = body(
+      deckAudit(buildEnv(SPECS.filter((s) => !s.key.startsWith("P"))), { decklist: lines(["W1", 2], ["F01", 3]), leader: "L1", base: "BC" }),
+    );
+    expect(none.orphanWants[0].feeders).toBe("");
+    expect(none.orphanWants[0].feedersInCardPool).toBe(0);
+  });
+
   it("says role clusters are unavailable without a similarity run", () => {
     const out = body(deckAudit(env, { decklist: deck, leader: "L1", base: "BC" }));
     expect(out.clusterGaps.note).toContain("unavailable");

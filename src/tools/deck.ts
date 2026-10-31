@@ -8,6 +8,7 @@ import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
+import { edgeOrder } from "../synergy/graph.js";
 import { cardLabel } from "../synergy/order.js";
 import type { PairEdge, SynergyCard } from "../synergy/schema.js";
 import type { ToolResult } from "../tools.js";
@@ -395,6 +396,24 @@ function edgesInto(ctx: SynergyContext): Map<string, PairEdge[]> {
   return index;
 }
 
+const NAMED_FEEDERS = 3;
+
+/** The best few cards offering what an orphan wants, penalty-free for this leader and base first; "Title (cost)", with ", +N" for an aspect penalty. */
+function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: ReadonlySet<string>, supplied: readonly string[]): string {
+  return feeders
+    .flatMap((edge) => {
+      const syn = env.ctx.graph.byKey.get(edge.a);
+      const row = env.store.byKey.get(edge.a);
+      if (syn === undefined || row === undefined || inDeck.has(edge.a)) return [];
+      if (!MAIN_TYPES.has(syn.type) || cardScope(env.store, row) === "rotated") return [];
+      return [{ edge, syn, penalty: singlePenalty(syn, supplied) }];
+    })
+    .sort((x, y) => x.penalty - y.penalty || edgeOrder(x.edge, y.edge))
+    .slice(0, NAMED_FEEDERS)
+    .map(({ syn, penalty }) => `${cardLabel(syn)} (${syn.structured.cost ?? "-"}${penalty > 0 ? `, +${penalty}` : ""})`)
+    .join("; ");
+}
+
 const wantsOf = (syn: SynergyCard): string[] =>
   [...new Set(syn.tags.wants.map((t) => t.tag).filter((tag) => !tag.startsWith("wants:trait-")))].sort(compareCodePoints);
 
@@ -449,7 +468,15 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
     if (wants.length === 0) return [];
     const feeders = into.get(l.syn.cardKey) ?? [];
     if (feeders.some((e) => inDeck.has(e.a) && e.a !== l.syn.cardKey)) return [];
-    return [{ card: cardLabel(l.syn), cardKey: l.syn.cardKey, wants: wants.slice(0, 4).join(", "), feedersInCardPool: feeders.length }];
+    return [
+      {
+        card: cardLabel(l.syn),
+        cardKey: l.syn.cardKey,
+        wants: wants.slice(0, 4).join(", "),
+        feedersInCardPool: feeders.length,
+        feeders: namedFeeders(env, feeders, inDeck, supplied),
+      },
+    ];
   });
 
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit);
