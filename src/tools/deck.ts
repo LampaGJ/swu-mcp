@@ -501,8 +501,15 @@ function edgesInto(ctx: SynergyContext): Map<string, PairEdge[]> {
 
 const NAMED_FEEDERS = 3;
 
-/** The best few cards offering what an orphan wants, penalty-free for this leader and base first; "Title (cost)", with ", +N" for an aspect penalty. */
-function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: ReadonlySet<string>, supplied: readonly string[]): string {
+/**
+ * The best few cards offering what an orphan wants; "Title (cost)", with ", +N" for an aspect penalty. Without the
+ * leader's lists, penalty-free for this leader and base first. With them (#140): cards the lists play at
+ * LEADER_INCLUSION_FLOOR or more first, most played first, then aspect penalty, then pair edge; an unplayed card is
+ * marked "unplayed" and a played one carries its inclusion.
+ */
+function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: ReadonlySet<string>, supplied: readonly string[], data: LeaderData | null): string {
+  const inclusionOf = (cardKey: string): number => data?.byCard.get(cardKey)?.inclusion ?? 0;
+  const playedIn = (cardKey: string): boolean => inclusionOf(cardKey) >= LEADER_INCLUSION_FLOOR;
   return feeders
     .flatMap((edge) => {
       const syn = env.ctx.graph.byKey.get(edge.a);
@@ -511,9 +518,19 @@ function namedFeeders(env: DeckEnv, feeders: readonly PairEdge[], inDeck: Readon
       if (!MAIN_TYPES.has(syn.type) || cardScope(env.store, row) === "rotated") return [];
       return [{ edge, syn, penalty: singlePenalty(syn, supplied) }];
     })
-    .sort((x, y) => x.penalty - y.penalty || edgeOrder(x.edge, y.edge))
+    .sort((x, y) =>
+      data === null
+        ? x.penalty - y.penalty || edgeOrder(x.edge, y.edge)
+        : Number(playedIn(y.edge.a)) - Number(playedIn(x.edge.a)) ||
+          (playedIn(x.edge.a) ? inclusionOf(y.edge.a) - inclusionOf(x.edge.a) : 0) ||
+          x.penalty - y.penalty ||
+          edgeOrder(x.edge, y.edge),
+    )
     .slice(0, NAMED_FEEDERS)
-    .map(({ syn, penalty }) => `${cardLabel(syn)} (${syn.structured.cost ?? "-"}${penalty > 0 ? `, +${penalty}` : ""})`)
+    .map(({ syn, penalty }) => {
+      const mark = data === null ? "" : playedIn(syn.cardKey) ? `, ${Math.round(inclusionOf(syn.cardKey) * 100)}%` : ", unplayed";
+      return `${cardLabel(syn)} (${syn.structured.cost ?? "-"}${penalty > 0 ? `, +${penalty}` : ""}${mark})`;
+    })
     .join("; ");
 }
 
@@ -598,6 +615,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const into = edgesInto(env.ctx);
   const generic = genericWantTags(env.ctx);
   const genericHolders = new Map<string, string[]>();
+  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
   const fedFromDeck = (feeders: readonly PairEdge[], cardKey: string): boolean => feeders.some((e) => inDeck.has(e.a) && e.a !== cardKey);
   const orphanWants = lines.flatMap((l) => {
     const wants = wantsOf(l.syn);
@@ -617,7 +635,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
         cardKey: l.syn.cardKey,
         wants: specific.slice(0, 4).join(", "),
         feedersInCardPool: feeders.length,
-        feeders: namedFeeders(env, feeders, inDeck, supplied),
+        feeders: namedFeeders(env, feeders, inDeck, supplied, leaderData),
       },
     ];
   });
@@ -629,7 +647,6 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
           .map(([w, cards]) => `${w} (${cards.length} ${cards.length === 1 ? "card" : "cards"}): ${cards.join("; ")}`)
           .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card.`;
 
-  const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
   const leaderComparison = leaderComparisonOf(env, lines, leaderData);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);
   const sideboardEntries = sideboardInput.parse(input).sideboard;
@@ -689,6 +706,36 @@ function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSc
     })),
     unresolved,
   };
+}
+
+/** A tag defines a cluster when at least this many of the cluster's cards carry it... */
+const DEFINING_TAG_MIN_CARDS = 5;
+/** ...and at least this share of every card carrying the tag sits in the cluster. */
+const DEFINING_TAG_MIN_SHARE = 0.4;
+const DECK_CARDS_RULE = `deckCards counts a deck card in a cluster when the clusters file places it there or it carries one of the cluster's defining tags (an offers: or wants: tag that at least ${DEFINING_TAG_MIN_CARDS} of the cluster's cards carry and that at least ${DEFINING_TAG_MIN_SHARE * 100}% of all cards carrying it sit in the cluster), so a card the clustering placed elsewhere still counts toward the role it plays`;
+
+const definingTags = new WeakMap<ClustersFile, Map<number, ReadonlySet<string>>>();
+
+/** Per cluster, the offers: and wants: tags concentrated in it (D56); computed once per clusters file from the synergy tags, no model in the path. */
+function definingTagsOf(ctx: SynergyContext, clusters: ClustersFile, clusterOf: ReadonlyMap<string, number>): ReadonlyMap<number, ReadonlySet<string>> {
+  const hit = definingTags.get(clusters);
+  if (hit !== undefined) return hit;
+  const carriers = new Map<string, string[]>();
+  for (const syn of ctx.cards) for (const t of new Set([...syn.tags.offers, ...syn.tags.wants].map((x) => x.tag))) carriers.set(t, [...(carriers.get(t) ?? []), syn.cardKey]);
+  const out = new Map<number, Set<string>>();
+  for (const [tag, keys] of carriers) {
+    const perCluster = new Map<number, number>();
+    for (const key of keys) {
+      const id = clusterOf.get(key);
+      if (id !== undefined) perCluster.set(id, (perCluster.get(id) ?? 0) + 1);
+    }
+    for (const [id, n] of perCluster) {
+      if (n < DEFINING_TAG_MIN_CARDS || n / keys.length < DEFINING_TAG_MIN_SHARE) continue;
+      out.set(id, (out.get(id) ?? new Set<string>()).add(tag));
+    }
+  }
+  definingTags.set(clusters, out);
+  return out;
 }
 
 /** A card the leader's lists play in at least this share of decks, and the deck lacks, is a missing staple. */
@@ -763,10 +810,14 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
     poolWeight.set(id, (poolWeight.get(id) ?? 0) + weight);
     poolCount.set(id, (poolCount.get(id) ?? 0) + 1);
   }
+  const defining = definingTagsOf(env.ctx, env.clusters, clusterOf);
   const deckCount = new Map<number, number>();
   for (const l of lines) {
-    const id = clusterOf.get(l.syn.cardKey);
-    if (id !== undefined) deckCount.set(id, (deckCount.get(id) ?? 0) + l.count);
+    const own = clusterOf.get(l.syn.cardKey);
+    const heldTags = new Set([...l.syn.tags.offers, ...l.syn.tags.wants].map((t) => t.tag));
+    const ids = new Set<number>(own === undefined ? [] : [own]);
+    for (const [id, tags] of defining) if ([...tags].some((t) => heldTags.has(t))) ids.add(id);
+    for (const id of ids) deckCount.set(id, (deckCount.get(id) ?? 0) + l.count);
   }
   const mainCopies = sumBy(
     lines.filter((l) => MAIN_TYPES.has(l.row.type)),
@@ -792,8 +843,8 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
   return {
     norm:
       leaderData === null
-        ? `a cluster's share of the ${weighted.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held; clusters made mostly of bases, leaders or tokens are skipped`
-        : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; clusters made mostly of bases, leaders or tokens are skipped`,
+        ? `a cluster's share of the ${weighted.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`
+        : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`,
     shown: Math.min(rows.length, limit),
     clusters: rows.slice(0, limit),
   };

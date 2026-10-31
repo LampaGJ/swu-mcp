@@ -1409,3 +1409,68 @@ describe.skipIf(!hasRules)("deck construction rules against the Comprehensive Ru
     expect(out.failures[0].detail).toContain("50 + 10 from Data Vault");
   });
 });
+
+describe("deck_audit, feeders and cluster gaps read the leader's lists (#140)", () => {
+  const absent = path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "absent.json");
+
+  describe("orphan feeders in leader mode", () => {
+    // Grit Brute (W1) wants self-damaged; Pinger Red (P1), Green (P2) and Blue (P3) offer it. Under Aggression+Villainy and
+    // a Command base, Red and Green carry no penalty and Blue carries +2.
+    const feedersOf = (leaderEnv: DeckEnv): string => body(deckAudit(leaderEnv, { decklist: lines(["W1", 3]), leader: "L1", base: "BC" })).orphanWants[0].feeders;
+
+    it("names the feeders the leader's lists play first, most played first, and marks the unplayed ones", () => {
+      const file = leaderCardsFile({ L1: [["P3", 0.5], ["P2", 0.3], ["P1", 0.01]] });
+      expect(feedersOf({ ...env, leaderCards: indexLeaderCards(file) })).toBe("Pinger Blue (3, +2, 50%); Pinger Green (3, 30%); Pinger Red (3, unplayed)");
+    });
+
+    it("breaks a tie in inclusion by aspect penalty, then by pair edge", () => {
+      const file = leaderCardsFile({ L1: [["P3", 0.3], ["P2", 0.3]] });
+      expect(feedersOf({ ...env, leaderCards: indexLeaderCards(file) })).toBe("Pinger Green (3, 30%); Pinger Blue (3, +2, 30%); Pinger Red (3, unplayed)");
+    });
+
+    it("keeps the penalty-first order when the package holds no lists for the leader", () => {
+      expect(feedersOf(env)).toBe(feedersOf({ ...env, leaderCards: indexLeaderCards(leaderCardsFile({ L2: [["P3", 0.5]] })) }));
+      expect(feedersOf(env)).not.toContain("unplayed");
+    });
+  });
+
+  describe("cluster gaps count a card the clusters file places elsewhere when it carries the cluster's defining tag", () => {
+    // Six hand-disruption cards (offers:discard-opponent) form cluster 1; Ninth Sister carries the same tag but sits in cluster 2.
+    const hand = Array.from({ length: 6 }, (_, i): Spec => ({ key: `H0${i + 1}`, title: `Hand Taker ${i + 1}`, cost: 2, icons: [], offers: ["offers:discard-opponent"] }));
+    const ninth: Spec = { key: "NS", title: "Ninth Sister", cost: 3, icons: [], offers: ["offers:discard-opponent"] };
+    const specs = [...SPECS, ...hand, ninth];
+    const clusters: ClustersFile = {
+      renderVersion: 1,
+      k: 3,
+      seed: 1,
+      restarts: 1,
+      maxIter: 1,
+      inertia: 0,
+      clusters: [
+        { id: 0, size: 17, label: "fillers", members: FILLERS.map((f) => f.key) },
+        { id: 1, size: 6, label: "hand disruption and disclose", members: hand.map((h) => h.key) },
+        { id: 2, size: 2, label: "sisters", members: ["NS", "P1"] },
+      ],
+    };
+    const file = leaderCardsFile({ L1: hand.map((h): [string, number] => [h.key, 0.5]) });
+    const clusterEnv: DeckEnv = { ...buildEnv(specs, clusters), clusterLabelsPath: absent, leaderCards: indexLeaderCards(file) };
+    const gaps = (decklist: ReturnType<typeof lines>) => body(deckAudit(clusterEnv, { decklist, leader: "L1", base: "BC" })).clusterGaps;
+    const rowOf = (out: { clusters: Record<string, unknown>[] }, id: number) => out.clusters.find((r) => r.clusterId === id);
+
+    it("counts Ninth Sister x2 in the hand-disruption cluster although the clusters file places her in another", () => {
+      const out = gaps(lines(["NS", 2], ["R1", 4], ["PR1", 4]));
+      expect(rowOf(out, 1)).toMatchObject({ label: "hand disruption and disclose", deckCards: 2, expected: 10, gap: 8 });
+    });
+
+    it("counts a card the clusters file places in the cluster as before, and a card with neither placement nor tag as nothing", () => {
+      expect(rowOf(gaps(lines(["H01", 2], ["R1", 4], ["PR1", 4])), 1)).toMatchObject({ deckCards: 2 });
+      expect(rowOf(gaps(lines(["R1", 5], ["PR1", 5])), 1)).toMatchObject({ deckCards: 0 });
+    });
+
+    it("documents the rule in the norm", () => {
+      const norm = gaps(lines(["NS", 2], ["R1", 4])).norm as string;
+      expect(norm).toContain("defining tag");
+      expect(norm).toContain("deckCards");
+    });
+  });
+});
