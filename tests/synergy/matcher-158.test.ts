@@ -193,7 +193,8 @@ describe("find_pairings and find_trios flag and demote the Force and trait locks
     // Youngling Padawan makes the Force, so a trio holding it meets Jedi Consular's cost.
     const withConsular = trios.filter((t) => members(t).includes("05010094") && !members(t).includes("05010193"));
     expect(withConsular.length).toBeGreaterThan(0);
-    expect(withConsular.every((t) => t.needsForce === "use the Force")).toBe(true);
+    // D82 (#164) widened this expectation: a trio may name a second Force need of another member ("while the Force is with you").
+    expect(withConsular.every((t) => String(t.needsForce).split(", ").includes("use the Force"))).toBe(true);
     const locked = (t: Record<string, any>) => ["baseLocked", "nameLocked", "needsForce", "needsTrait"].some((k) => t[k] !== undefined);
     const first = trios.findIndex(locked);
     expect(trios.slice(first).every(locked)).toBe(true);

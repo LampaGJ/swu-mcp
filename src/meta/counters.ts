@@ -4,7 +4,8 @@ import { z } from "zod";
 import { readJson } from "../data.js";
 import { REPO_ROOT } from "../paths.js";
 import { compareCodePoints } from "../swu/canonical.js";
-import { clip } from "../synergy/evidence.js";
+import { clip, evidenceSpan } from "../synergy/evidence.js";
+import type { SynergyCard } from "../synergy/schema.js";
 import {
   counterTableSchema,
   type CounterRelation,
@@ -355,7 +356,8 @@ export function relationHit(
       threat: relation.threat,
       offer: offer.tag,
       weight,
-      evidence: clip(offer.why),
+      // D82 (#164): the clause with the trigger, the clauses it hangs on and, in a choose-one, its whole mode, as the pairing tools quote it.
+      evidence: clip(evidenceSpan(card as unknown as Pick<SynergyCard, "faces">, offer.why)),
       answers,
       ...(threshold === null ? {} : { threshold }),
       fraction: Math.round(fraction * 1e4) / 1e4,

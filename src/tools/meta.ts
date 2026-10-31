@@ -487,6 +487,8 @@ interface Answer {
   primaryThreat: string;
   evidence: DeckEvidenceView;
   evidenceClass: EvidenceClass;
+  /** D82: the ok figure's with-card interval lies wholly above the without-card one. */
+  significant: boolean;
   /** Share of our leader's decklists that play the card; null when unplayed or when the package holds no list for the leader. */
   leaderInclusion: number | null;
   /** Decision D46: every offer this card answers with also hits our own units. */
@@ -510,7 +512,7 @@ export type EvidenceClass = "ok" | "negative" | "unmeasured" | "thin-control";
 /** What a deck-evidence cell needs to be classed: the object cardDeckEvidence returns, or the reason it has none. */
 export type DeckEvidenceView =
   | string
-  | { withCard: { n: number; decks: number }; withoutCard: { n: number; decks: number }; difference: number | null };
+  | { withCard: { n: number; decks: number; ci95?: string | null }; withoutCard: { n: number; decks: number; ci95?: string | null }; difference: number | null };
 
 /** The keys meta_answers sorts on, in the order compareAnswerRank applies them. */
 export interface AnswerRank {
@@ -591,6 +593,37 @@ export function negativeEvidenceLast<T extends { evidenceClass: EvidenceClass; p
     return [...part.slice(0, lastOk).filter((a) => a.evidenceClass !== "negative"), ...part.slice(lastOk, lastOk + 1), ...moved, ...part.slice(lastOk + 1)];
   };
   return [...behindOk(rows.filter((a) => !(a.partlyLocked ?? false))), ...behindOk(rows.filter((a) => a.partlyLocked ?? false))];
+}
+
+const ciBounds = (ci: string | null | undefined): [number, number] | null => {
+  const parts = (ci ?? "").split("..").map(Number);
+  return parts.length === 2 && parts.every(Number.isFinite) ? [parts[0], parts[1]] : null;
+};
+
+/**
+ * D82 (#164): a measured gain: an ok figure whose with-card Wilson 95% interval lies wholly above the without-card one
+ * (the two intervals the row prints), so the gap is not one event's luck.
+ */
+export function significantGain(evidence: DeckEvidenceView, evidenceClass: EvidenceClass): boolean {
+  if (evidenceClass !== "ok" || typeof evidence === "string" || evidence.difference === null || evidence.difference <= 0) return false;
+  const withCard = ciBounds(evidence.withCard.ci95);
+  const without = ciBounds(evidence.withoutCard.ci95);
+  return withCard !== null && without !== null && withCard[0] > without[1];
+}
+
+/**
+ * D82 (#164): an addition measured with a significant gain ranks before every unmeasured one: each unmeasured row that sits
+ * before the last significant row moves to just behind it, the order of every other row kept, inside each partition of
+ * the partly-locked split (D65), the mirror of negativeEvidenceLast.
+ */
+export function measuredBeforeUnmeasured<T extends { evidenceClass: EvidenceClass; significant?: boolean; partlyLocked?: boolean }>(rows: readonly T[]): T[] {
+  const behind = (part: readonly T[]): T[] => {
+    const last = part.map((a) => a.significant === true).lastIndexOf(true);
+    if (last < 0) return [...part];
+    const moved = part.slice(0, last).filter((a) => a.evidenceClass === "unmeasured");
+    return [...part.slice(0, last).filter((a) => a.evidenceClass !== "unmeasured"), part[last], ...moved, ...part.slice(last + 1)];
+  };
+  return [...behind(rows.filter((a) => !(a.partlyLocked ?? false))), ...behind(rows.filter((a) => a.partlyLocked ?? false))];
 }
 
 /** Decision D36: 0-2, 3-4, 5-6, 7+ and, last, an unknown cost. */
@@ -760,6 +793,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     const lock = mergeLocks([...shut.filter((o) => lockedHits.some((h) => h.hit.offer === o.offer.tag)).map((o) => o.lock), clauseLock(syn, locks)]);
     const symmetric = (lockedOut ? lockedHits : hits).every((h) => h.hit.symmetric);
     const evidence = cardDeckEvidence(env, syn.cardKey, ours);
+    const evidenceClass = evidenceClassOf(evidence, env.winrates.minN);
     answers.push({
       cardKey: syn.cardKey,
       title: cardLabel(syn),
@@ -771,7 +805,8 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       threatCount: new Set(hits.map((h) => h.hit.threat)).size,
       primaryThreat: primaryThreatOf(lockedOut ? lockedHits : hits),
       evidence,
-      evidenceClass: evidenceClassOf(evidence, env.winrates.minN),
+      evidenceClass,
+      significant: significantGain(evidence, evidenceClass),
       leaderInclusion: leaderData?.byCard.get(syn.cardKey)?.inclusion ?? null,
       symmetric,
       symmetricDemoted: symmetric && demoteSymmetric,
@@ -791,10 +826,11 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
   const hiddenRows = answers.filter((a) => hidden.has(a));
   const visible = hidden.size === 0 ? answers : answers.filter((a) => !hidden.has(a));
   const isStaple = (a: Answer): boolean => a.inDeck > 0 || (a.leaderInclusion ?? 0) >= STAPLE_INCLUSION;
-  const staples = visible.filter(isStaple);
+  // D82 (#164): the D75 order holds among the staples too: a negative staple follows the last ok one.
+  const staples = negativeEvidenceLast(visible.filter(isStaple));
   // D59: a card with no open offer takes no page slot, perThreat slot or reserved slot; it is listed apart, after the open answers.
   const lockedList = visible.filter((a) => !isStaple(a) && a.lockedOut);
-  const candidates = negativeEvidenceLast(visible.filter((a) => !isStaple(a) && !a.lockedOut));
+  const candidates = measuredBeforeUnmeasured(negativeEvidenceLast(visible.filter((a) => !isStaple(a) && !a.lockedOut)));
   const capped = deferRepeatedLinks(candidates, (a) => a.primaryThreat, args.perThreat);
   const { deferred } = capped;
   // D65 (#156): the perThreat cap lists the first answer of every threat ahead of repeats, so the lock partition of the sort is applied again after it.
@@ -901,6 +937,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     answers: byThreat(a),
     deckEvidence: annotated(a, env.winrates.minN),
     evidenceClass: a.evidenceClass,
+    ...(a.significant ? { significant: true } : {}),
     leaderInclusion: a.leaderInclusion,
   });
 
@@ -941,7 +978,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
     staples: staples.map(rowOf),
     additions: additions.map(rowOf),
     lockedAnswers: lockedList.slice(0, args.limit).map(rowOf),
-    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a card with an open offer and a locked clause (Sandcrawler Sales Team, Ritual Dragon: printed Saboteur open, Tatooine clause locked) ranks after every unlocked answer, also past the perThreat cap (D65); a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class reorders within a band and removes no row, with one exception for additions (D75): an addition whose class is negative, a thin negative included (deckEvidence.thin), is listed after every addition whose class is ok, whatever its coverage (it keeps its place among the unmeasured ones), and a threat's reserved slot goes to an answer ahead of it first; staples keep the band order; it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry, leaderData.selection)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
+    note: `${LOCK_NOTE} In this tool a locked offer is left out of coverage and the threats covered; a card with no open offer is listed apart, after the open answers, under lockedAnswers (lockedOut: true, coverage 0), with the offers it would have answered with; a card with an open offer and a locked clause (Sandcrawler Sales Team, Ritual Dragon: printed Saboteur open, Tatooine clause locked) ranks after every unlocked answer, also past the perThreat cap (D65); a staple stays among the staples with its lock named. Penalty-free cards first, then by coverage = sum over the archetypes answered of share x relation weight x the share of key-unit copies removed (removal) or 1, in bands of 0.05. Within a coverage band the order is evidenceClass (ok and unmeasured before negative), then cost band (0-2, 3-4, 5-6, 7+), then leaderInclusion (more-played first, unplayed last), then exact coverage. evidenceClass = unmeasured unless both sides (with the card, without it) have at least minN decisive matches; then negative when the difference is below -0.05 (deckEvidence.thin flags a negative with under 10 decks with the card), and ok only when both sides also have 10 decks, else unmeasured (deckEvidence.unmeasured names the thin side); an otherwise ok figure whose without-card side holds under the smaller of ${CONTROL_SHARE * 100}% of the comparable decks and ${CONTROL_DECKS_CAP} decks is thin-control (deckEvidence.thinControl: the decks without this card are N of M comparable decks: not a control group), sorted with ok and unmeasured, because a few decks that skip a staple are not a control group. The class reorders within a band and removes no row, with one exception for additions (D75): an addition whose class is negative, a thin negative included (deckEvidence.thin), is listed after every addition whose class is ok, whatever its coverage (it keeps its place among the unmeasured ones), and a threat's reserved slot goes to an answer ahead of it first; a negative staple likewise follows the last ok staple (D82); an addition marked significant: true (class ok, and its with-card Wilson interval lies wholly above the without-card one) is listed before every unmeasured addition, whatever its coverage (D82); it is association, not effect, because opponents are unknown. perThreat ${args.perThreat}: at most ${args.perThreat} answers per primary threat (the threat adding the most coverage to the answer) are ranked first, so the page shows a spread of threats; ${deferred} further answers to an already-listed threat follow in rank order (perThreat 60 turns the cap off). leaderInclusion = ${leaderData === null ? "not available: this package holds no decklist data for our leader, so nothing is filtered or tie-broken by it" : `placement-weighted share of our leader's ${leaderData.entry.population} decklists that play the card (${leaderSourceText(leaderData.entry, leaderData.selection)}); null = unplayed there`}. ${args.includeUnplayed || leaderData === null ? "includeUnplayed: every answer is listed." : `The page leaves out answers under ${LEADER_INCLUSION_FLOOR * 100}% leaderInclusion that are not already in the deck (${hidden.size} left out; includeUnplayed: true lists them).`} capped counts the answers deferred by perThreat plus those left out (minus any the page shows as hiddenByFloor). staples = answers already in the deck (inDeck above 0) or played by ${STAPLE_INCLUSION * 100}% or more of our leader's decklists; additions = the rest, so a builder sees what to add first. limit, perThreat and the leaderInclusion floor apply to additions only; every staple is listed. minPerThreat ${args.minPerThreat}: ${args.minPerThreat === 0 ? "off." : `before the rank fill each threat the defended archetypes pose gets at least ${args.minPerThreat} answer(s) on the page (a staple counts), best-ranked first, marked reserved: true when the rank alone would not have shown it; a threat whose every answer falls under the leaderInclusion floor gets its best hidden one anyway, marked reserved: true and hiddenByFloor: true, so a threat with an answer in the pool never reads 0.`} symmetric: true marks an answer whose every offer defeats or damages all or each unit of both sides, our own board included. symmetricSweeps: ${symmetricText}. threatsCovered counts staples and additions together: each threat the defended archetypes pose, the number of shown answers that address it and the meta share of the archetypes posing it; 0 means no answer in the pool addresses it (or minPerThreat is 0 and none was shown). Answers are candidates: confirm each clause (evidence) against the card text, then run deck_audit with the swaps. deckEvidence: match records of comparable tournament decks (our leader and base aspects, else our aspect set) with the card against those without it; n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Opponents are unknown (each record is the deck's whole event), so it is not a win rate against any archetype, and it is association, not effect. ourTournamentRecord: our leader and base aspect against that archetype's leader and base aspect in tournament matchups, same fields.`,
   });
 }
 
@@ -1053,7 +1090,7 @@ export const META_TOOLS = {
   ),
   meta_answers: tool(
     "Meta answers",
-    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers, and one with an open offer and a locked clause ranks after the unlocked answers, whether or not an answering offer rests on that clause (D71). When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and leaderSource.populationNote names the counts and the dominant base. An addition with negative deck evidence, a thin negative included, is listed after every addition whose evidenceClass is ok, whatever its coverage (D75).",
+    "Cards in our aspects that answer the largest archetypes, penalty-free first: for each, the threats it answers with clause evidence and status: candidate, coverage weighted by meta share, cost, whether it is already in the deck, and tournament deck evidence: the match win rate of comparable decks with the card against those without it (n, Wilson 95% interval, swumetastats source and window; opponents unknown) and its evidenceClass (negative; ok; or unmeasured when either side has under minN decisive matches, or under 10 decks without a negative gap). Within a coverage band, ok and unmeasured answers rank before negative ones, then cheaper cost bands first, then the answer more of our leader's tournament decks play (leaderInclusion). The page leaves out answers the leader's decks play in under 2% of their lists unless they are already in the decklist or includeUnplayed is true (capped counts them). perThreat (default 4) lists at most that many answers per primary threat before answers that repeat a threat. minPerThreat (default 1) reserves a page slot for the best answer of every fired threat, taking one under the leader-inclusion floor (hiddenByFloor) when nothing above it answers, so threatsCovered reads 0 only for a threat with no answer in the pool. The output splits into staples (in the deck, or played by 50% or more of the leader's lists) and additions (limit applies to these), and threatsCovered counts both. symmetric: true marks a sweep that also hits our own units; it sorts after the other answers of its coverage band when the deck runs 30 or more units (a decklist) or the leader's lists average more than 30. Takes a leader and base, or a decklist. An offer whose clause needs a base location or a unit aspect the leader, base and decklist do not supply (baseLocked, needsUnitAspect) is not counted as covering a threat; a card with no open offer is listed under lockedAnswers, and one with an open offer and a locked clause ranks after the unlocked answers, whether or not an answering offer rests on that clause (D71). When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and leaderSource.populationNote names the counts and the dominant base. An addition with negative deck evidence, a thin negative included, is listed after every addition whose evidenceClass is ok, whatever its coverage (D75), and a negative staple after the last ok staple; an addition measured with a significant gain (significant: true: class ok and the with-card Wilson interval wholly above the without-card one) is listed before every unmeasured addition; a choose-one answer quotes its whole mode (D82).",
     metaAnswersShape,
     metaAnswers,
   ),

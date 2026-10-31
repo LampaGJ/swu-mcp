@@ -146,6 +146,23 @@ export function traitGateOfClause(text: string): TraitGate | null {
   return { traits, another: hit[1] === "another ", ...(hit[3] === undefined ? {} : { orBase: hit[3] }) };
 }
 
+/** "You may attack with a friendly Droid unit", "Give a friendly Jedi unit ...": the effect's own target names a unit trait. */
+const TARGET_TRAIT = new RegExp(`\\b(?:(another|other) )?friendly (${CAP}(?: or ${CAP})*) units?\\b|\\battack with (another |an? )(${CAP}(?: or ${CAP})*) unit\\b`, "u");
+
+/**
+ * D82 (#164): the unit trait an effect's target is restricted to ("attack with a friendly Droid unit"), or null. With no
+ * friendly unit of the trait the clause has no legal target, so it gates the clause the way "While you control a Droid unit"
+ * does; an aspect list is no trait, and an "instead" clause gates nothing.
+ */
+export function targetTraitOfClause(text: string): TraitGate | null {
+  if (/\binstead\b/i.test(text)) return null;
+  const hit = TARGET_TRAIT.exec(text);
+  if (hit === null) return null;
+  const traits = (hit[2] ?? hit[4]).split(" or ");
+  if (traits.some((t) => ASPECT_NAMES.has(t))) return null;
+  return { traits, another: hit[1] !== undefined || hit[3] === "another " };
+}
+
 /** What the deck supplies: its base, and for each aspect the cards (leader, base, deck units) that supply a unit of it. */
 export interface LockSupply {
   base: SynergyCard | undefined;
@@ -206,7 +223,7 @@ const traitLabel = (gate: TraitGate): string => [gate.traits.join(" or "), ...(g
 function resourceTextLock(text: string, cardKey: string, supply: LockSupply, self?: SynergyCard): Partial<Record<"needsForce" | "needsTrait", string[]>> {
   const force = supply.forceMakers === undefined ? null : forceNeedOfText(text);
   const forceMet = supply.forceMakers === undefined || supply.forceMakers.size > 0 || (self !== undefined && makesForce(self));
-  const trait = supply.traitUnits === undefined ? null : traitGateOfClause(text);
+  const trait = supply.traitUnits === undefined ? null : (traitGateOfClause(text) ?? targetTraitOfClause(text));
   return {
     ...(force === null || forceMet ? {} : { needsForce: [force] }),
     ...(trait === null || metTrait(trait, cardKey, supply, self) ? {} : { needsTrait: [traitLabel(trait)] }),
@@ -270,4 +287,44 @@ export function hostNeedOfCards(cards: readonly SynergyCard[], leader: SynergyCa
   if (pilots.length === 0) return [];
   const hosted = [leader, ...deck, ...cards].some((c) => c !== undefined && (c === leader || c.type === "Unit") && !pilots.includes(c) && c.structured.traits.includes("Vehicle"));
   return hosted ? [] : ["Vehicle"];
+}
+
+/** "For this attack, it deals damage ...", "If you do, ...": a clause whose every effect lands on what an earlier clause chose. */
+const REFERS_BACK = /^(?:if you do(?:n't)?|for this attack|then)\b/i;
+function refersBack(clause: { text: string; effects: readonly unknown[] }): boolean {
+  if (REFERS_BACK.test(clause.text.trim())) return true;
+  const targets = clause.effects.map((e) => (e as { target?: { side?: unknown } }).target?.side);
+  return targets.length > 0 && targets.every((side) => side === "ref");
+}
+
+/**
+ * D82 (#164): the tags of a card that rest only on clauses the trait lock shuts. A clause whose own target or condition
+ * needs a unit of a trait the supply lacks is shut; when every clause of the ability is shut or only refers back to a
+ * shut one (Babu Frik: "You may attack with a friendly Droid unit. For this attack, it deals damage ..."), the whole
+ * ability is, its trigger and cost included ("Action [Exhaust]"). A tag is locked when every entry of it cites a shut text.
+ */
+export function lockedTagsOf(card: SynergyCard, supply: LockSupply): Set<string> {
+  if (supply.traitUnits === undefined) return new Set();
+  const shut = new Set<string>();
+  const shutTriggers: string[] = [];
+  const liveTriggers = new Set<string>();
+  for (const [face, abilities] of Object.entries(card.faces)) {
+    for (const ability of abilities) {
+      const clauses = [...(ability.clauses ?? []), ...(ability.options ?? []).flatMap((o) => o.clauses)];
+      const locked = clauses.map((c) => (resourceTextLock(c.text, card.cardKey, supply, card).needsTrait ?? []).length > 0);
+      const whole = locked.includes(true) && clauses.every((c, i) => locked[i] || refersBack(c));
+      // Two abilities can share a trigger text ("Action [Exhaust]"); the trigger is shut only when no live ability carries it.
+      if (!whole) for (const t of ability.triggers ?? []) if (t.text !== undefined) liveTriggers.add(`${face}: ${t.text}`);
+      if (!locked.includes(true)) continue;
+      clauses.forEach((c, i) => {
+        if (!locked[i] && !whole) return;
+        shut.add(`${face}: ${c.text}`);
+        if (c.curatedId !== undefined) shut.add(`curated ${c.curatedId}`);
+      });
+      if (whole) for (const t of ability.triggers ?? []) if (t.text !== undefined) shutTriggers.push(`${face}: ${t.text}`);
+    }
+  }
+  const isShut = (why: string): boolean => shut.has(why) || shutTriggers.some((t) => !liveTriggers.has(t) && (why === t || why.startsWith(`${t} (`)));
+  const tags = [...card.tags.offers, ...card.tags.wants];
+  return new Set(tags.filter((t) => tags.filter((u) => u.tag === t.tag).every((u) => isShut(u.why))).map((t) => t.tag));
 }

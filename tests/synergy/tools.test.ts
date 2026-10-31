@@ -1235,7 +1235,8 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
 
   it("find_pairings: the locked partner carries baseLocked and follows the unlocked ones although its rank is higher", () => {
     const out = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", withAlternatives: false, evidence: false }));
-    expect(order(out)).toEqual(["X2", "X3", "X1"]);
+    // D82 (#164) flipped this expectation: X2 and X3 tie on rank, and a tie now goes to the title ("Aspect Offer" before "Free Offer").
+    expect(order(out)).toEqual(["X3", "X2", "X1"]);
     expect(out.pairings[2]).toMatchObject({ cardKey: "X1", baseLocked: "Tatooine" });
     expect(out.pairings[2].rank).toBeGreaterThan(out.pairings[0].rank);
     expect(out.pairings[0]).not.toHaveProperty("baseLocked");

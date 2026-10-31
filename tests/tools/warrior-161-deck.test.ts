@@ -34,14 +34,17 @@ describe.skipIf(!hasData)("deck_audit shows the card that removes an aspect pena
   const audit = (decklist = DECKLIST): Record<string, any> => body(DECK_TOOLS.deck_audit.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, decklist, gapLimit: 10 }));
   const rowOf = (a: Record<string, any>, title: string): Record<string, any> => a.aspect.uncovered.find((r: Record<string, any>) => r.card.startsWith(title));
 
+  // D82 (#164) flipped this expectation: Qimir, Darth Traya and Marchion Ro are freed only by a Darksaber on one another, each a
+  // taxed carrier, so they keep the printed penalty; Oppo's carriers pay none and still free him.
   it("notes The Darksaber on every penalised row it can cover, with the effective penalty, and keeps the printed penalty", () => {
     const a = audit();
     expect(a.aspect.penalty).toBe(16);
     for (const title of ["Qimir", "Darth Traya", "Marchion Ro", "Oppo Rancisis"]) {
       const row = rowOf(a, title);
+      const taxedOnly = title !== "Oppo Rancisis";
       expect(row.removedBy, title).toContain("The Darksaber, Icon of Leadership attached to");
-      expect(row.effectivePenaltyEach, title).toBe(0);
-      expect(row.effectivePenaltyTotal, title).toBe(0);
+      expect(row.effectivePenaltyEach, title).toBe(taxedOnly ? 2 : 0);
+      expect(row.effectivePenaltyTotal, title).toBe(taxedOnly ? row.penaltyTotal : 0);
       expect(row.penaltyEach, title).toBe(2);
     }
   });
@@ -134,7 +137,11 @@ describe("readPenaltyRemovers on synthetic cards (#161, D75)", () => {
     const tax = card("T", "Taxed", { icons: ["Villainy", "Cunning"] });
     const carrier = card("C", "Carrier", { icons: ["Villainy"] });
     const reader = readPenaltyRemovers(leader, base, [saber, piece(tax), piece(carrier)]);
-    expect(reader.noteFor(tax, ["Heroism", "Command"])).toEqual({ by: "Saber attached to Carrier", effectivePenaltyEach: 2 });
+    // D82 (#164) flipped this expectation: the Villainy carrier pays its own penalty under Heroism and Command, so it removes none.
+    expect(reader.noteFor(tax, ["Heroism", "Command"])).toEqual({
+      by: "Saber attached to Carrier (each a taxed carrier: it pays its own aspect penalty, so it removes none here)",
+      effectivePenaltyEach: 4,
+    });
   });
 
   it("refuses a non-unique carrier, a Vehicle, the card itself and a carrier with no icon in common", () => {

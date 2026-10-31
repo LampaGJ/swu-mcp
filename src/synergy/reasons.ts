@@ -24,6 +24,7 @@ function rowById(graph: PairGraph, id: string): PairGraph["rows"][number] | unde
 
 type Loose = Record<string, unknown>;
 const PLAYED_UNIT_TRIGGER = /^when you play a unit\b/i;
+const PLAYED_THIS_PHASE = /\bplayed this phase\b/i;
 
 /**
  * D74 (#161): whether the offer clause readies a unit as it is played ("When you play a unit ...: ready that unit", "The next
@@ -38,6 +39,8 @@ function readiesAsPlayed(card: SynergyCard, why: string): boolean {
       if (clause.text.replace(/\s+/g, " ").trim() !== body) continue;
       const effects = clause.effects.filter((x): x is Loose => typeof x === "object" && x !== null);
       if (effects.some((x) => x.rule === "enters_ready" || (playTrigger && x.rule === "ready" && (x.target as Loose | undefined)?.side === "ref"))) return true;
+      // D82 (#164): "Ready a unit that was played this phase" readies a unit on the turn it entered, the same gain.
+      if (effects.some((x) => x.rule === "ready" && PLAYED_THIS_PHASE.test(String((x.target as Loose | undefined)?.text ?? "")))) return true;
     }
   }
   return false;
@@ -48,12 +51,19 @@ const PLAYED_READY_REASON: Record<string, string> = {
   "wants:ready-unit": "It readies a unit as you play it, so that unit can use its Action [Exhaust] the turn it enters play.",
 };
 
+/**
+ * D82 (#164): a unit that wants extra attacks gains from attacking (Raid per exhausted resource, a Tusken count), not from an
+ * Action [Exhaust] or an On Attack, so a ready that is not tied to playing the unit is worded as the second attack it gives.
+ */
+const READY_AGAIN_REASON = "Readying a unit after it attacks lets it attack again this round, so what it gains while attacking pays off twice.";
+
 /** The reason for one row hit of an edge, worded for the side the offer actually lands on. */
 export function reasonOfHit(graph: PairGraph, e: PairEdge, hit: PairRowHit): string {
   if (hit.offer === "offers:ready-unit" && PLAYED_READY_REASON[hit.want] !== undefined) {
     const a = graph.byKey.get(e.a) as SynergyCard;
     const why = hit.offerWhy ?? a.tags.offers.find((t) => t.tag === hit.offer)?.why;
     if (why !== undefined && readiesAsPlayed(a, why)) return PLAYED_READY_REASON[hit.want];
+    if (hit.want === "wants:extra-attacks") return READY_AGAIN_REASON;
   }
   const variants = rowById(graph, hit.row)?.reasonBySide;
   if (variants === undefined) return hit.reason;

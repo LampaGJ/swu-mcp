@@ -133,24 +133,32 @@ export function readPenaltyRemovers(leader: RemovalCard, base: RemovalCard, deck
       if (ignoring !== undefined) {
         return { by: `${cardLabel(ignoring.source.syn)}: "${ignoring.clause}"`, effectivePenaltyEach: 0 };
       }
-      let best: { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null = null;
-      for (const lender of lenders) {
-        const options = deck
-          .filter((d) => d.syn.cardKey !== card.cardKey && carrierOk(lender, d))
-          .map((d) => ({ d, n: covered(missing, d.syn) }))
-          .filter((o) => o.n > 0);
-        const n = Math.max(0, ...options.map((o) => o.n));
-        if (n === 0 || (best !== null && n <= best.n)) continue;
-        const carriers = options.filter((o) => o.n === n).map((o) => o.d).sort((a, b) => compareCodePoints(cardLabel(a.syn), cardLabel(b.syn)));
-        best = { lender, carriers, n };
-      }
+      // D82 (#164): a carrier that pays an aspect penalty of its own frees nothing before it is in play, and the carriers can
+      // free only each other (Qimir, Darth Traya, Marchion Ro), so such a carrier is named but takes no penalty off.
+      const taxed = (d: RemovalCard): boolean => missingIcons(d.syn, supplied).length > 0 && !ignorers.some((i) => i.covers(d.syn));
+      const bestOf = (free: boolean): { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null => {
+        let best: { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null = null;
+        for (const lender of lenders) {
+          const options = deck
+            .filter((d) => d.syn.cardKey !== card.cardKey && carrierOk(lender, d) && taxed(d) !== free)
+            .map((d) => ({ d, n: covered(missing, d.syn) }))
+            .filter((o) => o.n > 0);
+          const n = Math.max(0, ...options.map((o) => o.n));
+          if (n === 0 || (best !== null && n <= best.n)) continue;
+          const carriers = options.filter((o) => o.n === n).map((o) => o.d).sort((a, b) => compareCodePoints(cardLabel(a.syn), cardLabel(b.syn)));
+          best = { lender, carriers, n };
+        }
+        return best;
+      };
+      const free = bestOf(true);
+      const best = free ?? bestOf(false);
       if (best === null) return null;
       const names = best.carriers.slice(0, CARRIER_LIMIT).map((c) => cardLabel(c.syn));
       const more = best.carriers.length > CARRIER_LIMIT ? `, +${best.carriers.length - CARRIER_LIMIT} more` : "";
-      return {
-        by: `${cardLabel(best.lender.syn)} attached to ${names.join(" or ")}${more}`,
-        effectivePenaltyEach: UNCOVERED_ICON_PENALTY * (missing.length - best.n),
-      };
+      const by = `${cardLabel(best.lender.syn)} attached to ${names.join(" or ")}${more}`;
+      if (free === null)
+        return { by: `${by} (each a taxed carrier: it pays its own aspect penalty, so it removes none here)`, effectivePenaltyEach: UNCOVERED_ICON_PENALTY * missing.length };
+      return { by, effectivePenaltyEach: UNCOVERED_ICON_PENALTY * (missing.length - best.n) };
     },
   };
 }

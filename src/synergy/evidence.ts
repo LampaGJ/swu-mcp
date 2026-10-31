@@ -38,7 +38,7 @@ const sequencesOf = (a: AbilityLite): string[][] => [(a.clauses ?? []).map((c) =
  * cites the trigger alone ("When Defeated") takes the ability's clauses, so a drawback ("Each opponent may ready a
  * resource") shows. A why that names no clause of the card (a printed trait, a title, a curated id) is returned as it is.
  */
-export function evidenceSpan(card: SynergyCard, why: string): string {
+export function evidenceSpan(card: Pick<SynergyCard, "faces">, why: string): string {
   const prefix = /^(\w+): ([\s\S]*)$/.exec(why);
   const face = prefix !== null && prefix[1] in card.faces ? prefix[1] : undefined;
   const body = flat(face === undefined ? why : (prefix as RegExpExecArray)[2]);
@@ -59,9 +59,12 @@ function spanIn(abilities: readonly AbilityLite[], body: string): string | null 
   for (const a of abilities) {
     const trigger = (a.triggers ?? []).flatMap((t) => (t.text === undefined || t.text === "" ? [] : [flat(t.text)])).join("/");
     const lead = trigger === "" ? "" : `${trigger}: `;
-    for (const seq of sequencesOf(a)) {
+    for (const [i, seq] of sequencesOf(a).entries()) {
       const at = seq.findIndex((c) => flat(c) === body);
       if (at < 0) continue;
+      // D82 (#164): a mode of a choose-one is quoted whole after the ability's own lead ("Choose one:"), so its antecedent
+      // ("Look at an opponent's hand.") and its drawback ("If you do, they draw a card.") travel with the cited clause.
+      if (i > 0) return `${lead}${[...(a.clauses ?? []).map((c) => flat(c.text)), "\u2026", ...seq.map(flat)].join(" ")}`;
       let from = at;
       while (from > 0 && DEPENDENT.test(flat(seq[from]))) from--;
       return `${lead}${seq.slice(from, at + 1).map(flat).join(" ")}`;
