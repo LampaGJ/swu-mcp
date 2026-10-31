@@ -47,9 +47,9 @@ To publish new data (the maintainer's step):
 
 Tool results are TOON, a compact table format (column names once, then one line per row), not JSON. Failures set `isError` with a plain sentence. All tools are read-only.
 
-### Remote (interim, for Claude mobile and other hosted clients)
+### Remote (for Claude mobile and other hosted clients)
 
-Claude's connectors reach an MCP server by URL, so the stdio server is bridged to Streamable HTTP with [mcp-proxy](https://github.com/sparfenyuk/mcp-proxy) and published over HTTPS by the maintainer's Tailscale Funnel. The bridge is a LaunchAgent, `scripts/bridge/com.swu-mcp.bridge.plist` (copy to `~/Library/LaunchAgents` and `launchctl bootstrap gui/$(id -u) <plist>`), listening on `127.0.0.1:8765` with the endpoint at `/mcp`; the public path is `/swu/mcp` on the maintainer's host. The URL has no authentication: every tool is read-only over public card data. A Cloudflare Worker (#16) replaces this once its plan allows the data load.
+Claude's connectors reach an MCP server by URL, so the stdio server is bridged to Streamable HTTP with [mcp-proxy](https://github.com/sparfenyuk/mcp-proxy) and published over HTTPS by the maintainer's Tailscale Funnel. The bridge is a LaunchAgent, `scripts/bridge/com.swu-mcp.bridge.plist` (copy to `~/Library/LaunchAgents` and `launchctl bootstrap gui/$(id -u) <plist>`), listening on `127.0.0.1:8765` with the endpoint at `/mcp`; the public path is `/swu/mcp` on the maintainer's host. The URL has no authentication: every tool is read-only over public card data. This is the remote endpoint (D54 in docs/decisions.md); a hosted Worker was tried and not pursued.
 
 ## Read more
 
