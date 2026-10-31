@@ -153,7 +153,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                 add(offers, p === "friendly" ? "offers:damage-own-base" : "offers:damage-enemy-base", why);
                 add(offers, p === "friendly" ? "offers:damage-friendly-unit" : "offers:damage-enemy-unit", why);
               }
-              else if (p === "friendly" || p === "self") add(offers, "offers:damage-friendly-unit", why);
+              else if (p === "self") add(offers, "offers:damage-self", why);
+              else if (p === "friendly") add(offers, "offers:damage-friendly-unit", why);
               else if (p === "enemy") add(offers, "offers:damage-enemy-unit", why);
               else add(offers, "offers:damage-any-unit", why);
               break;
@@ -180,7 +181,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                 else if (tok === "Shield") add(offers, `offers:give-shield${tp === "friendly" ? "" : `-${tp}`}`, why);
                 else if (tok === "Weakness") {
                   const opponentPicks = p === "ref" && clauses.some((x) => /\bopponent chooses\b/i.test(x.text));
-                  add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : p === "friendly" || p === "self" ? "offers:give-weakness-own" : "offers:give-weakness", why);
+                  add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : p === "self" ? "offers:give-weakness-self" : p === "friendly" ? "offers:give-weakness-own" : "offers:give-weakness", why);
                 }
                 else add(offers, `offers:give-${tok.toLowerCase()}`, why);
               }

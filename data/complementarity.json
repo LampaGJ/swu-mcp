@@ -484,6 +484,14 @@
    "note": "A Shield on an enemy unit helps the opponent; nothing wants it. Reviewed #14."
   },
   {
+   "tag": "offers:damage-self",
+   "note": "the effect lands on the source card itself; it is a cost or a self-condition, not a resource for another card"
+  },
+  {
+   "tag": "offers:give-weakness-self",
+   "note": "the effect lands on the source card itself; it is a cost or a self-condition, not a resource for another card"
+  },
+  {
    "tag": "offers:give-weakness-own",
    "note": "A Weakness on a friendly unit is a drawback to you, not a payoff (Geonosian Picador, round 2). Reviewed #14."
   },

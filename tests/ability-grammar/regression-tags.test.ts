@@ -133,3 +133,31 @@ describe("wants:replay-when-played is limited to a When Played worth replaying",
     expect(wantTags(card)).not.toContain("wants:replay-when-played");
   });
 });
+
+describe("damage and Weakness that land on the source card are not offers to another card", () => {
+  const unit = (title: string, text: string) => featuresOf({ cardKey: "00000001", title, type: "Unit", traits: "Rebel|Vehicle", text });
+
+  it("04010158 Crackshot V-Wing: 'deal 1 damage to this unit' is offers:damage-self, not damage-friendly-unit", () => {
+    const card = unit("Crackshot V-Wing", "If you control no other Fighter units, deal 1 damage to this unit.");
+    expect(offerTags(card)).toContain("offers:damage-self");
+    expect(offerTags(card)).not.toContain("offers:damage-friendly-unit");
+  });
+
+  it("'deal 2 damage to a friendly unit' is still offers:damage-friendly-unit", () => {
+    const card = unit("Friendly Pinger", "When Played: Deal 2 damage to a friendly unit.");
+    expect(offerTags(card)).toContain("offers:damage-friendly-unit");
+    expect(offerTags(card)).not.toContain("offers:damage-self");
+  });
+
+  it("'give a Weakness token to this unit' is offers:give-weakness-self, not give-weakness-own", () => {
+    const card = unit("Self Weakener", "When Played: Give a Weakness token to this unit.");
+    expect(offerTags(card)).toContain("offers:give-weakness-self");
+    expect(offerTags(card)).not.toContain("offers:give-weakness-own");
+  });
+
+  it("'give a Weakness token to a friendly unit' is still offers:give-weakness-own", () => {
+    const card = unit("Friendly Weakener", "When Played: Give a Weakness token to a friendly unit.");
+    expect(offerTags(card)).toContain("offers:give-weakness-own");
+    expect(offerTags(card)).not.toContain("offers:give-weakness-self");
+  });
+});
