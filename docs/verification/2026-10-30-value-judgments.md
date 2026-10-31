@@ -11,7 +11,7 @@ What this answers: are the server's deck-building ideas worth having, measured t
 
 ## TL;DR
 
-Mean score moved from 1.09 to 1.25 to 1.50 to 1.64 to 1.57 of 3 across five builds, and the share of steps a builder would act on from 2 of 11 to 9 of 14. The tournament-data tools (meta records, leader-ranked lists, `leader_cards` lift) earn their keep; the synergy path still lags. The verdict after the fifth session is MIXED, not yet VALUABLE; the plateau sits in the trio tool and the per-cost list caps.
+Mean score moved from 1.09 to 1.25 to 1.50 to 1.64 to 1.57 to 1.57 of 3 across six builds, and the share of steps a builder would act on from 2 of 11 to 9 of 14. The tournament-data tools (meta records, leader-ranked lists, `leader_cards` lift) earn their keep; the synergy path still lags. The verdict after the sixth session is MIXED, not yet VALUABLE; the plateau sits in the trio tool and the per-cost list caps.
 
 ## Sessions
 
@@ -21,10 +21,11 @@ Mean score moved from 1.09 to 1.25 to 1.50 to 1.64 to 1.57 of 3 across five buil
 
 - Session 4, build `86c0b79` (release `data-2026-10-30.r4`), 14 steps: mean 1.64, 9 steps at 2 or above, verdict MIXED. Resolved: the audit flags Oggdo Bogdo from the leader's lists, Rancor Keeper reads penalty 0 under the base, cost 11 reads unfilled, listedCopies counts 50, Marrok gets keyword-matched substitutes. Remaining: Pilots offered to a non-Vehicle, a slot substitute bypassing the trait binding, one played card carrying two unplayed trio partners, the answers page being the deck's own staples with sentinel-wall at 0, every ping link worded as self-damage. Filed as #119 to #121.
 - Session 5, build `e99ccc3` (release `data-2026-10-30.r5`), 14 steps: mean 1.57, 9 steps at 2 or above, verdict MIXED. Resolved: attach and give restrictions, no Always a Bigger Fish in slot lists, side-aware reasons, the pairing call leads with TIE Dagger Vanguard, symmetric sweeps demoted and sentinel-wall at 1. The mean dipped because the leader default made the second pairing call a repeat of the first, and the trio tool still scored 0 and 1 (one played member per trio, a loop whose links do not combine, a curated id shown in place of clause text). Also: perCost 3 drops staples above 60%, empty-cost rows cover costs the leader never fills, budget swaps offered for cards already under the cap. Filed as #134 and #135.
+- Session 6, build `0983020` (release `data-2026-10-30.r6`), 14 steps: mean 1.57, 9 steps at 2 or above, verdict MIXED. Resolved: the Gar Saxon loop, curated clause text in trio evidence, staples kept past perCost, empty costs collapsed to one line, budget swaps skipping under-cap cards. Remaining, filed as #136: "played" means above zero rather than the 2% floor, staples consume the page limit so costs 5 to 8 never show, the unweighted pairing call invents leader and base aspects, the empty-cost wording contradicts the list, one deck card dropped silently from budget_alternatives. The step-3 score was depressed by the session dump truncating the answers page at 9,000 characters.
 
 ## What the sessions established
 
-- Every tool answered every step with no `isError` across the five runs (65 calls).
+- Every tool answered every step with no `isError` across the six runs (79 calls).
 - The pairs-v1 benchmark moved only upward through the matcher changes: 0.7424 to 0.7462 to 0.7617 to 0.7656 overall, 0.7048 to 0.7091 to 0.7267 to 0.7313 mechanical, recall of labelled-correct pairs 147 of 147 throughout.
 - Complaints confirmed resolved by the third judge: leader-aware weighting, no Porg or unplayed 9-to-11 fills, cost-banded budget swaps with correct savings, rotated-set wording, no leaders as partners, honest evidence classes, pinned cluster labels, the token-Creature want-side check.
 
