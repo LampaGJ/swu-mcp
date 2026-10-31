@@ -1,9 +1,9 @@
 {
-  "dataVersion": "2026-10-17.r2",
-  "tag": "data-2026-10-17.r2",
-  "asset": "swu-mcp-data-2026-10-17.r2.tar.gz",
-  "url": "https://github.com/LampaGJ/swu-mcp/releases/download/data-2026-10-17.r2/swu-mcp-data-2026-10-17.r2.tar.gz",
-  "sha256": "39aab09f9e8774946c7ec3ac4a2e64e94f64401f739fbba3217d64bc05737117",
-  "bytes": 2622060,
-  "buildHash": "202b9824fba059a8d5c76049e828651619d030bd298b9343ced8c6365cc2739e"
+  "dataVersion": "2026-10-30",
+  "tag": "data-2026-10-30",
+  "asset": "swu-mcp-data-2026-10-30.tar.gz",
+  "url": "https://github.com/LampaGJ/swu-mcp/releases/download/data-2026-10-30/swu-mcp-data-2026-10-30.tar.gz",
+  "sha256": "9349170b68113310a5f30ddbef6c880ff12efa6b65b6c1a8fad55958095c3cc5",
+  "bytes": 2625549,
+  "buildHash": "2666a888a73ac58a470cb67ba6beab898cbf4a4619ff2d10ff2fce9e94b8090d"
 }
