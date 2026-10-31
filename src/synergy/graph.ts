@@ -1,6 +1,6 @@
 import { compareCodePoints } from "../swu/canonical.js";
 import { cmp, r3 } from "./order.js";
-import { conflictBetween, qualifierOf, type TagQualifier } from "./qualifiers.js";
+import { boardTraits, conflictBetween, offerTraitNeeds, qualifierOf, type TagQualifier } from "./qualifiers.js";
 import type { ComplementarityRow, ComplementarityTable, NonObviousness, PairEdge, PairRowHit, SynergyCard, TraitsMode } from "./schema.js";
 
 /**
@@ -29,6 +29,11 @@ export interface PairGraph {
   rows: readonly ExpandedRow[];
   edges: readonly PairEdge[];
   edgeByKey: ReadonlyMap<string, PairEdge>;
+  /** Links that fire only when a third card supplies the traits in `needs` (#108); never pairs, only trio links. */
+  conditional: readonly PairEdge[];
+  conditionalByKey: ReadonlyMap<string, PairEdge>;
+  /** The traits a card puts on the board: its own as a unit, and those of the tokens it creates. */
+  boardTraits(cardKey: string): readonly string[];
   rowCounts: Readonly<Record<string, number>>;
   exampleChecks: readonly ExampleCheck[];
 }
@@ -126,12 +131,33 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
     return q;
   };
 
-  /** The offer and want tags of A and B that no stated qualifier contradicts. */
+  /**
+   * The offer and want tags of A and B that no stated qualifier contradicts. When every such pair needs a trait
+   * B does not carry, they are returned with those traits as `needs`: a trio link, not a pair.
+   */
   const linkable = (a: SynergyCard, offerHits: readonly string[], b: SynergyCard, wantHits: readonly string[]) => {
     const okPairs = offerHits.flatMap((o) =>
-      wantHits.filter((w) => conflictBetween(a, o, qualifier(a, "offers", o), b, w, qualifier(b, "wants", w)) === null).map((w) => [o, w] as const),
+      wantHits
+        .filter((w) => conflictBetween(a, o, qualifier(a, "offers", o), b, w, qualifier(b, "wants", w)) === null)
+        .map((w) => ({ o, w, needs: offerTraitNeeds(qualifier(a, "offers", o), b, w, qualifier(b, "wants", w), tokenTraits) })),
     );
-    return { offers: offerHits.filter((o) => okPairs.some(([x]) => x === o)), wants: wantHits.filter((w) => okPairs.some(([, y]) => y === w)) };
+    const free = okPairs.filter((p) => p.needs.length === 0);
+    const used = free.length > 0 ? free : okPairs;
+    return {
+      offers: offerHits.filter((o) => used.some((p) => p.o === o)),
+      wants: wantHits.filter((w) => used.some((p) => p.w === w)),
+      needs: free.length > 0 ? [] : [...new Set(okPairs.flatMap((p) => p.needs))].sort(cmp),
+    };
+  };
+  const boardTraitCache = new Map<string, string[]>();
+  const boardTraitsOf = (cardKey: string): string[] => {
+    let t = boardTraitCache.get(cardKey);
+    if (t === undefined) {
+      const c = byKey.get(cardKey);
+      t = c === undefined ? [] : boardTraits(c, tokenTraits);
+      boardTraitCache.set(cardKey, t);
+    }
+    return t;
   };
 
   const nonObvious = (a: SynergyCard, b: SynergyCard): NonObviousness => {
@@ -142,6 +168,7 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   };
 
   const edges = new Map<string, PairEdge>();
+  const conditional = new Map<string, PairEdge>();
   const rowCounts: Record<string, number> = {};
   for (const row of rows) {
     const offerTags = Object.keys(row.offers);
@@ -154,14 +181,15 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
       for (const b of wanters) {
         if (a.cardKey === b.cardKey || a.title === b.title) continue;
         const allWants = wantTags.filter((t) => wantsOf.get(b.cardKey)?.has(t)).sort(cmp);
-        const { offers: usableOffers, wants: hitWants } = row.family === "trait" ? { offers: hitOffers, wants: allWants } : linkable(a, hitOffers, b, allWants);
+        const { offers: usableOffers, wants: hitWants, needs } = row.family === "trait" ? { offers: hitOffers, wants: allWants, needs: [] } : linkable(a, hitOffers, b, allWants);
         if (usableOffers.length === 0 || hitWants.length === 0) continue;
         const w = Math.max(...usableOffers.map((t) => row.offers[t]));
         const viaOffer = [...usableOffers].sort(cmp)[0];
-        n++;
+        const target = needs.length === 0 ? edges : conditional;
+        if (needs.length === 0) n++;
         const k = `${a.cardKey}>${b.cardKey}`;
         const ww = Math.max(...hitWants.map((t) => row.wants[t]));
-        const e: PairEdge = edges.get(k) ?? {
+        const e: PairEdge = target.get(k) ?? {
           a: a.cardKey,
           b: b.cardKey,
           rows: [],
@@ -183,14 +211,19 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
         });
         if (row.family === "trait") e.traitLink = r3(e.traitLink + row.strength * w * ww);
         else e.mechanicalLink = r3(e.mechanicalLink + row.strength * w * ww);
-        edges.set(k, e);
+        if (needs.length > 0) e.needs = [...new Set([...(e.needs ?? []), ...needs])].sort(cmp);
+        target.set(k, e);
       }
     }
     rowCounts[row.baseId] = (rowCounts[row.baseId] ?? 0) + n;
   }
 
-  const edgeList = [...edges.values()].sort((x, y) => cmp(x.a, y.a) || cmp(x.b, y.b));
-  for (const e of edgeList) {
+  // A pair that already links without a supplier keeps that link; its supplier-bound rows add nothing to a trio.
+  for (const k of edges.keys()) conditional.delete(k);
+  const byPair = (x: PairEdge, y: PairEdge): number => cmp(x.a, y.a) || cmp(x.b, y.b);
+  const edgeList = [...edges.values()].sort(byPair);
+  const conditionalList = [...conditional.values()].sort(byPair);
+  for (const e of [...edgeList, ...conditionalList]) {
     e.nonObvious = nonObvious(byKey.get(e.a) as SynergyCard, byKey.get(e.b) as SynergyCard);
     const hasTrait = e.rows.some(isTraitRow);
     e.linkKind = e.rows.every(isTraitRow) ? "trait-only" : hasTrait ? "trait+mechanical" : "mechanical";
@@ -213,6 +246,9 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
     rows,
     edges: edgeList,
     edgeByKey: edges,
+    conditional: conditionalList,
+    conditionalByKey: conditional,
+    boardTraits: boardTraitsOf,
     exampleChecks,
     rowCounts: Object.fromEntries(
       Object.keys(rowCounts)

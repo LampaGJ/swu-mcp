@@ -4,8 +4,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildFungibility, roleOf } from "../../src/synergy/fungibility.js";
 import { buildPairGraph } from "../../src/synergy/graph.js";
-import { conflictBetween, qualifierOf } from "../../src/synergy/qualifiers.js";
+import { conflictBetween, offerTraitNeeds, qualifierOf } from "../../src/synergy/qualifiers.js";
 import { synergyCardsSchema, type SynergyCard } from "../../src/synergy/schema.js";
+import { coverCombos } from "../../src/synergy/cover.js";
+import { trioLinks } from "../../src/synergy/slots.js";
+import { searchTrios } from "../../src/synergy/trios.js";
 import { COMMITTED_TABLE, mk } from "./fixtures.js";
 
 /** Real feature records of the cards adjudicated in docs/verification/2026-10-16.md (see the file's `source`). */
@@ -175,5 +178,74 @@ describe("a want's trait restriction binds the subject the offer supplies (judge
     const oq = qualifierOf(GAR, "offers", "offers:create-token-units", "text: You may create a Mandalorian token.");
     const wq = qualifierOf(FISH, "wants", "wants:sac-fodder", "defeats your own units");
     expect(conflictBetween(GAR, "offers:create-token-units", oq, FISH, "wants:sac-fodder", wq)).toBeNull();
+  });
+});
+
+const LAST_WORDS_TEXT = "If a friendly unit was defeated this phase, give 2 Experience tokens to a unit.";
+const LAST_WORDS = rec("05010263", "Last Words", "Event", ["Learned"], {
+  text: [ability("event_resolve", [clause(LAST_WORDS_TEXT, [{ cat: "give_token", token: "Experience", n: 2, target: { side: "any", kind: "unit", arena: "any", restrict: [], text: "a unit" } }])])],
+}, [["offers:give-experience", `text: ${LAST_WORDS_TEXT}`]], [["wants:friendly-unit-defeated", `text: ${LAST_WORDS_TEXT}`]]);
+const SACRIFICER = rec("x0000001", "Self Sacrificer", "Unit", ["Trooper"], {
+  text: [ability("when_played", [clause("Defeat this unit.", [{ cat: "defeat", n: 1, target: { side: "self", kind: "unit", arena: "any", restrict: [], text: "this unit" } }])])],
+}, [["offers:defeat-self", "text: Defeat this unit."]], []);
+const WATCHER_TEXT = "When a friendly unit is defeated, draw a card.";
+const CREATURE_WATCHER = rec("x0000002", "Creature Watcher", "Unit", ["Creature"], {
+  text: [ability("reactive_you", [clause(WATCHER_TEXT, [{ cat: "draw", n: 1 }])])],
+}, [], [["wants:friendly-unit-defeated", `text: ${WATCHER_TEXT}`]]);
+const TROOPER_WATCHER = rec("x0000003", "Trooper Watcher", "Unit", ["Trooper"], {
+  text: [ability("reactive_you", [clause(WATCHER_TEXT, [{ cat: "draw", n: 1 }])])],
+}, [], [["wants:friendly-unit-defeated", `text: ${WATCHER_TEXT}`]]);
+const BASE = rec("x0000009", "Plain Base", "Base", [], { text: [] }, [], []);
+
+describe("an offer's trait restriction binds the card it feeds, or the trio's supplier (#108)", () => {
+  const cards = [FISH, LAST_WORDS, SACRIFICER, CREATURE_WATCHER, TROOPER_WATCHER, SCENT, GAR, CAD, BASE, MANDO_TOKEN, BEAST_TOKEN];
+  const g = buildPairGraph(cards, COMMITTED_TABLE);
+  const rows = (a: string, b: string): string[] => g.edgeByKey.get(`${a}>${b}`)?.rows.map((r) => r.row) ?? [];
+  const tokens = new Map([["Beast", ["Creature"]], ["Mandalorian", ["Mandalorian"]]]);
+  const fishOffer = qualifierOf(FISH, "offers", "offers:defeat-friendly-unit", "text: Defeat a friendly Creature unit.", tokens);
+  const FED = "wants:friendly-unit-defeated";
+  const wantOf = (c: SynergyCard): ReturnType<typeof qualifierOf> =>
+    qualifierOf(c, "wants", "wants:friendly-unit-defeated", c.tags.wants.find((t) => t.tag === "wants:friendly-unit-defeated")?.why ?? "", tokens);
+
+  it("names the trait the fed card lacks", () => {
+    expect(offerTraitNeeds(fishOffer, LAST_WORDS, FED, wantOf(LAST_WORDS), tokens)).toEqual(["Creature"]);
+    expect(offerTraitNeeds(fishOffer, TROOPER_WATCHER, FED, wantOf(TROOPER_WATCHER), tokens)).toEqual(["Creature"]);
+  });
+
+  it("needs nothing when the fed card carries the trait (positive control: a Creature unit)", () => {
+    expect(offerTraitNeeds(fishOffer, CREATURE_WATCHER, FED, wantOf(CREATURE_WATCHER), tokens)).toEqual([]);
+  });
+
+  it("a token maker carries its printed token traits (positive control: a Beast token)", () => {
+    const watchingScent = rec("x0000004", "Scent Watcher", "Event", [], SCENT.faces, SCENT.tags.offers.map((t) => [t.tag, t.why]), [["wants:friendly-unit-defeated", "x"]]);
+    expect(offerTraitNeeds(fishOffer, watchingScent, FED, wantOf(watchingScent), tokens)).toEqual([]);
+  });
+
+  it("a want that counts the discard pile is not bound: it watches what the defeat leaves, not the defeated unit", () => {
+    expect(offerTraitNeeds(fishOffer, LAST_WORDS, "wants:cards-in-discard", wantOf(LAST_WORDS), tokens)).toEqual([]);
+  });
+
+  it("a pair: 'Defeat a friendly Creature unit' does not feed Last Words, which is no Creature", () => {
+    expect(rows("09010099", "05010263")).not.toContain("sac-outlet-when-defeated");
+    expect(rows("09010099", "x0000003")).not.toContain("sac-outlet-when-defeated");
+  });
+
+  it("a pair: the same outlet still feeds a Creature unit's defeat watcher", () => {
+    expect(rows("09010099", "x0000002")).toContain("sac-outlet-when-defeated");
+  });
+
+  const trios = searchTrios(g, coverCombos(cards));
+  const all = Object.values(trios.trios).flat();
+  const members = (t: (typeof all)[number]): string[] => [t.cardA, t.cardB, t.cardC];
+
+  it("a trio holds Always a Bigger Fish > Last Words only beside a card that supplies a Creature", () => {
+    const withLink = all.filter((t) => trioLinks(g, t).some((e) => e.a === "09010099" && e.b === "05010263"));
+    expect(withLink.length).toBeGreaterThan(0);
+    for (const t of withLink) expect(members(t).some((k) => k === "09010195" || k === "x0000002")).toBe(true);
+    expect(all.some((t) => members(t).includes("09010099") && members(t).includes("05010263") && members(t).includes("x0000001"))).toBe(false);
+  });
+
+  it("a trio: the Beast-token maker supplies the Creature in a chain into Last Words", () => {
+    expect(trios.trios.chain.map(members)).toContainEqual(["09010195", "09010099", "05010263"]);
   });
 });

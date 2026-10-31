@@ -38,7 +38,7 @@ export function trioLinks(graph: PairGraph, t: Pick<TrioRecord, "cardA" | "cardB
             [t.cardB, t.cardC],
           ];
   return pairs.flatMap(([a, b]) => {
-    const e = graph.edgeByKey.get(`${a}>${b}`);
+    const e = graph.edgeByKey.get(`${a}>${b}`) ?? graph.conditionalByKey.get(`${a}>${b}`);
     return e === undefined ? [] : [e];
   });
 }

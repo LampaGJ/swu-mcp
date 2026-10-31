@@ -54,7 +54,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   const bestCover = makeBestCover(options.combos ?? combos);
   const member = (k: string): SynergyCard => byKey.get(k) as SynergyCard;
 
-  const trioEdges = graph.edges.filter(
+  const trioEdges = [...graph.edges, ...graph.conditional].filter(
     (e) => (traits === "include" || !e.traitOnly) && memberTypes.has(member(e.a).type) && memberTypes.has(member(e.b).type),
   );
   const outAdj = new Map<string, PairEdge[]>();
@@ -116,6 +116,9 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       arr.length = keep;
     }
   };
+  /** A conditional link (#108) holds only when the trio's third member puts its needed traits on the board. */
+  const supplied = (links: readonly PairEdge[], keys: readonly string[]): boolean =>
+    links.every((e) => e.needs === undefined || keys.some((k) => k !== e.a && k !== e.b && e.needs?.every((t) => graph.boardTraits(k).includes(t))));
   const sameName = (...ks: string[]): boolean => new Set(ks.map((k) => member(k).title)).size < ks.length;
   const costOf = (...ks: string[]): number => ks.reduce((s, k) => s + (member(k).structured.cost ?? 0), 0);
 
@@ -125,7 +128,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
     const outs = outAdj.get(b) ?? [];
     for (const e1 of ins) {
       for (const e2 of outs) {
-        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2])) continue;
+        if (e1.a === e2.b || sameName(e1.a, b, e2.b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, b, e2.b])) continue;
         counts.chain++;
         const keys: [string, string, string] = [e1.a, b, e2.b];
         if (accept(keys, costOf(...keys))) keepTop(trios.chain, record("chain", keys, [e1, e2]));
@@ -135,7 +138,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
       for (let j = i + 1; j < ins.length; j++) {
         const e1 = ins[i];
         const e2 = ins[j];
-        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2])) continue;
+        if (e1.a === e2.a || sameName(e1.a, e2.a, b) || !mechanical([e1, e2]) || !supplied([e1, e2], [e1.a, e2.a, b])) continue;
         const [x, y] = cmp(e1.a, e2.a) < 0 ? [e1, e2] : [e2, e1];
         const wantsHit = new Set([...linkRows(x), ...linkRows(y)].map((r) => r.want));
         const shape: TrioShape = wantsHit.size > 1 ? "convergent-different-wants" : "convergent-same-want";
@@ -151,7 +154,7 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
         const a = e3.b;
         if (a === b || a === c) continue;
         const e1 = edgeByKey.get(`${a}>${b}`);
-        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3])) continue;
+        if (!e1 || !(cmp(a, b) < 0 && cmp(a, c) < 0) || sameName(a, b, c) || !mechanical([e1, e2, e3]) || !supplied([e1, e2, e3], [a, b, c])) continue;
         counts.loop++;
         const keys: [string, string, string] = [a, b, c];
         if (accept(keys, costOf(...keys))) keepTop(trios.loop, record("loop", keys, [e1, e2, e3]));

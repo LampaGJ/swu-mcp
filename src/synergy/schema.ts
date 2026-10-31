@@ -112,6 +112,8 @@ export interface PairEdge {
   nonObvious: NonObviousness;
   traitOnly: boolean;
   score: number;
+  /** Set only on a conditional link (#108): the traits a third card must put on the board for the link to fire. */
+  needs?: string[];
 }
 
 export const TRIO_SHAPES = ["chain", "convergent-different-wants", "convergent-same-want", "loop"] as const;

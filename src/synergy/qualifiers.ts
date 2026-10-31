@@ -402,6 +402,31 @@ export function conflictBetween(
   return null;
 }
 
+/** Wants that count what an effect leaves behind (a card in the discard), not the subject the effect acted on. */
+const SIDE_PRODUCT_WANTS = new Set(["wants:cards-in-discard"]);
+
+/** The traits a card puts on the board: its own when it is a unit, and the printed traits of every token it creates (D42). */
+export function boardTraits(card: SynergyCard, tokenTraits: TokenTraits | undefined): string[] {
+  const own = card.type === "Unit" || card.type === "Leader" || card.type === "Token Unit" ? card.structured.traits : [];
+  const made = card.tags.offers
+    .filter((t) => CREATE_OFFERS.has(t.tag))
+    .flatMap((t) => (qualifierOf(card, "offers", t.tag, t.why, tokenTraits).subject.supplies ?? []).flatMap((s) => s.traits));
+  return [...new Set([...own, ...made])].sort(cmp);
+}
+
+/**
+ * The traits a friendly offer's target restricts to ("Defeat a friendly Creature unit") that card B neither
+ * carries nor creates, when B's want watches the offered subject (#108). Empty when nothing is missing. A non-empty
+ * answer is not a conflict: the pair alone cannot fire, but a trio whose third card supplies the traits can.
+ * A want on the card itself is already bound by conflictBetween.
+ */
+export function offerTraitNeeds(offer: TagQualifier, b: SynergyCard, wantTag: string, want: TagQualifier, tokenTraits?: TokenTraits): string[] {
+  const { side, kind, traits } = offer.subject;
+  if (offer.onSelf || want.onSelf || side !== "friendly" || traits.length === 0 || (kind !== undefined && kind !== "unit") || SIDE_PRODUCT_WANTS.has(wantTag)) return [];
+  const carried = boardTraits(b, tokenTraits);
+  return traits.filter((t) => !carried.includes(t));
+}
+
 /**
  * What a tag acts on, when that differs from a plain unit: an arena, or a non-unit kind such as a
  * base, an upgrade or a resource. Empty when the features state nothing beyond "a unit".
