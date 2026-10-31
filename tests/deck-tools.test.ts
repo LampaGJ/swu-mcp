@@ -712,7 +712,7 @@ describe("playable_cards, leader-aware", () => {
     const pile = lines(["P1", 1]);
     const out = body(playableCards(leaderEnv, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50 }));
     expect(out.cards).toEqual([]);
-    expect(out.emptyCosts).toBe("the leader's lists do not use cost 2; includeUnplayed: true lists score-ranked cards");
+    expect(out.emptyCosts).toBe("under 0.5 mean copies in the leader's lists at cost 2; includeUnplayed: true lists score-ranked cards");
     const listed = body(playableCards(leaderEnv, { leader: "L1", base: "BC", decklist: pile, emptyCostsOnly: true, perCost: 3, limit: 50, includeUnplayed: true }));
     expect(listed.cards.every((c: { cost: number; cardKey: string | null }) => c.cost === 2 && c.cardKey !== null)).toBe(true);
     expect(listed.cards).toHaveLength(3);
@@ -797,6 +797,28 @@ describe("playable_cards, leader-aware", () => {
       expect(body(playableCards(staples, { leader: "L1", base: "BC", costs: [3], perCost: 3, rankBy: "score" })).cards[0]).not.toHaveProperty("staple");
     });
 
+    it("limit counts non-staple rows only: every staple is listed, even past the limit and past the costs the limit reaches (#136)", () => {
+      const deep = withLeader([
+        ["W1", 0.8],
+        ["P2", 0.75],
+        ["P1", 0.6],
+        ["N1", 0.59],
+        ["N2", 0.5],
+        ["F01", 0.5],
+        ["F02", 0.4],
+        ["F03", 0.3],
+        ["Y1", 0.7],
+        ["Z1", 0.65],
+        ["X1", 0.3],
+      ]);
+      const out = body(playableCards(deep, { leader: "L1", base: "BC", perCost: 3, limit: 2 }));
+      expect(keys(out)).toEqual(["F01", "F02", "W1", "P2", "P1", "Y1", "Z1"]);
+      expect(out.cards.map((c: { staple: boolean }) => c.staple)).toEqual([false, false, true, true, true, true, true]);
+      expect(out.shown).toBe(7);
+      expect(out.note).toContain("does not count toward perCost or limit");
+      expect(body(playableCards(deep, { leader: "L1", base: "BC", perCost: 3, limit: 1, rankBy: "score" })).cards).toHaveLength(1);
+    });
+
     it("emptyCostsOnly reports only costs holding 0.5 mean copies of the leader's lists and names the rest in one line", () => {
       // cost 2: F01 3 copies; cost 4: 0.25 + 0.2 = 0.45 (unused); cost 5: 0.25 + 0.25 = 0.5 (used); cost 6: no leader card; cost 3 is held.
       const use = withLeader([
@@ -813,7 +835,7 @@ describe("playable_cards, leader-aware", () => {
         ["Y1", 5],
         ["Y2", 5],
       ]);
-      expect(out.emptyCosts).toBe("the leader's lists do not use costs 1, 4, 6; includeUnplayed: true lists score-ranked cards");
+      expect(out.emptyCosts).toBe("under 0.5 mean copies in the leader's lists at costs 1, 4, 6; includeUnplayed: true lists score-ranked cards");
       expect(out.cards.every((c: { cardKey: string | null }) => c.cardKey !== null)).toBe(true);
     });
   });
@@ -999,6 +1021,42 @@ describe("budget_alternatives, cap and ordering (#135)", () => {
     const plain = body(budgetAlternatives(capEnv, { decklist: deck, minSaving: 0.1 }));
     expect(plain.alreadyUnderCap).toEqual([]);
     expect(plain.slots.every((s: { note?: string }) => s.note === undefined)).toBe(true);
+  });
+
+  describe("every main-deck card lands in slots, alreadyUnderCap or noAlternative (#136)", () => {
+    const hkEnv = buildEnv([
+      ...SPECS,
+      cheap("H1", "HK Like", 6, 6.48, "offers:hk-role"),
+      cheap("H2", "Far Cost Twin", 2, 0.5, "offers:hk-role"),
+      cheap("J1", "Dear Slot", 5, 4, draw),
+      cheap("J2", "Dearer Twin", 5, 7, draw),
+      { key: "K1", title: "Roleless", cost: 4, icons: ["Aggression"], price: { normal: 3 } },
+      cheap("M1", "Pennies", 3, 0.05, damage),
+    ]);
+    const pile = lines(["H1", 1], ["J1", 2], ["K1", 1], ["P1", 1], ["P2", 1], ["M1", 1]);
+    const out = body(budgetAlternatives(hkEnv, { decklist: pile, maxPrice: 2, minSaving: 0.1, perSlot: 3 }));
+    const landed = (): string[] =>
+      [...out.slots.map((s: { card: string }) => s.card), ...out.alreadyUnderCap.map((s: { card: string }) => s.card), ...out.noAlternative.map((s: { card: string }) => s.card)];
+
+    it("lists a card with a role but no card in its cost band, with its price and reason", () => {
+      expect(out.noAlternative).toContainEqual({ card: "HK Like", price: 6.48, reason: "no card within the cost band" });
+    });
+
+    it("lists a card whose same-slot cards are all dearer, and a card with no role", () => {
+      expect(out.noAlternative).toContainEqual({ card: "Dear Slot", price: 4, reason: "no cheaper same-slot card" });
+      expect(out.noAlternative).toContainEqual({ card: "Roleless", price: 3, reason: "no cheaper same-slot card" });
+    });
+
+    it("puts each priced deck card in exactly one of the three lists", () => {
+      expect(landed().sort()).toEqual(["Dear Slot", "HK Like", "Pennies", "Pinger Green", "Pinger Red", "Roleless"]);
+      expect(new Set(landed()).size).toBe(landed().length);
+      expect(out.noAlternative.every((r: Record<string, unknown>) => Object.keys(r).sort().join() === "card,price,reason")).toBe(true);
+    });
+
+    it("gives noAlternative an empty list when every card has a swap", () => {
+      const swap = body(budgetAlternatives(capEnv, { decklist: lines(["P1", 1]), minSaving: 0.1 }));
+      expect(swap.noAlternative).toEqual([]);
+    });
   });
 });
 

@@ -16,13 +16,14 @@ import {
 } from "../synergy/fungibility.js";
 import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "../synergy/graph.js";
 import { cardLabel, cmp, r3 } from "../synergy/order.js";
+import { compareCodePoints } from "../swu/canonical.js";
 import { reasonOfHit } from "../synergy/reasons.js";
 import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { DEFAULT_TRIO_KEEP, TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
 import { ok, fail } from "./common.js";
-import { inPremierPool, leaderSourceText } from "./deck.js";
+import { inPremierPool, LEADER_INCLUSION_FLOOR, leaderSourceText } from "./deck.js";
 import { valueData } from "./value.js";
 
 /**
@@ -159,7 +160,7 @@ export const findTriosShape = {
     .max(3)
     .optional()
     .describe(
-      "Fewest members the leader's tournament decklists play (leaderInclusion > 0). Default 2 when the rank is leader-weighted, 0 otherwise; above 0 it needs a leader with decklist data and weighting: leader",
+      "Fewest members the leader's tournament decklists play (leaderInclusion of 0.02 or more). Default 2 when the rank is leader-weighted, 0 otherwise; above 0 it needs a leader with decklist data and weighting: leader",
     ),
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(50).default(10),
@@ -248,9 +249,15 @@ const NO_BASE_NOTE = "base not given: penalties measured against the leader's ic
 
 /** Share of the leader's decklists that play the card; null when the card is unplayed in them. */
 const inclusionOf = (w: LeaderWeight, cardKey: string): number | null => w.data?.byCard.get(cardKey)?.inclusion ?? null;
-const leaderFactor = (w: LeaderWeight, cardKey: string): number => {
+/** Decision D51: a card is played when the leader's lists hold it at LEADER_INCLUSION_FLOOR or more; the share shown stays the raw one. */
+const isPlayed = (inclusion: number | null | undefined): inclusion is number => inclusion != null && inclusion >= LEADER_INCLUSION_FLOOR;
+const playedInclusion = (w: LeaderWeight, cardKey: string): number | null => {
   const inc = inclusionOf(w, cardKey);
-  return inc !== null && inc > 0 ? 0.5 + inc : 0.5;
+  return isPlayed(inc) ? inc : null;
+};
+const leaderFactor = (w: LeaderWeight, cardKey: string): number => {
+  const inc = playedInclusion(w, cardKey);
+  return inc === null ? 0.5 : 0.5 + inc;
 };
 
 function leaderBlock(
@@ -291,7 +298,7 @@ function leaderBlock(
     population: entry.population,
     decks: entry.decks,
     window: `${entry.window.from}..${entry.window.to}`,
-    note: `leaderInclusion = placement-weighted share of this leader's decklists that play the card (${leaderSourceText(entry)}); null = unplayed in them. ${how}.`,
+    note: `leaderInclusion = placement-weighted share of this leader's decklists that play the card (${leaderSourceText(entry)}); null = unplayed in them; under ${LEADER_INCLUSION_FLOOR * 100}% counts as unplayed in the rank. ${how}.`,
   };
 }
 
@@ -332,7 +339,7 @@ function substituteOrder(
   weight: LeaderWeight | undefined,
   scores: ReadonlyMap<string, { playCalibrated: number | null }>,
 ): (a: Substitute, b: Substitute) => number {
-  const inclusion = (k: string): number | null => (weight === undefined ? null : inclusionOf(weight, k));
+  const inclusion = (k: string): number | null => (weight === undefined ? null : playedInclusion(weight, k));
   return (a, b) =>
     descNullLast(inclusion(a.cardKey), inclusion(b.cardKey)) ||
     descNullLast(scores.get(a.cardKey)?.playCalibrated, scores.get(b.cardKey)?.playCalibrated) ||
@@ -445,6 +452,33 @@ function penaltyFor(
   return { aspectPair: best.label, penalty: best.penalty };
 }
 
+const ASPECT_NAMES: ReadonlySet<string> = new Set(["Aggression", "Command", "Cunning", "Heroism", "Vigilance", "Villainy"]);
+/** "While you control a Tatooine base": the clause names one kind of base, not an aspect ("an Aggression leader or base" never matches). */
+const NAMED_BASE = /\byou control an? ([A-Z][\w'-]*(?: [A-Z][\w'-]*)*) base\b/;
+const baseLocks = new WeakMap<SynergyCard, string | null>();
+
+/** Decision D51: the base a card's own clause names ("While you control a Tatooine base"), or null when no clause does. */
+function baseLockOf(card: SynergyCard): string | null {
+  const known = baseLocks.get(card);
+  if (known !== undefined) return known;
+  let name: string | null = null;
+  for (const ability of Object.values(card.faces).flat()) {
+    const clauses = [...(ability.clauses ?? []), ...(ability.options ?? []).flatMap((o) => o.clauses)];
+    for (const c of clauses) {
+      const hit = NAMED_BASE.exec(c.text)?.[1];
+      if (hit !== undefined && !ASPECT_NAMES.has(hit)) name ??= hit;
+    }
+  }
+  baseLocks.set(card, name);
+  return name;
+}
+
+/** The names the members lock, and whether the deck's base fails to meet one of them (a base carrying the trait meets it). */
+function baseLockOfAll(cards: readonly SynergyCard[], base: SynergyCard | undefined): { names: string[]; unmet: boolean } {
+  const names = [...new Set(cards.flatMap((c) => baseLockOf(c) ?? []))].sort(compareCodePoints);
+  return { names, unmet: names.some((n) => base === undefined || !base.structured.traits.includes(n)) };
+}
+
 /** Stable partition: the first `perLink` rows of each link keep their place, later rows of that link follow them, both runs in input order. */
 /** How many times the default per-shape trio pool the leader-weighted ranking reads. */
 const LEADER_TRIO_POOL = 5;
@@ -478,7 +512,9 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
   const picked = leaderAndBase(ctx, args, card);
   if (typeof picked === "string") return fail(picked);
   const { leader, base } = picked;
-  const aspects = args.aspects ?? (leader === undefined ? undefined : [...leader.card.structured.aspectIcons, ...(base?.structured.aspectIcons ?? [])]);
+  // D51: a Leader cardKey keeps its own icons in every weighting mode, so the cover search never picks another leader.
+  const ownIcons = card.type === "Leader" ? card.structured.aspectIcons : undefined;
+  const aspects = args.aspects ?? (leader === undefined ? ownIcons : [...leader.card.structured.aspectIcons, ...(base?.structured.aspectIcons ?? [])]);
   const weight = args.weighting === "leader" && leader?.data != null ? leader : undefined;
   const touching = ctx.graph.edges.filter((e) => {
     const partner = e.a === card.cardKey ? e.b : e.b === card.cardKey ? e.a : undefined;
@@ -497,12 +533,13 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
       const score = edgeScore(e, mode);
       const unweighted = aspects === undefined ? score : Math.round((score / (1 + cover.penalty / 2)) * 1000) / 1000;
       const rank = weight === undefined ? unweighted : r3(unweighted * leaderFactor(weight, partner.cardKey));
-      return { e, partner, cover, score, rank };
+      const lock = baseLockOfAll([partner], base);
+      return { e, partner, cover, score, rank, lock };
     });
-    return rows.sort((x, y) => y.rank - x.rank || edgeOrder(x.e, y.e));
+    return rows.sort((x, y) => Number(x.lock.unmet) - Number(y.lock.unmet) || y.rank - x.rank || edgeOrder(x.e, y.e));
   };
   const linkRowsOf = (e: PairEdge, mode: TraitsMode) => (mode === "exclude" ? mechanicalRows(e) : e.rows);
-  const row = ({ e, partner, cover, score, rank }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
+  const row = ({ e, partner, cover, score, rank, lock }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
     const linkRows = linkRowsOf(e, mode);
     const out: Record<string, unknown> = {
       ...brief(partner),
@@ -516,6 +553,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
       penalty: cover.penalty,
       rank,
       ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, partner.cardKey) }),
+      ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
     };
     if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey, linkRows);
     return out;
@@ -587,14 +625,14 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   if (typeof picked === "string") return fail(picked);
   const { leader, base } = picked;
   const weight = args.weighting === "leader" && leader?.data != null ? leader : undefined;
-  const leaderAspects = args.leaderAspects ?? leader?.card.structured.aspectIcons;
+  const leaderAspects = args.leaderAspects ?? leader?.card.structured.aspectIcons ?? (subject?.type === "Leader" ? subject.structured.aspectIcons : undefined);
   const baseAspects = args.baseAspects ?? base?.structured.aspectIcons;
   const fixed = leaderAspects !== undefined || baseAspects !== undefined;
   const minPlayed = args.minPlayed ?? (weight === undefined ? 0 : DEFAULT_MIN_PLAYED);
   if (minPlayed > 0 && weight === undefined) {
     return fail("minPlayed counts members the leader's tournament decklists play: give a leader with decklist data and weighting: leader, or minPlayed: 0");
   }
-  const played = (keys: readonly string[]): number => (weight === undefined ? 0 : keys.filter((k) => (inclusionOf(weight, k) ?? 0) > 0).length);
+  const played = (keys: readonly string[]): number => (weight === undefined ? 0 : keys.filter((k) => playedInclusion(weight, k) !== null).length);
   const search = ctx.trios({
     combos: fixed ? fixedCombo(leaderAspects, baseAspects) : undefined,
     // The leader weight can lift a trio from below the unweighted cut, so the weighted ranking draws from a deeper pool.
@@ -607,7 +645,15 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   // The geometric mean of the member factors, so one played card cannot carry two unplayed ones (D46).
   const rankOf = (t: TrioRecord): number =>
     weight === undefined ? t.score : r3(t.score * Math.cbrt([t.cardA, t.cardB, t.cardC].reduce((f, k) => f * leaderFactor(weight, k), 1)));
-  const ranked: TrioRecord[] = shapes.flatMap((s) => search.trios[s]).sort(weight === undefined ? trioOrder : (x, y) => rankOf(y) - rankOf(x) || trioOrder(x, y));
+  const trioLock = (t: TrioRecord) => baseLockOfAll([t.cardA, t.cardB, t.cardC].map((k) => ctx.graph.byKey.get(k) as SynergyCard), base);
+  const byRank = weight === undefined ? trioOrder : (x: TrioRecord, y: TrioRecord) => rankOf(y) - rankOf(x) || trioOrder(x, y);
+  // D51: a trio holding a card that needs a base the deck does not have follows the trios that do not.
+  const lockOfTrio = new Map<TrioRecord, boolean>();
+  const unmet = (t: TrioRecord): number => {
+    if (!lockOfTrio.has(t)) lockOfTrio.set(t, trioLock(t).unmet);
+    return Number(lockOfTrio.get(t));
+  };
+  const ranked: TrioRecord[] = shapes.flatMap((s) => search.trios[s]).sort((x, y) => unmet(x) - unmet(y) || byRank(x, y));
   // D49: a trio sharing two members with a better-ranked one is that trio with another third card, listed as its variant.
   const kept: { t: TrioRecord; keys: string[]; variants: string[] }[] = [];
   for (const t of ranked) {
@@ -623,7 +669,8 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   const shown = kept.slice(0, args.limit);
   const variantOf = (k: string): Record<string, unknown> => {
     const c = ctx.graph.byKey.get(k) as SynergyCard;
-    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }) };
+    const lock = baseLockOf(c);
+    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }), ...(lock === null ? {} : { baseLocked: lock }) };
   };
   const prefer = fixed ? [...(leaderAspects ?? []), ...(baseAspects ?? [])] : undefined;
   const trios = shown.map(({ t, keys, variants }) => {
@@ -638,6 +685,7 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
       reasons: t.reasons,
       score: t.score,
       ...(weight === undefined ? {} : { rank: rankOf(t), leaderInclusion: keys.map((k) => inclusionOf(weight, k)) }),
+      ...(trioLock(t).names.length === 0 ? {} : { baseLocked: trioLock(t).names.join(", ") }),
       ...(variants.length === 0 ? {} : { variants: variants.map(variantOf) }),
     };
     if (args.evidence) {
@@ -686,7 +734,7 @@ function playedNote(block: Record<string, unknown>, minPlayed: number | undefine
   const rule =
     minPlayed === 0
       ? "minPlayed 0: a trio may hold members the leader's decks do not play."
-      : `minPlayed ${minPlayed}: every trio has at least ${minPlayed} member${minPlayed === 1 ? "" : "s"} with leaderInclusion > 0.`;
+      : `minPlayed ${minPlayed}: every trio has at least ${minPlayed} member${minPlayed === 1 ? "" : "s"} with leaderInclusion of ${LEADER_INCLUSION_FLOOR} or more.`;
   return { ...block, minPlayed, note: `${String(block.note)} ${rule}` };
 }
 

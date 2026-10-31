@@ -11,6 +11,7 @@ import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrio
 import { offerTargetSide } from "../../src/synergy/qualifiers.js";
 import type { SynergyCard } from "../../src/synergy/schema.js";
 import { indexLeaderCards } from "../../src/meta/schema.js";
+import { LEADER_INCLUSION_FLOOR } from "../../src/tools/deck.js";
 import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
 import { COMMITTED_TABLE, mk, table } from "./fixtures.js";
@@ -1038,7 +1039,7 @@ describe("find_trios played members and de-duplication (#134)", () => {
     expect(out.trios.length).toBeGreaterThan(0);
     expect(out.trios.every((t: any) => played(t) >= 2)).toBe(true);
     expect(out.leader.minPlayed).toBe(2);
-    expect(out.leader.note).toContain("at least 2 members with leaderInclusion > 0");
+    expect(out.leader.note).toContain("at least 2 members with leaderInclusion of 0.02 or more");
   });
 
   it("takes minPlayed 0 to 3 and rejects it without leader weighting", () => {
@@ -1110,5 +1111,148 @@ describe("find_trios curated evidence (#134)", () => {
     expect(link(ctx, "Reanimated Night Trooper > 0-0-0")).toMatchObject({ offer: "(no clause text recorded)", want: "(no clause text recorded)", source: "curated" });
     const bare = createSynergyContext([synth, trooper, torture], rows);
     expect(findTrios(bare, {}).content[0].text).not.toMatch(/curated cur-\d/);
+  });
+});
+
+describe("played means leaderInclusion of at least 2% in every synergy tool (#136)", () => {
+  const trioCards = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Command"], cost: 3 }),
+  ];
+  const trioTable = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const withRows = (rows: [string, number][]) => createSynergyContext(trioCards, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], rows));
+
+  it("uses one floor constant, 2%", () => {
+    expect(LEADER_INCLUSION_FLOOR).toBe(0.02);
+  });
+
+  it("find_trios: a card at 0.0039 is unplayed, so it does not satisfy minPlayed", () => {
+    const thin = withRows([["1", 0.5], ["2", 0.0039], ["3", 0.0039]]);
+    expect(body(findTrios(thin, { leader: "L", withAlternatives: false })).trios ?? []).toEqual([]);
+    const one = body(findTrios(thin, { leader: "L", minPlayed: 1, withAlternatives: false }));
+    expect(one.trios[0].leaderInclusion).toEqual([0.5, 0.0039, 0.0039]);
+    expect(one.leader.note).toContain("with leaderInclusion of 0.02 or more");
+    const two = body(findTrios(withRows([["1", 0.5], ["2", 0.0039], ["3", 0.02]]), { leader: "L", withAlternatives: false }));
+    expect(two.trios.map((t: any) => t.cardKeys)).toEqual(["1|2|3"]);
+  });
+
+  it("find_trios: the member factor is 0.5 for a card under the floor, 0.5 + inclusion at the floor", () => {
+    const out = body(findTrios(withRows([["1", 0.5], ["2", 0.0039], ["3", 0.02]]), { leader: "L", minPlayed: 0, withAlternatives: false }));
+    expect(out.trios[0].rank).toBeCloseTo(out.trios[0].score * Math.cbrt(1 * 0.5 * 0.52), 3);
+  });
+
+  it("find_pairings: the partner factor is 0.5 under the floor, and leaderInclusion still shows the raw share", () => {
+    const leaderCtx = createSynergyContext(cards, COMMITTED_TABLE, leaderCardsFile("L1", "Aggro Leader", ["Aggression", "Villainy"], [["5", 0.0039], ["4", 0.02]]));
+    const out = body(findPairings(leaderCtx, { cardKey: "1", leader: "L1", withAlternatives: false }));
+    const plain = body(findPairings(ctx, { cardKey: "1", aspects: ["Aggression", "Villainy"], withAlternatives: false }));
+    const rankOf = (o: Record<string, any>, k: string) => o.pairings.find((p: any) => p.cardKey === k).rank as number;
+    expect(out.pairings.find((p: any) => p.cardKey === "5").leaderInclusion).toBe(0.0039);
+    expect(rankOf(out, "5")).toBeCloseTo(rankOf(plain, "5") * 0.5, 3);
+    expect(rankOf(out, "4")).toBeCloseTo(rankOf(plain, "4") * 0.52, 3);
+  });
+
+  it("fungible_substitutes: a card under the floor sorts with the unplayed ones, by score", () => {
+    const sentinel = (key: string, title: string) => mk(key, title, { cost: 3, aspects: ["Command"], arenas: ["Ground"], power: 3, hp: 4, keywords: ["Sentinel"] });
+    const subCtx = createSynergyContext(
+      [mk("LD", "Order Leader", { type: "Leader", icons: ["Command", "Heroism"] }), sentinel("slot", "Slot"), sentinel("a", "Alpha"), sentinel("b", "Bravo"), sentinel("c", "Charlie")],
+      COMMITTED_TABLE,
+      leaderCardsFile("LD", "Order Leader", ["Command", "Heroism"], [["a", 0.0039], ["c", 0.03]]),
+    );
+    const scores = new Map([["a", { playCalibrated: 3 }], ["b", { playCalibrated: 1 }], ["c", { playCalibrated: 0 }]]);
+    const out = body(fungibleSubstitutes(subCtx, { cardKey: "slot", tag: "keyword:Sentinel", leader: "LD", evidence: false }, scores));
+    const cards2 = out.roles[0].substitutes.flatMap((g: any) => g.cards);
+    expect(cards2.map((c: any) => c.cardKey)).toEqual(["c", "a", "b"]);
+    expect(cards2.map((c: any) => c.leaderInclusion)).toEqual([0.03, 0.0039, null]);
+  });
+});
+
+describe("a Leader cardKey keeps its own icons in every weighting mode (#136)", () => {
+  const pieces = [
+    mk("LP", "Pinger Leader", { type: "Leader", icons: ["Aggression", "Villainy"], offers: ["offers:x"] }),
+    mk("LV", "Other Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("BN", "Cunning Base", { type: "Base", icons: ["Cunning"] }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Cunning"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Cunning"], cost: 3 }),
+  ];
+  const t = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const lcx = createSynergyContext(pieces, t, leaderCardsFile("LP", "Pinger Leader", ["Aggression", "Villainy"], [["2", 0.5]], { cardKey: "BN", title: "Cunning Base", decks: 9 }));
+
+  it("find_pairings weighting none measures every partner against the leader's own icons, not the best other leader and base", () => {
+    const out = body(findPairings(lcx, { cardKey: "LP", weighting: "none", withAlternatives: false, evidence: false }));
+    expect(out.pairings.length).toBeGreaterThan(0);
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy")).toBe(true);
+    expect(out.pairings[0].penalty).toBe(2);
+    expect(out.pairings.every((p: any) => !("leaderInclusion" in p))).toBe(true);
+    expect(out).not.toHaveProperty("leader");
+    const weighted = body(findPairings(lcx, { cardKey: "LP", withAlternatives: false, evidence: false }));
+    expect(weighted.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy+Cunning")).toBe(true);
+  });
+
+  it("find_pairings: an explicit aspects argument still wins, and a non-Leader card is measured as before", () => {
+    const given = body(findPairings(lcx, { cardKey: "LP", weighting: "none", aspects: ["Cunning"], withAlternatives: false, evidence: false }));
+    expect(given.pairings.every((p: any) => p.aspectPair === "icons Cunning")).toBe(true);
+    const plain = body(findPairings(lcx, { cardKey: "2", withAlternatives: false, evidence: false }));
+    expect(plain.pairings.every((p: any) => p.aspectPair.startsWith("leader "))).toBe(true);
+  });
+
+  it("find_trios weighting none fixes the cover search to the leader's icons", () => {
+    const out = body(findTrios(lcx, { cardKey: "LP", includeLeaders: true, weighting: "none", withAlternatives: false, evidence: false }));
+    expect(out.trios.length).toBeGreaterThan(0);
+    expect(out.trios.every((x: any) => x.aspectPair === "leader Aggression+Villainy / base neutral")).toBe(true);
+    expect(out.trios[0].penalty).toBe(4);
+  });
+});
+
+describe("a partner whose clause names a specific base is marked baseLocked and ranked after unlocked partners (#136)", () => {
+  const LOCK = "While you control a Tatooine base, friendly units enter play ready.";
+  const locked = mk("X1", "Ritual Like", { offers: ["offers:x"], aspects: ["Command"], cost: 3, abilities: [{ repeat: "constant", text: LOCK }] });
+  const free = mk("X2", "Free Offer", { offers: ["offers:x"], aspects: ["Command"], cost: 3, abilities: [{ repeat: "constant", text: "Friendly units get +1/+0." }] });
+  const aspectOnly = mk("X3", "Aspect Offer", { offers: ["offers:x"], aspects: ["Command"], cost: 3, abilities: [{ repeat: "constant", text: "While you control an Aggression leader or base, draw a card." }] });
+  const want = mk("W", "Wanter", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 });
+  const tail = mk("T", "Tail", { wants: ["wants:y"], aspects: ["Command"], cost: 3 });
+  const leader = mk("LK", "Lock Leader", { type: "Leader", icons: ["Command", "Heroism"] });
+  const tatooine = mk("BT", "Mos Eisley", { type: "Base", icons: ["Command"], traits: ["Tatooine"] });
+  const plainBase = mk("BP", "Command Base", { type: "Base", icons: ["Command"] });
+  const t = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const file = leaderCardsFile("LK", "Lock Leader", ["Command", "Heroism"], [["X1", 0.8], ["X2", 0.1], ["X3", 0.1], ["W", 0.5], ["T", 0.5]]);
+  const pairCtx = createSynergyContext([leader, tatooine, plainBase, locked, free, aspectOnly, want, tail], t, file);
+  const order = (o: Record<string, any>): string[] => o.pairings.map((p: any) => p.cardKey);
+
+  it("find_pairings: the locked partner carries baseLocked and follows the unlocked ones although its rank is higher", () => {
+    const out = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", withAlternatives: false, evidence: false }));
+    expect(order(out)).toEqual(["X2", "X3", "X1"]);
+    expect(out.pairings[2]).toMatchObject({ cardKey: "X1", baseLocked: "Tatooine" });
+    expect(out.pairings[2].rank).toBeGreaterThan(out.pairings[0].rank);
+    expect(out.pairings[0]).not.toHaveProperty("baseLocked");
+    expect(out.pairings[1]).not.toHaveProperty("baseLocked");
+  });
+
+  it("find_pairings: a base of the named kind satisfies the lock, so the partner keeps its rank", () => {
+    const out = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", base: "BT", withAlternatives: false, evidence: false }));
+    expect(order(out)[0]).toBe("X1");
+    expect(out.pairings[0].baseLocked).toBe("Tatooine");
+    const other = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", base: "BP", withAlternatives: false, evidence: false }));
+    expect(order(other)[2]).toBe("X1");
+  });
+
+  it("find_trios: a trio with a locked member carries baseLocked and a locked variant says so", () => {
+    const only = createSynergyContext([leader, locked, want, tail], t, file);
+    const row = body(findTrios(only, { leader: "LK", minPlayed: 0, withAlternatives: false, evidence: false })).trios[0];
+    expect(row.baseLocked).toBe("Tatooine");
+    const both = body(findTrios(pairCtx, { leader: "LK", minPlayed: 0, withAlternatives: false, evidence: false }));
+    expect(both.trios[0].cardKeys).toBe("X2|W|T");
+    expect(both.trios[0]).not.toHaveProperty("baseLocked");
+    expect(both.trios[0].variants).toContainEqual({ title: "Ritual Like", cost: 3, leaderInclusion: 0.8, baseLocked: "Tatooine" });
   });
 });

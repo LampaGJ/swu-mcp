@@ -976,7 +976,7 @@ export const playableCardsShape = {
   tag: z.string().min(1).optional().describe("Only cards carrying this offers: or wants: tag, for example offers:draw"),
   maxPenalty: z.number().int().min(0).default(0).describe("Highest aspect penalty to allow; 0 means every icon is supplied"),
   perCost: z.number().int().min(1).max(20).default(3),
-  limit: z.number().int().min(1).max(200).default(30),
+  limit: z.number().int().min(1).max(200).default(30).describe("Most rows listed besides staples (leader mode); a staple is always listed and does not count"),
   rankBy: z
     .enum(["leader", "score"])
     .optional()
@@ -1053,14 +1053,16 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     .map((r) => withStaple(r, rankedBy === "leader", r.cardKey !== null && isStaple({ cardKey: r.cardKey })))
     .sort((a, b) => a.cost - b.cost);
   const perCost = new Map<number, number>();
-  const shown = rows
-    .filter((r) => {
-      if (r.staple === true) return true;
-      const n = perCost.get(r.cost) ?? 0;
-      perCost.set(r.cost, n + 1);
-      return n < args.perCost;
-    })
-    .slice(0, args.limit);
+  let others = 0;
+  // Decision D51: a staple is always listed and spends neither perCost nor limit; limit caps the other rows.
+  const shown = rows.filter((r) => {
+    if (r.staple === true) return true;
+    const n = perCost.get(r.cost) ?? 0;
+    perCost.set(r.cost, n + 1);
+    if (n >= args.perCost || others >= args.limit) return false;
+    others++;
+    return true;
+  });
   return ok({
     dataVersion: env.dataVersion,
     leader: head(pair.leader.row),
@@ -1086,7 +1088,7 @@ function emptyCostsText(never: readonly number[], thin: readonly number[], unuse
   const parts = [
     ...(never.length === 0 ? [] : [`${never.join(", ")}: no tournament-played card at ${never.length === 1 ? "this cost" : "these costs"}`]),
     ...thin.map(floorText),
-    ...(unused.length === 0 ? [] : [`the leader's lists do not use ${unused.length === 1 ? "cost" : "costs"} ${unused.join(", ")}`]),
+    ...(unused.length === 0 ? [] : [`under ${LEADER_COST_MIN_COPIES} mean copies in the leader's lists at ${unused.length === 1 ? "cost" : "costs"} ${unused.join(", ")}`]),
   ];
   return parts.length === 0 ? "none" : `${parts.join("; ")}; includeUnplayed: true lists score-ranked cards`;
 }
@@ -1133,7 +1135,7 @@ function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "scor
   const unplayedRule = includeUnplayed
     ? "includeUnplayed: true lists the unplayed cards after the played ones in each cost"
     : `cards the leader's decks play in under ${LEADER_INCLUSION_FLOOR * 100}% of their lists, or not at all, are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card; with emptyCostsOnly only a cost where the leader's lists hold at least ${LEADER_COST_MIN_COPIES} mean copies in total is reported, and emptyCosts names the other empty costs in one line`;
-  const staples = `a card in ${LEADER_STAPLE_INCLUSION * 100}% or more of the lists is a staple: it is always listed, even past perCost (staple: true), and does not count toward perCost`;
+  const staples = `a card in ${LEADER_STAPLE_INCLUSION * 100}% or more of the lists is a staple: it is always listed in full, even past perCost and limit (staple: true), and does not count toward perCost or limit, which cap the other rows`;
   return rankedBy === "leader"
     ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}; ${staples}; ${unplayedRule}. Rotated cards are left out.`
     : `ranked within each cost by ${score} (rankBy score); leaderInclusion = ${source}; ${unplayed}. Rotated cards are left out.`;
@@ -1223,6 +1225,8 @@ export const budgetAlternativesShape = {
   perSlot: z.number().int().min(1).max(10).default(3),
 };
 
+type NoAlternativeReason = "no cheaper same-slot card" | "no card within the cost band";
+
 export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const args = z.object(budgetAlternativesShape).parse(input);
   if ((args.leader === undefined) !== (args.base === undefined)) return fail("give both leader and base, or neither");
@@ -1235,6 +1239,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const unpriced: string[] = [];
   const alreadyUnderCap: { card: string; price: number }[] = [];
+  const noAlternative: { card: string; price: number; reason: NoAlternativeReason }[] = [];
   const slots = lines.flatMap((line) => {
     const price = priceOf(env, line.syn.cardKey);
     if (price === null) {
@@ -1245,12 +1250,17 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
       alreadyUnderCap.push({ card: cardLabel(line.syn), price });
       return [];
     }
-    if (price < args.minSaving) return [];
+    const none = (reason: NoAlternativeReason): [] => {
+      noAlternative.push({ card: cardLabel(line.syn), price, reason });
+      return [];
+    };
+    if (price < args.minSaving) return none("no cheaper same-slot card");
     const slot = slotMembers(env, line.syn.cardKey);
-    if (slot === null) return [];
+    if (slot === null) return none("no cheaper same-slot card");
     const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
     const slotPenalty = supplied === undefined ? null : singlePenalty(line.syn, supplied);
-    const alternatives = substituteCandidates(env, line, slot, supplied, inDeck)
+    const candidates = substituteCandidates(env, line, slot, supplied, inDeck);
+    const alternatives = candidates
       .flatMap((c) => {
         if (!sameSlotShape(line.syn, c.syn)) return [];
         const cheaper = priceOf(env, c.syn.cardKey);
@@ -1282,7 +1292,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
           compareCodePoints(a.cardKey, b.cardKey),
       )
       .slice(0, args.perSlot);
-    if (alternatives.length === 0) return [];
+    if (alternatives.length === 0) return none(candidates.some((c) => sameSlotShape(line.syn, c.syn)) ? "no cheaper same-slot card" : "no card within the cost band");
     return [
       {
         card: cardLabel(line.syn),
@@ -1291,7 +1301,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
         price,
         aspectPenalty: slotPenalty,
         roles: slot.roles.join(", "),
-        ...(leaderData !== null && !alternatives.some((a) => (a.leaderInclusion ?? 0) > 0) ? { note: "no tournament-played substitute under the cap" } : {}),
+        ...(leaderData !== null && !alternatives.some((a) => (a.leaderInclusion ?? 0) >= LEADER_INCLUSION_FLOOR) ? { note: "no tournament-played substitute under the cap" } : {}),
         alternatives,
       },
     ];
@@ -1299,10 +1309,11 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   return ok({
     dataVersion: env.dataVersion,
     priceImport: { id: env.market.prices.priceImportId, date: env.market.prices.priceImportFinishedAt?.slice(0, 10) ?? null },
-    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes sort by this leader's decklist inclusion first (played before unplayed), then by role fit and saving; a slot with no played substitute says so; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
+    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes sort by this leader's decklist inclusion first (played before unplayed), then by role fit and saving; a slot with no played substitute (under 2% of the decks) says so; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
     unresolved,
     unpriced,
     alreadyUnderCap,
+    noAlternative,
     slotsWithAlternatives: slots.length,
     savingPerCopy: r2(Math.max(0, ...slots.flatMap((s) => s.alternatives.map((a) => a.saved)))),
     totalSaving: r2(sumBy(slots, (s) => s.count * s.alternatives[0].saved)),
@@ -1737,7 +1748,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: tool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed, even past perCost (staple: true). A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
     playableCardsShape,
     playableCards,
   ),
@@ -1749,7 +1760,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: tool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. Cards without a price are listed.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),
