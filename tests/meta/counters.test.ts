@@ -7,6 +7,7 @@ import {
   loadCounterTable,
   relationHit,
   removes,
+  thresholdOf,
   type EffectSpec,
 } from "../../src/meta/counters.js";
 import type { KeyUnit, ThreatProfile } from "../../src/meta/schema.js";
@@ -162,5 +163,63 @@ describe("removal qualifiers against key unit stats", () => {
     const sweeper = table.relations.find((r) => r.id === "sweeper") as (typeof table.relations)[number];
     expect(relationHit(deathField, answerOffers(deathField), sweeper, everything)).not.toBeNull();
     expect(relationHit(deathField, answerOffers(deathField), sweeper, { ...everything, cheapUnitMedianHp: 3 })).toBeNull();
+  });
+});
+
+describe("a stat threshold in the target's own words (#152)", () => {
+  const bounce = (spec: Partial<EffectSpec>): EffectSpec => ({
+    cat: "bounce",
+    n: 1,
+    side: "any",
+    kind: "unit",
+    arena: "any",
+    quant: "one",
+    restrict: ["non_leader"],
+    text: "a non-leader unit with 6 or more power",
+    ...spec,
+  });
+
+  it("returns only units at or above a power floor the restrict list does not carry (Exploit Confidence)", () => {
+    expect(removes(bounce({}), unit("Ant Droid", { power: 1 }))).toBe(false);
+    expect(removes(bounce({}), unit("Chimaera", { power: 6 }))).toBe(true);
+    expect(removes(bounce({}), unit("Devastator", { power: 9 }))).toBe(true);
+  });
+
+  it("reads a power ceiling, an HP floor and a cost floor the same way", () => {
+    expect(removes(bounce({ text: "a unit with 3 or less power" }), unit("u", { power: 4 }))).toBe(false);
+    expect(removes(bounce({ text: "a unit with 3 or less power" }), unit("u", { power: 3 }))).toBe(true);
+    expect(removes(bounce({ text: "a unit with 5 or more HP" }), unit("u", { hp: 4 }))).toBe(false);
+    expect(removes(bounce({ text: "a unit that costs 4 or more" }), unit("u", { cost: 3 }))).toBe(false);
+    expect(removes(bounce({ text: "a unit that costs 4 or more" }), unit("u", { cost: 4 }))).toBe(true);
+  });
+
+  it("names the threshold in words, from the text or the restrict list, and null when the clause states none", () => {
+    expect(thresholdOf(bounce({}))).toBe("power 6 or more");
+    expect(thresholdOf(bounce({ text: "a unit", restrict: ["cost_le_3"] }))).toBe("cost 3 or less");
+    expect(thresholdOf(bounce({ text: "a unit", restrict: ["non_leader"] }))).toBeNull();
+  });
+
+  it("credits an archetype only through the key units that meet the floor, and carries the threshold on the hit", () => {
+    const exploit = counterCardSchema.parse({
+      ...byKey.get("04010055"),
+      cardKey: "EXPLOIT",
+      title: "Exploit Confidence",
+      tags: { offers: [{ tag: "offers:return-any-to-hand", why: "text: Return a non-leader unit with 6 or more power to its owner's hand." }] },
+      faces: {
+        text: [
+          {
+            kind: "ability",
+            clauses: [{ text: "Return a non-leader unit with 6 or more power to its owner's hand.", effects: [{ cat: "bounce", n: 1, target: { side: "any", kind: "unit", arena: "any", quant: "one", restrict: ["non_leader"], text: "a non-leader unit with 6 or more power" } }] }],
+          },
+        ],
+      },
+    });
+    const relation = table.relations.find((r) => r.id === "bounce-key-unit") as (typeof table.relations)[number];
+    const profile = { ...everything, keyUnits: [unit("Ant Droid", { power: 1, meanCopies: 3 }), unit("Chimaera", { power: 6, meanCopies: 1 })] };
+    const hit = relationHit(exploit, answerOffers(exploit), relation, profile);
+    expect(hit?.answers).toEqual(["Chimaera"]);
+    expect(hit?.fraction).toBe(0.25);
+    expect(hit?.threshold).toBe("power 6 or more");
+    expect(relationHit(exploit, answerOffers(exploit), relation, { ...everything, keyUnits: [unit("Ant Droid", { power: 1 })] })).toBeNull();
   });
 });

@@ -193,6 +193,30 @@ const SWEEP_QUANTS = new Set(["all", "any_number", "any"]);
 const ALL_QUANTS = new Set(["all", "each"]);
 const LIMIT = /^(cost|hp|power)_(le|lt|ge)_(\d+)$/;
 
+const TEXT_LIMIT = /\bwith (\d+) or (more|less|fewer) (power|remaining hp|hp)\b|\b(?:that costs?|costing) (\d+) or (more|less)\b/gi;
+
+/** The stat limits of an effect's target, as restrict codes: the parsed restrict plus those only the target's own words state (#152). */
+function limitsOf(effect: EffectSpec): string[] {
+  const out = new Set(effect.restrict.filter((r) => LIMIT.test(r)));
+  for (const m of effect.text.matchAll(TEXT_LIMIT)) {
+    const stat = m[3] === undefined ? "cost" : m[3].toLowerCase() === "power" ? "power" : "hp";
+    const n = m[1] ?? m[4];
+    const more = (m[2] ?? m[5]).toLowerCase() === "more";
+    out.add(`${stat}_${more ? "ge" : "le"}_${n}`);
+  }
+  return [...out].sort(compareCodePoints);
+}
+
+/** A removal effect's stat floor or ceiling in words ("power 6 or more"), for the answer row; null when it states none. */
+export function thresholdOf(effect: EffectSpec): string | null {
+  const words = limitsOf(effect).flatMap((code) => {
+    const m = LIMIT.exec(code);
+    if (m === null) return [];
+    return [m[2] === "lt" ? `${m[1]} under ${m[3]}` : `${m[1]} ${m[3]} or ${m[2] === "ge" ? "more" : "less"}`];
+  });
+  return words.length === 0 ? null : words.join(", ");
+}
+
 /** Whether every stated limit on the target holds for the unit; a limit the matcher cannot read fails. */
 function restrictHolds(restrict: readonly string[], unit: KeyUnit): boolean {
   for (const r of restrict) {
@@ -222,7 +246,8 @@ const arenaFits = (effectArena: string, unitArenas: readonly string[]): boolean 
 export function removes(effect: EffectSpec, unit: KeyUnit): boolean {
   if (!REMOVAL.has(effect.cat) || !HOSTILE_SIDES.has(effect.side) || !UNIT_KINDS.has(effect.kind) || conditionalTarget(effect.text))
     return false;
-  if (!arenaFits(effect.arena, unit.arenas) || !restrictHolds(effect.restrict, unit)) return false;
+  if (!arenaFits(effect.arena, unit.arenas) || !restrictHolds([...new Set([...effect.restrict, ...limitsOf(effect)])], unit))
+    return false;
   if (effect.cat === "damage") return typeof effect.n === "number" && unit.hp !== null && effect.n >= unit.hp;
   return true;
 }
@@ -259,6 +284,8 @@ export interface RelationHit {
   evidence: string;
   /** Key units this offer removes, for the removal relations. */
   answers: string[];
+  /** The stat floor or ceiling the removing clause states ("power 6 or more"), when it states one. */
+  threshold?: string;
   /** Share of the archetype's key-unit copies removed (removal), else 1. */
   fraction: number;
   /** Decision D46: the offer is a sweep that also hits our own units (see symmetricOffer). */
@@ -280,9 +307,12 @@ export function relationHit(
     const tagBacked = offer.tag.startsWith("offers:") || offer.tag === "disrupt-resources";
     let answers: string[] = [];
     let fraction = 1;
+    let threshold: string | null = null;
     if (q.removesKeyUnit) {
       const removed = profile.keyUnits.filter((u) => offer.effects.some((e) => removes(e, u)));
       if (removed.length === 0) continue;
+      const limits = offer.effects.filter((e) => removed.some((u) => removes(e, u))).flatMap((e) => thresholdOf(e) ?? []);
+      threshold = limits.length === 0 ? null : [...new Set(limits)].join("; ");
       const total = profile.keyUnits.reduce((s, u) => s + u.meanCopies, 0);
       fraction = total === 0 ? 0 : removed.reduce((s, u) => s + u.meanCopies, 0) / total;
       answers = removed.map((u) => u.title);
@@ -308,6 +338,7 @@ export function relationHit(
       weight,
       evidence: clip(offer.why),
       answers,
+      ...(threshold === null ? {} : { threshold }),
       fraction: Math.round(fraction * 1e4) / 1e4,
       symmetric: symmetricOffer(offer),
     };

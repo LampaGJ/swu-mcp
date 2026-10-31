@@ -61,6 +61,10 @@ interface Spec {
   text?: string;
   offers?: string[];
   wants?: string[];
+  /** Printed keywords as structured.keywordsField carries them. */
+  keywords?: string[];
+  /** Tag -> the clause text behind it. */
+  why?: Record<string, string>;
   price?: { normal: number | null; foil?: number | null; printings?: number[] };
   play?: { included: number; wins?: number };
   score?: { total: number | null; play: number | null; expectedStats?: number };
@@ -159,6 +163,8 @@ function buildEnv(specs: readonly Spec[] = SPECS, clusters: ClustersFile | null 
       subtitle: s.subtitle ?? null,
       offers: s.offers,
       wants: s.wants,
+      keywords: s.keywords,
+      why: s.why,
     }),
   );
   const priced = specs.filter((s) => s.price !== undefined);
@@ -1471,6 +1477,78 @@ describe("deck_audit, feeders and cluster gaps read the leader's lists (#140)", 
       const norm = gaps(lines(["NS", 2], ["R1", 4])).norm as string;
       expect(norm).toContain("defining tag");
       expect(norm).toContain("deckCards");
+    });
+  });
+});
+
+describe("deck_audit, keyword clusters and wide-board wants (#152)", () => {
+  const absent = path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "absent.json");
+
+  describe("a card that prints the keyword naming a cluster counts in it", () => {
+    // Six printed-Raid units form cluster 1, six cards that only grant Raid form cluster 2 (both labels name kw:Raid at 100%),
+    // and Raid Elsewhere prints Raid but sits in the fillers' cluster 0.
+    const raiders = Array.from({ length: 6 }, (_, i): Spec => ({ key: `RD${i + 1}`, title: `Raider ${i + 1}`, cost: 2, icons: [], keywords: ["Raid"] }));
+    const granters = Array.from({ length: 6 }, (_, i): Spec => ({ key: `RG${i + 1}`, title: `Granter ${i + 1}`, cost: 2, icons: [], offers: ["offers:grant-raid"] }));
+    const elsewhere: Spec = { key: "RE", title: "Raid Elsewhere", cost: 2, icons: [], keywords: ["Raid"] };
+    const specs = [...SPECS, ...raiders, ...granters, elsewhere];
+    const clusters: ClustersFile = {
+      renderVersion: 1,
+      k: 3,
+      seed: 1,
+      restarts: 1,
+      maxIter: 1,
+      inertia: 0,
+      clusters: [
+        { id: 0, size: 18, label: "fillers", members: [...FILLERS.map((f) => f.key), "RE"] },
+        { id: 1, size: 6, label: "kw:Raid(100%) word:raid(100%) word:attacking(97%)", members: raiders.map((r) => r.key) },
+        { id: 2, size: 6, label: "kw:Raid(100%) word:raid(100%) word:while(50%)", members: granters.map((g) => g.key) },
+      ],
+    };
+    const file = leaderCardsFile({ L1: [...raiders, ...granters].map((c): [string, number] => [c.key, 0.5]) });
+    const clusterEnv: DeckEnv = { ...buildEnv(specs, clusters), clusterLabelsPath: absent, leaderCards: indexLeaderCards(file) };
+    const gaps = (decklist: ReturnType<typeof lines>) => body(deckAudit(clusterEnv, { decklist, leader: "L1", base: "BC" })).clusterGaps;
+    const rowOf = (out: { clusters: Record<string, unknown>[] }, id: number) => out.clusters.find((r) => r.clusterId === id);
+
+    it("counts Raid Elsewhere x2 in the cluster with the most printed Raid, although the clusters file places it in cluster 0", () => {
+      const out = gaps(lines(["RE", 2], ["R1", 4], ["PR1", 4]));
+      expect(rowOf(out, 1)).toMatchObject({ deckCards: 2, expected: 5, gap: 3 });
+    });
+
+    it("leaves the granters cluster to the cards that grant Raid: printed Raid does not count there", () => {
+      const out = gaps(lines(["RE", 2], ["RD1", 2], ["R1", 4], ["PR1", 2]));
+      expect(rowOf(out, 1)).toMatchObject({ deckCards: 4 });
+      expect(rowOf(out, 2)).toMatchObject({ deckCards: 0 });
+    });
+
+    it("counts a granter in its own cluster and states the keyword rule in the norm", () => {
+      const out = gaps(lines(["RG1", 3], ["R1", 4], ["PR1", 3]));
+      expect(rowOf(out, 2)).toMatchObject({ deckCards: 3 });
+      expect(out.norm).toContain("prints the keyword naming a cluster");
+    });
+  });
+
+  describe("a wide-board want is fed by the deck's own unit count", () => {
+    const wide = (key: string, why: string): Spec => ({ key, title: `Wide ${key}`, cost: 3, icons: [], wants: ["wants:wide-board"], why: { "wants:wide-board": why } });
+    const wideEnv = buildEnv([...SPECS, wide("WB3", "text: If you control 3 or more units, you may resource the top card of your deck."), wide("WB5", "text: While you control 5 or more units, this unit gets +2/+0."), wide("WBN", "curated cur-0001"), { key: "EV1", title: "Quiet Event", type: "Event", cost: 1, icons: [] }]);
+    const orphans = (...entries: [string, number][]) => body(deckAudit(wideEnv, { decklist: lines(...entries), leader: "L1", base: "BC" })).orphanWants.map((o: { cardKey: string }) => o.cardKey);
+
+    it("is no orphan at the clause's number of units, the card itself counted", () => {
+      expect(orphans(["WB3", 1], ["F01", 2])).toEqual([]);
+      expect(orphans(["WB5", 1], ["F01", 4])).toEqual([]);
+    });
+
+    it("stays an orphan below the clause's number", () => {
+      expect(orphans(["WB3", 1], ["F01", 1])).toEqual(["WB3"]);
+      expect(orphans(["WB5", 1], ["F01", 3])).toEqual(["WB5"]);
+    });
+
+    it("asks for 3 units when the clause names no number", () => {
+      expect(orphans(["WBN", 1], ["F01", 1])).toEqual(["WBN"]);
+      expect(orphans(["WBN", 1], ["F01", 2])).toEqual([]);
+    });
+
+    it("does not count a non-unit card toward the unit count", () => {
+      expect(orphans(["WB3", 1], ["F01", 1], ["EV1", 2])).toEqual(["WB3"]);
     });
   });
 });

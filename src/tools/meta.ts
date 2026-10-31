@@ -316,9 +316,11 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     .map((o) => ({ archetype: o.name, share: o.share, record: matchupRecord(env, a.leader.cardKey, a.baseAspects, o) }))
     .filter((v) => v.record !== null)
     .map((v) => ({ archetype: v.archetype, share: v.share, ...sourcedMatchup(env, v.record) }));
+  const record = sourcedMatchup(env, matchupRecord(env, a.leader.cardKey, a.baseAspects));
+  const recordNote = record === null ? "tournamentRecord is null: no tournament matchup is captured for this leader and base aspect" : "tournamentRecord is still tournament data for the leader and base aspect";
   return ok({
     dataVersion: env.deck.dataVersion,
-    sources: sourcesNote(env, a.population),
+    sources: { ...sourcesNote(env, a.population), ...(found.fallback ? { fallback: true } : {}) },
     leaderSource: found.fallback
       ? {
           population: "community",
@@ -336,7 +338,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
       decks: a.decks,
       window: `${a.window.from}..${a.window.to}`,
       cohesion: a.cohesion,
-      tournamentRecord: sourcedMatchup(env, matchupRecord(env, a.leader.cardKey, a.baseAspects)),
+      tournamentRecord: record,
     },
     leader: { ...a.leader, aspects: a.leader.aspects.join("+"), power: a.profile.leader.power, hp: a.profile.leader.hp },
     bases: a.bases,
@@ -374,7 +376,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     })),
     core: a.core.slice(0, args.coreLimit),
     tournamentRecordVs: vs,
-    note: `${found.fallback ? "The leader has no tournament archetype in the window, so this is its largest community archetype (leaderSource: the leader's community lists, never pooled with tournament decks); the record against the field is still tournament data for the leader and base aspect. " : ""}Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).`,
+    note: `${found.fallback ? "The leader has no tournament archetype in the window, so this is its largest community archetype (leaderSource: the leader's community lists, never pooled with tournament decks); " + recordNote + ". " : ""}Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).`,
   });
 }
 
@@ -741,7 +743,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
   const byThreat = (a: Answer) => {
     const groups = new Map<
       string,
-      { threat: string; relation: string; offer: string; evidence: string; archetypes: string[]; units: Set<string>; symmetric?: boolean }
+      { threat: string; relation: string; offer: string; evidence: string; archetypes: string[]; units: Set<string>; symmetric?: boolean; threshold?: string }
     >();
     for (const { archetype, hit } of a.hits) {
       const key = `${hit.relation}|${hit.offer}`;
@@ -754,6 +756,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
         units: new Set<string>(),
       };
       if (hit.symmetric) g.symmetric = true;
+      if (hit.threshold !== undefined) g.threshold = hit.threshold;
       g.archetypes.push(`${archetype.id} (${archetype.share})`);
       for (const u of hit.answers) g.units.add(u);
       groups.set(key, g);
@@ -763,6 +766,7 @@ export function metaAnswers(env: MetaEnv, input: unknown): ToolResult {
       relation: g.relation,
       offer: g.offer,
       ...(g.symmetric ? { symmetric: true } : {}),
+      ...(g.threshold === undefined ? {} : { threshold: g.threshold }),
       ...(args.evidence ? { evidence: g.evidence } : {}),
       archetypes: g.archetypes.join(", "),
       keyUnitsRemoved:

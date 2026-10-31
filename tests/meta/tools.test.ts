@@ -226,6 +226,22 @@ describe("meta_threats falls back to the leader's community decks (#144)", () =>
     expect(out.leaderSource).toBeNull();
   });
 
+  it("reports one consistent source: sources.fallback agrees with leaderSource.fallback, and a tournament answer keeps both false/null (#152)", () => {
+    const fallback = body(metaThreats(withCommunity, { archetype: "CL", coreLimit: 8 }));
+    expect(fallback.sources.fallback).toBe(true);
+    expect(fallback.leaderSource.fallback).toBe(true);
+    const tournament = body(metaThreats(withCommunity, { archetype: "EL" }));
+    expect(tournament.sources.fallback).toBe(false);
+    expect(tournament.leaderSource).toBeNull();
+  });
+
+  it("claims a tournament record in the note only when tournamentRecord holds one (#152)", () => {
+    const out = body(metaThreats(withCommunity, { archetype: "CL", coreLimit: 8 }));
+    expect(out.archetype.tournamentRecord).toBeNull();
+    expect(out.note).toContain("tournamentRecord is null");
+    expect(out.note).not.toContain("still tournament data");
+  });
+
   it("profiles the leader's archetype with the given base when the leader is a cardKey, and errors for a base it has no list with", () => {
     expect(body(metaThreats(withCommunity, { archetype: "CL", base: "OB" })).archetype.population).toBe("community");
     const miss = metaThreats(withCommunity, { archetype: "CL", base: "AB" });

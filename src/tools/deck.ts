@@ -567,6 +567,18 @@ function genericWantTags(ctx: SynergyContext): ReadonlySet<string> {
 const wantsOf = (syn: SynergyCard): string[] =>
   [...new Set(syn.tags.wants.map((t) => t.tag).filter((tag) => !tag.startsWith("wants:trait-")))].sort(compareCodePoints);
 
+/** A wide-board want with no number in its clause asks for this many units. */
+const WIDE_BOARD_DEFAULT_UNITS = 3;
+
+/** The unit count a wide-board want asks for: the first "N or more" in its clause, else WIDE_BOARD_DEFAULT_UNITS (#152). */
+function wideBoardNeed(syn: SynergyCard): number {
+  for (const t of syn.tags.wants) {
+    const m = t.tag === "wants:wide-board" ? /\b(\d+) or more\b/.exec(t.why) : null;
+    if (m !== null) return Number(m[1]);
+  }
+  return WIDE_BOARD_DEFAULT_UNITS;
+}
+
 export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const args = z.object(deckAuditShape).parse(input);
   const pair = resolvePair(env, args.leader, args.base);
@@ -617,8 +629,14 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   const genericHolders = new Map<string, string[]>();
   const leaderData = leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null;
   const fedFromDeck = (feeders: readonly PairEdge[], cardKey: string): boolean => feeders.some((e) => inDeck.has(e.a) && e.a !== cardKey);
+  const unitCopies = sumBy(
+    lines.filter((l) => l.row.type === "Unit"),
+    (l) => l.count,
+  );
+  // A wide-board want is fed by the deck's own unit count, so it is no orphan once the deck holds the units it asks for.
+  const boardFed = (l: DeckLine, want: string): boolean => want === "wants:wide-board" && unitCopies >= wideBoardNeed(l.syn);
   const orphanWants = lines.flatMap((l) => {
-    const wants = wantsOf(l.syn);
+    const wants = wantsOf(l.syn).filter((w) => !boardFed(l, w));
     if (wants.length === 0) return [];
     const all = into.get(l.syn.cardKey) ?? [];
     const feeding = (tags: readonly string[]): PairEdge[] => all.filter((e) => e.rows.some((r) => tags.includes(r.want)));
@@ -712,7 +730,46 @@ function sideboardRows(env: DeckEnv, entries: readonly z.infer<typeof deckLineSc
 const DEFINING_TAG_MIN_CARDS = 5;
 /** ...and at least this share of every card carrying the tag sits in the cluster. */
 const DEFINING_TAG_MIN_SHARE = 0.4;
-const DECK_CARDS_RULE = `deckCards counts a deck card in a cluster when the clusters file places it there or it carries one of the cluster's defining tags (an offers: or wants: tag that at least ${DEFINING_TAG_MIN_CARDS} of the cluster's cards carry and that at least ${DEFINING_TAG_MIN_SHARE * 100}% of all cards carrying it sit in the cluster), so a card the clustering placed elsewhere still counts toward the role it plays`;
+/** A cluster's label names the keyword that defines it as "kw:Raid(100%)"; a share this high counts. */
+const KEYWORD_CLUSTER_MIN_SHARE = 50;
+const KEYWORD_TOKEN = /\bkw:([A-Za-z]+)\((\d+)%\)/g;
+const DECK_CARDS_RULE = `deckCards counts a deck card in a cluster when the clusters file places it there or it carries one of the cluster's defining tags (an offers: or wants: tag that at least ${DEFINING_TAG_MIN_CARDS} of the cluster's cards carry and that at least ${DEFINING_TAG_MIN_SHARE * 100}% of all cards carrying it sit in the cluster), so a card the clustering placed elsewhere still counts toward the role it plays; a card that prints the keyword naming a cluster (kw:Raid in its label at ${KEYWORD_CLUSTER_MIN_SHARE}% or more) counts in that cluster, the one with the most printed holders when several are named for it`;
+
+/** Printed keywords of a card: `structured.keywordsField` and the non-granted entries of `keywords`. */
+function printedKeywordsOf(syn: SynergyCard): ReadonlySet<string> {
+  const field = ((syn.structured.keywordsField as unknown[] | undefined) ?? []).filter((k): k is string => typeof k === "string");
+  const listed = ((syn.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? []).flatMap((k) => (typeof k.keyword === "string" && k.granted !== true ? [k.keyword] : []));
+  return new Set([...field, ...listed]);
+}
+
+const keywordClusters = new WeakMap<ClustersFile, Map<string, number>>();
+
+/**
+ * Per keyword, the cluster a printed holder of it belongs to (#152): among the clusters whose label names the keyword
+ * at KEYWORD_CLUSTER_MIN_SHARE percent or more, the one with the most printed holders among its members, the lower id on
+ * a tie. A second cluster named for the same keyword (Raid granters beside Raid units) gets no printed holders, because
+ * it holds the cards that give the keyword, not the cards that print it.
+ */
+function keywordClustersOf(ctx: SynergyContext, clusters: ClustersFile, clusterOf: ReadonlyMap<string, number>): ReadonlyMap<string, number> {
+  const hit = keywordClusters.get(clusters);
+  if (hit !== undefined) return hit;
+  const best = new Map<string, { id: number; holders: number }>();
+  for (const c of [...clusters.clusters].sort((a, b) => a.id - b.id)) {
+    if (!c.members.some((k) => clusterOf.get(k) === c.id)) continue;
+    for (const m of c.label.matchAll(KEYWORD_TOKEN)) {
+      if (Number(m[2]) < KEYWORD_CLUSTER_MIN_SHARE) continue;
+      const holders = c.members.filter((k) => {
+        const syn = ctx.graph.byKey.get(k);
+        return syn !== undefined && printedKeywordsOf(syn).has(m[1]);
+      }).length;
+      const have = best.get(m[1]);
+      if (have === undefined || holders > have.holders) best.set(m[1], { id: c.id, holders });
+    }
+  }
+  const out = new Map([...best].map(([keyword, { id }]) => [keyword, id] as const));
+  keywordClusters.set(clusters, out);
+  return out;
+}
 
 const definingTags = new WeakMap<ClustersFile, Map<number, ReadonlySet<string>>>();
 
@@ -811,12 +868,17 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
     poolCount.set(id, (poolCount.get(id) ?? 0) + 1);
   }
   const defining = definingTagsOf(env.ctx, env.clusters, clusterOf);
+  const byKeyword = keywordClustersOf(env.ctx, env.clusters, clusterOf);
   const deckCount = new Map<number, number>();
   for (const l of lines) {
     const own = clusterOf.get(l.syn.cardKey);
     const heldTags = new Set([...l.syn.tags.offers, ...l.syn.tags.wants].map((t) => t.tag));
     const ids = new Set<number>(own === undefined ? [] : [own]);
     for (const [id, tags] of defining) if ([...tags].some((t) => heldTags.has(t))) ids.add(id);
+    for (const keyword of printedKeywordsOf(l.syn)) {
+      const id = byKeyword.get(keyword);
+      if (id !== undefined) ids.add(id);
+    }
     for (const id of ids) deckCount.set(id, (deckCount.get(id) ?? 0) + l.count);
   }
   const mainCopies = sumBy(
@@ -1862,7 +1924,7 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base.",
     deckAuditShape,
     deckAudit,
   ),
