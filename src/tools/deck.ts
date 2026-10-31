@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MissingDataError, splitCell, type CardRow, type CardStore } from "../data.js";
+import { loadClusterLabels, resolveClusterLabel } from "../embed/cluster-labels.js";
 import type { ClustersFile } from "../embed/files.js";
 import { rulesFor } from "../rules/store.js";
 import { countAtOrBelow } from "../scorer/rank.js";
@@ -36,6 +37,8 @@ export interface DeckEnv {
   market: MarketData;
   scores: ReadonlyMap<string, ScoreRow>;
   clusters: ClustersFile | null;
+  /** Where the pinned cluster labels are read from; the committed data/cluster-labels.json when unset. */
+  clusterLabelsPath?: string;
   dataVersion: string;
 }
 
@@ -516,6 +519,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
 /** Clusters over-represented in the penalty-free Premier pool relative to this deck, by the pool's own share. */
 function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: readonly string[], limit: number): unknown {
   if (env.clusters === null) return { note: "no similarity run in this package, so role clusters are unavailable" };
+  const labels = loadClusterLabels(env.clusterLabelsPath);
   const clusterOf = new Map(env.clusters.clusters.flatMap((c) => c.members.map((k) => [k, c.id] as const)));
   const pool = env.ctx.cards.filter((syn) => {
     const row = env.store.byKey.get(syn.cardKey);
@@ -535,14 +539,15 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
     lines.filter((l) => MAIN_TYPES.has(l.row.type)),
     (l) => l.count,
   );
-  const labelOf = new Map(env.clusters.clusters.map((c) => [c.id, c.label]));
+  const labelOf = new Map(env.clusters.clusters.map((c) => [c.id, resolveClusterLabel(c, labels)]));
   const rows = [...poolCount.entries()]
     .map(([id, n]) => {
       const expected = (n / pool.length) * mainCopies;
       const have = deckCount.get(id) ?? 0;
       return {
         clusterId: id,
-        label: labelOf.get(id) ?? "",
+        label: labelOf.get(id)?.label ?? "",
+        labelStatus: labelOf.get(id)?.labelStatus ?? "unlabelled",
         deckCards: have,
         expected: r2(expected),
         gap: r2(expected - have),

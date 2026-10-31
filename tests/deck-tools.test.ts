@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { MissingDataError, loadStore, newestRun, type CardRow, type CardStore } from "../src/data.js";
+import { membersSha256 } from "../src/embed/cluster-labels.js";
 import type { ClustersFile } from "../src/embed/files.js";
 import type { PlayFile, PricesFile } from "../src/market/build.js";
 import { rulesFor } from "../src/rules/store.js";
@@ -354,9 +355,78 @@ describe("deck_audit", () => {
         { id: 1, size: 3, label: "pingers", members: ["P1", "P2", "W1"] },
       ],
     };
-    const out = body(deckAudit(buildEnv(SPECS, clusters), { decklist: lines(["P1", 4], ["P2", 4]), leader: "L1", base: "BC" }));
+    const absent = path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "absent.json");
+    const out = body(deckAudit({ ...buildEnv(SPECS, clusters), clusterLabelsPath: absent }, { decklist: lines(["P1", 4], ["P2", 4]), leader: "L1", base: "BC" }));
     // pool: 17 fillers, 3 penalty-free named cards and the unverified promo card = 21; 17 / 21 * 8 main-deck cards
-    expect(out.clusterGaps.clusters).toEqual([{ clusterId: 0, label: "fillers", deckCards: 0, expected: 6.48, gap: 6.48, poolCards: 17 }]);
+    expect(out.clusterGaps.clusters).toEqual([
+      { clusterId: 0, label: "fillers", labelStatus: "unlabelled", deckCards: 0, expected: 6.48, gap: 6.48, poolCards: 17 },
+    ]);
+  });
+
+  describe("pinned cluster labels", () => {
+    const clusters: ClustersFile = {
+      renderVersion: 1,
+      k: 2,
+      seed: 1,
+      restarts: 1,
+      maxIter: 1,
+      inertia: 0,
+      clusters: [
+        { id: 0, size: 17, label: "word:filler(90%)", members: FILLERS.map((f) => f.key) },
+        { id: 1, size: 3, label: "word:ping(80%)", members: ["P1", "P2", "W1"] },
+      ],
+    };
+    const labelFile = (entries: { id: number; members: string[]; label: string }[]): string => {
+      const file = path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "cluster-labels.json");
+      writeFileSync(
+        file,
+        JSON.stringify({
+          labelsVersion: 1,
+          capturedAt: "2026-10-30",
+          capturedBy: "test",
+          note: "test fixture",
+          labels: entries.map((e) => ({ id: e.id, membersSha256: membersSha256(e.members), size: e.members.length, tokenLabel: "t", label: e.label })),
+        }),
+      );
+      return file;
+    };
+    // 8 main-deck cards outside both clusters, so both clusters show a gap of at least 1
+    const audit = (clusterLabelsPath: string) =>
+      body(deckAudit({ ...buildEnv(SPECS, clusters), clusterLabelsPath }, { decklist: lines(["R1", 4], ["PR1", 4]), leader: "L1", base: "BC" })).clusterGaps.clusters;
+    const fillerKeys = FILLERS.map((f) => f.key);
+
+    it("shows the human label where the member hash matches and the token label marked stale where it does not", () => {
+      const file = labelFile([
+        { id: 0, members: fillerKeys, label: "filler bodies" },
+        { id: 1, members: ["P1", "P2"], label: "pinger package" },
+      ]);
+      const rows = audit(file);
+      expect(rows.map((r: Record<string, unknown>) => [r.clusterId, r.label, r.labelStatus])).toEqual([
+        [0, "filler bodies", "pinned"],
+        [1, "word:ping(80%)", "stale"],
+      ]);
+    });
+
+    it("treats a cluster with no entry in the file as stale", () => {
+      const rows = audit(labelFile([{ id: 0, members: fillerKeys, label: "filler bodies" }]));
+      expect(rows.map((r: Record<string, unknown>) => [r.label, r.labelStatus])).toEqual([
+        ["filler bodies", "pinned"],
+        ["word:ping(80%)", "stale"],
+      ]);
+    });
+
+    it("falls back to the token label and unlabelled when the file is missing", () => {
+      const rows = audit(path.join(mkdtempSync(path.join(tmpdir(), "swu-deck-labels-")), "absent.json"));
+      expect(rows.map((r: Record<string, unknown>) => [r.label, r.labelStatus])).toEqual([
+        ["word:filler(90%)", "unlabelled"],
+        ["word:ping(80%)", "unlabelled"],
+      ]);
+    });
+
+    it("throws on a present but malformed file instead of guessing", () => {
+      const file = labelFile([{ id: 0, members: fillerKeys, label: "" }]);
+      expect(() => audit(file)).toThrow();
+    });
   });
 });
 

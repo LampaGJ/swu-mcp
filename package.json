@@ -73,6 +73,7 @@
     "data/rules-core.json",
     "data/complementarity.json",
     "data/counters.json",
+    "data/cluster-labels.json",
     "src/data-release.json"
   ]
 }

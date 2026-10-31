@@ -1,0 +1,232 @@
+{
+ "labelsVersion": 1,
+ "capturedAt": "2026-10-30",
+ "capturedBy": "claude-sonnet-5-5 (reading each cluster's member titles, types and text from llm/cards.toon)",
+ "note": "Captured model output (D3): the labels were written once by a model pass and are pinned here, never produced at run time. Each entry is valid only while membersSha256 equals the hash of the loaded run's cluster members; otherwise deck_audit falls back to tokenLabel and reports labelStatus stale.",
+ "labels": [
+  {
+   "id": 0,
+   "membersSha256": "3441b73ceacc9c2f00a66909f3974ee851647603c1d27342236db5520d1948a6",
+   "size": 101,
+   "tokenLabel": "type:Base(41%)",
+   "label": "bases and vanilla units"
+  },
+  {
+   "id": 1,
+   "membersSha256": "d29beeffe7e89c602f48e46bd65e70befcf85a10dcde4858b5983fc3a202e605",
+   "size": 94,
+   "tokenLabel": "kw:Sentinel(100%) word:sentinel(100%) word:arena(69%) type:Unit(91%) aspect:Vigilance(46%)",
+   "label": "Sentinel walls"
+  },
+  {
+   "id": 2,
+   "membersSha256": "1265dff360f232225e91055f24087013392275744bab99827d7e03897171e1d9",
+   "size": 90,
+   "tokenLabel": "type:Leader(98%) word:epic(97%) word:deploy(98%) arena:Ground(98%) trait:Official(30%)",
+   "label": "leaders and epic actions"
+  },
+  {
+   "id": 3,
+   "membersSha256": "7e02a138c7728189de60b95942ffbd5ac0f578e08edc9ed76c25f45086d9aea1",
+   "size": 85,
+   "tokenLabel": "word:give(75%) word:experience(44%) type:Unit(73%)",
+   "label": "experience and advantage givers"
+  },
+  {
+   "id": 4,
+   "membersSha256": "6369839129b41e976be2e41132bb944ffa518c0a04f7c4e901f686a0b91a0eee",
+   "size": 82,
+   "tokenLabel": "word:card(78%) word:hand(65%) aspect:Aggression(33%) aspect:Cunning(30%) type:Unit(68%)",
+   "label": "hand disruption and disclose"
+  },
+  {
+   "id": 5,
+   "membersSha256": "ed348c846aea35bc557af52b5a5046180f6746f5367a232f31fd9471823d3189",
+   "size": 67,
+   "tokenLabel": "kw:Overwhelm(100%) word:overwhelm(100%) word:excess(55%) aspect:Aggression(51%) aspect:Command(45%)",
+   "label": "Overwhelm units"
+  },
+  {
+   "id": 6,
+   "membersSha256": "2bd01c65d2b7bee93b64465c4c5b160f57a4f9b3ac85d02dbcd2440b449cab84",
+   "size": 65,
+   "tokenLabel": "word:deck(85%) word:cards(63%) aspect:Command(46%) type:Event(32%)",
+   "label": "deck search and draw"
+  },
+  {
+   "id": 7,
+   "membersSha256": "18fc61436662ba5a3f6f38f1764eafb86e3caffecec03e210a56443f0fdfb3f3",
+   "size": 64,
+   "tokenLabel": "word:deal(98%) word:damage(100%) aspect:Aggression(53%) trait:Vehicle(42%) type:Unit(86%)",
+   "label": "direct damage on play"
+  },
+  {
+   "id": 8,
+   "membersSha256": "a4da9a851d9c08d9f54371fcda1223c3bf1f5930089582c4e57909e26b2cfd54",
+   "size": 62,
+   "tokenLabel": "word:leader(65%) word:owner(32%) type:Event(47%) aspect:Vigilance(39%) aspect:Cunning(35%)",
+   "label": "removal and steal effects"
+  },
+  {
+   "id": 9,
+   "membersSha256": "1afaaba226c3063f6dcf42167db9d1c63feb3b848279719266782d9b09abe4e3",
+   "size": 62,
+   "tokenLabel": "kw:Ambush(76%) word:ambush(76%) word:play(77%) trait:Vehicle(48%) aspect:Cunning(52%)",
+   "label": "Ambush and Support units"
+  },
+  {
+   "id": 10,
+   "membersSha256": "385437408d3880f28b2bda9f7e87f2fd722712cd97c2759055a35cb6dadda2f1",
+   "size": 57,
+   "tokenLabel": "word:create(96%) word:token(82%) type:Event(32%) aspect:Command(39%)",
+   "label": "token makers"
+  },
+  {
+   "id": 11,
+   "membersSha256": "340816f7a2896c28ba00385bc832360e4e5b6b2d73bdbc20df1b3644383ef6ba",
+   "size": 56,
+   "tokenLabel": "type:Upgrade(95%) word:attached(89%) word:attach(61%) trait:Item(48%) trait:Weapon(34%)",
+   "label": "upgrades and weapons"
+  },
+  {
+   "id": 12,
+   "membersSha256": "a6ef84bba719e971fceb363903c54215ca41e4b9990b8235ee983bd59e003852",
+   "size": 55,
+   "tokenLabel": "kw:Hidden(100%) word:hidden(100%) word:attacked(71%) type:Unit(95%) arena:Ground(82%)",
+   "label": "Hidden units"
+  },
+  {
+   "id": 13,
+   "membersSha256": "1f9935bcdc94912b04ea0d52272b6d01ac38547fdf87226ac4a294157c7f3777",
+   "size": 53,
+   "tokenLabel": "kw:Restore(100%) word:restore(100%) word:attacks(74%) aspect:Vigilance(53%) type:Unit(94%)",
+   "label": "Restore units"
+  },
+  {
+   "id": 14,
+   "membersSha256": "dca514da2b09f44401bceb378412257775c24c9336c6cc8025535a0d69ad27a6",
+   "size": 51,
+   "tokenLabel": "kw:Saboteur(100%) word:saboteur(100%) word:shields(71%) aspect:Aggression(45%) aspect:Cunning(45%)",
+   "label": "Saboteur units"
+  },
+  {
+   "id": 15,
+   "membersSha256": "ee64446c979ccc800dd2669b9fb3f585ff1d14c563cd03e8b51edc0705380e60",
+   "size": 48,
+   "tokenLabel": "word:deal(94%) word:damage(100%) aspect:Aggression(65%) type:Event(33%) aspect:Villainy(31%)",
+   "label": "indirect and base damage"
+  },
+  {
+   "id": 16,
+   "membersSha256": "206f375fb35ee03209e77bc7522508464a0a3023efc0347607db5d045bcf0ef2",
+   "size": 41,
+   "tokenLabel": "word:attack(98%) word:gets(56%) trait:Tactic(34%) type:Event(51%) aspect:Cunning(32%)",
+   "label": "attack tricks"
+  },
+  {
+   "id": 17,
+   "membersSha256": "2fbe3600b4b8d7327d7ef9844e72f16d443051a309377e1a37521ff226ee937a",
+   "size": 40,
+   "tokenLabel": "word:costs(90%) word:less(90%) type:Event(30%)",
+   "label": "cost reducers"
+  },
+  {
+   "id": 18,
+   "membersSha256": "187e808c9a062902a148c0cd34027d4d4c62096196faa76d7c67d963fd8e8cf5",
+   "size": 40,
+   "tokenLabel": "kw:Piloting(98%) word:piloting(98%) trait:Pilot(100%) word:pilot(78%) arena:Ground(100%)",
+   "label": "Piloting units"
+  },
+  {
+   "id": 19,
+   "membersSha256": "66fd26c541a973955618793cfcd84f47538de65efe30785f4c8ade7c71a72cd1",
+   "size": 40,
+   "tokenLabel": "word:friendly(100%) type:Event(40%) word:unit(98%) aspect:Aggression(35%) aspect:Command(35%)",
+   "label": "friendly unit triggers"
+  },
+  {
+   "id": 20,
+   "membersSha256": "3f8e95218aca1c06afec7acd603e75f63d8cd9ec765cb8de417d1974bdf18a44",
+   "size": 37,
+   "tokenLabel": "kw:Shielded(97%) word:shielded(97%) word:shield(68%) aspect:Vigilance(59%) arena:Ground(86%)",
+   "label": "Shielded units"
+  },
+  {
+   "id": 21,
+   "membersSha256": "2de50df6a03344a1b3ea3c3c4fc9f1a1a120ffe404a1075e9f490d4063233bf7",
+   "size": 37,
+   "tokenLabel": "word:ready(65%) word:phase(54%) type:Event(35%) aspect:Aggression(41%) aspect:Cunning(41%)",
+   "label": "ready and attack protection"
+  },
+  {
+   "id": 22,
+   "membersSha256": "d3d62c741b01fa37cdc3c6bbc79b5157d370e07432ef79ec640c39f414076326",
+   "size": 35,
+   "tokenLabel": "kw:Raid(100%) word:raid(100%) word:attacking(97%) aspect:Aggression(51%) type:Unit(94%)",
+   "label": "Raid units"
+  },
+  {
+   "id": 23,
+   "membersSha256": "7d2e6e062d50b813a40e4e37fe0b62ddf9713afe88598184bd5c661e219c1fed",
+   "size": 33,
+   "tokenLabel": "kw:Grit(100%) word:grit(100%) word:gets(64%) aspect:Vigilance(61%) arena:Ground(79%)",
+   "label": "Grit units"
+  },
+  {
+   "id": 24,
+   "membersSha256": "4d6e19e19ff6599e0f7944ebb838116116d830378496417f827f94ab93c2f51b",
+   "size": 33,
+   "tokenLabel": "word:shield(100%) word:token(94%) aspect:Vigilance(58%)",
+   "label": "Shield token givers"
+  },
+  {
+   "id": 25,
+   "membersSha256": "b96b32655ceb2d214517b1a85d8a6a774bc1908b87c08336c1086a20c2063e97",
+   "size": 33,
+   "tokenLabel": "word:exhaust(97%) aspect:Cunning(61%) type:Event(39%) word:action(30%) aspect:Villainy(33%)",
+   "label": "exhaust effects"
+  },
+  {
+   "id": 26,
+   "membersSha256": "ff20dd49bd28b463206fe2ac4590da8830deab935404b152c7eeab4b054c4e6c",
+   "size": 32,
+   "tokenLabel": "word:gets(78%) word:friendly(53%) aspect:Command(53%) arena:Space(41%) trait:Vehicle(41%)",
+   "label": "power and HP boosts"
+  },
+  {
+   "id": 27,
+   "membersSha256": "4ef5d94458fcf8961caf4f28fb9b5dbd0fbeddd702d0a51e83e7e888f57a2200",
+   "size": 30,
+   "tokenLabel": "word:heal(90%) word:damage(97%) aspect:Vigilance(63%) type:Event(37%) aspect:Heroism(37%)",
+   "label": "healing"
+  },
+  {
+   "id": 28,
+   "membersSha256": "91949a1cbdbab683f16c5dd450950a52df1fd66f0f09219d7de2c53f3bfa91d8",
+   "size": 27,
+   "tokenLabel": "kw:Plot(100%) word:plot(100%) word:replace(81%) aspect:Villainy(33%) aspect:Heroism(33%)",
+   "label": "Plot cards"
+  },
+  {
+   "id": 29,
+   "membersSha256": "adf90bbed1a72b078388bc4cfa7a3f9482f286461443f1664f39e8dda67108bd",
+   "size": 23,
+   "tokenLabel": "word:give(100%) word:phase(100%) type:Event(48%) aspect:Vigilance(43%) aspect:Command(30%)",
+   "label": "this-phase stat changes"
+  },
+  {
+   "id": 30,
+   "membersSha256": "561f642c7d0a100ff1fb9a4b67c81173aa89df4f3d5167e9f7c46d326cac5929",
+   "size": 20,
+   "tokenLabel": "kw:Raid(100%) word:raid(100%) word:while(50%) arena:Ground(80%) aspect:Cunning(40%)",
+   "label": "Raid granters"
+  },
+  {
+   "id": 31,
+   "membersSha256": "f0b5778cb4f619d28f290bc3627c4a2f3d824d8a10f1eaba5d14e7b20b457143",
+   "size": 16,
+   "tokenLabel": "kw:Fortify(100%) word:fortify(100%) trait:Fortification(88%) word:attach(88%) type:Upgrade(94%)",
+   "label": "base fortifications"
+  }
+ ]
+}
