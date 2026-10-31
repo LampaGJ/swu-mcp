@@ -20,6 +20,7 @@ import {
 } from "../synergy/fungibility.js";
 import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "../synergy/graph.js";
 import { cardLabel, cmp, r3 } from "../synergy/order.js";
+import { nameLockOfCards } from "../synergy/clause-lock.js";
 import { baseLockOfAll } from "../synergy/locks.js";
 import { reasonOfHit } from "../synergy/reasons.js";
 import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type PairRowHit, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
@@ -751,14 +752,16 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
         weight === undefined ? 1 : hit === null || playedInclusion(weight, partner.cardKey) === null ? leaderFactor(weight, partner.cardKey) : Math.max(leaderFactor(weight, partner.cardKey), engineFactor());
       const rank = weight === undefined ? unweighted : r3(unweighted * factor);
       const lock = baseLockOfAll([partner], base);
-      return { e, partner, cover, score, rank, lock, hit };
+      // D66: a partner whose clause needs a named card the subject, leader and base do not supply is locked like a base lock.
+      const named = nameLockOfCards([partner], [card, leader?.card, base]);
+      return { e, partner, cover, score, rank, lock, named, locked: lock.unmet || named.length > 0, hit };
     });
-    return rows.sort((x, y) => Number(x.lock.unmet) - Number(y.lock.unmet) || y.rank - x.rank || (x.e !== null && y.e !== null ? edgeOrder(x.e, y.e) : cmp(x.partner.cardKey, y.partner.cardKey)));
+    return rows.sort((x, y) => Number(x.locked) - Number(y.locked) || y.rank - x.rank || (x.e !== null && y.e !== null ? edgeOrder(x.e, y.e) : cmp(x.partner.cardKey, y.partner.cardKey)));
   };
   const linkRowsOf = (e: PairEdge, mode: TraitsMode) => (mode === "exclude" ? mechanicalRows(e) : e.rows);
   const linkOf = (r: ReturnType<typeof ranked>[number], mode: TraitsMode): string =>
     r.e === null ? `leader-engine: ${(r.hit as EngineHit).kind} ${(r.hit as EngineHit).keyword ?? ""}` : linkRowsOf(r.e, mode).map((x) => `${x.offer} -> ${x.want}`).join("; ");
-  const row = ({ e, partner, cover, score, rank, lock, hit }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
+  const row = ({ e, partner, cover, score, rank, lock, named, hit }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
     if (e === null) {
       const found = hit as EngineHit;
       const keyword = (found.keyword ?? "").toLowerCase();
@@ -782,6 +785,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
         rank,
         ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, partner.cardKey) }),
         ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
+        ...(named.length === 0 ? {} : { nameLocked: named.join(", ") }),
       };
       if (args.evidence)
         out.evidence = [found.kind === "repeats-action" ? { offer: `text: ${found.partnerText}`, want: engineClause(found) } : { offer: `text: ${engineClause(found)}`, want: found.partnerText }];
@@ -802,6 +806,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
       rank,
       ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, partner.cardKey) }),
       ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
+      ...(named.length === 0 ? {} : { nameLocked: named.join(", ") }),
     };
     if (args.evidence) out.evidence = pairEvidence(ctx, e, linkRows);
     return out;
@@ -916,7 +921,13 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   // The geometric mean of the member factors, so one played card cannot carry two unplayed ones (D46).
   const rankOf = (t: TrioRecord): number =>
     weight === undefined ? t.score : r3(t.score * Math.cbrt([t.cardA, t.cardB, t.cardC].reduce((f, k) => f * leaderFactor(weight, k), 1)));
-  const trioLock = (t: TrioRecord) => baseLockOfAll([t.cardA, t.cardB, t.cardC].map((k) => ctx.graph.byKey.get(k) as SynergyCard), base);
+  const trioLock = (t: TrioRecord) => {
+    const members = [t.cardA, t.cardB, t.cardC].map((k) => ctx.graph.byKey.get(k) as SynergyCard);
+    const lock = baseLockOfAll(members, base);
+    // D66: a member's clause that needs a named card no member, the leader or the base supplies locks the trio.
+    const named = nameLockOfCards(members, [leader?.card, base]);
+    return { ...lock, named, unmet: lock.unmet || named.length > 0 };
+  };
   const byRank = weight === undefined ? trioOrder : (x: TrioRecord, y: TrioRecord) => rankOf(y) - rankOf(x) || trioOrder(x, y);
   // D51: a trio holding a card that needs a base the deck does not have follows the trios that do not.
   const lockOfTrio = new Map<TrioRecord, boolean>();
@@ -938,10 +949,17 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
     if (third !== undefined && !host.variants.includes(third) && host.variants.length < MAX_TRIO_VARIANTS) host.variants.push(third);
   }
   const shown = kept.slice(0, args.limit);
-  const variantOf = (k: string): Record<string, unknown> => {
+  const variantOf = (k: string, hostKeys: readonly string[]): Record<string, unknown> => {
     const c = ctx.graph.byKey.get(k) as SynergyCard;
     const lock = baseLockOfAll([c], base).names;
-    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }), ...(lock.length === 0 ? {} : { baseLocked: lock.join(", ") }) };
+    const named = nameLockOfCards([c], [...hostKeys.map((h) => ctx.graph.byKey.get(h) as SynergyCard), leader?.card, base]);
+    return {
+      title: cardLabel(c),
+      cost: c.structured.cost,
+      ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }),
+      ...(lock.length === 0 ? {} : { baseLocked: lock.join(", ") }),
+      ...(named.length === 0 ? {} : { nameLocked: named.join(", ") }),
+    };
   };
   const prefer = fixed ? [...(leaderAspects ?? []), ...(baseAspects ?? [])] : undefined;
   const trios = shown.map(({ t, keys, variants }) => {
@@ -957,7 +975,8 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
       score: t.score,
       ...(weight === undefined ? {} : { rank: rankOf(t), leaderInclusion: keys.map((k) => inclusionOf(weight, k)) }),
       ...(trioLock(t).names.length === 0 ? {} : { baseLocked: trioLock(t).names.join(", ") }),
-      ...(variants.length === 0 ? {} : { variants: variants.map(variantOf) }),
+      ...(trioLock(t).named.length === 0 ? {} : { nameLocked: trioLock(t).named.join(", ") }),
+      ...(variants.length === 0 ? {} : { variants: variants.map((v) => variantOf(v, keys)) }),
     };
     if (args.evidence) {
       out.evidence = trioLinks(ctx.graph, t).flatMap((e) =>

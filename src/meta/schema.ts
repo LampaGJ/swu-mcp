@@ -79,6 +79,11 @@ export const threatProfileSchema = z.strictObject({
   keywords: z.record(z.string(), z.number()),
   /** Mean copies per deck carrying each offers: tag, for the tags data/counters.json threat metrics read. */
   offers: z.record(z.string(), z.number()),
+  /**
+   * D66 (#157): mean copies per deck of cards that hold a tracked keyword they do not print ("this unit gains Sentinel",
+   * offers:has-keyword-<k>), so a printed keyword is never counted twice; absent in a package built before it.
+   */
+  gainedKeywords: z.record(z.string(), z.number()).optional(),
   cheapUnits: z.number(),
   cheapUnitMedianHp: z.number().nullable(),
   leader: z.strictObject({ power: z.number().nullable(), hp: z.number().nullable(), arenas: z.array(z.string()) }),
@@ -321,6 +326,8 @@ const qualifierSchema = z.strictObject({
   healsBase: z.boolean().optional(),
   /** A unit offered as an answer needs at least this power. */
   minPower: z.number().int().optional(),
+  /** Upgrade removal must reach a Shield token: a trait limit other than Armor ("a Condition upgrade") never does (D66). */
+  reachesShieldTokens: z.boolean().optional(),
 });
 export type CounterQualifier = z.infer<typeof qualifierSchema>;
 

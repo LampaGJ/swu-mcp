@@ -1,4 +1,5 @@
 import { SELF_GAINS } from "../ability-grammar/tags.js";
+import { ASPECT_NAMES } from "./locks.js";
 import { cmp } from "./order.js";
 import type { SynergyCard } from "./schema.js";
 
@@ -40,7 +41,7 @@ export interface Subject {
   isLeader?: boolean;
   aspects?: string[];
   /** The token units the offer creates and hands over, with their printed traits; set only when every token's card is known. */
-  supplies?: { token: string; traits: string[] }[];
+  supplies?: { token: string; traits: string[]; aspects?: string[] }[];
   /** `supplies` lists every printed token unit because the offer multiplies whatever tokens are created, not tokens of its own (D58). */
   anyToken?: boolean;
   /** The effect acts only on the tokens the same clause creates ("create 2 Beast tokens and ready 1 of them"). */
@@ -49,6 +50,8 @@ export interface Subject {
   keywords?: string[];
   /** The effect may act on several subjects at once ("Defeat any number of friendly units"). */
   many?: boolean;
+  /** The want counts the aspect icons or units of this aspect ("for each Heroism aspect icon among friendly units", D66). */
+  countsAspect?: string;
 }
 
 /** What an upgrade or Pilot may attach to: the printed "Attach to ..." line, or a Vehicle for Piloting (CR: "attach to a friendly Vehicle unit"). */
@@ -91,6 +94,8 @@ export interface TagQualifier {
   relays?: string;
   /** The unit a play offer puts into play ("Play a Vehicle unit from your discard pile"), read off the play effect's object (D64). */
   delivers?: Subject;
+  /** The ability that carries the want defeats or returns its own card ("You may defeat this upgrade. If you do, ..."), so it pays off once (D66). */
+  spendsSelf?: boolean;
 }
 
 interface TargetLite {
@@ -350,21 +355,29 @@ function playedSubject(what: string): Subject {
 
 /** Token name to printed traits, from the Token Unit cards in the set. */
 export type TokenTraits = ReadonlyMap<string, readonly string[]>;
+/** Token name to printed aspects, from the Token Unit cards in the set (D66). */
+export type TokenAspects = ReadonlyMap<string, readonly string[]>;
+
+const tokenSupply = (token: string, tokenTraits: TokenTraits, tokenAspects: TokenAspects | undefined): NonNullable<Subject["supplies"]>[number] => ({
+  token,
+  traits: [...(tokenTraits.get(token) ?? [])],
+  ...(tokenAspects?.has(token) === true ? { aspects: [...(tokenAspects.get(token) ?? [])] } : {}),
+});
 
 /** The token units a clause creates, or undefined when none is created or one has no known card. */
-function suppliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined): Subject["supplies"] {
+function suppliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined, tokenAspects?: TokenAspects): Subject["supplies"] {
   const names = (clause?.effects ?? []).filter((e) => e.cat === "create_token" && e.token !== undefined).map((e) => e.token as string);
   if (names.length === 0 || tokenTraits === undefined || !names.every((n) => tokenTraits.has(n))) return undefined;
-  return [...new Set(names)].sort(cmp).map((token) => ({ token, traits: [...(tokenTraits.get(token) ?? [])] }));
+  return [...new Set(names)].sort(cmp).map((token) => tokenSupply(token, tokenTraits, tokenAspects));
 }
 
 const GENERIC_TOKEN = /^tokens?$/i;
 
 /** Every printed token unit, when the clause only names "tokens" (a doubler: "create twice that number of tokens"). */
-function multipliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined): Subject["supplies"] {
+function multipliedTokens(clause: ClauseLite | undefined, tokenTraits: TokenTraits | undefined, tokenAspects?: TokenAspects): Subject["supplies"] {
   const names = (clause?.effects ?? []).filter((e) => e.cat === "create_token" && e.token !== undefined).map((e) => e.token as string);
   if (names.length === 0 || !names.every((n) => GENERIC_TOKEN.test(n)) || tokenTraits === undefined || tokenTraits.size === 0) return undefined;
-  return [...tokenTraits.keys()].sort(cmp).map((token) => ({ token, traits: [...(tokenTraits.get(token) ?? [])] }));
+  return [...tokenTraits.keys()].sort(cmp).map((token) => tokenSupply(token, tokenTraits, tokenAspects));
 }
 
 /**
@@ -387,11 +400,19 @@ function watcherSubject(text: string): Subject {
   return { side: "friendly", arena: m[2] === "ground" || m[2] === "space" ? m[2] : undefined, traits: m[1] === undefined ? [] : [m[1]], notTraits: [] };
 }
 
+const ASPECT_ALT = [...ASPECT_NAMES].join("|");
+/** "for each Heroism aspect icon among friendly units", "3 or more Command aspect icons", "for each friendly Vigilance unit" (D66). */
+const COUNTS_ASPECT = new RegExp(`\\b(${ASPECT_ALT}) aspect icons?\\b|\\bfor each (?:other )?friendly (${ASPECT_ALT}) units?\\b|\\b(?:\\d+|X) or more (${ASPECT_ALT}) units\\b`);
+
+/** "defeat this upgrade", "return this unit to its owner's hand"; a replacement ("... instead") spends nothing the effect needs. */
+const SPENDS_SELF = /\b(?:defeat|discard) this (?:upgrade|unit|card)\b|\breturn this (?:upgrade|unit|card) to (?:its owner's|your) hand\b/i;
+const spendsSelf = (ability: AbilityNode): boolean => clausesOf(ability).some((c) => SPENDS_SELF.test(c.text) && !/\binstead\b/i.test(c.text));
+
 const scopeOf = (text: string): TagQualifier["scope"] =>
   /\bwhile attacking\b/i.test(text) ? "attacking" : /\bwhile defending\b/i.test(text) ? "defending" : undefined;
 
 /** The qualifiers of one tag on one card; a tag whose origin is not in the feature record carries none. */
-export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: string, why: string, tokenTraits?: TokenTraits): TagQualifier {
+export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: string, why: string, tokenTraits?: TokenTraits, tokenAspects?: TokenAspects): TagQualifier {
   const origin = findOrigin(card, why);
   if (origin === undefined) {
     const onSelf = side === "offers" ? isSelfOffer(tag) : SELF_WANTS.has(tag) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(FACE_PREFIX.exec(why)?.[2] ?? why));
@@ -418,19 +439,21 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
       if (isRef(hit.target) && RELAYED.test(hit.target?.text ?? "") && (ability.triggers ?? []).some((t) => t.trigger?.startsWith("reactive") === true)) relays = triggerText;
       // A ready aimed back at "them" readies only the tokens the clause just made; give-* offers stay open because an upgrade on a token still counts as an upgrade.
       if (tag === "offers:ready-unit" && hit.target?.kind === "ref" && clause.effects.some((e) => e.cat === "create_token")) {
-        const supplies = suppliedTokens(clause, tokenTraits);
+        const supplies = suppliedTokens(clause, tokenTraits, tokenAspects);
         subject = { ...subject, tokensOnly: true, ...(supplies === undefined ? {} : { supplies }) };
       }
     } else if (clause.effects.some((e) => e.cat === "tuck")) viaCat = "tuck";
   } else if (side === "offers" && CREATE_OFFERS.has(tag)) {
-    const supplies = suppliedTokens(clause, tokenTraits);
-    const multiplied = supplies === undefined ? multipliedTokens(clause, tokenTraits) : undefined;
+    const supplies = suppliedTokens(clause, tokenTraits, tokenAspects);
+    const multiplied = supplies === undefined ? multipliedTokens(clause, tokenTraits, tokenAspects) : undefined;
     subject = { side: "friendly", traits: [], notTraits: [], ...(supplies !== undefined ? { supplies } : multiplied !== undefined ? { supplies: multiplied, anyToken: true } : {}) };
   }
   if (side === "wants" && subject === EMPTY) {
     const watcher = watcherSubject(`${text} ${triggerText}`);
     if (watcher !== EMPTY && watcher.traits.length + Number(watcher.arena !== undefined) > 0) subject = watcher;
   }
+  const counted = side === "wants" ? COUNTS_ASPECT.exec(text) : null;
+  if (counted !== null) subject = { ...subject, countsAspect: counted[1] ?? counted[2] ?? counted[3] };
   const hostAbility = side === "wants" && (clause?.conditions ?? []).some((k) => k.cat === "self_state" && k.state === "upgraded");
   const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
   const receives = side === "wants" && RECEIVING_WANTS.has(tag) && (hostAbility || ON_THIS_UNIT.test(`${text} ${triggerText}`));
@@ -456,6 +479,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     ...(opponentControls ? { opponentControls } : {}),
     ...(relays === undefined ? {} : { relays }),
     ...(delivers === undefined ? {} : { delivers }),
+    ...(side === "wants" && spendsSelf(ability) ? { spendsSelf: true } : {}),
   };
 }
 
@@ -585,6 +609,11 @@ export function conflictBetween(
       const missing = want.subject.traits.find((t) => !first.traits.includes(t));
       return missing !== undefined ? `the offer supplies a ${first.token} token, the want needs a ${missing}` : `the offer supplies a ${first.token} token, the want excludes it`;
     }
+  }
+  // D66: a token adds only its printed aspect icons, so a token of another aspect does not raise an aspect count.
+  const counts = want.subject.countsAspect;
+  if (counts !== undefined && supplies !== undefined && supplies.every((s) => s.aspects !== undefined && !s.aspects.includes(counts))) {
+    return `the offer supplies ${supplies.map((s) => `a ${s.token} token (${s.aspects?.join(", ") || "no aspect"})`).join(" or ")}, which adds no ${counts} icon`;
   }
   if (offer.subject.tokensOnly === true && wantConcrete !== undefined && !/\btoken\b/i.test(b.type)) {
     return "the offer acts only on the tokens it creates, the wanting card is not one";

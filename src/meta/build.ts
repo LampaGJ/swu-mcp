@@ -171,6 +171,14 @@ const KEYWORDS_TRACKED = [
   "Shielded",
   "Smuggle",
 ];
+const HOLDS_KEYWORD = /^offers:has-keyword-([a-z]+)$/;
+/** D66 (#157): the tracked keywords a card holds without printing them; #155 tags "this unit gains <K>" as a holder, never a grant. */
+const gainedKeywordsOf = (f: CardFact): string[] =>
+  f.offers.flatMap((o) => {
+    const k = HOLDS_KEYWORD.exec(o)?.[1];
+    const keyword = k === undefined ? undefined : KEYWORDS_TRACKED.find((t) => t.toLowerCase() === k);
+    return keyword === undefined || f.keywords.includes(keyword) ? [] : [keyword];
+  });
 const costBucket = (cost: number | null): string => (cost === null ? "-" : cost >= 7 ? "7+" : String(cost));
 
 interface Weighted {
@@ -219,6 +227,7 @@ export function threatProfile(
   const curve = new Map<string, number>();
   const keywords = new Map<string, number>();
   const offers = new Map<string, number>();
+  const gained = new Map<string, number>();
   const ordered = [...copies].sort((a, b) => compareCodePoints(a[0], b[0]));
   for (const [card, mean] of ordered) {
     const f = facts.get(card);
@@ -243,6 +252,7 @@ export function threatProfile(
     curve.set(costBucket(f.cost), (curve.get(costBucket(f.cost)) ?? 0) + mean);
     for (const k of f.keywords) if (KEYWORDS_TRACKED.includes(k)) keywords.set(k, (keywords.get(k) ?? 0) + mean);
     for (const o of f.offers) offers.set(o, (offers.get(o) ?? 0) + mean);
+    for (const k of gainedKeywordsOf(f)) gained.set(k, (gained.get(k) ?? 0) + mean);
   }
   const keyUnits: KeyUnit[] = ordered
     .filter(([card]) => facts.get(card)?.type === "Unit" && (inclusion.get(card) ?? 0) >= 0.5)
@@ -274,6 +284,7 @@ export function threatProfile(
     meanCost: costed === 0 ? null : r2(costSum / costed),
     keywords: record(keywords),
     offers: record(offers),
+    gainedKeywords: record(gained),
     cheapUnits: r2(cheap),
     cheapUnitMedianHp: median(cheapHp),
     leader: { power: leader?.power ?? null, hp: leader?.hp ?? null, arenas: leader?.arenas ?? [] },

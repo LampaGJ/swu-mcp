@@ -151,6 +151,16 @@ export function answerOffers(card: CounterCard): AnswerOffer[] {
 // ---------------------------------------------------------------------------------------------
 // Threat detection
 
+/**
+ * D66 (#157): holders of a keyword they do not print. A profile built before the field existed derives it from the holder
+ * offer (every Unit holding the keyword, printed or not) minus the printed count, which in a deck counts the same Units.
+ */
+function gainedKeyword(profile: ThreatProfile, keyword: string): number {
+  if (profile.gainedKeywords !== undefined) return profile.gainedKeywords[keyword] ?? 0;
+  const holders = profile.offers[`offers:has-keyword-${keyword.toLowerCase()}`] ?? 0;
+  return Math.max(0, Math.round((holders - (profile.keywords[keyword] ?? 0)) * 100) / 100);
+}
+
 function metricValue(profile: ThreatProfile, metric: string): number | null {
   if (metric === "keyUnits") return profile.keyUnits.length;
   // A package built before D63 has no heavyKeyUnits; the listed key units give a lower bound (they are capped, ordered by copies).
@@ -159,6 +169,7 @@ function metricValue(profile: ThreatProfile, metric: string): number | null {
   if (metric === "arena.spaceShare") return profile.arena.spaceShare;
   if (metric.startsWith("keywords.")) return profile.keywords[metric.slice(9)] ?? 0;
   if (metric.startsWith("offers.")) return profile.offers[metric.slice(7)] ?? 0;
+  if (metric.startsWith("gainedKeywords.")) return gainedKeyword(profile, metric.slice(15));
   const direct = (profile as unknown as Record<string, unknown>)[metric];
   return typeof direct === "number" ? direct : null;
 }
@@ -183,6 +194,10 @@ export function detectThreats(profile: ThreatProfile, table: CounterTable): Dete
 // Qualifier checks
 
 const REMOVAL = new Set(["defeat", "damage", "capture", "bounce"]);
+const UPGRADE_KINDS = new Set(["upgrade", "upgrades", "token", "tokens"]);
+/** D66: a Shield token is an Armor upgrade, so removal limited to another trait ("a Condition upgrade") leaves it. */
+const removesUpgrade = (e: EffectSpec): boolean => REMOVAL.has(e.cat) && UPGRADE_KINDS.has(e.kind);
+const reachesShieldToken = (e: EffectSpec): boolean => !e.restrict.some((r) => r.startsWith("trait:") && r !== "trait:Armor");
 const HOSTILE_SIDES = new Set(["any", "enemy"]);
 const UNIT_KINDS = new Set(["unit", "unit_or_base"]);
 /** Limits the parser reads into restrict; every other relative clause or reference makes the target conditional. */
@@ -334,6 +349,7 @@ export function relationHit(
     )
       continue;
     if (q.minPower !== undefined && (card.structured.power ?? 0) < q.minPower) continue;
+    if (q.reachesShieldTokens && offer.effects.some(removesUpgrade) && !offer.effects.some((e) => removesUpgrade(e) && reachesShieldToken(e))) continue;
     const hit: RelationHit = {
       relation: relation.id,
       threat: relation.threat,

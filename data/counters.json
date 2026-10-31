@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "tableVersion": 2,
- "note": "Committed, reviewed design input (LampaGJ/swu-mcp#25), versioned like complementarity.json. threats: a threat fires on an archetype when the sum of its profile metrics (mean copies per deck, or the named ratio) is at least min and at most max; key-units (v2, D63) fires when two or more units at cost 6 or more are played by at least 80% of the archetype's decks (profile.heavyKeyUnits), which marks 160 of the 463 archetypes of the 2026-10-31 run; the earlier test, any unit played by half the decks, fired on every row. Other thresholds sit near the 75th percentile of the 40 largest tournament archetypes of the 2026-07-20..2026-10-17 window (meanCost near the 25th). relations: an offer of ours (an offers: tag from card features, or a pseudo-tag: keyword:<printed keyword>, unit:space, disrupt-resources) answers one threat when its qualifier holds against the archetype: removesKeyUnit checks the parsed cost, HP, power, arena and trait limits (damage must reach printed HP) against each key unit; sweep needs an each/all/any-number effect on enemy units and reachesCheapHp a damage or HP limit at least the median HP of the archetype's cheap units; arena needs the removal to be limited to that arena (or, for a unit offer, the unit to be in it); healsBase needs the heal to reach a base; minPower bounds a unit offer. The weight scales the answer's coverage. Each example is a real card whose clause produces the offer; tests/meta/counters.test.ts checks every one.",
+ "tableVersion": 3,
+ "note": "Committed, reviewed design input (LampaGJ/swu-mcp#25), versioned like complementarity.json. threats: a threat fires on an archetype when the sum of its profile metrics (mean copies per deck, or the named ratio) is at least min and at most max; key-units (v2, D63) fires when two or more units at cost 6 or more are played by at least 80% of the archetype's decks (profile.heavyKeyUnits), which marks 160 of the 463 archetypes of the 2026-10-31 run; the earlier test, any unit played by half the decks, fired on every row. gainedKeywords.<K> (v3, D66) counts the units that hold a keyword they do not print (offers:has-keyword-<k>, \"this unit gains Sentinel\"), so every metric that reads offers:grant-<k> also reads gainedKeywords.<K> and a printed keyword is never counted twice. Other thresholds sit near the 75th percentile of the 40 largest tournament archetypes of the 2026-07-20..2026-10-17 window (meanCost near the 25th). relations: an offer of ours (an offers: tag from card features, or a pseudo-tag: keyword:<printed keyword>, unit:space, disrupt-resources) answers one threat when its qualifier holds against the archetype: removesKeyUnit checks the parsed cost, HP, power, arena and trait limits (damage must reach printed HP) against each key unit; sweep needs an each/all/any-number effect on enemy units and reachesCheapHp a damage or HP limit at least the median HP of the archetype's cheap units; arena needs the removal to be limited to that arena (or, for a unit offer, the unit to be in it); healsBase needs the heal to reach a base; minPower bounds a unit offer; reachesShieldTokens (v3, D66) drops upgrade removal limited to a trait other than Armor, because a Shield token is an Armor upgrade. The weight scales the answer's coverage. Each example is a real card whose clause produces the offer; tests/meta/counters.test.ts checks every one.",
  "threats": [
   {
    "id": "key-units",
@@ -34,9 +34,9 @@
   {
    "id": "sentinel-wall",
    "title": "Sentinel wall",
-   "metrics": ["keywords.Sentinel", "offers.offers:grant-sentinel"],
+   "metrics": ["keywords.Sentinel", "gainedKeywords.Sentinel", "offers.offers:grant-sentinel"],
    "min": 8,
-   "reason": "Eight or more Sentinel units or Sentinel grants per deck stop attacks on the base and on other units; Saboteur attacks past them."
+   "reason": "Eight or more Sentinel units (printed or self-gained) or Sentinel grants per deck stop attacks on the base and on other units; Saboteur attacks past them."
   },
   {
    "id": "space-heavy",
@@ -55,7 +55,7 @@
   {
    "id": "base-pressure",
    "title": "Base pressure",
-   "metrics": ["keywords.Raid", "offers.offers:grant-raid", "offers.offers:damage-enemy-base"],
+   "metrics": ["keywords.Raid", "gainedKeywords.Raid", "offers.offers:grant-raid", "offers.offers:damage-enemy-base"],
    "min": 5.5,
    "reason": "Raid and direct base damage push damage past the board; base healing undoes it."
   },
@@ -119,8 +119,8 @@
    "id": "shield-removal",
    "threat": "shields",
    "offers": { "offers:defeat-upgrade": 1, "keyword:Saboteur": 0.8, "offers:grant-saboteur": 0.6 },
-   "qualifier": {},
-   "reason": "Shield tokens are upgrades: upgrade removal defeats them, and a Saboteur attacker defeats the defender's Shields before damage.",
+   "qualifier": { "reachesShieldTokens": true },
+   "reason": "Shield tokens are Armor upgrades: upgrade removal defeats them unless it is limited to another trait (Renew's Condition upgrade), and a Saboteur attacker defeats the defender's Shields before damage.",
    "example": { "card": "Insurgent Saboteurs", "cardKey": "04010168", "clause": "You may defeat an upgrade." }
   },
   {

@@ -172,9 +172,18 @@ export function searchTrios(graph: PairGraph, combos: readonly CoverCombo[], opt
   /** A want that counts its feeders ("for each ... unit and upgrade", "3 or more units", a board-width or trait count), so two of them add up (D64). */
   const counting = (cardKey: string, want: string): boolean =>
     COUNTING_WANTS.has(want) || want.startsWith("wants:trait-") || COUNTS_FEEDERS.test(graph.qualifier(cardKey, "wants", want)?.text ?? "");
-  /** D64: two members that offer the third the very same thing are substitutes, not a combo, unless the want counts its feeders. */
-  const substitutes = (x: PairEdge, y: PairEdge): boolean =>
-    rowSignature(x) !== "" && rowSignature(x) === rowSignature(y) && !linkRows(x).some((r) => counting(x.b, r.want));
+  const wantSignature = (e: PairEdge): string => [...new Set(linkRows(e).map((r) => r.want))].sort(cmp).join("|");
+  /** D66: the third member defeats or returns itself after its effect, so it pays off once and a second feeder adds nothing. */
+  const spent = (e: PairEdge): boolean => linkRows(e).length > 0 && linkRows(e).every((r) => graph.qualifier(e.b, "wants", r.want)?.spendsSelf === true);
+  /**
+   * D64: two members that offer the third the very same thing are substitutes, not a combo, unless the want counts its feeders.
+   * D66: into a one-shot third member, two feeders of the same want are substitutes whatever their offers, and nothing counts.
+   */
+  const substitutes = (x: PairEdge, y: PairEdge): boolean => {
+    if (rowSignature(x) === "") return false;
+    if (spent(x) && spent(y)) return wantSignature(x) === wantSignature(y);
+    return rowSignature(x) === rowSignature(y) && !linkRows(x).some((r) => counting(x.b, r.want));
+  };
   const sameName = (...ks: string[]): boolean => new Set(ks.map((k) => member(k).title)).size < ks.length;
   const costOf = (...ks: string[]): number => ks.reduce((s, k) => s + (member(k).structured.cost ?? 0), 0);
 

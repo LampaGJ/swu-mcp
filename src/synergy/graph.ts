@@ -121,8 +121,11 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   const words = new Map(cards.map((c) => [c.cardKey, wordSet(c)]));
   const rows = expandRows(cards, table);
   const tokenTraits = new Map<string, string[]>();
+  const tokenAspects = new Map<string, string[]>();
   for (const c of cards) {
-    if (c.type === "Token Unit") tokenTraits.set(c.title, [...new Set([...(tokenTraits.get(c.title) ?? []), ...c.structured.traits])].sort(cmp));
+    if (c.type !== "Token Unit") continue;
+    tokenTraits.set(c.title, [...new Set([...(tokenTraits.get(c.title) ?? []), ...c.structured.traits])].sort(cmp));
+    tokenAspects.set(c.title, [...new Set([...(tokenAspects.get(c.title) ?? []), ...c.structured.aspects])].sort(cmp));
   }
   const qualifiers = new Map<string, TagQualifier>();
   const qualifier = (c: SynergyCard, side: "offers" | "wants", tag: string): TagQualifier => {
@@ -130,7 +133,7 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
     let q = qualifiers.get(key);
     if (q === undefined) {
       const why = c.tags[side].find((t) => t.tag === tag)?.why ?? "";
-      q = qualifierOf(c, side, tag, why, tokenTraits);
+      q = qualifierOf(c, side, tag, why, tokenTraits, tokenAspects);
       qualifiers.set(key, q);
     }
     return q;

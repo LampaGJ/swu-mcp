@@ -517,7 +517,7 @@ const NAMED_FEEDERS = 3;
 
 /** Decision D59 (#147, #150): the lock fields every deck tool prints. */
 export const LOCK_NOTE =
-  "baseLocked: a clause of the card works only under a base of that location (Origin Tree is Kashyyyk, Jundland Wastes Tatooine; the location is pinned from the engine card data) and this base is another; needsUnitAspect: a clause of the card works only while you control a unit of that aspect (\"A or B\" = either) and the leader, base and deck units supply none. A locked card is ranked after the unlocked ones and is not counted as covering a threat. Only the card's own clause text is read: a card whose lock sits in a leader or base ability is not flagged.";
+  "baseLocked: a clause of the card works only under a base of that location (Origin Tree is Kashyyyk, Jundland Wastes Tatooine; the location is pinned from the engine card data) and this base is another; needsUnitAspect: a clause of the card works only while you control a unit of that aspect (\"A or B\" = either) and the leader, base and deck units supply none; nameLocked: a clause of the card works only while you control a card of that name (\"While you control Padmé Amidala\") and the leader, base and deck hold none. A locked card is ranked after the unlocked ones and is not counted as covering a threat. Only the card's own clause text is read: a card whose lock sits in a leader or base ability is not flagged.";
 
 /**
  * The best few cards offering what an orphan wants; "Title (cost)", with ", +N" for an aspect penalty. Without the
