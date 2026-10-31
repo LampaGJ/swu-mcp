@@ -48,7 +48,11 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
         ...extra,
       }),
     );
-  const rowsOf = (out: Record<string, any>): Record<string, any>[] => out.roles.flatMap((r: any) => r.substitutes.flatMap((g: any) => g.cards));
+  // D69: every card of the judged call has a pair edge to Oppo, so the cards this suite reads sit under partners, beside the role classes' stand-ins.
+  const rowsOf = (out: Record<string, any>): Record<string, any>[] => [
+    ...out.partners,
+    ...out.roles.flatMap((r: any) => r.substitutes.flatMap((g: any) => g.cards)),
+  ];
 
   it("marks Anakin Skywalker, Force Prodigy as a card that feeds Oppo, with the edge's row, and says so in the note", () => {
     const out = call();
@@ -70,7 +74,7 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
   });
 
   it("flags exactly the cards the D59 lock holds, and ranks them after the unlocked cards of their group", () => {
-    const out = call({ maxClasses: 50 });
+    const out = call({ maxClasses: 50, maxPartners: 50 });
     const leader = ctx.graph.byKey.get(WARRIOR);
     const base = ctx.graph.byKey.get(ORIGIN_TREE);
     const deckCards = OWNER_DECK.deck.flatMap((d) => {
@@ -91,6 +95,13 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
         lockedSeen += flags.filter(Boolean).length;
       }
     }
+    const partnerFlags = out.partners.map((c: any) => Boolean(c.baseLocked ?? c.needsUnitAspect ?? c.nameLocked));
+    out.partners.forEach((c: any, i: number) => {
+      const lock = clauseLock(ctx.graph.byKey.get(c.cardKey)!, supply);
+      expect(partnerFlags[i], `${c.title} lock ${JSON.stringify(lock)}`).toBe(isLocked(lock));
+    });
+    expect(partnerFlags, "partners list the unlocked cards first").toEqual([...partnerFlags].sort((a, b) => Number(a) - Number(b)));
+    lockedSeen += partnerFlags.filter(Boolean).length;
     expect(deckCards.length, "every deck line resolves").toBeGreaterThan(20);
     expect(lockedSeen, "the base-locked stand-ins of the judged call are flagged").toBeGreaterThan(0);
     const opee = rowsOf(out).find((r) => r.title === "Opee Sea Killer");
@@ -98,8 +109,8 @@ describe.skipIf(!hasData)("fungible_substitutes for Oppo Rancisis against the bu
   });
 
   it("drops a rejected card named by SET id: Ryyk Blademaster is listed without exclude and gone with exclude [HMW_118]", () => {
-    expect(rowsOf(call({ maxClasses: 50 })).some((r) => r.cardKey === RYYK)).toBe(true);
-    const out = call({ maxClasses: 50, exclude: ["HMW_118"] });
+    expect(rowsOf(call({ maxClasses: 50, maxPartners: 50 })).some((r) => r.cardKey === RYYK)).toBe(true);
+    const out = call({ maxClasses: 50, maxPartners: 50, exclude: ["HMW_118"] });
     expect(rowsOf(out).some((r) => r.cardKey === RYYK)).toBe(false);
     expect(out.excluded).toBe(RYYK);
   });

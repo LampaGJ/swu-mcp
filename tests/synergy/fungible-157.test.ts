@@ -169,11 +169,13 @@ describe("fungible_substitutes marks a partner of the original (#157)", () => {
     expect(out.note).toContain("Pinger Green feeds The Elite Squad");
   });
 
-  it("marks a listed substitute that is a partner and ranks it after the plain ones", () => {
+  // D69 moved the partner out of the role classes: the mark now sits on its row under partners, and the class lists the plain stand-in alone.
+  it("marks a listed partner under partners and leaves it out of the role classes", () => {
     const out = body(fungibleSubstitutes(partnerCtx, { cardKey: "3", tag, evidence: false }));
     const rows = cardsOf(out, tag);
-    expect(rows.map((r) => r.cardKey)).toEqual(["1", "7"]);
-    expect(rows[1].fedByOriginal).toBe(true);
+    expect(rows.map((r) => r.cardKey)).toEqual(["1"]);
+    expect(out.partners.map((r: any) => r.cardKey)).toEqual(["7"]);
+    expect(out.partners[0].fedByOriginal).toBe(true);
     expect(rows[0]).not.toHaveProperty("fedByOriginal");
   });
 });
