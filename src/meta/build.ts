@@ -319,7 +319,7 @@ function archetypesOf(
         const others = coreSets.filter((_, j) => j !== index);
         const distinctive = cluster.core.filter((c) => facts.get(c) !== undefined && others.every((o) => !o.has(c)));
         const pick = distinctive.sort((a, b) => (inclusion.get(b) ?? 0) - (inclusion.get(a) ?? 0) || compareCodePoints(a, b))[0];
-        label = pick === undefined ? ` (variant ${index + 1})` : ` (${(facts.get(pick) as CardFact).title})`;
+        label = pick === undefined ? ` (variant ${index + 1})` : `, signature ${(facts.get(pick) as CardFact).title}`;
       }
       out.push({
         name: `${leader?.title ?? ms[0].leader} / ${baseAspects.join("+") || "neutral"} base${label}`,

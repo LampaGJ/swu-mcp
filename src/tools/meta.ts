@@ -209,6 +209,7 @@ export function metaArchetypes(env: MetaEnv, input: unknown): ToolResult {
       leader: a.leader.cardKey,
       leaderAspects: a.leader.aspects.join("+"),
       baseAspects: a.baseAspects.join("+") || "neutral",
+      topBase: a.bases[0] === undefined ? null : { cardKey: a.bases[0].cardKey, title: a.bases[0].title },
       share: a.share,
       top8Share: a.top8Share,
       decks: a.decks,
@@ -221,7 +222,7 @@ export function metaArchetypes(env: MetaEnv, input: unknown): ToolResult {
         .map((c) => c.title)
         .join("; "),
     })),
-    note: "share = placement-weighted share of the population's decks in the window; top8Share = share of all top-8 finishes; tournamentRecord = match wins-losses-draws of the leader and base aspect against the whole field (leader-level, all of its archetypes), n = decisive matches (wins + losses), winRate = wins / n (draws left out, as swumetastats does), ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Call meta_threats for one archetype and meta_answers for the cards that answer them.",
+    note: "name ends with the cluster's most distinctive core card as \"signature <card>\", which is a core card and not the base; topBase = the base most of its decks play, pass its title or cardKey as the base of playable_cards, deck_audit and meta_answers. share = placement-weighted share of the population's decks in the window; top8Share = share of all top-8 finishes; tournamentRecord = match wins-losses-draws of the leader and base aspect against the whole field (leader-level, all of its archetypes), n = decisive matches (wins + losses), winRate = wins / n (draws left out, as swumetastats does), ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments). Call meta_threats for one archetype and meta_answers for the cards that answer them.",
   });
 }
 
@@ -536,7 +537,7 @@ const tool = (title: string, description: string, shape: z.ZodRawShape, run: (en
 export const META_TOOLS = {
   meta_archetypes: tool(
     "Meta archetypes",
-    "The current Premier archetypes: recent tournament decklists (placement-weighted) clustered by leader, base aspect and shared core cards, with meta share, top-8 share, the date window, the leader's tournament match record, the threats each poses and its core cards. Community lists are a separate, labelled population.",
+    "The current Premier archetypes: recent tournament decklists (placement-weighted) clustered by leader, base aspect and shared core cards, with meta share, top-8 share, the date window, the leader's tournament match record, the threats each poses, its core cards and its most-played base (topBase). Community lists are a separate, labelled population.",
     metaArchetypesShape,
     metaArchetypes,
   ),

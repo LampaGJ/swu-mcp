@@ -132,3 +132,40 @@ describe("buildMeta", () => {
     expect(JSON.stringify(again)).toBe(JSON.stringify(meta));
   });
 });
+
+describe("archetype names", () => {
+  // Group A plays six shared cards plus one of its own; group B plays those six, ten of its own and one more:
+  // A's core lies inside B's, so only B has a distinctive core card.
+  const keys = (prefix: string, n: number): string[] => Array.from({ length: n }, (_, i) => `${prefix}${String(i).padStart(2, "0")}`);
+  const shared = keys("S", 6);
+  const bOnly = keys("Y", 10);
+  const splitFacts = new Map<string, CardFact>([
+    ...facts,
+    ...[...shared, ...bOnly, ...keys("A", 3), ...keys("B", 3)].map((k): [string, CardFact] => [k, fact(k, { title: `Card ${k}` })]),
+  ]);
+  const group = (prefix: string, cards: string[], own: string[]) =>
+    own.map((e, i) =>
+      deck(`${prefix}${i}`, {
+        leader: "L1",
+        base: i % 2 === 0 ? "BV" : "BV2",
+        cards: [...cards, e].map((c) => [c, 3] as [string, number]),
+        placement: i + 1,
+        field: 32,
+      }),
+    );
+  const decks = [...group("a", shared, keys("A", 3)), ...group("b", [...shared, ...bOnly], keys("B", 3))];
+  const split = buildMeta(decks, splitFacts, OPTIONS).archetypes;
+
+  it("labels a distinctive core card as the signature, never as a parenthesised base lookalike", () => {
+    const names = split.map((a) => a.name);
+    expect(names).toHaveLength(2);
+    expect(names.filter((n) => n === "Hunter / Vigilance base, signature Card Y00")).toHaveLength(1);
+    expect(names.filter((n) => /^Hunter \/ Vigilance base \(variant \d+\)$/.test(n))).toHaveLength(1);
+    expect(names.filter((n) => /\((?!variant \d+\))/.test(n))).toEqual([]);
+  });
+
+  it("keeps the single-cluster name without a suffix", () => {
+    const one = buildMeta(hunterDecks, facts, OPTIONS).archetypes.filter((a) => a.leader.cardKey === "L1");
+    expect(one.map((a) => a.name)).toEqual(["Hunter / Vigilance base"]);
+  });
+});
