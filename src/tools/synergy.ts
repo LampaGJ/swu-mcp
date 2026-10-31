@@ -72,6 +72,13 @@ export const findPairingsShape = {
   traits: traitsMode,
   tribalLimit: z.number().int().min(0).max(50).default(5).describe("Most trait-only (tribal) pairs listed in the separate tribal section when traits is bonus"),
   withAlternatives: z.boolean().default(true).describe("List fungible alternatives for the partner slot, by aspect"),
+  perLink: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(3)
+    .describe("Most rows listed per distinct link before further rows with the same link are deferred; 100 turns the cap off"),
   evidence: evidenceFlag,
   limit: z.number().int().min(1).max(100).default(15),
 };
@@ -195,6 +202,24 @@ function penaltyFor(
   return { aspectPair: best.label, penalty: best.penalty };
 }
 
+/** Stable partition: the first `perLink` rows of each link keep their place, later rows of that link follow them, both runs in input order. */
+export function deferRepeatedLinks<T>(
+  rows: readonly T[],
+  linkOf: (row: T) => string,
+  perLink: number,
+): { ordered: T[]; deferred: number } {
+  const seen = new Map<string, number>();
+  const kept: T[] = [];
+  const later: T[] = [];
+  for (const r of rows) {
+    const link = linkOf(r);
+    const n = seen.get(link) ?? 0;
+    seen.set(link, n + 1);
+    (n < perLink ? kept : later).push(r);
+  }
+  return { ordered: [...kept, ...later], deferred: later.length };
+}
+
 export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
   const args = z.object(findPairingsShape).parse(input);
   const resolved = resolve(ctx, [args.cardKey]);
@@ -218,8 +243,9 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     });
     return rows.sort((x, y) => y.rank - x.rank || edgeOrder(x.e, y.e));
   };
+  const linkRowsOf = (e: PairEdge, mode: TraitsMode) => (mode === "exclude" ? mechanicalRows(e) : e.rows);
   const row = ({ e, partner, cover, score, rank }: ReturnType<typeof ranked>[number], mode: TraitsMode): Record<string, unknown> => {
-    const linkRows = mode === "exclude" ? mechanicalRows(e) : e.rows;
+    const linkRows = linkRowsOf(e, mode);
     const out: Record<string, unknown> = {
       ...brief(partner),
       status: CANDIDATE_STATUS,
@@ -239,8 +265,13 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     touching.filter((e) => args.traits === "include" || !e.traitOnly),
     args.traits,
   );
+  const { ordered, deferred } = deferRepeatedLinks(
+    rows,
+    (r) => linkRowsOf(r.e, args.traits).map((x) => `${x.offer} -> ${x.want}`).join("; "),
+    args.perLink,
+  );
   const tribal = args.traits === "bonus" ? ranked(touching.filter((e) => e.traitOnly), "bonus") : [];
-  const shown = rows.slice(0, args.limit).map((r) => {
+  const shown = ordered.slice(0, args.limit).map((r) => {
     const { e, partner } = r;
     const out = row(r, args.traits);
     if (args.withAlternatives) {
@@ -263,6 +294,12 @@ export function findPairings(ctx: SynergyContext, input: unknown): ToolResult {
     traits: args.traits,
     total: rows.length,
     shown: shown.length,
+    capped: deferred,
+    ...(deferred > 0
+      ? {
+          note: `perLink ${args.perLink}: at most ${args.perLink} rows per distinct link are ranked first; ${deferred} further rows that repeat an already-listed link follow in rank order; set perLink 100 to turn the cap off.`,
+        }
+      : {}),
     pairings: shown,
     ...(tribal.length > 0
       ? {
@@ -458,7 +495,7 @@ export const SYNERGY_TOOLS = {
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input)),
   },

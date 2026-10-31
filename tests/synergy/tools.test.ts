@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { createServer } from "../../src/create-server.js";
 import { loadStore } from "../../src/data.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
-import { aspectCover, explainSynergy, findPairings, findTrios, fungibleSubstitutes, SYNERGY_TOOLS } from "../../src/tools/synergy.js";
+import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrios, fungibleSubstitutes, SYNERGY_TOOLS } from "../../src/tools/synergy.js";
 import type { ToolResult } from "../../src/tools.js";
 import { COMMITTED_TABLE, mk, table } from "./fixtures.js";
 
@@ -105,6 +105,80 @@ describe("find_pairings", () => {
 
   it("rejects an unknown card", () => {
     expect(findPairings(ctx, { cardKey: "nope" }).isError).toBe(true);
+  });
+});
+
+describe("find_pairings perLink", () => {
+  const linkCtx = createSynergyContext(
+    [
+      mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+      mk("Z", "Base", { type: "Base", icons: ["Command"] }),
+      mk("F", "Focus", { offers: ["offers:x", "offers:y"], aspects: ["Command"], cost: 2 }),
+      ...["A1", "A2", "A3", "A4"].map((k) => mk(k, `Payoff ${k}`, { wants: ["wants:x"], aspects: ["Command"], cost: 2 })),
+      ...["B1", "B2", "B3"].map((k) => mk(k, `Payoff ${k}`, { wants: ["wants:y"], aspects: ["Command"], cost: 2 })),
+    ],
+    table([
+      { id: "rx", offers: { "offers:x": 1 }, wants: { "wants:x": 1 }, strength: 3 },
+      { id: "ry", offers: { "offers:y": 1 }, wants: { "wants:y": 1 }, strength: 1 },
+    ]),
+  );
+  const keys = (out: Record<string, any>) => out.pairings.map((p: any) => p.cardKey);
+  const args = { cardKey: "F", withAlternatives: false, evidence: false, limit: 100 };
+
+  it("ranks the stronger link first with no cap (perLink 100)", () => {
+    const out = body(findPairings(linkCtx, { ...args, perLink: 100 }));
+    expect(keys(out)).toEqual(["A1", "A2", "A3", "A4", "B1", "B2", "B3"]);
+    expect(out).toMatchObject({ total: 7, shown: 7, capped: 0 });
+    expect(out.note).toBeUndefined();
+  });
+
+  it("lists at most perLink rows per link first, then the deferred tail in rank order", () => {
+    const out = body(findPairings(linkCtx, { ...args, perLink: 2 }));
+    expect(keys(out)).toEqual(["A1", "A2", "B1", "B2", "A3", "A4", "B3"]);
+    expect(out).toMatchObject({ total: 7, shown: 7, capped: 3 });
+    expect(out.note).toContain("perLink 2");
+    expect(out.note).toContain("3 further rows");
+  });
+
+  it("defaults to 3 rows per link and keeps deferred rows reachable by limit", () => {
+    const out = body(findPairings(linkCtx, { ...args, limit: 5 }));
+    expect(keys(out)).toEqual(["A1", "A2", "A3", "B1", "B2"]);
+    expect(out).toMatchObject({ total: 7, shown: 5, capped: 1 });
+  });
+
+  it("matches the uncapped output when no link repeats more than perLink times", () => {
+    const capped = body(findPairings(linkCtx, { ...args, perLink: 4 }));
+    const open = body(findPairings(linkCtx, { ...args, perLink: 100 }));
+    expect(capped.pairings).toEqual(open.pairings);
+    expect(capped.capped).toBe(0);
+  });
+
+  it("rejects perLink outside 1-100", () => {
+    expect(() => findPairings(linkCtx, { ...args, perLink: 0 })).toThrow();
+    expect(() => findPairings(linkCtx, { ...args, perLink: 101 })).toThrow();
+  });
+});
+
+describe("deferRepeatedLinks", () => {
+  const rows = [
+    { id: 1, link: "a" },
+    { id: 2, link: "a" },
+    { id: 3, link: "a" },
+    { id: 4, link: "b" },
+    { id: 5, link: "a" },
+    { id: 6, link: "b" },
+  ];
+
+  it("keeps the first perLink rows of each link, then the deferred rows, each in input order", () => {
+    const out = deferRepeatedLinks(rows, (r) => r.link, 2);
+    expect(out.ordered.map((r) => r.id)).toEqual([1, 2, 4, 6, 3, 5]);
+    expect(out.deferred).toBe(2);
+  });
+
+  it("returns the input order when the cap is never reached", () => {
+    const out = deferRepeatedLinks(rows, (r) => r.link, 100);
+    expect(out.ordered).toEqual(rows);
+    expect(out.deferred).toBe(0);
   });
 });
 
