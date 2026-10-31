@@ -368,6 +368,8 @@ For rung 4, a further check applies: the evaluator's held-out calibration (expec
 
 ## Open questions
 
-- Open question: are the gate thresholds right? The estimates are Spearman ≥ 0.5, non-decisive ≤ 2%, fallback ≤ 5% and annotation agreement ≥ 80%. They should be set from the first rung-1 measurements, not from this document.
-- Open question: does D1's "no model output decides a score" extend to a learned move evaluator, or does rung 4 need its own D-entry? This document assumes the latter.
-- Open question: does `simulate_matchup` default to rung 2 or rung 3? This depends on rung 3's measured 100-game wall time.
+Ruled by the owner on 2026-10-31 (D53 in `docs/decisions.md`): the maintainer settles all three iteratively, and every change is posted on #118 with its measurement before it lands. Current values:
+
+- Gate thresholds: Spearman ≥ 0.5, non-decisive ≤ 2%, fallback ≤ 5%, annotation agreement ≥ 80% (rung 5 only). These are the starting estimates; the first reset comes from the rung-1 measurements (#114).
+- Rung 4: a learned move evaluator is a pinned, hashed fit under D3 and needs its own D-entry before any tool reads its output. D1 stands: no model output decides a card score.
+- `simulate_matchup` defaults to rung 2 on both seats. Rung 3 becomes the default only if it beats rung 2 head to head and fits the 100-game interactive budget.
