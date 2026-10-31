@@ -368,7 +368,7 @@ function slotMembers(env: DeckEnv, cardKey: string): Slot | null {
   const fungibility = env.ctx.fungibility;
   const tags = [
     ...new Set((fungibility.rolesByCard.get(cardKey) ?? []).map((id) => (fungibility.classById.get(id) as { tag: string }).tag)),
-  ];
+  ].filter((tag) => !tag.startsWith("keyword:"));
   const fills = new Map<string, number>();
   for (const tag of tags) {
     for (const member of roleOf(fungibility, cardKey, tag)?.members ?? []) {

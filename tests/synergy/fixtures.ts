@@ -25,6 +25,10 @@ interface CardSpec {
   /** Tag -> why, when the test needs the origin lookup to find an ability. */
   why?: Record<string, string>;
   subtitle?: string | null;
+  /** Printed keywords as `structured.keywordsField` carries them. */
+  keywords?: string[];
+  power?: number;
+  hp?: number;
 }
 
 export function mk(cardKey: string, title: string, spec: CardSpec = {}): SynergyCard {
@@ -34,7 +38,11 @@ export function mk(cardKey: string, title: string, spec: CardSpec = {}): Synergy
     title,
     subtitle: spec.subtitle ?? null,
     type: spec.type ?? "Unit",
-    structured: { cost: spec.cost === undefined ? 2 : spec.cost, aspects, aspectIcons: spec.icons ?? aspects, traits: spec.traits ?? [], ...(spec.arenas === undefined ? {} : { arenas: spec.arenas }) },
+    structured: { cost: spec.cost === undefined ? 2 : spec.cost, aspects, aspectIcons: spec.icons ?? aspects, traits: spec.traits ?? [], ...(spec.arenas === undefined ? {} : { arenas: spec.arenas }),
+      ...(spec.keywords === undefined ? {} : { keywordsField: spec.keywords }),
+      ...(spec.power === undefined ? {} : { power: spec.power }),
+      ...(spec.hp === undefined ? {} : { hp: spec.hp }),
+    },
     faces: {
       text: (spec.abilities ?? []).map((a) => ({
         kind: "ability",

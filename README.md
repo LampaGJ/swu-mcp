@@ -92,7 +92,7 @@ Synergy and combos
 
 Fungibility and substitutes
 
-- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect, with the role's clause text for the slot card and each substitute and `status: candidate`. A card whose class holds no other member is retried with the cost band relaxed, then with magnitude ignored; `widened` names the step and those substitutes carry `match: widened`.
+- `fungible_substitutes` cards that fill the same role as a card, grouped by aspect, with the role's clause text for the slot card and each substitute and `status: candidate`. A card whose class holds no other member is retried with the cost band relaxed, then with magnitude ignored; `widened` names the step and those substitutes carry `match: widened`. A unit also holds a `keyword:<Keyword>` role per printed keyword (same arena, cost band and power-plus-HP band), listed first for a unit with no offers/wants tag or only a constant "while ..." condition. Inside an aspect group substitutes sort by play-calibrated score; give `leader` (cardKey or exact title) and each substitute carries `leaderInclusion`, with the cards that leader's tournament decklists play first.
 
 Market and play data
 

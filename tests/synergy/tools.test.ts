@@ -589,3 +589,73 @@ describe("find_trios with a leader", () => {
     expect(findTrios(leaderCtx, { leader: "nope" }).isError).toBe(true);
   });
 });
+
+describe("fungible_substitutes ordering and keyword roles", () => {
+  const sentinel = (key: string, title: string, extra: Record<string, unknown> = {}) =>
+    mk(key, title, { cost: 3, aspects: ["Command"], arenas: ["Ground"], power: 3, hp: 4, keywords: ["Sentinel"], ...extra });
+  const orderCtx = (rows: [string, number][]) =>
+    createSynergyContext(
+      [
+        mk("LD", "Order Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+        sentinel("slot", "Slot Sentinel", {
+          aspects: ["Vigilance"],
+          wants: ["wants:upgrades-attached"],
+          why: { "wants:upgrades-attached": "text: While this unit is upgraded, he gains Saboteur." },
+          abilities: [{ repeat: "constant", text: "While this unit is upgraded, he gains Saboteur." }],
+        }),
+        sentinel("a", "Alpha"),
+        sentinel("b", "Bravo"),
+        sentinel("c", "Charlie"),
+        sentinel("d", "Delta", { cost: 2 }),
+        sentinel("sp", "Space Sentinel", { arenas: ["Space"] }),
+      ],
+      COMMITTED_TABLE,
+      leaderCardsFile("LD", "Order Leader", ["Command", "Heroism"], rows),
+    );
+  const scores = new Map([
+    ["a", { playCalibrated: 1 }],
+    ["b", { playCalibrated: 3 }],
+    ["c", { playCalibrated: 2 }],
+    ["d", { playCalibrated: null }],
+  ]);
+  const keysOf = (out: Record<string, any>, tag = "keyword:Sentinel") =>
+    out.roles.find((r: any) => r.tag === tag).substitutes.flatMap((g: any) => g.cards.map((c: any) => c.cardKey));
+
+  it("lists the keyword role before the while-upgraded role and leaves out the Space Sentinel", () => {
+    const out = body(fungibleSubstitutes(orderCtx([]), { cardKey: "slot", evidence: false }));
+    expect(out.roles.map((r: any) => r.tag)).toEqual(["keyword:Sentinel", "wants:upgrades-attached"]);
+    expect(keysOf(out)).not.toContain("sp");
+    expect(keysOf(out).sort()).toEqual(["a", "b", "c", "d"]);
+    const withText = body(fungibleSubstitutes(orderCtx([]), { cardKey: "slot", tag: "keyword:Sentinel" })).roles[0];
+    expect(withText.slotText).toBe("printed keyword Sentinel");
+    expect(withText.substitutes[0].cards[0].text).toBe("printed keyword Sentinel");
+  });
+
+  it("without a leader sorts by play-calibrated score (unscored last, then cost, then cardKey) and adds no leaderInclusion", () => {
+    const out = body(fungibleSubstitutes(orderCtx([["a", 0.9]]), { cardKey: "slot", evidence: false }, scores));
+    expect(keysOf(out)).toEqual(["b", "c", "a", "d"]);
+    expect(JSON.stringify(out)).not.toContain("leaderInclusion");
+    expect(out.leader).toBeUndefined();
+    expect(keysOf(body(fungibleSubstitutes(orderCtx([]), { cardKey: "slot", evidence: false })))).toEqual(["d", "a", "b", "c"]);
+    const tied = new Map([["a", { playCalibrated: 2 }], ["b", { playCalibrated: 2 }], ["c", { playCalibrated: 2 }]]);
+    expect(keysOf(body(fungibleSubstitutes(orderCtx([]), { cardKey: "slot", evidence: false }, tied)))).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("with a leader sorts by leaderInclusion desc (null last), then play-calibrated score, and carries leaderInclusion", () => {
+    const ctxL = orderCtx([["a", 0.5], ["b", 0.5], ["c", 0.8]]);
+    const out = body(fungibleSubstitutes(ctxL, { cardKey: "slot", leader: "LD", evidence: false }, scores));
+    expect(keysOf(out)).toEqual(["c", "b", "a", "d"]);
+    const cards2 = out.roles[0].substitutes.flatMap((g: any) => g.cards);
+    expect(cards2.map((c: any) => c.leaderInclusion)).toEqual([0.8, 0.5, 0.5, null]);
+    expect(out.leader).toMatchObject({ cardKey: "LD", population: "tournament", decks: 12, window: "2026-07-20..2026-10-17" });
+    expect(keysOf(body(fungibleSubstitutes(ctxL, { cardKey: "slot", leader: "Order Leader", evidence: false })))).toEqual(["c", "a", "b", "d"]);
+  });
+
+  it("names a leader without decklist data and rejects an unknown leader", () => {
+    const bare = createSynergyContext([mk("LD", "Order Leader", { type: "Leader" }), sentinel("slot", "Slot"), sentinel("a", "Alpha")], COMMITTED_TABLE);
+    const out = body(fungibleSubstitutes(bare, { cardKey: "slot", leader: "LD", evidence: false }));
+    expect(out.leader.note).toMatch(/no decklist data/);
+    expect(out.roles[0].substitutes[0].cards[0].leaderInclusion).toBeNull();
+    expect(fungibleSubstitutes(bare, { cardKey: "slot", leader: "nope" }).isError).toBe(true);
+  });
+});

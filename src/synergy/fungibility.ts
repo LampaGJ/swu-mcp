@@ -11,14 +11,19 @@ import type { AbilityLite, SynergyCard } from "./schema.js";
  * friendly/enemy polarity), card type group, timing (repeat class of the ability that produced the
  * tag), magnitude band, cost band and target (arena or non-unit kind). Cards sharing a signature are one class. Deterministic: the
  * signature is a pure function of the feature record, with no model and no fitted parameter.
- * Trait tags are skipped: sharing a trait is membership, not a role.
+ * Trait tags are skipped: sharing a trait is membership, not a role. A unit also holds one
+ * `keyword:<Keyword>` role per printed keyword (its job on the board), keyed on type, arena, cost
+ * band and a power-plus-HP stats band (D44).
  */
 
 export type TagSide = "offers" | "wants";
 
+/** "keyword" marks the roles a unit derives from its printed keywords (D44); they are neither offers nor wants. */
+export type RoleSide = TagSide | "keyword";
+
 export interface RoleSignature {
   tag: string;
-  side: TagSide;
+  side: RoleSide;
   typeGroup: string;
   timing: string;
   magnitude: string;
@@ -27,6 +32,8 @@ export interface RoleSignature {
   target: string;
   /** The unit's own arena(s), lower-cased, sorted and joined with "+" ("ground", "space", "ground+space"); empty for a non-unit. */
   arena: string;
+  /** Power plus HP band of a keyword role (`statsBand`); absent on offers/wants roles. */
+  statsBand?: string;
 }
 
 export interface RoleClass extends RoleSignature {
@@ -53,6 +60,16 @@ export function costBand(cost: number | null): string {
   if (cost <= 3) return "2-3";
   if (cost <= 5) return "4-5";
   return "6+";
+}
+
+/** Power plus HP bucketed 0-3, 4-6, 7-9, 10+; "-" when either is missing. */
+export function statsBand(power: unknown, hp: unknown): string {
+  if (typeof power !== "number" || typeof hp !== "number") return "-";
+  const total = power + hp;
+  if (total <= 3) return "0-3";
+  if (total <= 6) return "4-6";
+  if (total <= 9) return "7-9";
+  return "10+";
 }
 
 export function magnitudeBand(n: unknown): string {
@@ -111,6 +128,17 @@ function originOf(card: SynergyCard, why: string): Origin {
   return { timing: "static", magnitude: "-" };
 }
 
+/** Printed keywords: the keyword field plus the keywords list, without keywords the text only grants. */
+function printedKeywords(card: SynergyCard): string[] {
+  const field = (card.structured.keywordsField as unknown[] | undefined) ?? [];
+  const listed = (card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? [];
+  const names = [...field, ...listed.filter((k) => k.granted !== true).map((k) => k.keyword)];
+  return [...new Set(names.filter((n): n is string => typeof n === "string" && n !== ""))].sort(cmp);
+}
+
+/** Timings of an ability that holds without an event ("While this unit is upgraded ..."). */
+const CONDITION_TIMINGS = new Set(["constant", "static"]);
+
 export function roleSignatures(card: SynergyCard): RoleSignature[] {
   const typeGroup = TYPE_GROUPS.has(card.type) ? card.type : "Other";
   const arena = card.type === "Unit" ? (card.structured.arenas ?? []).map((a) => a.toLowerCase()).sort(cmp).join("+") : "";
@@ -123,11 +151,25 @@ export function roleSignatures(card: SynergyCard): RoleSignature[] {
       out.push({ tag, side, typeGroup, timing, magnitude, costBand: costBand(card.structured.cost), target: targetLabel(q), arena });
     }
   }
-  return out;
+  if (card.type !== "Unit") return out;
+  const stats = statsBand(card.structured.power, card.structured.hp);
+  const keywordRoles: RoleSignature[] = printedKeywords(card).map((name) => ({
+    tag: `keyword:${name}`,
+    side: "keyword",
+    typeGroup,
+    timing: "static",
+    magnitude: "-",
+    costBand: costBand(card.structured.cost),
+    target: "",
+    arena,
+    statsBand: stats,
+  }));
+  const definesJob = out.every((s) => s.side === "wants" && CONDITION_TIMINGS.has(s.timing));
+  return definesJob ? [...keywordRoles, ...out] : [...out, ...keywordRoles];
 }
 
 export const roleId = (s: RoleSignature): string =>
-  `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}${s.target === "" ? "" : `|t${s.target}`}${s.arena === "" ? "" : `|a${s.arena}`}`;
+  `${s.tag}|${s.typeGroup}|${s.timing}|m${s.magnitude}|c${s.costBand}${s.target === "" ? "" : `|t${s.target}`}${s.arena === "" ? "" : `|a${s.arena}`}${s.statsBand === undefined ? "" : `|s${s.statsBand}`}`;
 
 export function buildFungibility(cards: readonly SynergyCard[]): FungibilityIndex {
   const classes = new Map<string, RoleClass>();
@@ -155,6 +197,9 @@ export interface Substitute {
   cost: number | null;
 }
 
+/** Orders two substitutes inside an aspect group; the default is cost, then cardKey. */
+export type SubstituteOrder = (a: Substitute, b: Substitute) => number;
+
 export interface SubstituteGroup {
   aspects: string;
   /** True when this aspect set is not the slot card's own. */
@@ -172,6 +217,8 @@ export interface SubstituteOptions {
   /** Drop groups with the slot card's own aspects. */
   crossAspectOnly?: boolean;
   maxCost?: number;
+  /** Replaces the cost-then-cardKey order inside each group. */
+  order?: SubstituteOrder;
 }
 
 /** Class id the card holds for a tag, if any (a card has at most one signature per tag). */
@@ -218,7 +265,7 @@ export function substitutesFor(
     aspects,
     differsFromSlot: aspects !== slotGroup,
     covered: prefer === undefined ? null : iconsCovered(icons.get(aspects) ?? [], prefer),
-    cards: list.sort((x, y) => (x.cost ?? 99) - (y.cost ?? 99) || cmp(x.cardKey, y.cardKey)).slice(0, perGroup),
+    cards: list.sort(options.order ?? ((x, y) => (x.cost ?? 99) - (y.cost ?? 99) || cmp(x.cardKey, y.cardKey))).slice(0, perGroup),
   }));
   return out.sort(
     (x, y) =>
@@ -228,7 +275,7 @@ export function substitutesFor(
   );
 }
 
-export type Widening = "cost band" | "cost band + magnitude";
+export type Widening = "cost band" | "cost band + magnitude" | "cost band + stats band";
 
 export interface WidenedSubstitutes {
   widened: Widening;
@@ -245,7 +292,8 @@ const adjacentBands = (a: string, b: string): boolean => {
 
 /**
  * Substitutes for a slot whose class holds no other card: the same tag, type, timing, target and
- * arena, with the cost band relaxed to the adjacent bands, then with magnitude ignored as well.
+ * arena, with the cost band relaxed to the adjacent bands, then with magnitude ignored as well. A
+ * keyword role keeps its stats band in the first step and ignores it in the second (D44).
  * Null when neither step finds a card.
  */
 export function widenedSubstitutes(
@@ -254,10 +302,16 @@ export function widenedSubstitutes(
   slotCardKey: string,
   options: SubstituteOptions = {},
 ): WidenedSubstitutes | null {
-  const steps: [Widening, (c: RoleClass) => boolean][] = [
-    ["cost band", (c) => c.magnitude === slotClass.magnitude],
-    ["cost band + magnitude", () => true],
-  ];
+  const steps: [Widening, (c: RoleClass) => boolean][] =
+    slotClass.statsBand === undefined
+      ? [
+          ["cost band", (c) => c.magnitude === slotClass.magnitude],
+          ["cost band + magnitude", () => true],
+        ]
+      : [
+          ["cost band", (c) => c.statsBand === slotClass.statsBand],
+          ["cost band + stats band", () => true],
+        ];
   for (const [widened, magnitudeOk] of steps) {
     const members = index.classes
       .filter(

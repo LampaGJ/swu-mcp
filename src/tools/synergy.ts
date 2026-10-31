@@ -10,6 +10,7 @@ import {
   roleOf,
   substitutesFor,
   widenedSubstitutes,
+  type Substitute,
   type SubstituteGroup,
   type SubstituteOptions,
 } from "../synergy/fungibility.js";
@@ -21,6 +22,7 @@ import { DEFAULT_TRIO_KEEP, TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trio
 import type { ToolResult } from "../tools.js";
 import { ok, fail } from "./common.js";
 import { leaderSourceText } from "./deck.js";
+import { valueData } from "./value.js";
 
 /**
  * @displayName SWU synergy MCP tools
@@ -78,6 +80,13 @@ export const fungibleSubstitutesShape = {
   crossAspectOnly: z.boolean().default(false).describe("Only list substitutes whose aspects differ from the card's"),
   maxCost: z.number().int().min(0).optional().describe("Highest substitute cost, inclusive"),
   limit: z.number().int().min(1).max(50).default(5).describe("Substitutes listed per aspect group"),
+  leader: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "The deck's leader, by cardKey or exact title. Each substitute carries leaderInclusion (null when the leader's tournament decklists do not play it) and, inside an aspect group, substitutes the leader's decks play sort first. Without it they sort by play-calibrated score",
+    ),
   evidence: evidenceFlag,
 };
 
@@ -169,12 +178,14 @@ const leaderFactor = (w: LeaderWeight, cardKey: string): number => {
   return inc !== null && inc > 0 ? 0.5 + inc : 0.5;
 };
 
-function leaderBlock(w: LeaderWeight, unit: "partner" | "trio"): Record<string, unknown> {
+function leaderBlock(w: LeaderWeight, unit: "partner" | "trio" | "substitute"): Record<string, unknown> {
   const head = { cardKey: w.card.cardKey, title: cardLabel(w.card), aspects: w.card.structured.aspectIcons.join("+") || "none" };
   if (w.data === null) return { ...head, note: "no decklist data for this leader in the package; ranking is not leader-weighted, aspects still default to its icons" };
   const { entry } = w.data;
   const how =
-    unit === "partner"
+    unit === "substitute"
+      ? "inside an aspect group, substitutes sort by leaderInclusion (unplayed last), then play-calibrated score"
+      : unit === "partner"
       ? "rank = the unweighted rank x (0.5 + leaderInclusion) when the leader's decks play the partner, x 0.5 when they do not"
       : "rank = score x, for each member, (0.5 + leaderInclusion) when the leader's decks play it, 0.5 when they do not";
   return {
@@ -207,11 +218,41 @@ function groupText(groups: readonly SubstituteGroup[], maxGroups: number): strin
     );
 }
 
-export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolResult {
+/** The text behind a role: the tag's clause, or the printed keyword for a keyword role (it has no clause). */
+const roleText = (card: SynergyCard, tag: string): string =>
+  tag.startsWith("keyword:") ? `printed keyword ${tag.slice("keyword:".length)}` : tagEvidence(card, tag);
+
+/** Higher first, a missing value last. */
+const descNullLast = (a: number | null | undefined, b: number | null | undefined): number =>
+  a == null ? (b == null ? 0 : 1) : b == null ? -1 : b - a;
+
+/**
+ * Order inside an aspect group: leaderInclusion desc when a leader is given, then play-calibrated
+ * score desc, then cost and cardKey so ties stay deterministic (D44).
+ */
+function substituteOrder(
+  weight: LeaderWeight | undefined,
+  scores: ReadonlyMap<string, { playCalibrated: number | null }>,
+): (a: Substitute, b: Substitute) => number {
+  const inclusion = (k: string): number | null => (weight === undefined ? null : inclusionOf(weight, k));
+  return (a, b) =>
+    descNullLast(inclusion(a.cardKey), inclusion(b.cardKey)) ||
+    descNullLast(scores.get(a.cardKey)?.playCalibrated, scores.get(b.cardKey)?.playCalibrated) ||
+    (a.cost ?? 99) - (b.cost ?? 99) ||
+    cmp(a.cardKey, b.cardKey);
+}
+
+export function fungibleSubstitutes(
+  ctx: SynergyContext,
+  input: unknown,
+  scores: ReadonlyMap<string, { playCalibrated: number | null }> = new Map(),
+): ToolResult {
   const args = z.object(fungibleSubstitutesShape).parse(input);
   const resolved = resolve(ctx, [args.cardKey]);
   if (typeof resolved === "string") return fail(resolved);
   const slot = resolved[0];
+  const leader = args.leader === undefined ? undefined : resolveLeader(ctx, args.leader);
+  if (typeof leader === "string") return fail(leader);
   const tags =
     args.tag !== undefined
       ? [args.tag]
@@ -227,6 +268,7 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
     crossAspectOnly: args.crossAspectOnly,
     maxCost: args.maxCost,
     perGroup: args.limit,
+    order: substituteOrder(leader, scores),
   };
   const roles = tags.flatMap((tag) => {
     const cls = roleOf(ctx.fungibility, slot.cardKey, tag);
@@ -235,8 +277,9 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
     const widenedResult = cls.members.length === 1 ? widenedSubstitutes(ctx.fungibility, cls, slot.cardKey, options) : null;
     const groups = widenedResult?.groups ?? exact;
     const withText = (c: SubstituteGroup["cards"][number]) => {
-      const marked = widenedResult === null ? c : { ...c, match: "widened" };
-      return args.evidence ? { ...marked, text: tagEvidence(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : marked;
+      const widenedMark = widenedResult === null ? c : { ...c, match: "widened" };
+      const marked = leader === undefined ? widenedMark : { ...widenedMark, leaderInclusion: inclusionOf(leader, c.cardKey) };
+      return args.evidence ? { ...marked, text: roleText(ctx.graph.byKey.get(c.cardKey) as SynergyCard, tag) } : marked;
     };
     return [
       {
@@ -245,7 +288,7 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
         classSize: cls.members.length,
         widened: widenedResult?.widened ?? null,
         aspectSets: new Set(cls.members.map((k) => aspectGroup(ctx.graph.byKey.get(k) as SynergyCard))).size,
-        ...(args.evidence ? { slotText: tagEvidence(slot, tag) } : {}),
+        ...(args.evidence ? { slotText: roleText(slot, tag) } : {}),
         substitutes: groups.map((g) => ({
           aspects: g.aspects,
           differsFromSlot: g.differsFromSlot,
@@ -256,7 +299,7 @@ export function fungibleSubstitutes(ctx: SynergyContext, input: unknown): ToolRe
     ];
   });
   if (roles.length === 0) return fail(`${slot.cardKey} has no role for tag ${args.tag}`);
-  return ok({ status: CANDIDATE_STATUS, card: brief(slot), roles });
+  return ok({ status: CANDIDATE_STATUS, card: brief(slot), ...(leader === undefined ? {} : { leader: leaderBlock(leader, "substitute") }), roles });
 }
 
 function deckMembers(ctx: SynergyContext, members: readonly string[], includeLeaders: boolean): readonly string[] {
@@ -573,6 +616,15 @@ export function synergyContextOf(store: CardStore): SynergyContext {
   return ctx;
 }
 
+/** The play-calibrated scores, or none when the package has no scores (substitutes then sort by cost). */
+function scoresOf(store: CardStore): ReadonlyMap<string, { playCalibrated: number | null }> {
+  try {
+    return valueData(store).rows;
+  } catch {
+    return new Map();
+  }
+}
+
 function withContext(store: CardStore, run: (ctx: SynergyContext) => ToolResult): ToolResult {
   try {
     return run(synergyContextOf(store));
@@ -586,9 +638,9 @@ export const SYNERGY_TOOLS = {
   fungible_substitutes: {
     title: "Fungible substitutes",
     description:
-      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
+      "Cards that fill the same role as a card (same offers/wants tag, timing, magnitude band, cost band and type), grouped by aspect. A deck picks the substitute its leader and base already cover. Roles come from the card's feature tags; trait tags are not roles. When the card's class has no other member, each role entry retries with the cost band relaxed to the adjacent bands, then with magnitude ignored as well (same tag, type, timing, target and arena kept), and reports it as widened (\"cost band\" or \"cost band + magnitude\", else null); those substitutes carry match: widened. A unit also holds one keyword:<Keyword> role per printed keyword (same arena, cost band and power-plus-HP band), listed first when the unit has no offers/wants tag or only a constant \"while ...\" condition, so a 3-cost Ground Sentinel finds other Ground Sentinels; its widening drops the stats band in the second step (\"cost band + stats band\"). Inside an aspect group substitutes sort by play-calibrated score; give leader (cardKey or exact title) to sort the ones that leader's tournament decklists play first, with leaderInclusion (null when unplayed) on each. Each substitute carries the clause text behind its role; they are candidates, so check that clause says the same thing as the slot card's (evidence: false turns it off).",
     shape: fungibleSubstitutesShape,
-    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input)),
+    handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => fungibleSubstitutes(ctx, input, scoresOf(store))),
   },
   find_pairings: {
     title: "Find pairings",

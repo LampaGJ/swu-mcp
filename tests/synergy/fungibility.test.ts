@@ -7,6 +7,7 @@ import {
   magnitudeBand,
   roleOf,
   roleSignatures,
+  statsBand,
   substitutesFor,
   widenedSubstitutes,
 } from "../../src/synergy/fungibility.js";
@@ -269,5 +270,98 @@ describe("widened substitutes for a slot with no other class member", () => {
       mk("c", "Costed", { cost: 2, wants: ["wants:self-damaged"], why: { "wants:self-damaged": "text: x" } }),
     ]);
     expect(widenedSubstitutes(index, roleOf(index, "n", "wants:self-damaged") as never, "n")).toBeNull();
+  });
+});
+
+describe("keyword roles for units", () => {
+  const unit = (key: string, keywords: string[], extra = {}) =>
+    mk(key, `Unit ${key}`, { cost: 3, arenas: ["Ground"], power: 3, hp: 4, keywords, ...extra });
+
+  it("gives a unit one keyword:<Keyword> role per printed keyword, keyed on type, arena, cost band and stats band", () => {
+    expect(roleSignatures(unit("a", ["Sentinel"]))).toEqual([
+      { tag: "keyword:Sentinel", side: "keyword", typeGroup: "Unit", timing: "static", magnitude: "-", costBand: "2-3", target: "", arena: "ground", statsBand: "7-9" },
+    ]);
+    expect(roleSignatures(unit("b", ["Sentinel", "Saboteur", "Sentinel"])).map((s) => s.tag)).toEqual(["keyword:Saboteur", "keyword:Sentinel"]);
+  });
+
+  it("reads the keywords list too, and skips a keyword the text only grants", () => {
+    const fromList = {
+      ...unit("l", []),
+      keywords: [
+        { keyword: "Raid", n: 1, granted: false },
+        { keyword: "Overwhelm", granted: true },
+        { keyword: "Sentinel", granted: false },
+      ],
+    };
+    expect(roleSignatures(fromList).map((s) => s.tag)).toEqual(["keyword:Raid", "keyword:Sentinel"]);
+  });
+
+  it("gives non-units no keyword role", () => {
+    expect(roleSignatures(unit("u", ["Grit"], { type: "Upgrade" }))).toEqual([]);
+    expect(roleSignatures(unit("t", ["Grit"], { type: "Leader" }))).toEqual([]);
+  });
+
+  it("bands power plus HP", () => {
+    expect([[0, 3], [1, 2], [2, 2], [3, 3], [3, 4], [4, 5], [5, 5], [6, 4], [null, 4], [3, null]].map(([p, h]) => statsBand(p, h))).toEqual([
+      "0-3", "0-3", "4-6", "4-6", "7-9", "7-9", "10+", "10+", "-", "-",
+    ]);
+  });
+
+  it("puts two Sentinels with the same arena, cost band and stats band in one class, and splits a Space Sentinel and another stats band", () => {
+    const index = buildFungibility([
+      unit("g1", ["Sentinel"]),
+      unit("g2", ["Sentinel"], { aspects: ["Command"], cost: 2, power: 4, hp: 3 }),
+      unit("s1", ["Sentinel"], { arenas: ["Space"] }),
+      unit("big", ["Sentinel"], { power: 5, hp: 6 }),
+      unit("raid", ["Raid"]),
+    ]);
+    const cls = roleOf(index, "g1", "keyword:Sentinel");
+    expect(cls?.id).toBe("keyword:Sentinel|Unit|static|m-|c2-3|aground|s7-9");
+    expect(cls?.members).toEqual(["g1", "g2"]);
+    expect(roleOf(index, "s1", "keyword:Sentinel")?.members).toEqual(["s1"]);
+    expect(roleOf(index, "big", "keyword:Sentinel")?.members).toEqual(["big"]);
+    expect(roleOf(index, "raid", "keyword:Raid")?.members).toEqual(["raid"]);
+  });
+
+  it("lists the keyword role first when the text has no offers/wants tag or only a constant want", () => {
+    const upgraded = unit("w", ["Sentinel"], {
+      wants: ["wants:upgrades-attached"],
+      why: { "wants:upgrades-attached": "text: While this unit is upgraded, he gains Saboteur." },
+      abilities: [{ repeat: "constant", text: "While this unit is upgraded, he gains Saboteur." }],
+    });
+    const drawer = unit("d", ["Sentinel"], {
+      offers: ["offers:draw"],
+      why: { "offers:draw": "text: draws" },
+      abilities: [{ repeat: "once_on_play", text: "draws", n: 1 }],
+    });
+    const eventful = unit("e", ["Sentinel"], {
+      wants: ["wants:self-damaged"],
+      why: { "wants:self-damaged": "text: Each time attacks, if damaged" },
+      abilities: [{ repeat: "per_attack", text: "Each time attacks, if damaged" }],
+    });
+    const index = buildFungibility([upgraded, drawer, eventful, unit("plain", ["Sentinel"])]);
+    const tagsOf = (key: string) => (index.rolesByCard.get(key) ?? []).map((id) => index.classById.get(id)?.tag);
+    expect(tagsOf("w")).toEqual(["keyword:Sentinel", "wants:upgrades-attached"]);
+    expect(tagsOf("d")).toEqual(["offers:draw", "keyword:Sentinel"]);
+    expect(tagsOf("e")).toEqual(["wants:self-damaged", "keyword:Sentinel"]);
+    expect(tagsOf("plain")).toEqual(["keyword:Sentinel"]);
+  });
+
+  it("widens a lone keyword class by the D39 steps: adjacent cost bands first, then the stats band", () => {
+    const index = buildFungibility([
+      unit("slot", ["Sentinel"]),
+      unit("near", ["Sentinel"], { cost: 4, power: 4, hp: 4 }),
+      unit("far", ["Sentinel"], { cost: 9, power: 4, hp: 4 }),
+      unit("band", ["Sentinel"], { cost: 4, power: 6, hp: 6 }),
+      unit("space", ["Sentinel"], { cost: 4, arenas: ["Space"] }),
+    ]);
+    const slotClass = roleOf(index, "slot", "keyword:Sentinel");
+    const first = widenedSubstitutes(index, slotClass as NonNullable<typeof slotClass>, "slot");
+    expect(first?.widened).toBe("cost band");
+    expect(first?.groups.flatMap((g) => g.cards.map((c) => c.cardKey))).toEqual(["near"]);
+    const only = buildFungibility([unit("slot", ["Sentinel"]), unit("band", ["Sentinel"], { cost: 4, power: 6, hp: 6 }), unit("space", ["Sentinel"], { cost: 4, arenas: ["Space"] })]);
+    const second = widenedSubstitutes(only, roleOf(only, "slot", "keyword:Sentinel") as NonNullable<ReturnType<typeof roleOf>>, "slot");
+    expect(second?.widened).toBe("cost band + stats band");
+    expect(second?.groups.flatMap((g) => g.cards.map((c) => c.cardKey))).toEqual(["band"]);
   });
 });
