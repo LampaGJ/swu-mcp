@@ -8,6 +8,7 @@ export {
   swuCardFeaturesReplaySchema,
   swuFeatureInputCardSchema,
 } from "../schemas/card-features.js";
+export { baseLocationsFileSchema } from "../schemas/base-locations.js";
 export type {
   SwuAbility,
   SwuAbilityNode,

@@ -9,6 +9,7 @@ import {
 } from "./deps.js";
 import { compareCodePoints, sha256Hex } from "./deps.js";
 import { StaleCuratedEntriesError, loadCuratedTable } from "./curated.js";
+import { mergeBaseLocations } from "./base-locations.js";
 import { extractFeatures, type ExtractionResult } from "./extract.js";
 import { GRAMMAR_VERSION } from "./vocab.js";
 
@@ -54,8 +55,10 @@ function inputText(cards: readonly SwuFeatureInputCard[]): string {
  * run if a curated entry matches no clause, with the files already built.
  * No clock, no randomness: outputs are a pure function of the arguments.
  */
-export function buildFeatureRun(rawCards: readonly unknown[], curatedJson: string, codeCommit: string): FeatureRun {
-  const cards = z.array(swuFeatureInputCardSchema).parse(rawCards);
+export function buildFeatureRun(rawCards: readonly unknown[], curatedJson: string, codeCommit: string, baseLocationsJson?: string): FeatureRun {
+  const parsed = z.array(swuFeatureInputCardSchema).parse(rawCards);
+  const located = baseLocationsJson === undefined ? undefined : mergeBaseLocations(parsed, baseLocationsJson);
+  const cards = located?.cards ?? parsed;
   const { table, index } = loadCuratedTable(curatedJson);
   const result = extractFeatures(cards, index);
   z.array(swuCardFeaturesSchema).parse(result.cards);
@@ -68,11 +71,12 @@ export function buildFeatureRun(rawCards: readonly unknown[], curatedJson: strin
   };
   const outputHashes = Object.fromEntries(Object.keys(files).sort(compareCodePoints).map((name) => [name, sha256Hex(files[name])]));
   const replay = swuCardFeaturesReplaySchema.parse({
-    inputHash: sha256Hex(inputText(cards)),
+    inputHash: sha256Hex(inputText(parsed)),
     codeCommit,
     curatedTableSha256: sha256Hex(curatedJson),
     curatedTableVersion: table.tableVersion,
     grammarVersion: GRAMMAR_VERSION,
+    ...(located === undefined ? {} : { baseLocations: located.record }),
     outputHashes,
   });
   files["replay.json"] = json(replay);

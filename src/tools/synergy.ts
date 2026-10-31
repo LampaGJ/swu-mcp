@@ -16,7 +16,7 @@ import {
 } from "../synergy/fungibility.js";
 import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "../synergy/graph.js";
 import { cardLabel, cmp, r3 } from "../synergy/order.js";
-import { compareCodePoints } from "../swu/canonical.js";
+import { baseLockOfAll } from "../synergy/locks.js";
 import { reasonOfHit } from "../synergy/reasons.js";
 import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
@@ -452,33 +452,6 @@ function penaltyFor(
   return { aspectPair: best.label, penalty: best.penalty };
 }
 
-const ASPECT_NAMES: ReadonlySet<string> = new Set(["Aggression", "Command", "Cunning", "Heroism", "Vigilance", "Villainy"]);
-/** "While you control a Tatooine base": the clause names one kind of base, not an aspect ("an Aggression leader or base" never matches). */
-const NAMED_BASE = /\byou control an? ([A-Z][\w'-]*(?: [A-Z][\w'-]*)*) base\b/;
-const baseLocks = new WeakMap<SynergyCard, string | null>();
-
-/** Decision D51: the base a card's own clause names ("While you control a Tatooine base"), or null when no clause does. */
-function baseLockOf(card: SynergyCard): string | null {
-  const known = baseLocks.get(card);
-  if (known !== undefined) return known;
-  let name: string | null = null;
-  for (const ability of Object.values(card.faces).flat()) {
-    const clauses = [...(ability.clauses ?? []), ...(ability.options ?? []).flatMap((o) => o.clauses)];
-    for (const c of clauses) {
-      const hit = NAMED_BASE.exec(c.text)?.[1];
-      if (hit !== undefined && !ASPECT_NAMES.has(hit)) name ??= hit;
-    }
-  }
-  baseLocks.set(card, name);
-  return name;
-}
-
-/** The names the members lock, and whether the deck's base fails to meet one of them (a base carrying the trait meets it). */
-function baseLockOfAll(cards: readonly SynergyCard[], base: SynergyCard | undefined): { names: string[]; unmet: boolean } {
-  const names = [...new Set(cards.flatMap((c) => baseLockOf(c) ?? []))].sort(compareCodePoints);
-  return { names, unmet: names.some((n) => base === undefined || !base.structured.traits.includes(n)) };
-}
-
 /** Stable partition: the first `perLink` rows of each link keep their place, later rows of that link follow them, both runs in input order. */
 /** How many times the default per-shape trio pool the leader-weighted ranking reads. */
 const LEADER_TRIO_POOL = 5;
@@ -669,8 +642,8 @@ export function findTrios(ctx: SynergyContext, input: unknown, inPool?: (cardKey
   const shown = kept.slice(0, args.limit);
   const variantOf = (k: string): Record<string, unknown> => {
     const c = ctx.graph.byKey.get(k) as SynergyCard;
-    const lock = baseLockOf(c);
-    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }), ...(lock === null ? {} : { baseLocked: lock }) };
+    const lock = baseLockOfAll([c], base).names;
+    return { title: cardLabel(c), cost: c.structured.cost, ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, k) }), ...(lock.length === 0 ? {} : { baseLocked: lock.join(", ") }) };
   };
   const prefer = fixed ? [...(leaderAspects ?? []), ...(baseAspects ?? [])] : undefined;
   const trios = shown.map(({ t, keys, variants }) => {

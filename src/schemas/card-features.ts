@@ -387,6 +387,8 @@ export const swuCardFeaturesReplaySchema = z.strictObject({
   curatedTableSha256: hex64,
   curatedTableVersion: z.number().int(),
   grammarVersion: z.number().int(),
+  /** D59: the pinned base-locations file merged into base traits; absent when the run merged none. */
+  baseLocations: z.strictObject({ sha256: hex64, applied: z.number().int().min(0), missing: z.array(z.string()) }).optional(),
   outputHashes: z.record(z.string(), hex64),
 });
 export type SwuCardFeaturesReplay = z.infer<typeof swuCardFeaturesReplaySchema>;

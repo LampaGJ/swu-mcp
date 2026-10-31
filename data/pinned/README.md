@@ -10,3 +10,7 @@ sha256, then file:
     5b14b16223f6f622ecfe37ce5844394500f1ba1cd4bb647edb4c60712190d396  gt/tcg-prices-import43.tsv
 
 `gt/swustats-premier-*.json` are SWU Stats Premier inclusion captures by game window. `gt/tcg-prices-import43.tsv` is the TCGplayer price import 43 export. `articles/` holds the official strategy articles the rubric cites, as text.
+
+## base-locations/
+
+`forceteki-<hash12>.json` holds the printed location of every base our card table holds (`cardKey`, `title`, the engine's source string `location`, and the display name `locationName` that the features step merges into the base's traits, D59). The official API ships every base with empty traits, so the location comes from the forceteki engine's card data (`test/json/Card/*.json`), read once by `scripts/pinned/capture-base-locations.ts` (`--engine <clone>`; the clone is never written to). `<name>.manifest.json` records the file sha256, the engine commit, the engine card-data hash, the sha256 of the card table it was mapped against, and the engine bases the table does not hold. A second capture of the same source rewrites nothing; a different source has a different card-data hash and so a new file, and `pnpm card-features` then needs `--base-locations <file>` to say which to use. Re-capture only when the engine's card data changes or the card table gains a base.

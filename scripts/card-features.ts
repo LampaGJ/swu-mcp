@@ -6,21 +6,22 @@
  * @tacticalObjective Builds the logical card rows from a mault originals folder with the same
  * flattener as the data package, or reads a data-package cards.toon with --cards.
  *
- * Usage: pnpm card-features [--originals <dir>] [--cards <cards.toon>] [--curated <curated-rules.json>] [--out <dir>]
+ * Usage: pnpm card-features [--originals <dir>] [--cards <cards.toon>] [--curated <curated-rules.json>] [--base-locations <file>] [--out <dir>]
  *   --originals  default: newest dated dir under /Volumes/Local Files/Projects/mault/data/swu-originals
  *   --cards      read rows from a data-package cards.toon instead of the originals
  *   --curated    default: <repo>/data/curated-rules.json
+ *   --base-locations  default: the one pinned file in <repo>/data/pinned/base-locations (D59); several files need this flag
  *   --out        default: <repo>/data/runs/<date>/features
  *
  * Exit codes: 0 ok, 3 stale curated entries (outputs are still written).
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { decode } from "@toon-format/toon";
 import { z } from "zod";
 import { StaleCuratedEntriesError, assertNoStaleCurated, buildFeatureRun } from "../src/ability-grammar/index.js";
-import { sha256Hex } from "../src/swu/canonical.js";
+import { compareCodePoints, sha256Hex } from "../src/swu/canonical.js";
 import { buildLogicalCards, flattenPrinting, newFlattenIssues, splitByCurrentSets, type FlatRow } from "../src/swu/llm-flatten.js";
 import { swuRawCacheManifestSchema } from "../src/swu/raw-manifest.js";
 import { codeCommit } from "./lib/code-commit.js";
@@ -60,12 +61,24 @@ function cardsFromOriginals(originalsDir: string, tick: (done: number) => void):
   return { rows: splitByCurrentSets(logical.cards).kept, runDate: manifest.finishedAt.slice(0, 10) };
 }
 
+const BASE_LOCATIONS_DIR = path.join(REPO_ROOT, "data/pinned/base-locations");
+
+function pinnedBaseLocations(given: string | undefined): string {
+  if (given !== undefined) return path.resolve(expandHome(given));
+  const files = readdirSync(BASE_LOCATIONS_DIR)
+    .filter((f) => f.endsWith(".json") && !f.endsWith(".manifest.json"))
+    .sort(compareCodePoints);
+  if (files.length !== 1) throw new Error(`${BASE_LOCATIONS_DIR} holds ${files.length} pinned files (${files.join(", ")}); name the one to use with --base-locations`);
+  return path.join(BASE_LOCATIONS_DIR, files[0]);
+}
+
 function main(): void {
   const { values } = parseArgs({
     options: {
       originals: { type: "string" },
       cards: { type: "string" },
       curated: { type: "string" },
+      "base-locations": { type: "string" },
       out: { type: "string" },
     },
   });
@@ -85,7 +98,8 @@ function main(): void {
   const curatedJson = readFileSync(path.resolve(expandHome(values.curated ?? path.join(REPO_ROOT, "data/curated-rules.json"))), "utf8");
 
   p.log({ phase: "extract", cards: rows.length });
-  const run = buildFeatureRun(rows, curatedJson, codeCommit(["src", "scripts", "data/curated-rules.json"]));
+  const baseLocationsJson = readFileSync(pinnedBaseLocations(values["base-locations"]), "utf8");
+  const run = buildFeatureRun(rows, curatedJson, codeCommit(["src", "scripts", "data/curated-rules.json"]), baseLocationsJson);
   mkdirSync(outDir, { recursive: true });
   for (const [name, content] of Object.entries(run.files)) writeFileSync(path.join(outDir, name), content);
   const c = run.result.coverage;

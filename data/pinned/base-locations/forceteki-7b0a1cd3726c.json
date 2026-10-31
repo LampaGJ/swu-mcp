@@ -1,0 +1,420 @@
+{
+ "source": "forceteki",
+ "cardDataHash": "7b0a1cd3726cb48642bb8f72edf1d86e6ee78e213155e0ba78c5815a177661cd",
+ "rows": [
+  {
+   "cardKey": "0101030",
+   "title": "Chopper Base",
+   "location": "atollon",
+   "locationName": "Atollon"
+  },
+  {
+   "cardKey": "04010019",
+   "title": "City in the Clouds",
+   "location": "cloud city",
+   "locationName": "Cloud City"
+  },
+  {
+   "cardKey": "04010020",
+   "title": "Shield Generator Complex",
+   "location": "endor",
+   "locationName": "Endor"
+  },
+  {
+   "cardKey": "04010021",
+   "title": "Colossus",
+   "location": "castilon",
+   "locationName": "Castilon"
+  },
+  {
+   "cardKey": "04010022",
+   "title": "Resistance Headquarters",
+   "location": "d'qar",
+   "locationName": "D'Qar"
+  },
+  {
+   "cardKey": "04010023",
+   "title": "Theed Palace",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "04010024",
+   "title": "Data Vault",
+   "location": "scarif",
+   "locationName": "Scarif"
+  },
+  {
+   "cardKey": "04010025",
+   "title": "Thermal Oscillator",
+   "location": "starkiller base",
+   "locationName": "Starkiller Base"
+  },
+  {
+   "cardKey": "04010026",
+   "title": "Massassi Temple",
+   "location": "yavin 4",
+   "locationName": "Yavin 4"
+  },
+  {
+   "cardKey": "04010027",
+   "title": "Nadiri Dockyards",
+   "location": "nadiri",
+   "locationName": "Nadiri"
+  },
+  {
+   "cardKey": "04010028",
+   "title": "Nabat Village",
+   "location": "ryloth",
+   "locationName": "Ryloth"
+  },
+  {
+   "cardKey": "04010030",
+   "title": "Mos Eisley",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "04010031",
+   "title": "Lake Country",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "05010019",
+   "title": "Vergence Temple",
+   "location": "lothal",
+   "locationName": "Lothal"
+  },
+  {
+   "cardKey": "05010020",
+   "title": "Nightsister Lair",
+   "location": "dathomir",
+   "locationName": "Dathomir"
+  },
+  {
+   "cardKey": "05010021",
+   "title": "Shadowed Undercity",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "05010022",
+   "title": "Mystic Monastery",
+   "location": "mortis",
+   "locationName": "Mortis"
+  },
+  {
+   "cardKey": "05010023",
+   "title": "Jedi Temple",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "05010024",
+   "title": "Starlight Temple",
+   "location": "starlight beacon",
+   "locationName": "Starlight Beacon"
+  },
+  {
+   "cardKey": "05010025",
+   "title": "Temple of Destruction",
+   "location": "malachor",
+   "locationName": "Malachor"
+  },
+  {
+   "cardKey": "05010026",
+   "title": "Fortress Vader",
+   "location": "mustafar",
+   "locationName": "Mustafar"
+  },
+  {
+   "cardKey": "05010027",
+   "title": "Strangled Cliffs",
+   "location": "dathomir",
+   "locationName": "Dathomir"
+  },
+  {
+   "cardKey": "05010028",
+   "title": "Tomb of Eilram",
+   "location": "zeffo",
+   "locationName": "Zeffo"
+  },
+  {
+   "cardKey": "05010029",
+   "title": "Crystal Caves",
+   "location": "ilum",
+   "locationName": "Ilum"
+  },
+  {
+   "cardKey": "05010030",
+   "title": "The Holy City",
+   "location": "jedha",
+   "locationName": "Jedha"
+  },
+  {
+   "cardKey": "06010019",
+   "title": "Rix Road",
+   "location": "ferrix",
+   "locationName": "Ferrix"
+  },
+  {
+   "cardKey": "06010020",
+   "title": "Uscru Entertainment District",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "06010021",
+   "title": "Republic City",
+   "location": "hosnian prime",
+   "locationName": "Hosnian Prime"
+  },
+  {
+   "cardKey": "06010022",
+   "title": "Senate Rotunda",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "06010023",
+   "title": "Imperial Prison Complex",
+   "location": "narkina 5",
+   "locationName": "Narkina 5"
+  },
+  {
+   "cardKey": "06010024",
+   "title": "Naval Intelligence HQ",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "06010025",
+   "title": "Amnesty Housing",
+   "location": "coruscant",
+   "locationName": "Coruscant"
+  },
+  {
+   "cardKey": "06010026",
+   "title": "Mount Tantiss",
+   "location": "wayland",
+   "locationName": "Wayland"
+  },
+  {
+   "cardKey": "07010019",
+   "title": "Alliance Outpost",
+   "location": "lowick",
+   "locationName": "Lowick"
+  },
+  {
+   "cardKey": "07010020",
+   "title": "Daimyo's Palace",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "07010021",
+   "title": "Coaxium Mine",
+   "location": "kessel",
+   "locationName": "Kessel"
+  },
+  {
+   "cardKey": "07010022",
+   "title": "Aldhani Garrison",
+   "location": "aldhani",
+   "locationName": "Aldhani"
+  },
+  {
+   "cardKey": "07010023",
+   "title": "Great Pit of Carkoon",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "07010024",
+   "title": "Imperial Command Complex",
+   "location": "lothal",
+   "locationName": "Lothal"
+  },
+  {
+   "cardKey": "07010025",
+   "title": "Contested Caverns",
+   "location": "quarzite",
+   "locationName": "Quarzite"
+  },
+  {
+   "cardKey": "07010026",
+   "title": "Shipbreaking Yard",
+   "location": "bracca",
+   "locationName": "Bracca"
+  },
+  {
+   "cardKey": "07010027",
+   "title": "Stygeon Spire",
+   "location": "stygeon prime",
+   "locationName": "Stygeon Prime"
+  },
+  {
+   "cardKey": "07010028",
+   "title": "Canto Bight",
+   "location": "cantonica",
+   "locationName": "Cantonica"
+  },
+  {
+   "cardKey": "07010029",
+   "title": "Citadel Research Center",
+   "location": "scarif",
+   "locationName": "Scarif"
+  },
+  {
+   "cardKey": "07010030",
+   "title": "Partisan Hideout",
+   "location": "segra milo",
+   "locationName": "Segra Milo"
+  },
+  {
+   "cardKey": "08010019",
+   "title": "Fortress of the Great Mothers",
+   "location": "peridea",
+   "locationName": "Peridea"
+  },
+  {
+   "cardKey": "08010020",
+   "title": "Nevarro City, Restored",
+   "location": "nevarro",
+   "locationName": "Nevarro"
+  },
+  {
+   "cardKey": "08010021",
+   "title": "Emperor's Throne Room",
+   "location": "death star",
+   "locationName": "Death Star"
+  },
+  {
+   "cardKey": "08010022",
+   "title": "Kryze Castle",
+   "location": "kalevala",
+   "locationName": "Kalevala"
+  },
+  {
+   "cardKey": "08010023",
+   "title": "Ancient Henge",
+   "location": "seatos",
+   "locationName": "Seatos"
+  },
+  {
+   "cardKey": "08010024",
+   "title": "Dragonsnake Bog",
+   "location": "dagobah",
+   "locationName": "Dagobah"
+  },
+  {
+   "cardKey": "08010025",
+   "title": "Emperor's Observatory",
+   "location": "pillio",
+   "locationName": "Pillio"
+  },
+  {
+   "cardKey": "08010026",
+   "title": "Freetown",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "09010019",
+   "title": "Dune Sea",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "09010020",
+   "title": "Great Grass Plains",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "09010021",
+   "title": "Kachirho",
+   "location": "kashyyyk",
+   "locationName": "Kashyyyk"
+  },
+  {
+   "cardKey": "09010022",
+   "title": "Shield Generator Complex",
+   "location": "endor",
+   "locationName": "Endor"
+  },
+  {
+   "cardKey": "09010023",
+   "title": "Bright Tree Village",
+   "location": "endor",
+   "locationName": "Endor"
+  },
+  {
+   "cardKey": "09010024",
+   "title": "Origin Tree",
+   "location": "kashyyyk",
+   "locationName": "Kashyyyk"
+  },
+  {
+   "cardKey": "09010025",
+   "title": "Theed Palace",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "09010026",
+   "title": "Tusken Camp",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "09010027",
+   "title": "Bioweapons Lab",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "09010028",
+   "title": "Jundland Wastes",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "09010029",
+   "title": "Dendroid Wilds",
+   "location": "endor",
+   "locationName": "Endor"
+  },
+  {
+   "cardKey": "09010030",
+   "title": "Shadowlands",
+   "location": "kashyyyk",
+   "locationName": "Kashyyyk"
+  },
+  {
+   "cardKey": "09010031",
+   "title": "Kyyyalstaad Swamp",
+   "location": "kashyyyk",
+   "locationName": "Kashyyyk"
+  },
+  {
+   "cardKey": "09010032",
+   "title": "Mos Eisley",
+   "location": "tatooine",
+   "locationName": "Tatooine"
+  },
+  {
+   "cardKey": "09010033",
+   "title": "Otoh Gunga",
+   "location": "naboo",
+   "locationName": "Naboo"
+  },
+  {
+   "cardKey": "09010034",
+   "title": "Research Station 9",
+   "location": "endor",
+   "locationName": "Endor"
+  }
+ ]
+}

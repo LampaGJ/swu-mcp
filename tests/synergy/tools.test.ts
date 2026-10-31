@@ -1241,7 +1241,8 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
   it("find_pairings: a base of the named kind satisfies the lock, so the partner keeps its rank", () => {
     const out = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", base: "BT", withAlternatives: false, evidence: false }));
     expect(order(out)[0]).toBe("X1");
-    expect(out.pairings[0].baseLocked).toBe("Tatooine");
+    // D59: a lock the base meets is cleared, so the row no longer names it (it used to keep the name, #150).
+    expect(out.pairings[0]).not.toHaveProperty("baseLocked");
     const other = body(findPairings(pairCtx, { cardKey: "W", direction: "enablers", leader: "LK", base: "BP", withAlternatives: false, evidence: false }));
     expect(order(other)[2]).toBe("X1");
   });
@@ -1254,5 +1255,28 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
     expect(both.trios[0].cardKeys).toBe("X2|W|T");
     expect(both.trios[0]).not.toHaveProperty("baseLocked");
     expect(both.trios[0].variants).toContainEqual({ title: "Ritual Like", cost: 3, leaderInclusion: 0.8, baseLocked: "Tatooine" });
+  });
+
+  it("find_trios: a base of the named kind clears the lock on the trio and on its variant, a base of another kind keeps it (#150)", () => {
+    const run = (base: string) => body(findTrios(pairCtx, { leader: "LK", base, minPlayed: 0, withAlternatives: false, evidence: false })).trios[0];
+    const met = run("BT");
+    expect(met.cardKeys).toBe("X1|W|T");
+    expect(met).not.toHaveProperty("baseLocked");
+    const kept = run("BP");
+    expect(kept.cardKeys).toBe("X2|W|T");
+    expect(kept.variants).toContainEqual({ title: "Ritual Like", cost: 3, leaderInclusion: 0.8, baseLocked: "Tatooine" });
+  });
+
+  it("find_pairings: a pinned location clears the Tatooine clause under Jundland Wastes and keeps it under Origin Tree, and Kashyyyk clears under Origin Tree (#150)", () => {
+    const dragon = mk("RD", "Ritual Dragon", { offers: ["offers:x"], aspects: ["Cunning"], cost: 8, abilities: [{ repeat: "constant", text: LOCK }] });
+    const cell = mk("SC", "Soaring Can-Cell", { offers: ["offers:x"], aspects: ["Cunning"], cost: 2, abilities: [{ repeat: "constant", text: "While you control a Kashyyyk base, this unit gains Ambush." }] });
+    const origin = mk("OT", "Origin Tree", { type: "Base", icons: ["Command"], traits: ["Kashyyyk"] });
+    const jundland = mk("JW", "Jundland Wastes", { type: "Base", icons: ["Command"], traits: ["Tatooine"] });
+    const fx = createSynergyContext([leader, origin, jundland, dragon, cell, want, tail], t, file);
+    const at = (base: string, key: string) => body(findPairings(fx, { cardKey: "W", direction: "enablers", leader: "LK", base, withAlternatives: false, evidence: false })).pairings.find((p: any) => p.cardKey === key);
+    expect(at("OT", "RD")).toMatchObject({ baseLocked: "Tatooine" });
+    expect(at("JW", "RD")).not.toHaveProperty("baseLocked");
+    expect(at("OT", "SC")).not.toHaveProperty("baseLocked");
+    expect(at("JW", "SC")).toMatchObject({ baseLocked: "Kashyyyk" });
   });
 });
