@@ -19,6 +19,22 @@ const luminara = mk("P2", "Luminara Unduli", {
   traits: ["Force", "Jedi", "Republic"],
   aspects: ["Vigilance"],
 });
+// D62: the play-trigger-payoff example is a free play; Jedi Consular's "costs 2 resources less" pays, so it is paid-play-trigger now.
+const dathomiriMagicks = mk("P6", "Dathomiri Magicks", {
+  type: "Event",
+  offers: ["offers:play-from-discard"],
+  why: { "offers:play-from-discard": "text: Play up to 3 non-Vehicle units that each cost 2 or less from your discard pile for free." },
+  abilities: abilityText("Play up to 3 non-Vehicle units that each cost 2 or less from your discard pile for free."),
+  traits: ["Force"],
+  aspects: ["Command", "Villainy"],
+});
+const insurgentCamp = mk("P7", "Insurgent Camp", {
+  type: "Upgrade",
+  wants: ["wants:units-played"],
+  why: { "wants:units-played": "When you play a unit with 3 or less power" },
+  traits: ["Fortification"],
+  aspects: ["Cunning", "Heroism"],
+});
 const kelleran = mk("P3", "Kelleran Beq", {
   offers: ["offers:tutor-to-play"],
   why: { "offers:tutor-to-play": "text: Search the top 7 cards of your deck for a unit, reveal it, and play it." },
@@ -101,7 +117,7 @@ describe("pilot-attach-trigger and upgrade-return-reattach (pilot attached)", ()
     expect(rowsOf([fullOfSurprises, redLeader], "Q6", "Q4")).toContain("upgrade-return-reattach");
   });
   it("matches the documented example pairs to their rows", () => {
-    const g = buildPairGraph([r2d2, redLeader, anakin, jediConsular, luminara], COMMITTED_TABLE);
+    const g = buildPairGraph([r2d2, redLeader, anakin, jediConsular, luminara, dathomiriMagicks, insurgentCamp], COMMITTED_TABLE);
     const byRow = new Map(g.exampleChecks.map((c) => [c.row, c.matches]));
     expect(byRow.get("play-trigger-payoff")).toBe(true);
     expect(byRow.get("pilot-attach-trigger")).toBe(true);

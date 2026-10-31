@@ -1,3 +1,4 @@
+import { SELF_GAINS } from "../ability-grammar/tags.js";
 import { cmp } from "./order.js";
 import type { SynergyCard } from "./schema.js";
 
@@ -84,6 +85,8 @@ export interface TagQualifier {
   attach?: AttachBound;
   /** The wanting card is the one that receives the upgrade or token ("while this unit is upgraded"), so the offer's target restriction binds it. */
   receives?: boolean;
+  /** The want comes from a condition on what an opponent controls ("if an opponent controls an upgrade"), so only an offer that can act on the opponent's side feeds it (D62). */
+  opponentControls?: boolean;
 }
 
 interface TargetLite {
@@ -124,6 +127,9 @@ const EMPTY: Subject = { traits: [], notTraits: [] };
 const ATTACK_TRIGGERS = new Set(["on_attack", "on_defense", "attack_end", "on_attack_kill", "on_base_hit"]);
 const FACE_PREFIX = /^([A-Za-z]+): ([\s\S]*)$/;
 
+/** The clause gives the card itself a keyword ("this unit gains Raid 1"), so an extra-attacks want it carries is bound to that card (D62). */
+const grantsItself = (clause: ClauseLite | undefined): boolean =>
+  clause !== undefined && SELF_GAINS.test(clause.text) && clause.effects.some((e) => e.cat === "grant_keyword" && e.target?.side === "self");
 const clausesOf = (a: AbilityNode): ClauseLite[] => [...(a.clauses ?? []), ...(a.options ?? []).flatMap((o) => o.clauses)];
 
 function* abilitiesOf(nodes: readonly unknown[], forAttackOnly = false): Generator<{ ability: AbilityNode; forAttackOnly: boolean }> {
@@ -278,6 +284,21 @@ function printedKeywords(card: SynergyCard): string[] {
 const RECEIVING_WANTS = new Set(["wants:upgrades-attached", "wants:pilot-attached"]);
 /** A want that counts upgrades wherever they sit ("you control 2 or more upgrades") or on a base, which a Fortify upgrade can feed. */
 const BASE_OR_ANY_UPGRADE = /\bupgrades? (?:you control|on (?:your|a friendly) base)\b|\bcontrol (?:\d+ or more |an? |any )?upgrades?\b/i;
+/** Wants the tag builder reads off a control or "for each" condition, which can name what an opponent controls. */
+const CONDITION_WANTS = new Set(["wants:upgrades-attached", "wants:tokens", "wants:damaged-units", "wants:exhausted-own", "wants:exhausted-resources", "wants:wide-board"]);
+const OPPONENT_CONTROLS = /\b(?:an|each|that) opponent controls?\b|\bthe defending player controls\b/i;
+const YOU_CONTROL = /\byou control\b/i;
+const OWN_SIDE_TAG = /-(?:friendly|own|self)(?:-|$)/;
+
+/**
+ * The offer acts only on its own player's side: the tag or the target says so, it acts on the card itself, or the clause
+ * names only friendly things. An upgrade you play stays yours on any unit (CR: "If a player plays an upgrade onto an enemy
+ * unit, that player still controls that upgrade"), so attaching one never gives an opponent an upgrade.
+ */
+function actsOnOwnSide(offerTag: string, offer: TagQualifier): boolean {
+  if (OWN_SIDE_TAG.test(offerTag) || offer.onSelf || offer.subject.side === "friendly" || offerTag === "offers:upgrade-to-attach") return true;
+  return offer.subject.side === undefined && /\bfriendly\b/i.test(offer.text) && !/\b(?:enemy|opponent)/i.test(offer.text);
+}
 const ON_THIS_UNIT = /\b(?:this unit is upgraded|upgrades? (?:on|attach(?:es)? to) (?:this unit|him|her)\b|upgrade on this unit)/i;
 
 /** Token name to printed traits, from the Token Unit cards in the set. */
@@ -362,17 +383,24 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   const hostAbility = side === "wants" && (clause?.conditions ?? []).some((k) => k.cat === "self_state" && k.state === "upgraded");
   const attach = side === "offers" && tag === "offers:upgrade-to-attach" ? attachBound(card) : undefined;
   const receives = side === "wants" && RECEIVING_WANTS.has(tag) && (hostAbility || ON_THIS_UNIT.test(`${text} ${triggerText}`));
+  const opponentControls = side === "wants" && CONDITION_WANTS.has(tag) && OPPONENT_CONTROLS.test(text) && !YOU_CONTROL.test(text);
   return {
     subject,
     triggers,
     scope: side === "wants" ? scopeOf(`${triggerText} ${text}`) : undefined,
     forAttackOnly: side === "wants" && forAttackOnly,
     viaCat,
-    onSelf: side === "offers" ? SELF_OFFERS.has(tag) : SELF_WANTS.has(tag) || (tag === "wants:heal" && /\bthis unit\b/i.test(triggerText)) || (tag === "wants:extra-attacks" && ATTACK_TRIGGERS.has(payload)),
+    onSelf:
+      side === "offers"
+        ? SELF_OFFERS.has(tag)
+        : SELF_WANTS.has(tag) ||
+          (tag === "wants:heal" && /\bthis unit\b/i.test(triggerText)) ||
+          (tag === "wants:extra-attacks" && (ATTACK_TRIGGERS.has(payload) || grantsItself(clause))),
     text,
     hostAbility,
     ...(attach === undefined ? {} : { attach }),
     ...(receives ? { receives } : {}),
+    ...(opponentControls ? { opponentControls } : {}),
   };
 }
 
@@ -443,6 +471,9 @@ export function conflictBetween(
   }
   if ((offerConcrete === undefined || wantConcrete === undefined) && touched.arena !== undefined && needed.arena !== undefined && touched.arena !== needed.arena) {
     return `the offer reaches ${touched.arena} only, the want is ${needed.arena}`;
+  }
+  if (want.opponentControls === true && actsOnOwnSide(offerTag, offer)) {
+    return "the want counts what an opponent controls, the offer acts on your own side";
   }
   if (touched.side !== undefined && needed.side !== undefined && touched.side !== needed.side) {
     return `the offer acts on ${touched.side} things, the want is ${needed.side}`;

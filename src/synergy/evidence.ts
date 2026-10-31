@@ -33,7 +33,7 @@ export function edgeEvidence(a: SynergyCard, b: SynergyCard, rows: readonly Pair
   const seen = new Set<string>();
   const out: RowEvidence[] = [];
   for (const r of rows) {
-    const entry = { offer: tagEvidence(a, r.offer), want: tagEvidence(b, r.want) };
+    const entry = { offer: r.offerWhy === undefined ? tagEvidence(a, r.offer) : clip(r.offerWhy), want: r.wantWhy === undefined ? tagEvidence(b, r.want) : clip(r.wantWhy) };
     const key = `${entry.offer}\u0000${entry.want}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -72,8 +72,8 @@ export function sourcedEvidenceOf(e: PairEdge, byKey: ReadonlyMap<string, Synerg
   const seen = new Set<string>();
   const out: SourcedEvidence[] = [];
   for (const r of rows) {
-    const offer = sourcedTag(a, r.offer, curated);
-    const want = sourcedTag(b, r.want, curated);
+    const offer = r.offerWhy === undefined ? sourcedTag(a, r.offer, curated) : { text: clip(r.offerWhy), curated: false };
+    const want = r.wantWhy === undefined ? sourcedTag(b, r.want, curated) : { text: clip(r.wantWhy), curated: false };
     const source: EvidenceSource = offer.curated ? (want.curated ? "curated" : "curated offer") : want.curated ? "curated want" : "grammar";
     const key = `${offer.text}\u0000${want.text}`;
     if (seen.has(key)) continue;

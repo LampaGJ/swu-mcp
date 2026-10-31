@@ -42,7 +42,17 @@ const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
 /** Every effect of the clause that reads the discard pile returns the card itself. */
 const onlyReturnsItself = (c: SwuClause): boolean =>
   c.effects.some((e) => e.cat === "recursion") && c.effects.every((e) => !DISCARD_READERS.has(e.cat) || returnsItself(c, e));
+/**
+ * A play pays the card's cost unless the clause makes it free (CR: "Abilities that let you play a card require you to pay
+ * that card's cost unless specified otherwise"). "For free" is the only zero-cost wording printed; the grammar reads it as a
+ * cost reduction of "all". A partial reduction or an ignored aspect penalty still pays (D62).
+ */
+const playsFree = (c: SwuClause): boolean => c.effects.some((e) => e.cat === "cost_reduction" && e.n === "all");
 const EXHAUSTED_RESOURCES = /\bresources? you control (?:is|are) exhausted\b|\bexhausted resources?\b/i;
+/** Keywords that act only while the unit attacks (CR: Raid, Overwhelm, Saboteur, Restore); one a unit gives itself pays off per attack, like an On Attack (D62). */
+const ATTACK_KEYWORDS = new Set(["Raid", "Overwhelm", "Saboteur", "Restore"]);
+/** The grammar marks "attached unit", a referenced "it" and "each friendly unit" as self too, so the clause must say the card gains it. */
+export const SELF_GAINS = /\bthis unit (?:gets [^.;]*? and )?gains\b/i;
 const ONE_SHOT_GRANT = /\bfor this (?:attack|phase|round)\b|\bthe next\b/i;
 const SEARCH_OFFER: Record<string, string> = {
   deck_top: "offers:tutor-to-deck",
@@ -222,7 +232,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
               const zone = e.zone ?? "";
               if (/discard/.test(zone)) { add(offers, "offers:play-from-discard", why); if (!SELF_DISCARD.test(c.text)) add(wants, "wants:cards-in-discard", why); }
               else if (/resources/.test(zone)) add(offers, "offers:play-from-resources", why);
-              else add(offers, c.modifiers.some((m) => m.cat === "pays_cost") ? "offers:paid-play" : "offers:cheat-play", why);
+              else add(offers, playsFree(c) ? "offers:cheat-play" : "offers:paid-play", why);
               if (/(?<!non-)\bunits?\b/.test(typeof e.what === "string" ? e.what : "")) add(offers, "offers:units-entering", why);
               break;
             }
@@ -234,6 +244,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "stat_mod": if (e.sign === "buff" && p !== "enemy") add(offers, "offers:buff", why); break;
             case "grant_keyword":
               for (const k of e.keywords ?? []) if (p !== "enemy") add(offers, `offers:grant-${keywordName(k).toLowerCase()}`, why);
+              if (SELF_GAINS.test(c.text) && p === "self" && wantsExtraAttacks && (e.keywords ?? []).some((k) => ATTACK_KEYWORDS.has(keywordName(k)))) add(wants, "wants:extra-attacks", why);
               break;
             case "attach": if (e.rule === "attach_self") add(offers, "offers:upgrade-to-attach", why); break;
             case "cost_reduction": if (/credit/i.test(c.text)) add(wants, "wants:credit-tokens", why); break;

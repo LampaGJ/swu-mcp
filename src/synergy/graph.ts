@@ -1,5 +1,6 @@
 import { compareCodePoints } from "../swu/canonical.js";
 import { cmp, r3 } from "./order.js";
+import { nameReferences } from "./names.js";
 import { boardTraits, conflictBetween, offerTraitNeeds, qualifierOf, type TagQualifier } from "./qualifiers.js";
 import type { ComplementarityRow, ComplementarityTable, NonObviousness, PairEdge, PairRowHit, SynergyCard, TraitsMode } from "./schema.js";
 
@@ -38,6 +39,8 @@ export interface PairGraph {
   qualifier(cardKey: string, side: "offers" | "wants", tag: string): TagQualifier | undefined;
   rowCounts: Readonly<Record<string, number>>;
   exampleChecks: readonly ExampleCheck[];
+  /** Want tags the table marks fed by every deck that plays cards at all (`genericallyFed`, D62). */
+  genericallyFed: ReadonlySet<string>;
 }
 
 export const TRAIT_ROW = "trait-reference";
@@ -172,9 +175,36 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
   const edges = new Map<string, PairEdge>();
   const conditional = new Map<string, PairEdge>();
   const rowCounts: Record<string, number> = {};
+  const edgeFor = (target: Map<string, PairEdge>, a: string, b: string): PairEdge =>
+    target.get(`${a}>${b}`) ?? {
+      a,
+      b,
+      rows: [],
+      link: 0,
+      mechanicalLink: 0,
+      traitLink: 0,
+      linkKind: "mechanical",
+      nonObvious: { aspects: 0, traits: 0, wording: 0, factor: 0 },
+      traitOnly: false,
+      score: 0,
+    };
   for (const row of rows) {
     const offerTags = Object.keys(row.offers);
     const wantTags = Object.keys(row.wants);
+    if (row.family === "name") {
+      const [offer, want] = [offerTags.sort(cmp)[0], wantTags.sort(cmp)[0]];
+      const weight = r3(row.strength * row.offers[offer] * row.wants[want]);
+      let named = 0;
+      for (const ref of nameReferences(cards)) {
+        const e = edgeFor(edges, ref.a, ref.b);
+        e.rows.push({ row: row.id, baseId: row.baseId, offer, want, weight, reason: row.reason, offerWhy: ref.why, wantWhy: `title: ${ref.title}` });
+        e.mechanicalLink = r3(e.mechanicalLink + weight);
+        edges.set(`${ref.a}>${ref.b}`, e);
+        named++;
+      }
+      rowCounts[row.baseId] = (rowCounts[row.baseId] ?? 0) + named;
+      continue;
+    }
     const offerers = cards.filter((c) => offerTags.some((t) => offersOf.get(c.cardKey)?.has(t)));
     const wanters = cards.filter((c) => wantTags.some((t) => wantsOf.get(c.cardKey)?.has(t)));
     let n = 0;
@@ -191,18 +221,7 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
         if (needs.length === 0) n++;
         const k = `${a.cardKey}>${b.cardKey}`;
         const ww = Math.max(...hitWants.map((t) => row.wants[t]));
-        const e: PairEdge = target.get(k) ?? {
-          a: a.cardKey,
-          b: b.cardKey,
-          rows: [],
-          link: 0,
-          mechanicalLink: 0,
-          traitLink: 0,
-          linkKind: "mechanical",
-          nonObvious: { aspects: 0, traits: 0, wording: 0, factor: 0 },
-          traitOnly: false,
-          score: 0,
-        };
+        const e = edgeFor(target, a.cardKey, b.cardKey);
         e.rows.push({
           row: row.id,
           baseId: row.baseId,
@@ -256,6 +275,7 @@ export function buildPairGraph(cards: readonly SynergyCard[], table: Complementa
       return c === undefined ? undefined : qualifier(c, side, tag);
     },
     exampleChecks,
+    genericallyFed: new Set((table.genericallyFed ?? []).map((g) => g.tag)),
     rowCounts: Object.fromEntries(
       Object.keys(rowCounts)
         .sort(cmp)

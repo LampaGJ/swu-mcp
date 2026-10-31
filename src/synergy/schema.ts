@@ -29,7 +29,8 @@ export type ReasonBySide = z.infer<typeof reasonBySideSchema>;
 
 export const complementarityRowSchema = z.strictObject({
   id: z.string().min(1),
-  family: z.literal("trait").optional(),
+  /** "trait": expanded per trait; "name": links a card to the cards its text names by title (D62), never matched by tag. */
+  family: z.enum(["trait", "name"]).optional(),
   offers: tagWeights,
   // The trait family row lists its wants as bare tag patterns; it is expanded per trait and never read as a record.
   wants: z.union([tagWeights, z.array(z.string())]),
@@ -44,12 +45,16 @@ export type ComplementarityRow = z.infer<typeof complementarityRowSchema>;
 /** An offer tag the table decides feeds no want, with the reason, so an uncovered tag is a choice and not a gap. */
 export const feedsNothingSchema = z.strictObject({ tag: z.string().min(1), note: z.string().min(1) });
 
+/** A want tag every deck feeds by playing cards at all (paying costs exhausts resources), with the reason (D62). */
+export const genericallyFedSchema = z.strictObject({ tag: z.string().startsWith("wants:"), note: z.string().min(1) });
+
 export const complementarityTableSchema = z.strictObject({
   schemaVersion: z.literal(SYNERGY_TABLE_SCHEMA_VERSION),
   tableVersion: z.number().int().positive(),
   note: z.string().optional(),
   rows: z.array(complementarityRowSchema).min(1),
   feedsNothing: z.array(feedsNothingSchema).optional(),
+  genericallyFed: z.array(genericallyFedSchema).optional(),
 });
 export type ComplementarityTable = z.infer<typeof complementarityTableSchema>;
 
@@ -98,6 +103,9 @@ export interface PairRowHit {
   want: string;
   weight: number;
   reason: string;
+  /** Evidence a row reads off the card text rather than a tag (the name family): the naming clause and the named title. */
+  offerWhy?: string;
+  wantWhy?: string;
 }
 
 export interface NonObviousness {

@@ -33,7 +33,7 @@ The server downloads its data from a GitHub Release pinned by `src/data-release.
 
 ## Accuracy, honestly
 
-Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings are about 74% precise on pairs-v1 (docs/verification/2026-10-17-pair-fixture.md): about 70% for mechanical links and about 94% for trait-only links, which rank separately (#24), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
+Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings are about 79% precise on pairs-v1 (docs/verification/2026-10-17-pair-fixture.md): about 76% for mechanical links and about 94% for trait-only links, which rank separately (#24), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
 
 ## Play-data precedence (owner rule, 2026-10-17)
 

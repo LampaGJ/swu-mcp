@@ -658,8 +658,10 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   );
   // A wide-board want is fed by the deck's own unit count, so it is no orphan once the deck holds the units it asks for.
   const boardFed = (l: DeckLine, want: string): boolean => want === "wants:wide-board" && unitCopies >= wideBoardNeed(l.syn);
+  // A want the table marks generically fed (paying any cost exhausts resources) is fed by playing the deck at all (D62).
+  const fedByAnyDeck = env.ctx.graph.genericallyFed;
   const orphanWants = lines.flatMap((l) => {
-    const wants = wantsOf(l.syn).filter((w) => !boardFed(l, w));
+    const wants = wantsOf(l.syn).filter((w) => !boardFed(l, w) && !fedByAnyDeck.has(w));
     if (wants.length === 0) return [];
     const all = into.get(l.syn.cardKey) ?? [];
     const feeding = (tags: readonly string[]): PairEdge[] => all.filter((e) => e.rows.some((r) => tags.includes(r.want)));
@@ -686,7 +688,7 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
       : `${[...genericHolders.entries()]
           .sort(([a], [b]) => compareCodePoints(a, b))
           .map(([w, cards]) => `${w} (${cards.length} ${cards.length === 1 ? "card" : "cards"}): ${cards.join("; ")}`)
-          .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card.`;
+          .join(" | ")}. Generic wants (any When Played, On Attack or When Defeated, or fed by more than ${GENERIC_FEEDER_SHARE * 100}% of main-deck cards) are not listed per card. Wants every deck feeds by playing cards at all (${[...fedByAnyDeck].sort(compareCodePoints).join(", ") || "none"}) are never listed.`;
 
   const leaderComparison = leaderComparisonOf(env, lines, leaderData, supplied);
   const clusterGaps = clusterGapRows(env, lines, supplied, args.gapLimit, leaderData);

@@ -1,8 +1,21 @@
 {
  "schemaVersion": 1,
  "tableVersion": 4,
- "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note.",
+ "note": "Committed, reviewed input (issue #325). Each row: offers tags (with per-tag weight for polarity) feed wants tags. A pair A->B is emitted when A carries any row offer and B carries any row want, A != B. Example pairs are documentation, checked by the pairing step to actually match the row. feedsNothing lists the offer tags reviewed in #14 that feed no want, each with the reason; the run report lists any offer tag with neither a row nor a note. genericallyFed lists the want tags every deck feeds by playing cards at all (D62): deck_audit never calls such a want an orphan, and pairings keep only the row feeders that supply it beyond that. The name family links a card whose text names another card by its title (D62).",
  "rows": [
+  {
+   "id": "name-reference",
+   "family": "name",
+   "offers": {
+    "offers:name-reference": 1
+   },
+   "wants": {
+    "wants:named-card": 1
+   },
+   "strength": 1.5,
+   "reason": "The card's text names the other card by its title, so it is built for that card; the strongest link.",
+   "example": null
+  },
   {
    "id": "sac-outlet-when-defeated",
    "offers": {
@@ -305,8 +318,8 @@
    "strength": 0.8,
    "reason": "Putting a unit into play from hand, discard, resources or the deck still counts as playing it, which triggers 'when you play a unit' payoffs.",
    "example": [
-    "Jedi Consular",
-    "Luminara Unduli"
+    "Dathomiri Magicks",
+    "Insurgent Camp"
    ]
   },
   {
@@ -569,6 +582,12 @@
   {
    "tag": "offers:ready-resource",
    "note": "Readying a resource lowers the count of exhausted resources, so it works against wants:exhausted-resources, and it adds no resource toward a 'control N or more resources' threshold. Reviewed #145 (D58), decided no row."
+  }
+ ],
+ "genericallyFed": [
+  {
+   "tag": "wants:exhausted-resources",
+   "note": "Paying for any card exhausts resources, so every deck feeds a count of exhausted resources by playing cards at all. Only a card that exhausts a resource without paying (Mandalorian Scout) is a specific feeder, through exhaust-resource-payoff. Reviewed #153 (D62)."
   }
  ]
 }
