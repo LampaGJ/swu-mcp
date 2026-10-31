@@ -8,6 +8,8 @@ import { createServer } from "../../src/create-server.js";
 import { loadStore } from "../../src/data.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { aspectCover, deferRepeatedLinks, explainSynergy, findPairings, findTrios, fungibleSubstitutes, SYNERGY_TOOLS } from "../../src/tools/synergy.js";
+import { offerTargetSide } from "../../src/synergy/qualifiers.js";
+import type { SynergyCard } from "../../src/synergy/schema.js";
 import { indexLeaderCards } from "../../src/meta/schema.js";
 import type { ToolResult } from "../../src/tools.js";
 import { COMMITTED_TABLE, mk, table } from "./fixtures.js";
@@ -487,7 +489,13 @@ describe("fungible_substitutes widening", () => {
 });
 
 /** A small leader-cards.json (meta/leader-cards.json shape, src/meta/schema.ts leaderCardsFileSchema). */
-const leaderCardsFile = (leaderKey: string, title: string, aspects: string[], rows: [string, number][]) =>
+const leaderCardsFile = (
+  leaderKey: string,
+  title: string,
+  aspects: string[],
+  rows: [string, number][],
+  topBase: { cardKey: string; title: string; decks: number } | null = null,
+) =>
   indexLeaderCards({
     schemaVersion: 1,
     window: { from: "2026-07-20", to: "2026-10-17", days: 90 },
@@ -502,7 +510,7 @@ const leaderCardsFile = (leaderKey: string, title: string, aspects: string[], ro
         decks: 12,
         weight: 10.5,
         window: { from: "2026-07-20", to: "2026-10-17" },
-        topBase: null,
+        topBase,
         cards: rows.map(([cardKey, inclusion]) => ({ cardKey, title: cardKey, inclusion, meanCopies: 2, baselineInclusion: 0.1, lift: inclusion - 0.1 })),
       },
     ],
@@ -728,5 +736,176 @@ describe("fungible_substitutes ordering and keyword roles", () => {
     expect(out.leader.note).toMatch(/no decklist data/);
     expect(out.roles[0].substitutes[0].cards[0].leaderInclusion).toBeNull();
     expect(fungibleSubstitutes(bare, { cardKey: "slot", leader: "nope" }).isError).toBe(true);
+  });
+});
+
+describe("side-aware pair reasons (#121)", () => {
+  const pinger = (key: string, title: string, tag: string, side: string) =>
+    unit(key, title, ["Aggression"], 2, {
+      offers: [tag],
+      why: { [tag]: `text: ${title} pings` },
+      abilities: [{ repeat: "once_on_play", text: `${title} pings`, n: 1, effect: { cat: "damage", target: { side } } }],
+    });
+  const sideCards = [
+    pinger("E", "Enemy Pinger", "offers:damage-any-unit", "enemy"),
+    pinger("A", "Any Pinger", "offers:damage-any-unit", "any"),
+    pinger("F", "Own Pinger", "offers:damage-any-unit", "friendly"),
+    unit("G", "Grit Unit", ["Aggression"], 3, { wants: ["wants:self-damaged"] }),
+    unit("K", "Finisher", ["Aggression"], 3, { wants: ["wants:damaged-units"] }),
+    mk("SL", "Side Leader", { type: "Leader", icons: ["Aggression", "Villainy"] }),
+    mk("SB", "Side Base", { type: "Base", icons: ["Aggression"] }),
+  ];
+  const sideCtx = createSynergyContext(sideCards, COMMITTED_TABLE);
+  const reasonOf = (from: string, to: string): string =>
+    body(findPairings(sideCtx, { cardKey: from, direction: "payoffs", withAlternatives: false })).pairings.find((p: any) => p.cardKey === to).reason;
+
+  it("words an enemy-target damage offer as a finisher setup, not as Grit", () => {
+    expect(reasonOf("E", "K")).toBe("Damage on an enemy unit sets up a finisher that wants a damaged target.");
+    expect(reasonOf("E", "G")).not.toContain("your own unit");
+  });
+
+  it("keeps the own-unit wording when the offer lands on a friendly unit", () => {
+    expect(reasonOf("F", "G")).toBe("Damaging your own unit switches on Grit, 'while damaged' and damage-taken triggers.");
+  });
+
+  it("uses the any wording when the clause says a unit, naming both sides", () => {
+    const text = reasonOf("A", "K");
+    expect(text).toContain("an enemy's or your own");
+    expect(text).toContain("a finisher that wants any damaged target");
+  });
+
+  it("lets a tag that names a side win over the first effect of its clause", () => {
+    const mixed = createSynergyContext(
+      [
+        unit("M", "Mixed Pinger", ["Aggression"], 2, {
+          offers: ["offers:damage-enemy-unit"],
+          why: { "offers:damage-enemy-unit": "text: Mixed Pinger pings" },
+          abilities: [{ repeat: "once_on_play", text: "Mixed Pinger pings", n: 1, effect: { cat: "damage", target: { side: "friendly" } } }],
+        }),
+        sideCards[4],
+        sideCards[5],
+        sideCards[6],
+      ],
+      table([{ id: "r", offers: { "offers:damage-enemy-unit": 1 }, wants: { "wants:damaged-units": 1 } }]),
+    );
+    expect(mixed.graph.edges).toHaveLength(1);
+    expect(offerTargetSide(mixed.graph.byKey.get("M") as SynergyCard, "offers:damage-enemy-unit")).toBe("enemy");
+  });
+
+  it("reads the tag name when the clause states no side, and falls back to reason for a row without variants", () => {
+    const named = createSynergyContext(
+      [unit("P", "Named Pinger", ["Aggression"], 2, { offers: ["offers:damage-friendly-unit"] }), sideCards[3], sideCards[5], sideCards[6]],
+      COMMITTED_TABLE,
+    );
+    expect(body(findPairings(named, { cardKey: "P", withAlternatives: false })).pairings[0].reason).toContain("Damaging your own unit");
+    const plain = createSynergyContext(
+      [unit("X", "Healer", ["Aggression"], 2, { offers: ["offers:heal"] }), unit("Y", "Heal Payoff", ["Aggression"], 2, { wants: ["wants:heal"] }), sideCards[5], sideCards[6]],
+      COMMITTED_TABLE,
+    );
+    expect(body(findPairings(plain, { cardKey: "X", withAlternatives: false })).pairings[0].reason).toBe("Healing triggers 'when damage is healed' payoffs.");
+  });
+
+  it("changes no edge: the link, score and rank match the same table without variants", () => {
+    const stripped = { ...COMMITTED_TABLE, rows: COMMITTED_TABLE.rows.map((row) => ({ ...row, reasonBySide: undefined })) };
+    const plainCtx = createSynergyContext(sideCards, stripped);
+    const drop = (o: Record<string, any>) => o.pairings.map((p: Record<string, any>) => ({ ...p, reason: undefined }));
+    for (const key of ["E", "A", "F", "K"]) {
+      expect(drop(body(findPairings(sideCtx, { cardKey: key })))).toEqual(drop(body(findPairings(plainCtx, { cardKey: key }))));
+    }
+  });
+
+  it("explain_synergy words each row by its side too", () => {
+    const rows = body(explainSynergy(sideCtx, { cardKeys: ["E", "K"] })).links[0].rows;
+    expect(rows[0].reason).toBe("Damage on an enemy unit sets up a finisher that wants a damaged target.");
+  });
+});
+
+describe("a Leader cardKey defaults the leader weighting (#121)", () => {
+  const withBase = [
+    ...cards,
+    mk("BN", "Nevarro Base", { type: "Base", icons: ["Command"] }),
+    mk("LP", "Pinger Leader", {
+      type: "Leader",
+      icons: ["Aggression", "Villainy"],
+      cost: 4,
+      offers: ["offers:damage-friendly-unit"],
+      why: { "offers:damage-friendly-unit": "text: Pinger Leader text" },
+    }),
+  ];
+  const plainLeaderCtx = createSynergyContext(withBase, COMMITTED_TABLE);
+  const leaderCtx = createSynergyContext(
+    withBase,
+    COMMITTED_TABLE,
+    leaderCardsFile("LP", "Pinger Leader", ["Aggression", "Villainy"], [["5", 0.8]], { cardKey: "BN", title: "Nevarro Base", decks: 40 }),
+  );
+
+  it("find_pairings defaults leader to the Leader cardKey and base to its top base, and says so", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "LP" }));
+    expect(out.leader).toMatchObject({ cardKey: "LP", defaulted: true, population: "tournament" });
+    expect(out.leader.base).toMatchObject({ cardKey: "BN", title: "Nevarro Base", defaulted: true });
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy+Command")).toBe(true);
+    expect(out.pairings.every((p: any) => "leaderInclusion" in p)).toBe(true);
+  });
+
+  it("weights the rank by the leader's decklists and puts the played partner first", () => {
+    const withLeader = body(findPairings(leaderCtx, { cardKey: "LP" }));
+    expect(withLeader.pairings.find((p: any) => p.cardKey === "5").leaderInclusion).toBe(0.8);
+    expect(withLeader.pairings[0].cardKey).toBe("5");
+  });
+
+  it("weighting: none restores the unweighted answer with no leader block", () => {
+    const none = findPairings(leaderCtx, { cardKey: "LP", weighting: "none" });
+    expect(none.content[0].text).toBe(findPairings(plainLeaderCtx, { cardKey: "LP" , weighting: "none" }).content[0].text);
+    expect(body(none)).not.toHaveProperty("leader");
+  });
+
+  it("an explicit leader is not marked defaulted, and an explicit base wins over the top base", () => {
+    const explicit = body(findPairings(leaderCtx, { cardKey: "LP", leader: "LP" }));
+    expect(explicit.leader).not.toHaveProperty("defaulted");
+    expect(explicit.leader).not.toHaveProperty("base");
+    const chosen = body(findPairings(leaderCtx, { cardKey: "LP", base: "BV" }));
+    expect(chosen.leader).toMatchObject({ defaulted: true, base: { cardKey: "BV" } });
+    expect(chosen.leader.base).not.toHaveProperty("defaulted");
+  });
+
+  it("weighting: none with an explicit leader keeps the aspects but drops the inclusion weighting", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "1", leader: "LP", weighting: "none" }));
+    expect(out.pairings.every((p: any) => !("leaderInclusion" in p))).toBe(true);
+    expect(out.pairings.every((p: any) => p.aspectPair === "icons Aggression+Villainy")).toBe(true);
+    expect(out.leader.note).toContain("weighting: none");
+  });
+
+  it("a Leader without decklist data still defaults the leader and its aspects", () => {
+    const out = body(findPairings(leaderCtx, { cardKey: "L2" }));
+    expect(out.leader).toMatchObject({ cardKey: "L2", defaulted: true });
+    expect(out.leader.note).toContain("no decklist data");
+  });
+
+  it("a non-Leader cardKey is unchanged", () => {
+    expect(findPairings(leaderCtx, { cardKey: "5" }).content[0].text).toBe(findPairings(plainLeaderCtx, { cardKey: "5" }).content[0].text);
+  });
+
+  const trioCards = [
+    mk("L", "Leader", { type: "Leader", icons: ["Command", "Heroism"] }),
+    mk("Z", "Command Base", { type: "Base", icons: ["Command"] }),
+    mk("1", "Alpha", { offers: ["offers:x"], aspects: ["Command"], cost: 2 }),
+    mk("2", "Bravo", { wants: ["wants:x"], offers: ["offers:y"], aspects: ["Command"], cost: 3 }),
+    mk("3", "Charlie", { wants: ["wants:y"], aspects: ["Command"], cost: 3 }),
+  ];
+  const trioTable = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+  ]);
+  const trioCtx = createSynergyContext(trioCards, trioTable, leaderCardsFile("L", "Leader", ["Command", "Heroism"], [["1", 0.5]], { cardKey: "Z", title: "Command Base", decks: 9 }));
+
+  it("find_trios defaults the leader and base from a Leader cardKey, and weighting: none restores the plain answer", () => {
+    const out = body(findTrios(trioCtx, { cardKey: "L", includeLeaders: true }));
+    expect(out.leader).toMatchObject({ cardKey: "L", defaulted: true, base: { cardKey: "Z", defaulted: true } });
+    const none = findTrios(trioCtx, { cardKey: "L", includeLeaders: true, weighting: "none" });
+    expect(none.content[0].text).toBe(findTrios(createSynergyContext(trioCards, trioTable), { cardKey: "L", includeLeaders: true, weighting: "none" }).content[0].text);
+  });
+
+  it("find_trios from a non-Leader cardKey adds no leader", () => {
+    expect(body(findTrios(trioCtx, { cardKey: "1" }))).not.toHaveProperty("leader");
   });
 });

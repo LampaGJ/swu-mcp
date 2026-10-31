@@ -291,6 +291,18 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   };
 }
 
+/**
+ * Where an offer's effect lands: the side the tag names (`damage-friendly-unit`; one clause can make a friendly and an
+ * enemy tag, so the tag wins), else the side the clause states, else "any" ("deal 1 damage to a unit").
+ */
+export function offerTargetSide(card: SynergyCard, tag: string): "enemy" | "own" | "any" {
+  if (/-(?:friendly|own|self)(?:-|$)/.test(tag)) return "own";
+  if (/-enemy(?:-|$)/.test(tag)) return "enemy";
+  const why = card.tags.offers.find((t) => t.tag === tag)?.why ?? "";
+  const stated = qualifierOf(card, "offers", tag, why).subject.side;
+  return stated === undefined ? "any" : stated === "friendly" ? "own" : "enemy";
+}
+
 /** True when the card is an upgrade that strips the abilities of the unit it attaches to. */
 function blanksHost(c: SynergyCard): boolean {
   return Object.keys(c.faces).some((f) =>

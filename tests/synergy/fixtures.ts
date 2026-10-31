@@ -21,7 +21,7 @@ interface CardSpec {
   offers?: string[];
   wants?: string[];
   /** One ability per entry: repeat class, clause text, optional effect magnitude. */
-  abilities?: { repeat: string; text: string; n?: number | string; trigger?: string; triggerText?: string }[];
+  abilities?: { repeat: string; text: string; n?: number | string; trigger?: string; triggerText?: string; effect?: { cat: string; target: { side: string } } }[];
   /** Tag -> why, when the test needs the origin lookup to find an ability. */
   why?: Record<string, string>;
   subtitle?: string | null;
@@ -48,7 +48,7 @@ export function mk(cardKey: string, title: string, spec: CardSpec = {}): Synergy
         kind: "ability",
         repeat: a.repeat,
         triggers: a.trigger === undefined ? [] : [{ trigger: a.trigger, text: a.triggerText }],
-        clauses: [{ text: a.text, effects: a.n === undefined ? [] : [{ n: a.n }], conditions: [] }],
+        clauses: [{ text: a.text, effects: [...(a.n === undefined ? [] : [{ n: a.n }]), ...(a.effect === undefined ? [] : [a.effect])], conditions: [] }],
         options: [],
         grantedAbilities: [],
       })),

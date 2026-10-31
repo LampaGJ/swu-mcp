@@ -15,6 +15,18 @@ export const SYNERGY_TABLE_SCHEMA_VERSION = 1;
 
 const tagWeights = z.record(z.string(), z.number().positive());
 
+/** Which side of the board an offer's effect lands on: an enemy unit, the player's own, or either (the clause says "a unit"). */
+export const REASON_SIDES = ["enemy", "own", "any"] as const;
+export type ReasonSide = (typeof REASON_SIDES)[number];
+
+/** A reason per target side, for a row whose wording depends on where the offer lands (LampaGJ/swu-mcp#121). */
+export const reasonBySideSchema = z.strictObject({
+  enemy: z.string().min(1).optional(),
+  own: z.string().min(1).optional(),
+  any: z.string().min(1).optional(),
+});
+export type ReasonBySide = z.infer<typeof reasonBySideSchema>;
+
 export const complementarityRowSchema = z.strictObject({
   id: z.string().min(1),
   family: z.literal("trait").optional(),
@@ -23,6 +35,8 @@ export const complementarityRowSchema = z.strictObject({
   wants: z.union([tagWeights, z.array(z.string())]),
   strength: z.number().positive(),
   reason: z.string().min(1),
+  /** Tool-side wording by the offer's actual target side; a side without an entry falls back to `reason`. The data release keeps `reason`. */
+  reasonBySide: reasonBySideSchema.optional(),
   example: z.tuple([z.string(), z.string()]).nullable(),
 });
 export type ComplementarityRow = z.infer<typeof complementarityRowSchema>;

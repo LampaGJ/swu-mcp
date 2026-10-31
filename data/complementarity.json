@@ -60,6 +60,11 @@
    },
    "strength": 0.9,
    "reason": "Damaging your own unit switches on Grit, 'while damaged' and damage-taken triggers.",
+   "reasonBySide": {
+    "enemy": "Damage on an enemy unit sets up a finisher that wants a damaged target.",
+    "own": "Damaging your own unit switches on Grit, 'while damaged' and damage-taken triggers.",
+    "any": "Damage on a unit, an enemy's or your own, switches on cards that need a damaged unit: a finisher that wants any damaged target, or Grit, 'while damaged' and damage-taken triggers on your own."
+   },
    "example": [
     "Death Trooper",
     "The Elite Squad"
