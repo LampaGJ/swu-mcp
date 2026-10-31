@@ -434,7 +434,10 @@ const numberOr = (value: number | null | undefined, fallback: number): number =>
 
 /** Decision D45: a card in under 2% of the leader's decklists is not a card the leader plays; the tools that fill a deck leave it out. */
 export const LEADER_INCLUSION_FLOOR = 0.02;
-const playedBy = (row: { leaderInclusion?: number | null }): number => ((row.leaderInclusion ?? 0) > 0 ? 1 : 0);
+/** Decision D50: a card in at least 60% of the leader's decklists is a staple, listed past perCost. */
+export const LEADER_STAPLE_INCLUSION = 0.6;
+/** Decision D50: with emptyCostsOnly, a cost counts as used when the leader's lists hold this many mean copies there. */
+export const LEADER_COST_MIN_COPIES = 0.5;
 
 // ---------------------------------------------------------------------------------------------
 // deck_audit
@@ -1021,14 +1024,18 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
     ];
   });
   const dropUnplayed = rankedBy === "leader" && !args.includeUnplayed;
-  const everPlayed = dropUnplayed ? eligible.filter((r) => inclusionOf(r.cardKey) !== null) : eligible;
-  // Decision D45: with emptyCostsOnly, a cost whose most-played card sits under the floor counts as unfilled.
-  const best = new Map<number, number>();
-  for (const r of everPlayed) best.set(r.cost, Math.max(best.get(r.cost) ?? 0, inclusionOf(r.cardKey) ?? 0));
-  const thinCosts = new Set(
-    dropUnplayed && args.emptyCostsOnly ? [...best].filter(([, top]) => top < LEADER_INCLUSION_FLOOR).map(([cost]) => cost) : [],
-  );
-  const played = everPlayed.filter((r) => !thinCosts.has(r.cost));
+  const isStaple = (r: { cardKey: string }): boolean => rankedBy === "leader" && (inclusionOf(r.cardKey) ?? 0) >= LEADER_STAPLE_INCLUSION;
+  // Decision D45, D50: the floor drops a card the leader's decks play in under 2% (or never) from the listing.
+  const everPlayed = dropUnplayed ? eligible.filter((r) => (inclusionOf(r.cardKey) ?? 0) >= LEADER_INCLUSION_FLOOR) : eligible;
+  const costsWithCards = new Set(eligible.map((r) => r.cost));
+  const playedCosts = new Set(everPlayed.map((r) => r.cost));
+  const everSeen = new Set(eligible.filter((r) => inclusionOf(r.cardKey) !== null).map((r) => r.cost));
+  const allCosts = [...new Set([...(args.costs ?? []), ...costsWithCards])].sort((a, b) => a - b);
+  // Decision D50: with emptyCostsOnly, only a cost the leader's lists use (0.5 mean copies in total) is reported as empty.
+  const usedCosts = dropUnplayed && args.emptyCostsOnly ? leaderUsedCosts(env, leaderData) : null;
+  const unusedCosts = usedCosts === null ? [] : allCosts.filter((c) => !usedCosts.has(c) && !heldCosts.has(c));
+  const reported = (cost: number): boolean => usedCosts === null || usedCosts.has(cost);
+  const played = everPlayed.filter((r) => reported(r.cost));
   played.sort(
     (a, b) =>
       a.cost - b.cost ||
@@ -1037,17 +1044,18 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       a.penalty - b.penalty ||
       compareCodePoints(a.cardKey, b.cardKey),
   );
-  const playedCosts = new Set(everPlayed.map((r) => r.cost));
-  const emptyCosts = dropUnplayed
-    ? [...new Set([...(args.costs ?? []), ...eligible.map((r) => r.cost)])].filter((c) => !playedCosts.has(c)).sort((a, b) => a - b)
-    : [];
-  const thinList = [...thinCosts].sort((a, b) => a - b);
-  const rows = args.emptyCostsOnly
-    ? [...played, ...emptyCosts.map((c) => noPlayedRow(c, false)), ...thinList.map((c) => noPlayedRow(c, true))].sort((a, b) => a.cost - b.cost)
-    : played;
+  const emptyCosts = dropUnplayed ? allCosts.filter((c) => !playedCosts.has(c) && !everSeen.has(c) && reported(c) && !(args.emptyCostsOnly && heldCosts.has(c))) : [];
+  const thinList = dropUnplayed ? allCosts.filter((c) => !playedCosts.has(c) && everSeen.has(c) && reported(c)) : [];
+  const rows = [
+    ...played,
+    ...(args.emptyCostsOnly ? [...emptyCosts.map((c) => noPlayedRow(c, false)), ...thinList.map((c) => noPlayedRow(c, true))] : []),
+  ]
+    .map((r) => withStaple(r, rankedBy === "leader", r.cardKey !== null && isStaple({ cardKey: r.cardKey })))
+    .sort((a, b) => a.cost - b.cost);
   const perCost = new Map<number, number>();
   const shown = rows
     .filter((r) => {
+      if (r.staple === true) return true;
       const n = perCost.get(r.cost) ?? 0;
       perCost.set(r.cost, n + 1);
       return n < args.perCost;
@@ -1064,7 +1072,7 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       leaderData === null
         ? null
         : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}` },
-    emptyCosts: emptyCostsText(emptyCosts, thinList),
+    emptyCosts: emptyCostsText(emptyCosts, thinList, unusedCosts),
     note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed),
     matched: played.length,
     shown: shown.length,
@@ -1074,12 +1082,30 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
 
 const floorText = (cost: number): string => `no tournament-played card (>= ${LEADER_INCLUSION_FLOOR * 100}%) at cost ${cost}`;
 
-function emptyCostsText(never: readonly number[], thin: readonly number[]): string {
+function emptyCostsText(never: readonly number[], thin: readonly number[], unused: readonly number[]): string {
   const parts = [
     ...(never.length === 0 ? [] : [`${never.join(", ")}: no tournament-played card at ${never.length === 1 ? "this cost" : "these costs"}`]),
     ...thin.map(floorText),
+    ...(unused.length === 0 ? [] : [`the leader's lists do not use ${unused.length === 1 ? "cost" : "costs"} ${unused.join(", ")}`]),
   ];
   return parts.length === 0 ? "none" : `${parts.join("; ")}; includeUnplayed: true lists score-ranked cards`;
+}
+
+/** The costs at which the leader's lists hold LEADER_COST_MIN_COPIES mean copies or more, summed over the cards of that cost. */
+function leaderUsedCosts(env: DeckEnv, leaderData: { entry: LeaderCardsEntry } | null): ReadonlySet<number> {
+  const copies = new Map<number, number>();
+  for (const row of leaderData?.entry.cards ?? []) {
+    const syn = env.ctx.graph.byKey.get(row.cardKey);
+    const cost = syn?.structured.cost ?? null;
+    if (syn === undefined || cost === null || !MAIN_TYPES.has(syn.type)) continue;
+    copies.set(cost, (copies.get(cost) ?? 0) + row.meanCopies);
+  }
+  return new Set([...copies].filter(([, n]) => n >= LEADER_COST_MIN_COPIES).map(([cost]) => cost));
+}
+
+/** In leader mode every row says whether it is a staple, so the rows keep one shape. */
+function withStaple<T extends object>(row: T, leaderMode: boolean, staple: boolean): T & { staple?: boolean } {
+  return leaderMode ? { ...row, staple } : row;
 }
 
 /** The row that stands in for a cost the leader's decks never play, so a gap reads as a gap and not as a filled cost. */
@@ -1106,9 +1132,10 @@ function playableNote(entry: LeaderCardsEntry | null, rankedBy: "leader" | "scor
   const source = `this leader's ${entry.population} decklist inclusion (${leaderSourceText(entry)})`;
   const unplayedRule = includeUnplayed
     ? "includeUnplayed: true lists the unplayed cards after the played ones in each cost"
-    : `cards the leader's decks do not play are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card; with emptyCostsOnly a cost whose most-played card is in under ${LEADER_INCLUSION_FLOOR * 100}% of the leader's decks counts as unfilled`;
+    : `cards the leader's decks play in under ${LEADER_INCLUSION_FLOOR * 100}% of their lists, or not at all, are left out (includeUnplayed: true lists them), and emptyCosts names the costs left with no card; with emptyCostsOnly only a cost where the leader's lists hold at least ${LEADER_COST_MIN_COPIES} mean copies in total is reported, and emptyCosts names the other empty costs in one line`;
+  const staples = `a card in ${LEADER_STAPLE_INCLUSION * 100}% or more of the lists is a staple: it is always listed, even past perCost (staple: true), and does not count toward perCost`;
   return rankedBy === "leader"
-    ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}; ${unplayedRule}. Rotated cards are left out.`
+    ? `within each cost, ranked by ${source}, then ${score}; leaderInclusion = placement-weighted share of the leader's decks that play the card; ${unplayed}; ${staples}; ${unplayedRule}. Rotated cards are left out.`
     : `ranked within each cost by ${score} (rankBy score); leaderInclusion = ${source}; ${unplayed}. Rotated cards are left out.`;
 }
 
@@ -1189,7 +1216,7 @@ export function fungibleInDeck(env: DeckEnv, input: unknown): ToolResult {
 
 export const budgetAlternativesShape = {
   decklist: decklistField,
-  maxPrice: z.number().positive().optional().describe("Highest price of a substitute, in US dollars"),
+  maxPrice: z.number().positive().optional().describe("Highest price of a substitute, in US dollars; a card already at or under it is skipped and listed in alreadyUnderCap"),
   minSaving: z.number().positive().default(0.25).describe("Smallest price saving worth listing, in US dollars"),
   leader: leaderField.optional().describe("Give with base to add each substitute's aspect penalty"),
   base: baseField.optional(),
@@ -1207,10 +1234,15 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   const leaderData = pair === undefined ? null : (leaderCardsOf(env)?.get(pair.leader.row.cardKey) ?? null);
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const unpriced: string[] = [];
+  const alreadyUnderCap: { card: string; price: number }[] = [];
   const slots = lines.flatMap((line) => {
     const price = priceOf(env, line.syn.cardKey);
     if (price === null) {
       unpriced.push(cardLabel(line.syn));
+      return [];
+    }
+    if (args.maxPrice !== undefined && price <= args.maxPrice) {
+      alreadyUnderCap.push({ card: cardLabel(line.syn), price });
       return [];
     }
     if (price < args.minSaving) return [];
@@ -1243,7 +1275,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
       })
       .sort(
         (a, b) =>
-          playedBy(b) - playedBy(a) ||
+          numberOr(b.leaderInclusion, -1) - numberOr(a.leaderInclusion, -1) ||
           b.fills - a.fills ||
           b.saved - a.saved ||
           numberOr(b.scoreDelta, -Infinity) - numberOr(a.scoreDelta, -Infinity) ||
@@ -1259,6 +1291,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
         price,
         aspectPenalty: slotPenalty,
         roles: slot.roles.join(", "),
+        ...(leaderData !== null && !alternatives.some((a) => (a.leaderInclusion ?? 0) > 0) ? { note: "no tournament-played substitute under the cap" } : {}),
         alternatives,
       },
     ];
@@ -1266,9 +1299,10 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
   return ok({
     dataVersion: env.dataVersion,
     priceImport: { id: env.market.prices.priceImportId, date: env.market.prices.priceImportFinishedAt?.slice(0, 10) ?? null },
-    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes this leader's decks play (leaderInclusion > 0) come first; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
+    note: `Canonical normal prices, US only. A substitute has the card's type, a unit's arena and a cost within 1 of the card it replaces, so a cheap card never stands in for one from a different part of the curve. savingPerCopy is the largest saving of any one listed swap on one copy; totalSaving is the sum over slots of count times that slot's first alternative's saving. scoreDelta is play-calibrated score of the substitute minus the card (rank-meaningful only). ${supplied === undefined ? "No aspect penalty without a leader and base." : "penalty is the substitute's own aspect penalty under this leader and base; only substitutes whose penalty is no higher than the card's own are listed."}${leaderData === null ? "" : ` Substitutes sort by this leader's decklist inclusion first (played before unplayed), then by role fit and saving; a slot with no played substitute says so; leaderInclusion = ${`this leader's ${leaderData.entry.population} decklist inclusion (${leaderSourceText(leaderData.entry)})`}, null = unplayed in this leader's decks.`}`,
     unresolved,
     unpriced,
+    alreadyUnderCap,
     slotsWithAlternatives: slots.length,
     savingPerCopy: r2(Math.max(0, ...slots.flatMap((s) => s.alternatives.map((a) => a.saved)))),
     totalSaving: r2(sumBy(slots, (s) => s.count * s.alternatives[0].saved)),
@@ -1703,7 +1737,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: tool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card the leader's decks do not play is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card (with emptyCostsOnly it gets an explicit row). Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed, even past perCost (staple: true). A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks.",
     playableCardsShape,
     playableCards,
   ),
@@ -1715,7 +1749,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: tool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; played substitutes first). Cards without a price are listed.",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. Cards without a price are listed.",
     budgetAlternativesShape,
     budgetAlternatives,
   ),
