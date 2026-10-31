@@ -1,14 +1,14 @@
 {
  "schemaVersion": 1,
- "tableVersion": 1,
- "note": "Committed, reviewed design input (LampaGJ/swu-mcp#25), versioned like complementarity.json. threats: a threat fires on an archetype when the sum of its profile metrics (mean copies per deck, or the named ratio) is at least min and at most max; thresholds sit near the 75th percentile of the 40 largest tournament archetypes of the 2026-07-20..2026-10-17 window (meanCost near the 25th). relations: an offer of ours (an offers: tag from card features, or a pseudo-tag: keyword:<printed keyword>, unit:space, disrupt-resources) answers one threat when its qualifier holds against the archetype: removesKeyUnit checks the parsed cost, HP, power, arena and trait limits (damage must reach printed HP) against each key unit; sweep needs an each/all/any-number effect on enemy units and reachesCheapHp a damage or HP limit at least the median HP of the archetype's cheap units; arena needs the removal to be limited to that arena (or, for a unit offer, the unit to be in it); healsBase needs the heal to reach a base; minPower bounds a unit offer. The weight scales the answer's coverage. Each example is a real card whose clause produces the offer; tests/meta/counters.test.ts checks every one.",
+ "tableVersion": 2,
+ "note": "Committed, reviewed design input (LampaGJ/swu-mcp#25), versioned like complementarity.json. threats: a threat fires on an archetype when the sum of its profile metrics (mean copies per deck, or the named ratio) is at least min and at most max; key-units (v2, D63) fires when two or more units at cost 6 or more are played by at least 80% of the archetype's decks (profile.heavyKeyUnits), which marks 160 of the 463 archetypes of the 2026-10-31 run; the earlier test, any unit played by half the decks, fired on every row. Other thresholds sit near the 75th percentile of the 40 largest tournament archetypes of the 2026-07-20..2026-10-17 window (meanCost near the 25th). relations: an offer of ours (an offers: tag from card features, or a pseudo-tag: keyword:<printed keyword>, unit:space, disrupt-resources) answers one threat when its qualifier holds against the archetype: removesKeyUnit checks the parsed cost, HP, power, arena and trait limits (damage must reach printed HP) against each key unit; sweep needs an each/all/any-number effect on enemy units and reachesCheapHp a damage or HP limit at least the median HP of the archetype's cheap units; arena needs the removal to be limited to that arena (or, for a unit offer, the unit to be in it); healsBase needs the heal to reach a base; minPower bounds a unit offer. The weight scales the answer's coverage. Each example is a real card whose clause produces the offer; tests/meta/counters.test.ts checks every one.",
  "threats": [
   {
    "id": "key-units",
    "title": "Key units",
-   "metrics": ["keyUnits"],
-   "min": 1,
-   "reason": "Units that at least half of the archetype's decks play; removal that can take them answers the deck's main threats."
+   "metrics": ["heavyKeyUnits"],
+   "min": 2,
+   "reason": "Two or more units at cost 6 or more that at least 80% of the archetype's decks play: the core leans on a few high-value units, and removal that can take them answers the deck's main threats."
   },
   {
    "id": "upgrade-heavy",

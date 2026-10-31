@@ -2,7 +2,7 @@ import { z } from "zod";
 import { packageDirOf, type CardStore } from "../data.js";
 import { selectLeaderPopulation, type LeaderSelection } from "../meta/leader-split.js";
 import type { LeaderCardsEntry, LeaderCardRow } from "../meta/schema.js";
-import { CANDIDATE_STATUS, clip, evidenceOf, sourcedEvidenceOf, tagEvidence } from "../synergy/evidence.js";
+import { CANDIDATE_STATUS, clip, sourcedEvidenceOf, tagEvidence } from "../synergy/evidence.js";
 import { comboLabel, coverPenalty, rankCovers, type CoverCombo } from "../synergy/cover.js";
 import { engineHitOf, leaderEngineOf, roleKeepOf, suppliedKeywords, type EngineHit, type LeaderEngine } from "../synergy/leader-engine.js";
 import { loadSynergyContext, type SynergyContext } from "../synergy/context.js";
@@ -20,7 +20,7 @@ import { edgeOrder, edgeScore, mechanicalRows, primaryRows, TRAIT_BONUS } from "
 import { cardLabel, cmp, r3 } from "../synergy/order.js";
 import { baseLockOfAll } from "../synergy/locks.js";
 import { reasonOfHit } from "../synergy/reasons.js";
-import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
+import { TRAITS_MODES, TRIO_SHAPES, type PairEdge, type PairRowHit, type SynergyCard, type TraitsMode, type TrioRecord } from "../synergy/schema.js";
 import { slotRoles, trioLinks } from "../synergy/slots.js";
 import { DEFAULT_TRIO_KEEP, TRIO_MEMBER_TYPES, trioOrder } from "../synergy/trios.js";
 import type { ToolResult } from "../tools.js";
@@ -587,6 +587,11 @@ const DEFAULT_MIN_PLAYED = 2;
 const MAX_TRIO_VARIANTS = 5;
 const NO_CURATED: ReadonlyMap<string, string> = new Map();
 
+/** D63 (#154): a pairing's evidence quotes a curated tag's clause, as a trio's does (D49); `source` appears only when a side is curated. */
+function pairEvidence(ctx: SynergyContext, e: PairEdge, rows: readonly PairRowHit[]): Record<string, string>[] {
+  return sourcedEvidenceOf(e, ctx.graph.byKey, rows, ctx.curated ?? NO_CURATED).map(({ source, ...text }) => (source === "grammar" ? text : { ...text, source }));
+}
+
 export function deferRepeatedLinks<T>(
   rows: readonly T[],
   linkOf: (row: T) => string,
@@ -617,7 +622,8 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
   const aspects = args.aspects ?? (leader === undefined ? ownIcons : [...leader.card.structured.aspectIcons, ...(base?.structured.aspectIcons ?? [])]);
   const weight = args.weighting === "leader" && leader?.data != null ? leader : undefined;
   // D60 (#149): the leader's own clause is a want source for the deck, so partners that meet it rank with the leader factor.
-  const engine = weight === undefined ? null : leaderEngineOf(weight.card);
+  // D63 (#154): the clause is read whenever a leader is given, so weighting none still lists the engine rows and only drops the play-share factor.
+  const engine = leader === undefined ? null : leaderEngineOf(leader.card);
   const touching = ctx.graph.edges.filter((e) => {
     const partner = e.a === card.cardKey ? e.b : e.b === card.cardKey ? e.a : undefined;
     if (partner === undefined) return false;
@@ -629,7 +635,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
     return args.maxCost === undefined || (cost !== null && cost <= args.maxCost);
   });
   const engineReason = (hit: EngineHit): string =>
-    `Leader engine: ${cardLabel((weight as LeaderWeight).card)}'s own clause "${(engine as LeaderEngine).clause}" meets this card: ${hit.how}${hit.partnerText === null ? "" : ` ("${hit.partnerText}")`}.`;
+    `Leader engine: ${cardLabel((leader as LeaderWeight).card)}'s own clause "${(engine as LeaderEngine).clause}" meets this card: ${hit.how}${hit.partnerText === null ? "" : ` ("${hit.partnerText}")`}.`;
   const ranked = (edges: readonly (PairEdge | null)[], mode: TraitsMode, engineOnly: readonly SynergyCard[] = []) => {
     const rows = [...edges, ...engineOnly.map(() => null)].map((e, i) => {
       const partner = e === null ? engineOnly[i - edges.length] : (ctx.graph.byKey.get(e.a === card.cardKey ? e.b : e.a) as SynergyCard);
@@ -661,7 +667,7 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
         aspectPair: cover.aspectPair,
         penalty: cover.penalty,
         rank,
-        leaderInclusion: inclusionOf(weight as LeaderWeight, partner.cardKey),
+        ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, partner.cardKey) }),
         ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
       };
       if (args.evidence) out.evidence = [{ offer: `text: ${(engine as LeaderEngine).clause}`, want: found.partnerText }];
@@ -683,14 +689,14 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
       ...(weight === undefined ? {} : { leaderInclusion: inclusionOf(weight, partner.cardKey) }),
       ...(lock.names.length === 0 ? {} : { baseLocked: lock.names.join(", ") }),
     };
-    if (args.evidence) out.evidence = evidenceOf(e, ctx.graph.byKey, linkRows);
+    if (args.evidence) out.evidence = pairEvidence(ctx, e, linkRows);
     return out;
   };
   // A partner the leader's clause pays off but the graph does not link to the leader is added as a leader-engine row, for a leader subject only.
   const mainEdges = touching.filter((e) => args.traits === "include" || !e.traitOnly);
   const edgePartners = new Set(mainEdges.map((e) => (e.a === card.cardKey ? e.b : e.a)));
   const engineOnly =
-    engine === null || weight === undefined || card.cardKey !== weight.card.cardKey || args.direction === "enablers"
+    engine === null || leader === undefined || card.cardKey !== leader.card.cardKey || args.direction === "enablers"
       ? []
       : ctx.cards.filter((c) => {
           if (edgePartners.has(c.cardKey) || c.cardKey === card.cardKey) return false;
@@ -700,7 +706,10 @@ export function findPairings(ctx: SynergyContext, input: unknown, inPool?: (card
         });
   const engineKeys = new Set(engineOnly.map((c) => c.cardKey));
   const rows = ranked(mainEdges, args.traits, engineOnly);
-  const { ordered, deferred } = deferRepeatedLinks(rows, (r) => linkOf(r, args.traits), args.perLink);
+  const capped = deferRepeatedLinks(rows, (r) => linkOf(r, args.traits), args.perLink);
+  const { deferred } = capped;
+  // D63 (#154): the perLink cap moves repeated links behind first ones, so the base-lock demotion of the sort is applied again after it.
+  const ordered = [...capped.ordered.filter((r) => !r.lock.unmet), ...capped.ordered.filter((r) => r.lock.unmet)];
   const tribal = args.traits === "bonus" ? ranked(touching.filter((e) => e.traitOnly && !engineKeys.has(e.a === card.cardKey ? e.b : e.a)), "bonus") : [];
   const shown = ordered.slice(0, args.limit).map((r) => {
     const { e, partner } = r;
@@ -1024,7 +1033,7 @@ export const SYNERGY_TOOLS = {
   find_pairings: {
     title: "Find pairings",
     description:
-      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect (only Premier-pool cards that still link with the card through the same row) and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base or aspects is given (a supplied aspect set is never replaced by the leader's top base); the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. With a leader (D60), the leader's own clause is a want source: when it plays a unit of limited power or gives a keyword (The Warrior: a unit with 3 or less power, with Ambush), partners that meet it rank at least as if the leader's decks played them 60% of the time and the reason quotes the leader clause; for a leader subject, a card whose text keys on a friendly unit with the granted keyword (Boba Fett, Family Found) is listed as a leader-engine row. Given a base, or aspects that add one base icon, the leader's decklists are narrowed to the lists with that base when at least 10 remain, else all are used and the leader block says so (populationNote). Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
+      "Partners for a card from the offers-to-wants pair graph: enablers that feed it and payoffs it feeds, each with the reason, its linkKind (mechanical, trait+mechanical or trait-only), a score (link strength times non-obviousness), the aspect penalty, fungible alternatives by aspect (only Premier-pool cards that still link with the card through the same row) and the clause text of each card that produced the offer and the want (status: candidate). By default (traits: bonus) only mechanical links rank; a trait the pair also shares is a small bonus, and pairs that only share a trait (obvious tribal links) come in a separate tribal list capped by tribalLimit (default 5). traits: exclude ignores traits; traits: include ranks trait-only pairs with the rest. Rows list at most perLink (default 3) per distinct link before rows that repeat a link, so the first page shows varied reasons; the deferred rows follow in rank order (capped counts them; perLink 100 turns the cap off). Leader and Base partners are left out because they cannot be one of a deck's 50 cards (includeLeaders: true lists them; partnerFilter states which applied). Give leader (cardKey or exact title) to weight the rank by the leader's tournament decklists: each partner carries leaderInclusion (null when unplayed), played partners rise, unplayed ones stay listed, aspects default to the leader's icons, and the leader block names the population and window. Give base too (a Base card, cardKey or exact title) and aspects default to the leader's and the base's icons together and the leader block names the base; with a leader alone the penalty is measured against the leader's icons only and the leader block says so. A Leader cardKey with no leader argument stands in as the leader, and its most-played tournament base as the base unless base or aspects is given (a supplied aspect set is never replaced by the leader's top base); the leader block says defaulted: true, and weighting: none restores the unweighted answer. The reason names the side the offer lands on (enemy unit, your own, either) where the rule reads differently by side. With a leader (D60), the leader's own clause is a want source: when it plays a unit of limited power or gives a keyword (The Warrior: a unit with 3 or less power, with Ambush), partners that meet it rank at least as if the leader's decks played them 60% of the time and the reason quotes the leader clause; for a leader subject, a card whose text keys on a friendly unit with the granted keyword (Boba Fett, Family Found) is listed as a leader-engine row. Given a base, or aspects that add one base icon, the leader's decklists are narrowed to the lists with that base when at least 10 remain, else all are used and the leader block says so (populationNote). A partner whose clause names a base the given base does not meet (baseLocked) ranks after every unlocked partner, also past the perLink cap. The leader-engine rows appear whenever a leader is given, in every weighting mode; weighting: none only drops the play-share factor. Evidence for a curated tag quotes the curated clause, and source names the curated side. Every result is a candidate, not a fact: confirm each link against the clause text in the evidence (evidence: false turns it off) before relying on it.",
     shape: findPairingsShape,
     handler: (store: CardStore, input: unknown): ToolResult => withContext(store, (ctx) => findPairings(ctx, input, inPremierPool(store))),
   },

@@ -13,6 +13,7 @@ import {
   type MetaFile,
   type Population,
   type ThreatProfile,
+  isHeavyKeyUnit,
 } from "./schema.js";
 
 /**
@@ -213,6 +214,7 @@ export function threatProfile(
   let costSum = 0;
   let costed = 0;
   let cheap = 0;
+  let heavy = 0;
   const cheapHp: number[] = [];
   const curve = new Map<string, number>();
   const keywords = new Map<string, number>();
@@ -226,6 +228,7 @@ export function threatProfile(
     if (f.type === "Event") events += mean;
     if (f.type === "Upgrade" || f.keywords.includes("Piloting")) upgrades += mean;
     if (f.type === "Unit") {
+      if (isHeavyKeyUnit(f.cost, inclusion.get(card) ?? 0)) heavy += 1;
       if (f.arenas.includes("Space")) space += mean;
       else ground += mean;
       if (f.cost !== null && f.cost <= 2) {
@@ -275,6 +278,7 @@ export function threatProfile(
     cheapUnitMedianHp: median(cheapHp),
     leader: { power: leader?.power ?? null, hp: leader?.hp ?? null, arenas: leader?.arenas ?? [] },
     keyUnits,
+    heavyKeyUnits: heavy,
   };
 }
 

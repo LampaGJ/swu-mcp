@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CardRow, CardStore } from "../../src/data.js";
 import { buildLeaderCards, buildMeta, cardFacts, DEFAULT_META_OPTIONS } from "../../src/meta/build.js";
 import { loadCounterTable } from "../../src/meta/counters.js";
-import { indexLeaderCards, LEADER_CARDS_MAX, leaderCardsFileSchema, SWUMETASTATS_SOURCE } from "../../src/meta/schema.js";
+import { indexLeaderCards, LEADER_CARDS_MAX, leaderCardsFileSchema, SWUMETASTATS_SOURCE, type MetaFile } from "../../src/meta/schema.js";
 import { createSynergyContext } from "../../src/synergy/context.js";
 import { synergyCardsSchema } from "../../src/synergy/schema.js";
 import type { ToolResult } from "../../src/tools.js";
@@ -89,7 +89,12 @@ const enemyDecks = Array.from({ length: 6 }, (_, i) =>
   deck(`e${i}`, { leader: "EL", base: i < 4 ? "EB" : "EB2", cards: [[RUSH_UNIT, 3]], placement: i + 1, field: 16 }),
 );
 const facts = cardFacts(features);
-const meta = buildMeta(enemyDecks, facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 });
+/** The fixture's one 4-cost rush unit is no heavy unit (D63), so its archetypes are marked as leaning on two, which is what fires key-units. */
+const leaningOnHeavyUnits = (file: MetaFile): MetaFile => ({
+  ...file,
+  archetypes: file.archetypes.map((a) => ({ ...a, profile: { ...a.profile, heavyKeyUnits: 2 } })),
+});
+const meta = leaningOnHeavyUnits(buildMeta(enemyDecks, facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 }));
 const winrates = {
   schemaVersion: 2,
   minN: 10,
@@ -187,7 +192,7 @@ describe("meta_threats falls back to the leader's community decks (#144)", () =>
   const communityDecks = Array.from({ length: 3 }, (_, i) =>
     deck(`c${i}`, { leader: "CL", base: "OB", cards: [[RUSH_UNIT, 3]], population: "community", source: "swudb", event: null, placement: null }),
   );
-  const mixed = buildMeta([...enemyDecks, ...communityDecks], facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 });
+  const mixed = leaningOnHeavyUnits(buildMeta([...enemyDecks, ...communityDecks], facts, { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 }));
   const casualFile = leaderCardsFileSchema.parse({
     schemaVersion: 1,
     window: { from: "2026-07-04", to: "2026-10-01", days: 90 },
@@ -1147,5 +1152,89 @@ describe("leader lists by base (D60, #148)", () => {
     const byKey = Object.fromEntries([...out.staples, ...out.additions].map((a: { cardKey: string; leaderInclusion: number | null }) => [a.cardKey, a.leaderInclusion]));
     expect(byKey[IT_IS_WORSE]).toBe(1);
     expect(byKey[PROFUNDITY] ?? null).toBeNull();
+  });
+});
+
+describe("meta_threats faces and a key-units threat that carries information (#154, D63)", () => {
+  const opponents = [
+    ...Array.from({ length: 4 }, (_, i) => deck(`lc${i}`, { leader: "LC", base: "AB", cards: [[RUSH_UNIT, 3]], placement: 10 + i, field: 16 })),
+    ...Array.from({ length: 3 }, (_, i) => deck(`cl${i}`, { leader: "CL", base: "EB", cards: [[RUSH_UNIT, 3]], placement: 14 + i, field: 16 })),
+  ];
+  const options = { ...DEFAULT_META_OPTIONS, minDecks: 2, minTournamentDecks: 1 };
+  const field = buildMeta([...enemyDecks, ...opponents], facts, options);
+  const pair = (leader: string, baseAspects: string[], oppLeader: string, oppBaseAspects: string[], wins: number, losses: number, draws = 0) => ({
+    leader,
+    baseAspects,
+    oppLeader,
+    oppBaseAspects,
+    wins,
+    losses,
+    draws,
+  });
+  const withPairs = (pairs: ReturnType<typeof pair>[] | null) =>
+    createMetaEnv(
+      deckEnv,
+      leaningOnHeavyUnits(field),
+      { ...winrates, matchups: pairs === null ? null : { ...winrates.matchups, pairs } },
+      loadCounterTable(),
+      features,
+    );
+  const measuredEnv = withPairs([pair("EL", ["Cunning"], "LC", ["Aggression"], 14, 6, 1), pair("EL", ["Cunning"], "CL", ["Cunning"], 4, 3)]);
+  const facesOf = (e: typeof measuredEnv, extra: object = {}) => body(metaThreats(e, { archetype: "EL", ...extra })).faces;
+
+  it("lists the largest archetypes by share, leaving out the leader's own, with the record where n meets minN", () => {
+    const faces = facesOf(measuredEnv);
+    expect(faces.population).toBe("tournament");
+    expect(faces.source).toContain(SWUMETASTATS_SOURCE);
+    expect(faces.minN).toBe(10);
+    expect(faces.rows.map((r: any) => r.name.split(" / ")[0])).toEqual(["Bounty Boss", "Casual Leader"]);
+    expect(faces.rows[0].share).toBeGreaterThan(faces.rows[1].share);
+    expect(faces.rows[0]).toMatchObject({ record: "14-6-1", wins: 14, losses: 6, draws: 1, n: 20, winRate: 0.7 });
+    expect(faces.rows[0].ci95).toMatch(/^0\.\d+\.\.0\.\d+$/);
+    expect(faces.measured).toBe(1);
+  });
+
+  it("says no measured matchup, with the n it has, under minN, and for an opponent with no match at all", () => {
+    const faces = facesOf(measuredEnv);
+    expect(faces.rows[1]).toMatchObject({ record: "no measured matchup (n < 10)", wins: null, losses: null, draws: null, n: 7, winRate: null, ci95: null });
+    const none = facesOf(withPairs([pair("EL", ["Cunning"], "LC", ["Aggression"], 1, 0)]));
+    expect(none.rows.map((r: any) => [r.record, r.n])).toEqual([
+      ["no measured matchup (n < 10)", 1],
+      ["no measured matchup (n < 10)", 0],
+    ]);
+    expect(none.measured).toBe(0);
+  });
+
+  it("names no source captured when the package holds no matchups, and still states every row", () => {
+    const faces = facesOf(withPairs(null));
+    expect(faces.source).toBe("none captured");
+    expect(faces.rows.every((r: any) => r.record === "no measured matchup (n < 10)")).toBe(true);
+  });
+
+  it("takes facesLimit and leaves the block out at 0", () => {
+    expect(facesOf(measuredEnv, { facesLimit: 1 }).rows).toHaveLength(1);
+    expect(body(metaThreats(measuredEnv, { archetype: "EL", facesLimit: 0 }))).not.toHaveProperty("faces");
+  });
+
+  it("a community archetype found by fallback faces the tournament meta, never the community one (D21)", () => {
+    const communityDecks = Array.from({ length: 3 }, (_, i) =>
+      deck(`cc${i}`, { leader: "OL", base: "OB", cards: [[RUSH_UNIT, 3]], population: "community", source: "swudb", event: null, placement: null }),
+    );
+    const mixed = leaningOnHeavyUnits(buildMeta([...enemyDecks, ...opponents, ...communityDecks], facts, options));
+    const e = createMetaEnv(deckEnv, mixed, winrates, loadCounterTable(), features);
+    const out = body(metaThreats(e, { archetype: "OL" }));
+    expect(out.archetype.population).toBe("community");
+    expect(out.faces.population).toBe("tournament");
+    expect(out.faces.rows.map((r: any) => r.name.split(" / ")[0])).toEqual(["Enemy Leader", "Bounty Boss", "Casual Leader"]);
+    expect(out.faces.rows[0]).toMatchObject({ record: "7-5-0", wins: 7, losses: 5, n: 12 });
+  });
+
+  it("key-units marks an archetype that leans on heavy units and not one whose key units are all cheap", () => {
+    const cheap = createMetaEnv(deckEnv, buildMeta(enemyDecks, facts, options), winrates, loadCounterTable(), features);
+    const bare = body(metaThreats(cheap, { archetype: "EL" }));
+    expect(bare.keyUnits.length).toBeGreaterThan(0);
+    expect(bare.threats.map((t: any) => t.id)).not.toContain("key-units");
+    expect(body(metaArchetypes(cheap, {})).rows[0].threats).not.toContain("key-units");
+    expect(body(metaThreats(measuredEnv, { archetype: "EL" })).threats.map((t: any) => t.id)).toContain("key-units");
   });
 });

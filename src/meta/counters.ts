@@ -12,6 +12,7 @@ import {
   type CounterThreat,
   type KeyUnit,
   type ThreatProfile,
+  isHeavyKeyUnit,
 } from "./schema.js";
 
 /**
@@ -152,6 +153,8 @@ export function answerOffers(card: CounterCard): AnswerOffer[] {
 
 function metricValue(profile: ThreatProfile, metric: string): number | null {
   if (metric === "keyUnits") return profile.keyUnits.length;
+  // A package built before D63 has no heavyKeyUnits; the listed key units give a lower bound (they are capped, ordered by copies).
+  if (metric === "heavyKeyUnits") return profile.heavyKeyUnits ?? profile.keyUnits.filter((u) => isHeavyKeyUnit(u.cost, u.inclusion)).length;
   if (metric === "meanCost") return profile.meanCost;
   if (metric === "arena.spaceShare") return profile.arena.spaceShare;
   if (metric.startsWith("keywords.")) return profile.keywords[metric.slice(9)] ?? 0;

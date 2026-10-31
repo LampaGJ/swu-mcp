@@ -1280,3 +1280,119 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
     expect(at("JW", "SC")).toMatchObject({ baseLocked: "Kashyyyk" });
   });
 });
+
+describe("a base-locked partner stays last past the perLink cap, and curated evidence quotes its clause (#154, D63)", () => {
+  const LOCK = "While you control a Tatooine base, friendly units enter play ready.";
+  const free = [1, 2, 3].map((i) => mk(`F${i}`, `Free Feeder ${i}`, { offers: ["offers:x"], aspects: ["Command"], cost: 3, why: { "offers:x": "text: Friendly units get +1/+0." } }));
+  // The locked card's link is the only row of its kind, so the perLink cap lists it among the first rows; its tag comes from the curated table.
+  const locked = mk("L", "Ritual Dragon", {
+    offers: ["offers:z"],
+    aspects: ["Command"],
+    cost: 8,
+    abilities: [{ repeat: "constant", text: LOCK }],
+    why: { "offers:z": "curated cur-9001" },
+  });
+  const want = mk("W", "Wanter", { wants: ["wants:x", "wants:z"], aspects: ["Command"], cost: 3, why: { "wants:x": "text: Wants x.", "wants:z": "text: Wants z." } });
+  const leader = mk("LK", "Lock Leader", { type: "Leader", icons: ["Command", "Heroism"] });
+  const origin = mk("OT", "Origin Tree", { type: "Base", icons: ["Command"], traits: ["Kashyyyk"] });
+  const jundland = mk("JW", "Jundland Wastes", { type: "Base", icons: ["Command"], traits: ["Tatooine"] });
+  const t = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:z": 1 }, wants: { "wants:z": 1 } },
+  ]);
+  const file = leaderCardsFile("LK", "Lock Leader", ["Command", "Heroism"], [["L", 0.9], ["F1", 0.1], ["F2", 0.1], ["F3", 0.1], ["W", 0.5]]);
+  const curated = new Map([["cur-9001", "text: Play a unit from your hand (paying its cost)."]]);
+  const ctx = createSynergyContext([leader, origin, jundland, ...free, locked, want], t, file, curated);
+  const call = (extra: object) => body(findPairings(ctx, { cardKey: "W", direction: "enablers", leader: "LK", base: "OT", withAlternatives: false, ...extra }));
+  const order = (o: Record<string, any>): string[] => o.pairings.map((p: any) => p.cardKey);
+
+  it.each([
+    ["leader-weighted", {}],
+    ["weighting none", { weighting: "none" }],
+  ])("%s: the locked partner follows every unlocked one although perLink 1 would list its unique link second", (_, extra) => {
+    const out = call({ perLink: 1, ...extra });
+    expect(order(out)[3]).toBe("L");
+    expect(order(out).slice(0, 3).sort()).toEqual(["F1", "F2", "F3"]);
+    expect(out.pairings[3]).toMatchObject({ baseLocked: "Tatooine" });
+    expect(out.capped).toBe(2);
+  });
+
+  it("keeps the unlocked rows' own cap order: the first row of each link ahead of the repeats", () => {
+    const rowsOf = (o: Record<string, any>) => o.pairings.map((p: any) => p.link);
+    const out = call({ perLink: 1 });
+    expect(rowsOf(out).slice(0, 3)).toEqual(Array(3).fill("offers:x -> wants:x"));
+  });
+
+  it("a base of the named location returns the partner to its rank", () => {
+    const out = body(findPairings(ctx, { cardKey: "W", direction: "enablers", leader: "LK", base: "JW", perLink: 1, withAlternatives: false }));
+    expect(order(out)).toContain("L");
+    expect(order(out)[3]).not.toBe("L");
+    expect(out.pairings.find((p: any) => p.cardKey === "L")).not.toHaveProperty("baseLocked");
+  });
+
+  it("evidence quotes the curated clause with source naming the curated side, and a grammar row carries no source", () => {
+    const out = call({ perLink: 100 });
+    const dragon = out.pairings.find((p: any) => p.cardKey === "L");
+    expect(dragon.evidence).toEqual([{ offer: "text: Play a unit from your hand (paying its cost).", want: "text: Wants z.", source: "curated offer" }]);
+    const feeder = out.pairings.find((p: any) => p.cardKey === "F1");
+    expect(feeder.evidence).toEqual([{ offer: "text: Friendly units get +1/+0.", want: "text: Wants x." }]);
+    expect(findPairings(ctx, { cardKey: "W", leader: "LK", perLink: 100 }).content[0].text).not.toMatch(/curated cur-\d/);
+  });
+
+  it("a curated id the table lacks reads no clause text recorded and never prints the id", () => {
+    const bare = createSynergyContext([leader, origin, ...free, locked, want], t, file);
+    const text = findPairings(bare, { cardKey: "W", leader: "LK", perLink: 100 }).content[0].text;
+    expect(text).toContain("(no clause text recorded)");
+    expect(text).not.toMatch(/curated cur-\d/);
+  });
+});
+
+describe("find_trios ranks a trio with a base-locked member after every unlocked trio (#154, D63)", () => {
+  const LOCK = "While you control a Tatooine base, friendly units enter play ready.";
+  const link = (key: string, wants: string | null, offers: string | null, locked = false) =>
+    mk(key, `Card ${key}`, {
+      aspects: ["Command"],
+      cost: 2,
+      ...(wants === null ? {} : { wants: [wants] }),
+      ...(offers === null ? {} : { offers: [offers] }),
+      abilities: locked ? [{ repeat: "constant", text: LOCK }] : [],
+      why: { ...(wants === null ? {} : { [wants]: `text: ${key} wants` }), ...(offers === null ? {} : { [offers]: `text: ${key} offers` }) },
+    });
+  const leader = mk("LK", "Lock Leader", { type: "Leader", icons: ["Command", "Heroism"] });
+  const origin = mk("OT", "Origin Tree", { type: "Base", icons: ["Command"], traits: ["Kashyyyk"] });
+  const t = table([
+    { id: "r1", offers: { "offers:x": 1 }, wants: { "wants:x": 1 } },
+    { id: "r2", offers: { "offers:y": 1 }, wants: { "wants:y": 1 } },
+    { id: "r3", offers: { "offers:p": 1 }, wants: { "wants:p": 1 } },
+    { id: "r4", offers: { "offers:q": 1 }, wants: { "wants:q": 1 } },
+  ]);
+  // Two chains with no shared card: U1 > U2 > U3 is open; V1 > V2 > V3 holds V1, which needs a Tatooine base, and the leader's lists play all of V.
+  const pool = [
+    leader,
+    origin,
+    link("U1", null, "offers:x"),
+    link("U2", "wants:x", "offers:y"),
+    link("U3", "wants:y", null),
+    link("V1", null, "offers:p", true),
+    link("V2", "wants:p", "offers:q"),
+    link("V3", "wants:q", null),
+  ];
+  const file = leaderCardsFile("LK", "Lock Leader", ["Command", "Heroism"], [["V1", 0.95], ["V2", 0.95], ["V3", 0.95], ["U1", 0.05], ["U2", 0.05], ["U3", 0.05]]);
+  const ctx = createSynergyContext(pool, t, file);
+  const run = (extra: object) => body(findTrios(ctx, { leader: "LK", minPlayed: 0, withAlternatives: false, evidence: false, limit: 10, ...extra })).trios;
+
+  it("lists the unlocked trio first although the locked one has the higher rank", () => {
+    const trios = run({ base: "OT" });
+    expect(trios.map((x: any) => x.cardKeys)).toEqual(["U1|U2|U3", "V1|V2|V3"]);
+    expect(trios[1]).toMatchObject({ baseLocked: "Tatooine" });
+    expect(trios[0]).not.toHaveProperty("baseLocked");
+    expect(trios[1].rank).toBeGreaterThan(trios[0].rank);
+  });
+
+  it("keeps the rank order when the base meets the lock", () => {
+    const jundland = mk("JW", "Jundland Wastes", { type: "Base", icons: ["Command"], traits: ["Tatooine"] });
+    const met = body(findTrios(createSynergyContext([...pool, jundland], t, file), { leader: "LK", base: "JW", minPlayed: 0, withAlternatives: false, evidence: false, limit: 10 })).trios;
+    expect(met.map((x: any) => x.cardKeys)).toEqual(["V1|V2|V3", "U1|U2|U3"]);
+    expect(met[0]).not.toHaveProperty("baseLocked");
+  });
+});

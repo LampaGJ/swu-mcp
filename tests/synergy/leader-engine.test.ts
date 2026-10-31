@@ -126,6 +126,22 @@ describe("find_pairings: the leader's own clause is a want source (#149)", () =>
     expect(out.pairings.every((p: { linkKind: string }) => p.linkKind !== "leader-engine")).toBe(true);
   });
 
+  it("keeps the leader-engine rows in every weighting mode when a leader is given; weighting none only drops the play-share factor (#154, D63)", () => {
+    const given = { leader: WARRIOR, base: "09010024", aspects: ["Cunning", "Heroism", "Command"] };
+    const engineKeys = (o: Record<string, any>): string[] =>
+      o.pairings.filter((p: { linkKind: string }) => p.linkKind === "leader-engine").map((p: { cardKey: string }) => p.cardKey).sort();
+    const weighted = run(given);
+    const none = run({ ...given, weighting: "none" });
+    expect(engineKeys(weighted)).toContain(BOBA);
+    expect(engineKeys(none)).toEqual(engineKeys(weighted));
+    const boba = none.pairings.find((p: { cardKey: string }) => p.cardKey === BOBA);
+    expect(boba.reason).toContain("Play a unit with 3 or less power from your hand and give it Ambush for this phase.");
+    expect(boba).not.toHaveProperty("leaderInclusion");
+    expect(none.leader.engine).toMatchObject({ playsUnitMaxPower: 3, grantsKeywords: "Ambush" });
+    expect(none.leader.note).toContain("weighting: none");
+    expect(none.pairings.every((p: Record<string, unknown>) => !("leaderInclusion" in p))).toBe(true);
+  });
+
   it("does not replace the supplied aspect set with the leader's top base", () => {
     const given = run({ aspects: ["Cunning", "Heroism", "Command"] });
     expect(given.leader).not.toHaveProperty("base");

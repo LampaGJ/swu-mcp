@@ -169,3 +169,38 @@ describe("archetype names", () => {
     expect(one.map((a) => a.name)).toEqual(["Hunter / Vigilance base"]);
   });
 });
+
+describe("heavyKeyUnits (D63, #154)", () => {
+  const heavyFacts = new Map<string, CardFact>(
+    [
+      fact("L1", { type: "Leader", title: "Hunter", aspectIcons: ["Aggression", "Villainy"] }),
+      fact("BV", { type: "Base", title: "Vigilance Base", aspectIcons: ["Vigilance"], cost: null }),
+      fact("H1", { title: "Finisher One", cost: 7 }),
+      fact("H2", { title: "Finisher Two", cost: 6 }),
+      fact("H3", { title: "Half-played Finisher", cost: 8 }),
+      fact("M1", { title: "Mid Unit", cost: 5 }),
+      fact("E1", { type: "Event", title: "Costly Event", cost: 7 }),
+    ].map((f) => [f.cardKey, f]),
+  );
+  // Ten decks: H1 and H2 and M1 and E1 in all ten, H3 in five of them.
+  const decks = Array.from({ length: 10 }, (_, i) =>
+    deck(`d${i}`, {
+      leader: "L1",
+      base: "BV",
+      cards: [["H1", 3], ["H2", 3], ["M1", 3], ["E1", 2], ...(i < 5 ? ([["H3", 1]] as [string, number][]) : [])],
+      placement: i + 1,
+      field: 32,
+    }),
+  );
+  const built = buildMeta(decks, heavyFacts, OPTIONS);
+
+  it("counts units at cost 6 or more that at least 80% of the decks play, and no event, cheaper unit or half-played unit", () => {
+    expect(built.archetypes[0].profile.heavyKeyUnits).toBe(2);
+  });
+
+  it("is zero for an archetype whose key units are all cheaper", () => {
+    const cheap = buildMeta(hunterDecks, facts, OPTIONS);
+    expect(cheap.archetypes[0].profile.keyUnits.length).toBeGreaterThan(0);
+    expect(cheap.archetypes[0].profile.heavyKeyUnits).toBe(0);
+  });
+});

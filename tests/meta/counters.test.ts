@@ -45,6 +45,7 @@ const everything: ThreatProfile = {
   cheapUnitMedianHp: 2,
   leader: { power: 4, hp: 7, arenas: ["Ground"] },
   keyUnits: [unit("Ground Bruiser", { cost: 4, hp: 5 }), unit("Space Fighter", { cost: 2, hp: 3, arenas: ["Space"] })],
+  heavyKeyUnits: 2,
 };
 
 describe("data/counters.json", () => {
@@ -61,6 +62,24 @@ describe("data/counters.json", () => {
         .map((t) => t.threat.id)
         .sort(),
     ).toEqual(table.threats.map((t) => t.id).sort());
+  });
+
+  describe("key-units (D63, #154)", () => {
+    const fires = (profile: ThreatProfile): boolean => detectThreats(profile, table).some((t) => t.threat.id === "key-units");
+
+    it("fires on two heavy key units and not on one, however many ordinary key units the core holds", () => {
+      expect(fires({ ...everything, heavyKeyUnits: 2 })).toBe(true);
+      expect(fires({ ...everything, heavyKeyUnits: 1 })).toBe(false);
+      expect(fires({ ...everything, heavyKeyUnits: 0, keyUnits: Array.from({ length: 8 }, (_, i) => unit(`U${i}`, { cost: 3 })) })).toBe(false);
+    });
+
+    it("reads a package built before the field from its listed key units: cost 6 or more and played by 80% of decks", () => {
+      const old: ThreatProfile = { ...everything, heavyKeyUnits: undefined };
+      const heavy = (title: string, inclusion: number, cost = 7): KeyUnit => ({ ...unit(title, { cost }), inclusion });
+      expect(fires({ ...old, keyUnits: [heavy("A", 0.9), heavy("B", 0.85)] })).toBe(true);
+      expect(fires({ ...old, keyUnits: [heavy("A", 0.9), heavy("B", 0.79)] })).toBe(false);
+      expect(fires({ ...old, keyUnits: [heavy("A", 0.9), heavy("B", 0.9, 5)] })).toBe(false);
+    });
   });
 
   it.each(table.relations.map((r) => [r.id, r] as const))(

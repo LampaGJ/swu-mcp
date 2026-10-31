@@ -62,6 +62,11 @@ const keyUnit = z.strictObject({
 });
 export type KeyUnit = z.infer<typeof keyUnit>;
 
+/** D63 (#154): a heavy key unit costs this much or more and is played by at least HEAVY_UNIT_INCLUSION of the archetype's decks. */
+export const HEAVY_UNIT_COST = 6;
+export const HEAVY_UNIT_INCLUSION = 0.8;
+export const isHeavyKeyUnit = (cost: number | null, inclusion: number): boolean => cost !== null && cost >= HEAVY_UNIT_COST && inclusion >= HEAVY_UNIT_INCLUSION;
+
 /** Mean copies per deck of cards that carry a mark, so thresholds in data/counters.json read one number. */
 export const threatProfileSchema = z.strictObject({
   cardsKnown: z.number(),
@@ -78,6 +83,8 @@ export const threatProfileSchema = z.strictObject({
   cheapUnitMedianHp: z.number().nullable(),
   leader: z.strictObject({ power: z.number().nullable(), hp: z.number().nullable(), arenas: z.array(z.string()) }),
   keyUnits: z.array(keyUnit),
+  /** Units at HEAVY_UNIT_COST or more that at least HEAVY_UNIT_INCLUSION of the decks play (D63); absent in a package built before it. */
+  heavyKeyUnits: z.number().int().optional(),
 });
 export type ThreatProfile = z.infer<typeof threatProfileSchema>;
 

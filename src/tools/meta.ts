@@ -253,6 +253,15 @@ export const metaThreatsShape = {
     .describe("With a leader in archetype: profile the leader's archetype whose bases share this base's aspects, not the leader's largest one"),
   population: populationField,
   coreLimit: z.number().int().min(1).max(40).default(15),
+  facesLimit: z
+    .number()
+    .int()
+    .min(0)
+    .max(20)
+    .default(6)
+    .describe(
+      "How many of the largest archetypes (by meta share) the faces block lists with this leader's tournament record against each; 0 leaves the block out. A record needs at least minN decisive matches, else the row says no measured matchup",
+    ),
 };
 
 interface FoundArchetype {
@@ -307,6 +316,41 @@ function findArchetype(env: MetaEnv, ref: string, population: string, baseRef: s
   return `no ${population} or community archetype with leader ${cardLabel(leader.row)}${baseText}: ${counts.tournament} tournament decks, ${counts.community} community decks in ${env.meta.window.from}..${env.meta.window.to}`;
 }
 
+/**
+ * D63 (#154): what the archetype's leader faces. The largest archetypes of the primary population (tournament; a community
+ * archetype found by fallback still faces the tournament meta, tiers are never pooled, D21), each with the leader's
+ * tournament record against that archetype's leader and base aspect when it holds minN decisive matches, else a stated gap.
+ */
+function facesOf(env: MetaEnv, a: Archetype, fallback: boolean, limit: number): Record<string, unknown> | undefined {
+  if (limit === 0) return undefined;
+  const population = fallback ? env.meta.primary : a.population;
+  const m = env.winrates.matchups;
+  const minN = env.winrates.minN;
+  const pool = archetypesIn(env, population)
+    .filter((o) => !(o.leader.cardKey === a.leader.cardKey && sameIcons(o.baseAspects, a.baseAspects)))
+    .sort((x, y) => y.share - x.share || compareCodePoints(x.id, y.id))
+    .slice(0, limit);
+  const rows = pool.map((o) => {
+    const rec = matchupRecord(env, a.leader.cardKey, a.baseAspects, o);
+    const n = rec === null ? 0 : rec.wins + rec.losses;
+    const head = { id: o.id, name: o.name, share: o.share };
+    if (rec === null || n < minN) {
+      return { ...head, record: `no measured matchup (n < ${minN})`, wins: null, losses: null, draws: null, n, winRate: null, ci95: null };
+    }
+    const r = rated(rec);
+    return { ...head, record: r.record, wins: rec.wins, losses: rec.losses, draws: rec.draws, n: r.n, winRate: r.winRate, ci95: r.ci95 };
+  });
+  return {
+    population,
+    source: m === null ? "none captured" : `${SWUMETASTATS_SOURCE}: leader and base-aspect matchups, ${m.period.from}..${m.period.to}, ${m.matches} matches`,
+    minN,
+    measured: rows.filter((r) => r.wins !== null).length,
+    shown: rows.length,
+    note: `The ${rows.length} largest ${population} archetypes by meta share, leaving out this leader's own leader and base aspect. record = this leader's tournament wins-losses-draws against that archetype's leader and base aspect, over all builds of both (leader-level, not deck-level); n = decisive matches (wins + losses), winRate = wins / n (draws left out), ci95 = Wilson 95% interval. A row with fewer than ${minN} decisive matches reads no measured matchup and is not estimated; archetypes of one leader and base aspect share a record. Tournament matchups only: community lists have none (D21).`,
+    rows,
+  };
+}
+
 export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
   const args = z.object(metaThreatsShape).parse(input);
   const found = findArchetype(env, args.archetype, populationOf(env, args.population), args.base);
@@ -323,6 +367,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     .map((v) => ({ archetype: v.archetype, share: v.share, ...sourcedMatchup(env, v.record) }));
   const record = sourcedMatchup(env, matchupRecord(env, a.leader.cardKey, a.baseAspects));
   const recordNote = record === null ? "tournamentRecord is null: no tournament matchup is captured for this leader and base aspect" : "tournamentRecord is still tournament data for the leader and base aspect";
+  const faces = facesOf(env, a, found.fallback, args.facesLimit);
   return ok({
     dataVersion: env.deck.dataVersion,
     sources: { ...sourcesNote(env, a.population), ...(found.fallback ? { fallback: true } : {}) },
@@ -381,6 +426,7 @@ export function metaThreats(env: MetaEnv, input: unknown): ToolResult {
     })),
     core: a.core.slice(0, args.coreLimit),
     tournamentRecordVs: vs,
+    ...(faces === undefined ? {} : { faces }),
     note: `${found.fallback ? "The leader has no tournament archetype in the window, so this is its largest community archetype (leaderSource: the leader's community lists, never pooled with tournament decks); " + recordNote + ". " : ""}Profile figures are placement-weighted mean copies per deck. Threats fire from data/counters.json thresholds. tournamentRecord (against the whole field) and tournamentRecordVs (against each other large archetype's leader and base aspect) are leader-level tournament matchups over all builds: n = decisive matches (wins + losses), winRate = wins / n, ci95 = Wilson 95% interval, source swumetastats (melee.gg tournaments).`,
   });
 }
@@ -965,7 +1011,7 @@ export const META_TOOLS = {
   ),
   meta_threats: tool(
     "Meta threats",
-    "One archetype in depth: leader and bases, threat profile (arena split, curve, keywords, upgrade and token reliance), key units with cost, power and HP, core cards with inclusion rates, the threats it poses and its tournament record against the other large archetypes. A leader with no tournament archetype in the window falls back to its largest community archetype (leaderSource: population community, fallback true, decks); an error names both deck counts only when neither population holds a deck. Give base with a leader to profile the archetype with that base's aspects.",
+    "One archetype in depth: leader and bases, threat profile (arena split, curve, keywords, upgrade and token reliance), key units with cost, power and HP, core cards with inclusion rates, the threats it poses and its tournament record against the other large archetypes. The faces block (facesLimit, default 6) answers what the leader faces: the largest archetypes of the tournament population by meta share, each with this leader's wins, losses, draws, win share, Wilson 95% interval and n against that archetype's leader and base aspect (swumetastats), or no measured matchup (n < minN) where fewer than minN decisive matches exist. key-units fires only on archetypes whose core leans on two or more units at cost 6 or more that at least 80% of its decks play. A leader with no tournament archetype in the window falls back to its largest community archetype (leaderSource: population community, fallback true, decks); an error names both deck counts only when neither population holds a deck. Give base with a leader to profile the archetype with that base's aspects.",
     metaThreatsShape,
     metaThreats,
   ),
