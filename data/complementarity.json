@@ -611,6 +611,14 @@
    "note": "the effect lands on the source card itself; it is a cost or a self-condition, not a resource for another card"
   },
   {
+   "tag": "offers:heal-self",
+   "note": "Heals only the card itself (\"Heal 2 damage from this unit\"), so no other card's 'when damage is healed from this unit' trigger fires. D83 (#165)."
+  },
+  {
+   "tag": "offers:return-self-to-hand",
+   "note": "Returns only the card itself to hand (\"Return him to his owner's hand\"), so no other card's When Played is replayed. D83 (#165)."
+  },
+  {
    "tag": "offers:give-weakness-own",
    "note": "A Weakness on a friendly unit is a drawback to you, not a payoff (Geonosian Picador, round 2). Reviewed #14."
   },

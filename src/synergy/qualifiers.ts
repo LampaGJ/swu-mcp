@@ -96,6 +96,8 @@ export interface TagQualifier {
   delivers?: Subject;
   /** The ability that carries the want defeats or returns its own card ("You may defeat this upgrade. If you do, ..."), so it pays off once (D66). */
   spendsSelf?: boolean;
+  /** D83: the offer happens in the regroup phase ("When the regroup phase starts", "At the start of the next regroup phase"). */
+  regroup?: boolean;
 }
 
 interface TargetLite {
@@ -108,6 +110,7 @@ interface TargetLite {
 }
 interface EffectLite {
   cat?: string;
+  sign?: string;
   token?: string;
   target?: TargetLite;
   what?: unknown;
@@ -408,6 +411,8 @@ const COUNTS_ASPECT = new RegExp(`\\b(${ASPECT_ALT}) aspect icons?\\b|\\bfor eac
 const SPENDS_SELF = /\b(?:defeat|discard) this (?:upgrade|unit|card)\b|\breturn this (?:upgrade|unit|card) to (?:its owner's|your) hand\b/i;
 const spendsSelf = (ability: AbilityNode): boolean => clausesOf(ability).some((c) => SPENDS_SELF.test(c.text) && !/\binstead\b/i.test(c.text));
 
+const REGROUP = /\bregroup phase\b/i;
+
 const scopeOf = (text: string): TagQualifier["scope"] =>
   /\bwhile attacking\b/i.test(text) ? "attacking" : /\bwhile defending\b/i.test(text) ? "defending" : undefined;
 
@@ -480,6 +485,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     ...(relays === undefined ? {} : { relays }),
     ...(delivers === undefined ? {} : { delivers }),
     ...(side === "wants" && spendsSelf(ability) ? { spendsSelf: true } : {}),
+    ...(side === "offers" && REGROUP.test(`${triggerText} ${text}`) ? { regroup: true } : {}),
   };
 }
 
@@ -506,6 +512,25 @@ export function blanksHost(c: SynergyCard): boolean {
     ),
   );
 }
+
+/**
+ * D83 (#165): an upgrade whose own effect harms the unit it sits on (Condemn: "loses all other abilities" while attacking;
+ * "Attached unit can't ready"; "Attached unit gets -3/-0"; "Exhaust attached unit") is played on an enemy unit.
+ */
+export function harmsHost(c: SynergyCard): boolean {
+  if (c.type !== "Upgrade") return false;
+  if (blanksHost(c)) return true;
+  const onHost = (e: EffectLite): boolean => ATTACHED_UNIT.test(e.target?.text ?? "");
+  return Object.keys(c.faces).some((f) =>
+    [...abilitiesOf(c.faces[f])].some(({ ability }) =>
+      clausesOf(ability).some((cl) => cl.effects.some((e) => onHost(e) && ((e.cat === "stat_mod" && e.sign === "debuff") || e.cat === "restriction" || e.cat === "exhaust"))),
+    ),
+  );
+}
+
+/** "If attached unit is Darth Maul, you may attack with him": the name the clause gates on, or null ("If attached unit is a Fighter" names a trait). */
+const ATTACHED_NAME = /\b[Ii]f attached unit is ((?!an? )[A-Z][\p{L}'\u2019-]*(?: [A-Z][\p{L}'\u2019-]*)*)/u;
+const folded = (s: string): string => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 /** D74 (#161): a token that is not a unit (CR: Credit, Force, Experience, Shield and Advantage tokens are no units), named by a defeat offer. */
 const NON_UNIT_TOKEN = /\b(Credit|Force|Experience|Shield|Advantage) tokens?\b/i;
@@ -659,6 +684,19 @@ export function conflictBetween(
   }
   if (offerTag === "offers:upgrade-to-attach" && want.hostAbility === true && a.type === "Upgrade" && blanksHost(a)) {
     return "the upgrade removes the abilities of the unit it attaches to, including the one that needs the unit upgraded";
+  }
+  // D83 (#165): an upgrade that harms its carrier goes on an enemy unit, so it upgrades none of yours and no card of yours moves it.
+  if (offerTag === "offers:upgrade-to-attach" && RECEIVING_WANTS.has(wantTag) && !BASE_OR_ANY_UPGRADE.test(want.text) && harmsHost(a)) {
+    return "the upgrade harms the unit it attaches to, so it is played on an enemy unit and upgrades none of yours";
+  }
+  // D83 (#165): an effect gated on the attached unit's name reaches only that card.
+  const named = ATTACHED_NAME.exec(offer.text)?.[1];
+  if (named !== undefined && (want.onSelf || want.receives === true) && folded(named) !== folded(b.title) && !b.structured.traits.includes(named)) {
+    return `the offer works only if the attached unit is ${named}, the wanting card is not`;
+  }
+  // D83 (#165): a defeat in the regroup phase is not one a "this phase" check of the action phase sees.
+  if (offer.regroup === true && /\bthis phase\b/i.test(want.text)) {
+    return "the offer happens in the regroup phase, the want counts what happened this phase";
   }
   if (want.scope !== undefined && !STATE_WANTS.has(wantTag) && offer.triggers.length > 0 && !offer.triggers.some((t) => ATTACK_TRIGGERS.has(t)) && !/\battack/i.test(offer.text)) {
     return `the want triggers only ${want.scope}, the offer does not happen in combat`;

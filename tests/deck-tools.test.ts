@@ -543,6 +543,14 @@ describe("deck_legality_check", () => {
     expect(eternal.legal).toBe(true);
   });
 
+  // LampaGJ/swu-mcp#165 item 15, D83: a sideboard card is swapped into the deck, so it meets the same cardpool.
+  it("fails a sideboard card that appears only in rotated sets in Premier (CR 9.2.2.d), not in Eternal", () => {
+    const premier = body(deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC", sideboard: [{ card: "R1", count: 1 }] }));
+    expect(premier.failures).toEqual([expect.objectContaining({ rule: "9.2.2.d", check: "cardpool", detail: expect.stringContaining("sideboard card") })]);
+    const eternal = body(deckLegalityCheck(env, { decklist: legalDeck, leader: "L1", base: "BC", sideboard: [{ card: "R1", count: 1 }], format: "eternal" }));
+    expect(eternal.legal).toBe(true);
+  });
+
   it("warns, without failing, on a promo-only card the data cannot place in the Premier cardpool", () => {
     const out = body(deckLegalityCheck(env, { decklist: [...legalDeck, { card: "PR1", count: 1 }], leader: "L1", base: "BC" }));
     expect(out.legal).toBe(true);

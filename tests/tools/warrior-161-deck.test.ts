@@ -35,7 +35,8 @@ describe.skipIf(!hasData)("deck_audit shows the card that removes an aspect pena
   const rowOf = (a: Record<string, any>, title: string): Record<string, any> => a.aspect.uncovered.find((r: Record<string, any>) => r.card.startsWith(title));
 
   // D82 (#164) flipped this expectation: Qimir, Darth Traya and Marchion Ro are freed only by a Darksaber on one another, each a
-  // taxed carrier, so they keep the printed penalty; Oppo's carriers pay none and still free him.
+  // taxed carrier; Oppo's carriers pay none and still free him. D83 (#165) flipped it again: the taxed carriers free each other in
+  // sequence, so each row reads 0 (sequenced: true) once the first carrier has paid; aspect.sequence holds the 2..14 range.
   it("notes The Darksaber on every penalised row it can cover, with the effective penalty, and keeps the printed penalty", () => {
     const a = audit();
     expect(a.aspect.penalty).toBe(16);
@@ -43,8 +44,9 @@ describe.skipIf(!hasData)("deck_audit shows the card that removes an aspect pena
       const row = rowOf(a, title);
       const taxedOnly = title !== "Oppo Rancisis";
       expect(row.removedBy, title).toContain("The Darksaber, Icon of Leadership attached to");
-      expect(row.effectivePenaltyEach, title).toBe(taxedOnly ? 2 : 0);
-      expect(row.effectivePenaltyTotal, title).toBe(taxedOnly ? row.penaltyTotal : 0);
+      expect(row.effectivePenaltyEach, title).toBe(0);
+      expect(row.effectivePenaltyTotal, title).toBe(0);
+      expect(row.sequenced, title).toBe(taxedOnly ? true : undefined);
       expect(row.penaltyEach, title).toBe(2);
     }
   });
@@ -137,10 +139,12 @@ describe("readPenaltyRemovers on synthetic cards (#161, D75)", () => {
     const tax = card("T", "Taxed", { icons: ["Villainy", "Cunning"] });
     const carrier = card("C", "Carrier", { icons: ["Villainy"] });
     const reader = readPenaltyRemovers(leader, base, [saber, piece(tax), piece(carrier)]);
-    // D82 (#164) flipped this expectation: the Villainy carrier pays its own penalty under Heroism and Command, so it removes none.
+    // D82 (#164) flipped this expectation: the Villainy carrier pays its own penalty under Heroism and Command, so it removed none.
+    // D83 (#165) flipped it again: the taxed carrier frees the cards played after it, so the Villainy icon is off in sequence.
     expect(reader.noteFor(tax, ["Heroism", "Command"])).toEqual({
-      by: "Saber attached to Carrier (each a taxed carrier: it pays its own aspect penalty, so it removes none here)",
-      effectivePenaltyEach: 4,
+      by: "Saber attached to Carrier (taxed carriers: the first one you play pays its own aspect penalty; cards played while Saber stays on it pay the figure shown)",
+      effectivePenaltyEach: 2,
+      sequenced: { worstEach: 4, carriers: ["C"] },
     });
   });
 

@@ -132,6 +132,36 @@ function classifyClause(ctx: Context, card: SwuFeatureInputCard, face: SwuFeatur
   return rec;
 }
 
+const PRONOUN_DEFEAT = /\bdefeat (?:it|him|her)\b/i;
+
+/**
+ * D83 (#165): "An enemy unit loses all abilities for this phase. If it costs 3 or less, defeat it." The pronoun of a
+ * "defeat it" with no antecedent in its own clause (parseClause resolves those) names the unit or upgrade the nearest
+ * earlier clause of the ability acts on, so The Tree Remembers defeats an enemy unit and Salvaged Materials the upgrade
+ * it played. An earlier clause that acts on the card itself ("this unit") keeps the card as the antecedent.
+ */
+function resolveCrossClauseDefeat(clauses: SwuClause[]): void {
+  clauses.forEach((c, i) => {
+    if (i === 0 || c.source !== "grammar" || !PRONOUN_DEFEAT.test(c.text)) return;
+    const effect = c.effects.find((e) => e.rule === "defeat_self");
+    if (effect === undefined) return;
+    for (const prev of clauses.slice(0, i).reverse()) {
+      for (const e of [...prev.effects].reverse()) {
+        const target = e.target;
+        if (target?.side === "self") return;
+        if (target !== undefined && target.kind === "unit" && (target.side === "enemy" || target.side === "friendly" || target.side === "any")) {
+          Object.assign(effect, { rule: "defeat_ref", cat: "defeat", target: { ...structuredClone(target), text: "it" } });
+          return;
+        }
+        if (e.cat === "play_extra" && typeof e.what === "string" && /\bupgrades?\b/i.test(e.what)) {
+          Object.assign(effect, { rule: "defeat_ref", cat: "defeat", target: { side: "friendly", kind: "upgrade", arena: "any", quant: "one", restrict: [], text: "it" } });
+          return;
+        }
+      }
+    }
+  });
+}
+
 function parseParagraphs(ctx: Context, card: SwuFeatureInputCard, face: SwuFeatureFace, text: string, granted: boolean, path: string): SwuAbilityNode[] {
   const abilities: SwuAbilityNode[] = [];
   const paragraphs = text.split(/\n+/).map((p) => p.trim()).filter(Boolean);
@@ -165,6 +195,7 @@ function parseParagraphs(ctx: Context, card: SwuFeatureInputCard, face: SwuFeatu
     }
     const sentences = splitSentences(body);
     const clauses = sentences.map((sentence, si) => classifyClause(ctx, card, face, sentence, `${path}p${pi}s${si}`));
+    resolveCrossClauseDefeat(clauses);
     const grantedAbilities = grantedTexts.map((g, gi) => ({ index: gi, abilities: parseParagraphs(ctx, card, face, g, true, `${path}p${pi}g${gi}.`) }));
     if (triggers === null) {
       (modalHost as SwuAbility).options.push({ clauses, granted: grantedAbilities });

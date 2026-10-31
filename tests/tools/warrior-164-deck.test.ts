@@ -109,11 +109,13 @@ describe.skipIf(!hasData)("deck_audit names attaching upgrades as orphan feeders
     if (unplayedUnit >= 0) expect(upgrade).toBeLessThan(unplayedUnit);
   });
 
-  it("Qimir, Darth Traya and Marchion Ro keep their penalty: every Darksaber carrier named for them is itself a taxed Villainy card; Oppo's untaxed carriers still free him", () => {
+  it("Qimir, Darth Traya and Marchion Ro: every Darksaber carrier named for them is itself a taxed Villainy card, so they are freed only in sequence (D83); Oppo's untaxed carriers still free him", () => {
     const a = body(DECK_TOOLS.deck_audit.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, decklist: DECKLIST, gapLimit: 10 }));
     const rowOf = (title: string): Record<string, any> => a.aspect.uncovered.find((r: Record<string, any>) => r.card.startsWith(title));
+    // D83 (#165) flipped this expectation: a taxed carrier frees the cards played after it, so these rows read 0 in sequence.
     for (const title of ["Qimir", "Darth Traya", "Marchion Ro"]) {
-      expect(rowOf(title).effectivePenaltyEach, title).toBe(2);
+      expect(rowOf(title).effectivePenaltyEach, title).toBe(0);
+      expect(rowOf(title).sequenced, title).toBe(true);
       expect(rowOf(title).removedBy, title).toContain("taxed");
     }
     expect(rowOf("Oppo Rancisis").effectivePenaltyEach).toBe(0);

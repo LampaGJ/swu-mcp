@@ -12,7 +12,7 @@ import type { ScoreRow } from "../scorer/scores-file.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { SynergyContext } from "../synergy/context.js";
 import { clauseLock, isLocked, lockFields, lockSupply, type ClauseLock, type LockSupply } from "../synergy/clause-lock.js";
-import { baseEnabledOf, enabledFields } from "../synergy/locks.js";
+import { baseEnabledOf, clauseTextsOf, enabledFields } from "../synergy/locks.js";
 import { coverPenalty } from "../synergy/cover.js";
 import { aspectGroup, roleOf, substitutesFor } from "../synergy/fungibility.js";
 import { readPenaltyRemovers, type RemovalCard } from "./penalty-removal.js";
@@ -160,7 +160,7 @@ export const leaderField = z.string().min(1).describe("The leader: a cardKey, a 
 export const baseField = z.string().min(1).describe("The base: a cardKey, a SET_NNN id or an exact title");
 
 /** The SWUDB document's sideboard, carried beside the registered arguments by expandSwudb; never an argument of its own. */
-const sideboardInput = z.object({ sideboard: cardList("Sideboard cards as {card, count}").optional() });
+export const sideboardInput = z.object({ sideboard: cardList("Sideboard cards as {card, count}").optional() });
 const MAX_SIDEBOARD = 10;
 
 const normalise = (text: string): string =>
@@ -449,6 +449,7 @@ function substituteCandidates(
   slot: Slot,
   supplied: readonly string[] | undefined,
   exclude: ReadonlySet<string>,
+  dropped?: string[][],
 ): Candidate[] {
   const groups = substitutesFor(env.ctx.fungibility, [...slot.fills.keys()], slotCard.syn.cardKey, {
     preferAspects: supplied,
@@ -464,7 +465,11 @@ function substituteCandidates(
       if (row === undefined || syn === undefined || !pool(sub.cardKey)) continue;
       const fills = slot.fills.get(sub.cardKey) as number;
       // D82 (#164): every upgrade fills offers:upgrade-to-attach, so an upgrade that fills fewer of the original's roles fills only that generic one and loses the job.
-      if (slotCard.syn.type === "Upgrade" && fills < slot.roles.length) continue;
+      if (slotCard.syn.type === "Upgrade" && fills < slot.roles.length) {
+        // D83 (#165): the roles this band card leaves unfilled, so a slot with no swap can name the job nothing in the band does.
+        dropped?.push(slot.roles.filter((tag) => !(roleOf(env.ctx.fungibility, slotCard.syn.cardKey, tag)?.members ?? []).includes(sub.cardKey)));
+        continue;
+      }
       out.push({ syn, row, cost: sub.cost, fills });
     }
   }
@@ -678,8 +683,27 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
   );
   const uncovered = cover.uncovered.map((u) => {
     const note = removal.noteFor((lines.find((l) => l.syn.cardKey === u.cardKey) as DeckLine).syn, supplied);
-    return note === null ? u : { ...u, removedBy: note.by, effectivePenaltyEach: note.effectivePenaltyEach, effectivePenaltyTotal: note.effectivePenaltyEach * u.count };
+    if (note === null) return u;
+    return {
+      ...u,
+      removedBy: note.by,
+      effectivePenaltyEach: note.effectivePenaltyEach,
+      effectivePenaltyTotal: note.effectivePenaltyEach * u.count,
+      ...(note.sequenced === undefined ? {} : { sequenced: true }),
+    };
   });
+  // D83 (#165): taxed carriers free each other in sequence. Best case: the first one played pays its own penalty and every later
+  // card of the group pays its effective figure; worst case: the lender is not in play and every copy pays the printed figure.
+  const inSequence = uncovered.filter((u) => "sequenced" in u);
+  const sequence =
+    inSequence.length === 0
+      ? undefined
+      : {
+          cards: inSequence.map((u) => u.card).join("; "),
+          bestCaseTotal: Math.min(...inSequence.map((u) => u.penaltyEach)) + sumBy(inSequence, (u) => (u as { effectivePenaltyTotal: number }).effectivePenaltyTotal),
+          worstCaseTotal: sumBy(inSequence, (u) => u.penaltyTotal),
+          note: `these cards carry each other: ${removal.removers.filter((r) => r.kind === "icon-lender").map((r) => r.card).join(" or ")} must be drawn and attached to the first of them you play, which pays its own aspect penalty; while it stays on that unit, later ones pay their effectivePenaltyEach. Best case = one carrier's penalty plus those figures; worst case = no lender in play, every copy at its printed penalty.`,
+        };
 
   const inDeck = new Set(lines.map((l) => l.syn.cardKey));
   const into = edgesInto(env.ctx);
@@ -758,8 +782,9 @@ export function deckAudit(env: DeckEnv, input: unknown): ToolResult {
     aspect: {
       suppliedIcons: iconText(supplied),
       penalty: cover.penalty,
-      note: `+2 resources per aspect icon the leader and base do not supply, counted per copy; penalty is the printed figure. A deck card that removes it is read from card text (D75): an upgrade that lends its carrier's icons while you pay costs (The Darksaber; the carrier is a deck unit other than the card itself) takes off the icons the carrier prints, unless every such carrier pays an aspect penalty of its own (it is then named as a taxed carrier and takes nothing off, D82), and a leader, base or deck card that says "ignore the aspect penalties on ... you play" takes off the whole penalty of the cards it names. A row so covered carries removedBy and effectivePenaltyEach, which holds only while the remover is in play (the carrier, for an upgrade, or the leader unit with its condition met); a one-play Action that ignores penalties (Play a card, ignoring its aspect penalties) is no standing remover and is not counted${removal.removers.length === 0 ? "" : ". Removers in this deck: " + removal.removers.map((r) => `${r.card} (${r.detail})`).join("; ")}`,
+      note: `+2 resources per aspect icon the leader and base do not supply, counted per copy; penalty is the printed figure. A deck card that removes it is read from card text (D75): an upgrade that lends its carrier's icons while you pay costs (The Darksaber; the carrier is a deck unit other than the card itself) takes off the icons the carrier prints, and when every such carrier pays an aspect penalty of its own it is named as a taxed carrier (D82): the first one you play pays its penalty, and cards played while the lender stays on it pay effectivePenaltyEach (sequenced: true; aspect.sequence holds the best-case and worst-case totals, D83), and a leader, base or deck card that says "ignore the aspect penalties on ... you play" takes off the whole penalty of the cards it names. A row so covered carries removedBy and effectivePenaltyEach, which holds only while the remover is in play (the carrier, for an upgrade, or the leader unit with its condition met); a one-play Action that ignores penalties (Play a card, ignoring its aspect penalties) is no standing remover and is not counted${removal.removers.length === 0 ? "" : ". Removers in this deck: " + removal.removers.map((r) => `${r.card} (${r.detail})`).join("; ")}`,
       uncovered,
+      ...(sequence === undefined ? {} : { sequence }),
     },
     leaderComparison,
     lockedCards: { note: LOCK_NOTE, cards: lockedCards },
@@ -1075,8 +1100,10 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     } else main.push(l);
   }
 
+  const sideLines: DeckLine[] = [];
   if (sideboardEntries !== undefined) {
     const side = resolveList(env, sideboardEntries, "any");
+    sideLines.push(...side.lines.filter((l) => MAIN_TYPES.has(l.row.type)));
     for (const u of side.unresolved)
       failures.push({ rule: CR.sideboard, check: "unresolved sideboard card", detail: `"${u.card}" x${u.count}: ${u.reason}, ${u.detail}` });
     for (const l of side.lines)
@@ -1138,6 +1165,8 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     if (leader !== undefined) checkSet(leader.row, "leader");
     if (base !== undefined) checkSet(base.row, "base");
     for (const l of main) checkSet(l.row, "card");
+    // D83 (#165): a sideboard card is swapped into the deck between games, so it meets the same cardpool (CR 9.2.2.d).
+    for (const l of sideLines) checkSet(l.row, "sideboard card");
   }
 
   const cited = Object.values(CR);
@@ -1147,7 +1176,7 @@ export function deckLegalityCheck(env: DeckEnv, input: unknown): ToolResult {
     "asOf dates are not supported: legality is judged against this data version only.",
     sideboardEntries === undefined
       ? "The sideboard (up to 10 cards, CR 9.2.2.c) is not checked: none was given."
-      : "The sideboard is checked for its 10-card limit, unresolved cards and non-deck card types (CR 9.2.2.c); its copies are not added to the 3-copy count, and its cards are not checked against the Premier cardpool.",
+      : `The sideboard is checked for its 10-card limit, unresolved cards and non-deck card types (CR 9.2.2.c)${premier ? " and against the Premier cardpool like the deck (CR 9.2.2.d)" : ""}; its copies are not added to the 3-copy count.`,
     premier
       ? "Premier cardpool comes from the expansion definitions in the package (sets marked Premier legal or rotated), not from rotation symbols on cards (CR 9.2.2.d)."
       : "Eternal accepts every released card (CR 9.2.2.d); no set check is made.",
@@ -1554,6 +1583,22 @@ export const budgetAlternativesShape = {
     ),
 };
 
+/** "Each opponent may ready a resource", "they draw a card": an effect that hands an opponent a resource, a card or a token. */
+const OPPONENT_GAIN = /\b(?:each|an|that|the) opponent (?:may )?(?:ready|readies|draws?|creates?|gains?|puts?|resources?|takes?)\b|\bthey (?:may )?(?:draw|create|resource)s?\b/i;
+/** "Its controller resources it": the controller of the unit an enemy-only effect took. */
+const CONTROLLER_GAIN = /\bits controller (?:may )?(?:resources?|draws?|creates?|gains?|puts?)\b/i;
+
+/**
+ * D83 (#165): the clause by which a card gives the opponent a resource, a card or a token (Display Piece: "Defeat an enemy
+ * non-leader unit. Its controller resources it from its owner's discard pile."), so a swap that offers it says so; null when none.
+ */
+export function drawbackOf(syn: SynergyCard): string | null {
+  const texts = clauseTextsOf(syn);
+  const enemyOnly = texts.some((t) => /\benemy\b/i.test(t));
+  const opponent = texts.some((t) => /\bopponent\b/i.test(t));
+  return texts.find((t) => (opponent && OPPONENT_GAIN.test(t)) || (enemyOnly && CONTROLLER_GAIN.test(t))) ?? null;
+}
+
 type NoAlternativeReason = "no cheaper same-slot card" | `no cheaper same-slot card that ${string}` | `no card ${string}`;
 
 /** Named candidates (cardKey, SET_NNN id or title) as feature records; what does not resolve is listed, never guessed (D55). */
@@ -1611,7 +1656,8 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
     const slotScore = env.scores.get(line.syn.cardKey)?.playCalibrated ?? null;
     const slotPenalty = supplied === undefined ? null : singlePenalty(line.syn, supplied);
     const roleKeep = roleKeepOf(line.syn, suppliedKw, true);
-    const allCandidates = substituteCandidates(env, line, slot, supplied, inDeck);
+    const dropped: string[][] = [];
+    const allCandidates = substituteCandidates(env, line, slot, supplied, inDeck, dropped);
     const candidates = roleKeep === null ? allCandidates : allCandidates.filter((c) => roleKeep.keptBy(c.syn).length > 0);
     const alternatives = candidates
       .flatMap((c) => {
@@ -1635,6 +1681,7 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
             scoreDelta: score === null || slotScore === null ? null : r2(score - slotScore),
             penalty,
             ...lockFields(lock),
+            ...(drawbackOf(c.syn) === null ? {} : { drawback: drawbackOf(c.syn) }),
             ...(roleKeep === null ? {} : { keepsRole: roleKeep.keptBy(c.syn).join(", ") }),
             ...(leaderData === null ? {} : { leaderInclusion: leaderData.byCard.get(c.syn.cardKey)?.inclusion ?? null }),
           },
@@ -1654,7 +1701,11 @@ export function budgetAlternatives(env: DeckEnv, input: unknown): ToolResult {
       if (roleKeep !== null && candidates.length === 0) return none(`no card ${roleKeep.jobs.join(" or ")}`);
       // D65: cards that do the job exist but none is cheaper in the slot's shape; the row names the job it kept.
       if (roleKeep !== null && candidates.some((c) => sameSlotShape(line.syn, c.syn))) return none(`no cheaper same-slot card that ${roleKeep.jobs.join(" or ")}`);
-      return none(candidates.some((c) => sameSlotShape(line.syn, c.syn)) ? "no cheaper same-slot card" : "no card within the cost band");
+      if (candidates.some((c) => sameSlotShape(line.syn, c.syn))) return none("no cheaper same-slot card");
+      // D83 (#165): band cards exist but each leaves a role of the card unfilled; the reason names the role none of them fills.
+      const unfilled = slot.roles.filter((tag) => dropped.length > 0 && dropped.every((missing) => missing.includes(tag)));
+      if (unfilled.length > 0) return none(`no card in the cost band fills ${unfilled.join(" or ")} (${dropped.length} band card${dropped.length === 1 ? "" : "s"} fill only its other roles)`);
+      return none("no card within the cost band");
     }
     return [
       {
@@ -2146,13 +2197,13 @@ const FORM_FIELDS: Record<string, true> = { decklist: true, leader: true, base: 
 export const DECK_TOOLS = {
   deck_audit: deckTool(
     "Deck audit",
-    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier and removes nothing (D82).",
+    "One-call report on a decklist under a leader and base: size and types, cost curve against the rubric's fitted stat curve, mean score, aspect penalty per card (+2 resources per uncovered icon, per copy), orphan wants (cards that want what nothing in the deck offers; a wide-board want counts as fed once the deck holds the units its clause asks for, 3 when it names no number) and role-cluster gaps. Decklist is {card, count} with a cardKey or exact title; unresolved names are listed. A swudb sideboard is listed under sideboard with a row per card, apart from the deck. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card whose clause needs a base location or a unit aspect the leader, base and deck do not supply is listed under lockedCards with the lock named (baseLocked, needsUnitAspect), and such feeders follow the open ones. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A card that removes an aspect penalty (The Darksaber lending its carrier's icons; a leader, base or deck card that says \"ignore the aspect penalties on ... you play\") is read from card text: the covered rows of aspect.uncovered carry removedBy and effectivePenaltyEach, and penalty stays the printed figure (D75). clusterGaps.gapCards names the top three cards of each shown gap, with cost, penalty and play share. Among unplayed orphan feeders an in-colour upgrade that attaches to the card comes first, the one linked to more other deck cards ahead; a Darksaber carrier that pays its own aspect penalty is named as a taxed carrier (D82): the first one played pays its penalty and later ones pay effectivePenaltyEach while the Darksaber stays on it (sequenced: true), and aspect.sequence gives the best-case and worst-case totals of those cards (D83).",
     deckAuditShape,
     deckAudit,
   ),
   deck_legality_check: deckTool(
     "Deck legality check",
-    `Checks a list against Comprehensive Rules v8.0 deck construction: exactly 1 leader and 1 base and at least 50 other cards (CR ${CR.deckContents}), at most 3 copies of a card (CR ${CR.premierCopies}, ${CR.copyLimit}), no tokens (CR ${CR.tokens}), base text that changes the minimum deck size (CR ${CR.baseOverride}) and the Premier cardpool (CR ${CR.cardpool}). Lists failing cards with the section id. Data limits: no ban or suspension ledger, no asOf date; a sideboard (swudb) is checked for its 10-card limit only.${" Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base."}`,
+    `Checks a list against Comprehensive Rules v8.0 deck construction: exactly 1 leader and 1 base and at least 50 other cards (CR ${CR.deckContents}), at most 3 copies of a card (CR ${CR.premierCopies}, ${CR.copyLimit}), no tokens (CR ${CR.tokens}), base text that changes the minimum deck size (CR ${CR.baseOverride}) and the Premier cardpool (CR ${CR.cardpool}). Lists failing cards with the section id. Data limits: no ban or suspension ledger, no asOf date; a sideboard (swudb) is checked for its 10-card limit, its card types and, in premier, the Premier cardpool (D83).${" Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base."}`,
     deckLegalityShape,
     deckLegalityCheck,
   ),
@@ -2176,7 +2227,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82).",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, the role no card in the cost band fills when band cards exist (D83), or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82). A substitute that gives the opponent a resource, a card or a token carries drawback, the clause quoted (Display Piece: \"Its controller resources it from its owner's discard pile.\") (D83).",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

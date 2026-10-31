@@ -21,6 +21,8 @@ export function clip(text: string, max = EVIDENCE_CHARS): string {
 
 /** A clause that hangs on the one before it: "If you do, ready that unit." after "You may defeat this upgrade." */
 const DEPENDENT = /^(?:if you do(?:n't)?|if you can't|if (?:it|that unit|they) (?:does|do|is|was|survives)|then|otherwise)\b/i;
+/** A clause that qualifies the one before it: "If it shares a Trait ..., it gets +2/+0 for this attack.", "For this attack, he gains Overwhelm". */
+const RIDER = /^(?:if (?:it|he|she|they|that unit)\b|for this attack\b)/i;
 /** The why the tag builder writes for a trigger it reads by kind, not by text ("text: When Defeated"). */
 const TRIGGER_WHY: Record<string, (t: { trigger?: string }) => boolean> = {
   "When Defeated": (t) => t.trigger === "when_defeated",
@@ -62,14 +64,24 @@ function spanIn(abilities: readonly AbilityLite[], body: string): string | null 
     for (const [i, seq] of sequencesOf(a).entries()) {
       const at = seq.findIndex((c) => flat(c) === body);
       if (at < 0) continue;
-      // D82 (#164): a mode of a choose-one is quoted whole after the ability's own lead ("Choose one:"), so its antecedent
-      // ("Look at an opponent's hand.") and its drawback ("If you do, they draw a card.") travel with the cited clause.
-      if (i > 0) return `${lead}${[...(a.clauses ?? []).map((c) => flat(c.text)), "\u2026", ...seq.map(flat)].join(" ")}`;
+      // D82 (#164): a mode of a choose-one is quoted whole, so its antecedent ("Look at an opponent's hand.") and its drawback
+      // ("If you do, they draw a card.") travel with the cited clause. D83 (#165): the lead names the mode's place among the
+      // modes ("Choose one (mode 2 of 2):") instead of an elision mark, so nothing reads as cut.
+      if (i > 0) {
+        const modes = (a.options ?? []).length;
+        const choose = (a.clauses ?? []).map((c) => flat(c.text)).join(" ").replace(/:$/, "");
+        return `${lead}${choose === "" ? "Choose one" : choose} (mode ${i} of ${modes}): ${seq.map(flat).join(" ")}`;
+      }
       let from = at;
       while (from > 0 && DEPENDENT.test(flat(seq[from]))) from--;
-      return `${lead}${seq.slice(from, at + 1).map(flat).join(" ")}`;
+      // D83 (#165): a conditional rider on the cited effect ("If it shares a Trait with another friendly unit, it gets +2/+0
+      // for this attack.") is never trimmed from the quote.
+      let to = at;
+      while (to + 1 < seq.length && RIDER.test(flat(seq[to + 1]))) to++;
+      return `${lead}${seq.slice(from, to + 1).map(flat).join(" ")}`;
     }
-    const byKind = TRIGGER_WHY[body];
+    // D83 (#165): the replay want's why carries the categories it read ("When Played (damage)"); it cites the trigger all the same.
+    const byKind = TRIGGER_WHY[body] ?? TRIGGER_WHY[body.replace(/ \([^)]*\)$/, "")];
     const cited = (a.triggers ?? []).some((t) => (t.text !== undefined && flat(t.text) === body) || (byKind?.(t) ?? false) || t.trigger === body);
     const clauses = sequencesOf(a).flat();
     if (cited && clauses.length > 0) return `${trigger === "" ? body : trigger}: ${clauses.map(flat).join(" ")}`;

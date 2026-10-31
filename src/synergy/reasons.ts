@@ -66,6 +66,49 @@ export function reasonOfHit(graph: PairGraph, e: PairEdge, hit: PairRowHit): str
     if (hit.want === "wants:extra-attacks") return READY_AGAIN_REASON;
   }
   const variants = rowById(graph, hit.row)?.reasonBySide;
-  if (variants === undefined) return hit.reason;
-  return variants[offerTargetSide(graph.byKey.get(e.a) as SynergyCard, hit.offer)] ?? hit.reason;
+  const text = variants === undefined ? hit.reason : (variants[offerTargetSide(graph.byKey.get(e.a) as SynergyCard, hit.offer)] ?? hit.reason);
+  return ownExamples(graph, e, text);
+}
+
+const titlesOf = new WeakMap<PairGraph, readonly string[]>();
+/** Card titles of the graph, longest first, so "Oppo Rancisis" is matched before a shorter title it starts with. */
+function graphTitles(graph: PairGraph): readonly string[] {
+  let titles = titlesOf.get(graph);
+  if (titles === undefined) {
+    titles = [...new Set([...graph.byKey.values()].map((c) => c.title))].filter((t) => t.length > 0).sort((x, y) => y.length - x.length || (x < y ? -1 : x > y ? 1 : 0));
+    titlesOf.set(graph, titles);
+  }
+  return titles;
+}
+const DECISION_REF = /\s*\((?:D\d+(?:, D\d+)*)\)\.?\s*$/;
+
+/**
+ * D83 (#165): a row's reason names example cards ("...: Marchion Ro doubles each friendly unit's Raid, and Oppo Rancisis gains
+ * Raid 2 while another friendly unit has Raid."; "Example: Academy Graduate feeds Kylo Ren's Command Shuttle."). On a link the
+ * reason keeps only the example clauses of the two linked cards, so Oppo's row never explains Marchion Ro.
+ */
+export function ownExamples(graph: PairGraph, e: PairEdge, reason: string): string {
+  const titles = graphTitles(graph);
+  const own = new Set([e.a, e.b].map((k) => graph.byKey.get(k)?.title).filter((t): t is string => t !== undefined));
+  const titleAt = (text: string): string | undefined => titles.find((t) => text.startsWith(t) && !/[\p{L}\p{N}]/u.test(text.charAt(t.length)));
+  const ref = DECISION_REF.exec(reason)?.[0] ?? "";
+  let body = ref === "" ? reason : reason.slice(0, reason.length - ref.length);
+  // "Example: X feeds Y." names other cards; it stays only when it names a linked card.
+  body = body.replace(/\s*Example: ([^.]*)\./g, (whole, inner: string) => ([...own].some((t) => inner.includes(t)) ? whole : ""));
+  const colon = body.indexOf(": ");
+  if (colon >= 0) {
+    const head = body.slice(0, colon);
+    const segments = body.slice(colon + 2).replace(/\.$/, "").split(/, and |; /);
+    const named = segments.map(titleAt);
+    if (named.every((t) => t !== undefined)) {
+      const kept = segments.filter((_, i) => own.has(named[i] as string));
+      body = kept.length === 0 ? `${head}.` : `${head}: ${kept.join("; ")}.`;
+    }
+  }
+  // "...is such a target too; Oppo Rancisis copies it from one" names a card after a semicolon.
+  body = body.replace(/; ([^;.]+)(?=\.|$)/g, (whole, inner: string) => {
+    const t = titleAt(inner);
+    return t === undefined || own.has(t) ? whole : "";
+  });
+  return `${body.trimEnd()}${ref}`;
 }

@@ -25,6 +25,11 @@ export interface RemovalNote {
   by: string;
   /** Penalty per copy that is left once the remover is in place. */
   effectivePenaltyEach: number;
+  /**
+   * D83 (#165): the carriers pay a penalty of their own, so the removal holds only in sequence: the first carrier played pays
+   * its penalty, and cards played while the lender sits on it pay effectivePenaltyEach. worstEach is the printed figure.
+   */
+  sequenced?: { worstEach: number; carriers: string[] };
 }
 
 const PROVIDES_ICONS = /\bwhile you are paying costs, this unit provides its aspect icons\b/i;
@@ -133,8 +138,8 @@ export function readPenaltyRemovers(leader: RemovalCard, base: RemovalCard, deck
       if (ignoring !== undefined) {
         return { by: `${cardLabel(ignoring.source.syn)}: "${ignoring.clause}"`, effectivePenaltyEach: 0 };
       }
-      // D82 (#164): a carrier that pays an aspect penalty of its own frees nothing before it is in play, and the carriers can
-      // free only each other (Qimir, Darth Traya, Marchion Ro), so such a carrier is named but takes no penalty off.
+      // D82 (#164): a carrier that pays an aspect penalty of its own frees nothing before it is in play. D83 (#165): it frees the
+      // cards played after it, so the carriers (Qimir, Darth Traya, Marchion Ro) are a sequence: the first pays, the later ones do not.
       const taxed = (d: RemovalCard): boolean => missingIcons(d.syn, supplied).length > 0 && !ignorers.some((i) => i.covers(d.syn));
       const bestOf = (free: boolean): { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null => {
         let best: { lender: RemovalCard; carriers: RemovalCard[]; n: number } | null = null;
@@ -157,7 +162,11 @@ export function readPenaltyRemovers(leader: RemovalCard, base: RemovalCard, deck
       const more = best.carriers.length > CARRIER_LIMIT ? `, +${best.carriers.length - CARRIER_LIMIT} more` : "";
       const by = `${cardLabel(best.lender.syn)} attached to ${names.join(" or ")}${more}`;
       if (free === null)
-        return { by: `${by} (each a taxed carrier: it pays its own aspect penalty, so it removes none here)`, effectivePenaltyEach: UNCOVERED_ICON_PENALTY * missing.length };
+        return {
+          by: `${by} (taxed carriers: the first one you play pays its own aspect penalty; cards played while ${cardLabel(best.lender.syn)} stays on it pay the figure shown)`,
+          effectivePenaltyEach: UNCOVERED_ICON_PENALTY * (missing.length - best.n),
+          sequenced: { worstEach: UNCOVERED_ICON_PENALTY * missing.length, carriers: best.carriers.map((c) => c.syn.cardKey) },
+        };
       return { by, effectivePenaltyEach: UNCOVERED_ICON_PENALTY * (missing.length - best.n) };
     },
   };

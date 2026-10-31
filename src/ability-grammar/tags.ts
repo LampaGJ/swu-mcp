@@ -47,6 +47,12 @@ const givesItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolea
   !c.effects.some((x) => x.cat === "create_token") &&
   /\bthis unit\b/i.test(c.text) &&
   !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
+const THIS_UPGRADE = /\bdefeat this upgrade\b/i;
+/** The bounce's object is the card ("this unit", or a pronoun) and no other unit is named in the clause or its trigger. */
+const returnsOnlyItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolean =>
+  (SELF_OBJECT.test(e.target?.text ?? "") || PRONOUN.test(e.target?.text ?? "")) &&
+  (pol(e.target) === "self" || pol(e.target) === "ref") &&
+  !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
 const returnsItself = (c: SwuClause, e: ClauseEffect): boolean =>
   e.cat === "recursion" && (SELF_OBJECT.test(e.target?.text ?? "") || isSelfGated(c, e));
 const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
@@ -213,7 +219,12 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         const toCount = discardsToCount(c);
         const selfReturn = onlyReturnsItself(c);
         const copies = copiesKeyword(c);
-        for (const o of c.offers ?? []) add(offers, o, `curated ${c.curatedId}`);
+        const bouncesItself = !a.granted && card.type === "Unit" && c.effects.some((e) => e.cat === "bounce" && returnsOnlyItself(c, e, a.triggers.map((x) => x.text ?? "").join(" ")));
+        for (const o of c.offers ?? []) {
+          // D83 (#165): a curated self-bounce (cur-0089 General Grievous, cur-0107 Krrsantan) is read as one, below; the table cannot be hand-edited.
+          if (bouncesItself && o === "offers:return-own-to-hand") continue;
+          add(offers, o, `curated ${c.curatedId}`);
+        }
         // Overrides a curated row's want too (cur-0189, cur-0180), because the table cannot be hand-edited.
         for (const w of c.wants ?? []) {
           if ((toCount && w === "wants:cards-in-hand") || (selfReturn && w === "wants:cards-in-discard")) continue;
@@ -255,7 +266,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                 if (target?.kind === "token" && /credit/i.test(target.text)) add(wants, "wants:credit-tokens", why);
               }
               break;
-            case "self_defeat": add(offers, "offers:defeat-self", why); break;
+            // D83 (#165): "You may defeat this upgrade" defeats an upgrade, which no friendly-unit-defeated want counts.
+            case "self_defeat": add(offers, card.type === "Upgrade" && THIS_UPGRADE.test(c.text) ? "offers:defeat-own-upgrade" : "offers:defeat-self", why); break;
             case "damage":
             case "indirect_damage":
               if (p === "ref" && createsToken) break;
@@ -270,7 +282,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
               else if (p === "enemy") add(offers, "offers:damage-enemy-unit", why);
               else add(offers, "offers:damage-any-unit", why);
               break;
-            case "heal": add(offers, "offers:heal", why); break;
+            // D83 (#165): "Heal 2 damage from this unit" heals only the card itself, so it feeds no other card's heal trigger.
+            case "heal": add(offers, p === "self" && SELF_OBJECT.test(target?.text ?? "") ? "offers:heal-self" : "offers:heal", why); break;
             case "draw": add(offers, "offers:draw", why); break;
             case "search": add(offers, SEARCH_OFFER[e.dest ?? ""] ?? "offers:tutor", why); break;
             case "discard_self": add(offers, "offers:discard-own", why); break;
@@ -307,7 +320,12 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "ready": if (p !== "enemy" && p !== "self" && (!target || isUnitKind(target))) add(offers, "offers:ready-unit", why); break;
             case "exhaust": add(offers, p === "friendly" ? "offers:exhaust-own" : p === "enemy" ? "offers:exhaust-enemy" : "offers:exhaust-any", why); break;
             case "self_exhaust": add(offers, "offers:exhaust-own", why); break;
-            case "bounce": add(offers, target?.kind === "upgrade" ? "offers:return-upgrade" : p === "friendly" || p === "self" ? "offers:return-own-to-hand" : p === "enemy" ? "offers:bounce-enemy" : "offers:return-any-to-hand", why); break;
+            case "bounce": {
+              // D83 (#165): "Return him to his owner's hand" on a unit that names no other unit returns only itself, so it replays no other card.
+              const toItself = !a.granted && card.type === "Unit" && returnsOnlyItself(c, e, a.triggers.map((x) => x.text ?? "").join(" "));
+              add(offers, target?.kind === "upgrade" ? "offers:return-upgrade" : toItself ? "offers:return-self-to-hand" : p === "friendly" || p === "self" ? "offers:return-own-to-hand" : p === "enemy" ? "offers:bounce-enemy" : "offers:return-any-to-hand", why);
+              break;
+            }
             case "play_extra": {
               const zone = e.zone ?? "";
               if (/discard/.test(zone)) { add(offers, "offers:play-from-discard", why); if (!SELF_DISCARD.test(c.text)) add(wants, "wants:cards-in-discard", why); }

@@ -1061,7 +1061,8 @@ describe("find_trios played members and de-duplication (#134)", () => {
     // 1|2|4, 5|2|3 and the convergent 1|5|2 each share two members with 1|2|3; 5|2|4 shares only Bravo.
     expect(keysOf(out)).toEqual(["1|2|3", "5|2|4"]);
     expect(out.trios[0].variants.map((v: any) => v.title)).toEqual(["Echo", "Delta"]);
-    expect(out.trios[0].variants[1]).toEqual({ title: "Delta", cost: 1, leaderInclusion: null });
+    // D83 (#165) flipped this expectation: a variant names its slot and, with fixed aspects, its penalty.
+    expect(out.trios[0].variants[1]).toEqual({ title: "Delta", slot: "C", cost: 1, penalty: 0, leaderInclusion: null });
     expect(out.trios[1].variants).toBeUndefined();
     expect(out.shown).toBe(2);
   });
@@ -1259,7 +1260,8 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
     const both = body(findTrios(pairCtx, { leader: "LK", minPlayed: 0, withAlternatives: false, evidence: false }));
     expect(both.trios[0].cardKeys).toBe("X2|W|T");
     expect(both.trios[0]).not.toHaveProperty("baseLocked");
-    expect(both.trios[0].variants).toContainEqual({ title: "Ritual Like", cost: 3, leaderInclusion: 0.8, baseLocked: "Tatooine" });
+    // D83 (#165) flipped this expectation: a variant names its slot and, with fixed aspects, its penalty.
+    expect(both.trios[0].variants).toContainEqual({ title: "Ritual Like", slot: "A", cost: 3, penalty: 0, leaderInclusion: 0.8, baseLocked: "Tatooine" });
   });
 
   it("find_trios: a base of the named kind clears the lock on the trio and on its variant, a base of another kind keeps it (#150)", () => {
@@ -1269,7 +1271,8 @@ describe("a partner whose clause names a specific base is marked baseLocked and 
     expect(met).not.toHaveProperty("baseLocked");
     const kept = run("BP");
     expect(kept.cardKeys).toBe("X2|W|T");
-    expect(kept.variants).toContainEqual({ title: "Ritual Like", cost: 3, leaderInclusion: 0.8, baseLocked: "Tatooine" });
+    // D83 (#165) flipped this expectation: a variant names its slot and, with fixed aspects, its penalty.
+    expect(kept.variants).toContainEqual({ title: "Ritual Like", slot: "A", cost: 3, penalty: 0, leaderInclusion: 0.8, baseLocked: "Tatooine" });
   });
 
   it("find_pairings: a pinned location clears the Tatooine clause under Jundland Wastes and keeps it under Origin Tree, and Kashyyyk clears under Origin Tree (#150)", () => {
