@@ -4,8 +4,10 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { gateRecordSchema } from "../src/sims/calibration.js";
+import { loadStore } from "../src/data.js";
+import { failedRelativeGates, gateRecordSchema } from "../src/sims/calibration.js";
 import { BUILT_MARKER, DEFAULT_FORCETEKI, readPin } from "../src/sims/engine-pin.js";
+import { swudbCandidates } from "../src/tools/swudb.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RUNS = path.join(REPO_ROOT, "data/runs");
@@ -22,7 +24,17 @@ const servableRung =
       const rec = gateRecordSchema.parse(JSON.parse(readFileSync(path.join(CALIBRATION, name), "utf8")));
       return rec.servesWinShare && rec.engine.commit === readPin().commit;
     });
-const OWNER_DECK: unknown = JSON.parse(readFileSync(path.join(REPO_ROOT, "tests/fixtures/decks/warrior-chewie-raid.swudb.json"), "utf8"));
+/** Relative mode (D108) needs only replay, health and ladder, so it can be served while no rung passes the external gate. */
+const relativeRung =
+  hasEngine &&
+  existsSync(CALIBRATION) &&
+  readdirSync(CALIBRATION)
+    .filter((name) => name.endsWith(".json"))
+    .some((name) => {
+      const rec = gateRecordSchema.parse(JSON.parse(readFileSync(path.join(CALIBRATION, name), "utf8")));
+      return failedRelativeGates(rec).length === 0 && rec.engine.commit === readPin().commit;
+    });
+const OWNER_DECK: unknown =JSON.parse(readFileSync(path.join(REPO_ROOT, "tests/fixtures/decks/warrior-chewie-raid.swudb.json"), "utf8"));
 
 const ELIA_KANE = "06010242";
 const IDEN_VERSIO = "0101002";
@@ -193,6 +205,26 @@ describe.skipIf(!hasBuiltData || !hasEngine)("simulate_matchup over stdio (local
       expect(result.isError).toBe(true);
       expect(text).toMatch(/^no bot rung has passed every calibration gate, so simulate_matchup reports no win share\./);
       expect(text).toMatch(/failed the external calibration gate/);
+    }
+  }, 60_000);
+
+  it.skipIf(!relativeRung)("plans a relative comparison of the owner's deck with a variant, without a win share, while the absolute mode stays refused (D108, #185)", async () => {
+    const run = readdirSync(RUNS).filter((name) => /^\d{4}-\d{2}-\d{2}$/.test(name) && existsSync(path.join(RUNS, name, "llm"))).sort().at(-1) as string;
+    const store = loadStore(path.join(RUNS, run, "llm"));
+    const doc = OWNER_DECK as { deck: { id: string }[] };
+    const keys = [...new Set(doc.deck.map((e) => swudbCandidates(store, e.id).find((c) => c.type !== "Leader" && c.type !== "Base")?.cardKey as string))];
+    const relative = await client.callTool({ name: "simulate_matchup", arguments: { swudb: OWNER_DECK, variant: [`${keys[0]}>${keys[1]}`], relative: true, dryRun: true } });
+    const text = (relative.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+    expect(relative.isError, text.slice(0, 300)).toBeUndefined();
+    expect(text).toContain("jobState: plan");
+    expect(text).toContain("mode: relative");
+    expect(text).toContain("relative comparison on identical shuffles, not a human or tournament win rate");
+    expect(text).toContain("plannedGames: 300");
+    if (!servableRung) {
+      const absolute = await client.callTool({ name: "simulate_matchup", arguments: { swudb: OWNER_DECK, variant: [`${keys[0]}>${keys[1]}`], dryRun: true } });
+      const refused = (absolute.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+      expect(absolute.isError).toBe(true);
+      expect(refused).toMatch(/Pass relative: true/);
     }
   }, 60_000);
 });

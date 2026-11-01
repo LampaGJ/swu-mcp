@@ -343,6 +343,43 @@ export function choosePilot(records: readonly GateRecord[], requested: string | 
   return { error: `no bot rung has passed every calibration gate, so simulate_matchup reports no win share.${reasons.length > 0 ? ` ${reasons.join(" ")}` : " No calibration gate record exists yet."}` };
 }
 
+/** The gates a relative comparison needs (D108): its claim is a difference on identical shuffles, so rank agreement with tournaments (external) does not decide it. */
+export const RELATIVE_GATES = ["replay", "health", "ladder"] as const;
+
+export const failedRelativeGates = (rec: GateRecord): (typeof RELATIVE_GATES)[number][] => RELATIVE_GATES.filter((g) => !rec.gates[g].pass);
+
+/** The plain sentence a rung gets when it fails a gate relative mode needs (D9); null when replay, health and ladder all passed. */
+export function failedRelativeGateSentence(rec: GateRecord): string | null {
+  const first = failedRelativeGates(rec)[0];
+  if (first === undefined) return null;
+  const spec = rec.policy.spec;
+  if (first === "health") {
+    const h = rec.gates.health;
+    return `${spec} failed the health gate: ${h.nonDecisiveShare} of its games were not decisive and ${h.fallbackShare} of its decisions fell back to random play, so it may not report a relative comparison.`;
+  }
+  return `${spec} failed the ${GATE_NAMES[first]}, so it may not report a relative comparison.`;
+}
+
+/**
+ * The pilot for a relative comparison: the requested policy when its record passes replay, health and ladder, else the
+ * highest such rung (ties: the spec name in code-point order). The external gate is not consulted; a record pinned to
+ * another engine commit serves nothing.
+ */
+export function choosePilotRelative(records: readonly GateRecord[], requested: string | undefined, engineCommit: string): PilotChoice {
+  if (requested !== undefined) {
+    const rec = records.find((r) => r.policy.spec === requested);
+    if (rec === undefined) return { error: `${requested} has no calibration gate record, so it may not report a relative comparison; run scripts/sims/calibration-gate.ts --policy ${requested} first.` };
+    if (rec.engine.commit !== engineCommit) return { error: `the calibration record for ${requested} was measured on engine commit ${rec.engine.commit}, not the pinned ${engineCommit}; re-run the calibration gate.` };
+    const why = failedRelativeGateSentence(rec);
+    return why === null ? { spec: requested, record: rec } : { error: why };
+  }
+  const passing = records.filter((r) => failedRelativeGates(r).length === 0 && r.engine.commit === engineCommit);
+  passing.sort((a, b) => b.policy.rung - a.policy.rung || compareCodePoints(a.policy.spec, b.policy.spec));
+  if (passing.length > 0) return { spec: passing[0].policy.spec, record: passing[0] };
+  const reasons = records.map((r) => (r.engine.commit !== engineCommit ? `${r.policy.spec} was measured on engine commit ${r.engine.commit}, not the pinned ${engineCommit}.` : failedRelativeGateSentence(r))).filter((x): x is string => x !== null);
+  return { error: `no bot rung has passed the replay, health and ladder gates, so simulate_matchup reports no relative comparison.${reasons.length > 0 ? ` ${reasons.join(" ")}` : " No calibration gate record exists yet."}` };
+}
+
 const Z95 = 1.959964;
 
 /**

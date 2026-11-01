@@ -5,7 +5,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { CardStore } from "../data.js";
 import { REPO_ROOT } from "../paths.js";
-import { choosePilot, gateRecordSchema, type GateRecord } from "../sims/calibration.js";
+import { choosePilot, choosePilotRelative, gateRecordSchema, type GateRecord } from "../sims/calibration.js";
 import { BUILT_MARKER, DEFAULT_FORCETEKI, readPin } from "../sims/engine-pin.js";
 import {
   SIMS_JOBS_DIR,
@@ -20,6 +20,8 @@ import {
   matchupLabel,
   parseMatchupInput,
   plannedGames,
+  relativeLabel,
+  relativeNotes,
   simulateMatchupShape,
   validateDeck,
   type JobFile,
@@ -37,7 +39,8 @@ import { swudbCandidates, swudbDeckSchema, swudbField } from "./swudb.js";
  * @strategicPurpose Lets an assistant battle-test a deck offline against real tournament decklists, against its own
  * variant, or against another deck, with the calibrated bot rung on both seats (#116). Bot play is the last tier of
  * D21 and is labelled so; Karabast data never enters it (D22); a rung without a passing calibration gate record
- * reports no win share (D9, #115).
+ * reports no win share (D9, #115). Relative mode (D108, #185) serves a paired difference between two decks on a rung
+ * that passes replay, health and ladder even when the external gate fails, because it claims no absolute win rate.
  * @tacticalObjective Never blocks the stdio server: a call parses and checks the input, picks the pilot from the
  * pinned gate records, keys the job by the canonical input hash plus code commit, engine pin and gate record, and
  * then either returns the cached result, the running job's progress, a busy notice (one job at a time), or starts
@@ -197,8 +200,14 @@ export function simulateMatchup(store: CardStore, raw: unknown, deps: SimsDeps =
       return fail(`policy ${x.policy}: ${(e as Error).message}; known rungs are rung1, rung3:k=8 and rung3mc:playout=rung1,n=2`);
     }
   }
-  const choice = choosePilot(loaded.records, requested, engine.commit);
-  if ("error" in choice) return fail(choice.error);
+  const relative = x.mode === "relative";
+  const choice = relative ? choosePilotRelative(loaded.records, requested, engine.commit) : choosePilot(loaded.records, requested, engine.commit);
+  if ("error" in choice) {
+    // A deck pair has a licensed reading even where the absolute one is refused: say so, only when a rung would serve it.
+    const comparesTwoDecks = x.variant.length > 0 || x.opponentDeck !== null;
+    const canRelative = comparesTwoDecks && !("error" in choosePilotRelative(loaded.records, requested, engine.commit));
+    return fail(canRelative ? `${choice.error} Pass relative: true to compare the two decks without an absolute win share: it needs only the replay, health and ladder gates.` : choice.error);
+  }
   const rec = loaded.files.get(choice.record) as { file: string; sha256: string };
 
   const canon = canonicalInput(x, choice.spec);
@@ -213,7 +222,8 @@ export function simulateMatchup(store: CardStore, raw: unknown, deps: SimsDeps =
     calibration: rec.file,
     plannedGames: games,
     estimatedSeconds: Math.round(STARTUP_SECONDS + (games / GAMES_PER_SECOND[kind]) * (12 / deps.workers)),
-    label: matchupLabel(choice.spec),
+    label: relative ? relativeLabel(choice.spec) : matchupLabel(choice.spec),
+    ...(relative && relativeNotes(choice.spec).length > 0 ? { notes: relativeNotes(choice.spec) } : {}),
   };
   if (x.dryRun) return ok({ jobState: "plan", ...head });
 
@@ -251,7 +261,7 @@ export const SIMS_TOOLS = {
   simulate_matchup: {
     title: "Simulate a matchup (bot play)",
     description:
-      'Battle-tests a deck offline on the forceteki rules engine with the same calibrated bot rung on both seats: against an archetype id, a melee tournament list key, or "field" (the six largest archetypes plus a rest-of-field stratum, weighted by share); against its own variant (OUT>IN swaps: head-to-head on paired seeds with both seat orders, a sign test and a mirror control, or, with opponent, both decks against the same opponents and seeds); or against opponentDeck (my deck against my deck). Returns win share, a Wilson 95% interval (a stratified bootstrap for the weighted field), per-archetype rows, draw and error rates and a replay record, labelled "bot play (forceteki <policy>), not human results", status candidate: it describes the deck as this bot plays it, never a tournament win rate. Games run as one background job keyed by the input: the first call starts it and returns at once, repeat the identical call for progress and the result. One job at a time. Local only; a rung reports a win share only with a passing calibration gate record.',
+      'Battle-tests a deck offline on the forceteki rules engine with the same calibrated bot rung on both seats: against an archetype id, a melee tournament list key, or "field" (the six largest archetypes plus a rest-of-field stratum, weighted by share); against its own variant (OUT>IN swaps: head-to-head on paired seeds with both seat orders, a sign test and a mirror control, or, with opponent, both decks against the same opponents and seeds); or against opponentDeck (my deck against my deck). Returns win share, a Wilson 95% interval (a stratified bootstrap for the weighted field), per-archetype rows, draw and error rates and a replay record, labelled "bot play (forceteki <policy>), not human results", status candidate: it describes the deck as this bot plays it, never a tournament win rate. Games run as one background job keyed by the input: the first call starts it and returns at once, repeat the identical call for progress and the result. One job at a time. Local only; a rung reports a win share only with a passing calibration gate record. With relative: true (a variant or opponentDeck, optionally with opponent) it compares the two decks only by difference, on a rung that passes the replay, health and ladder gates even while the external gate fails: the head-to-head share of the deck over the other on identical seeds in both seat orders with its Wilson interval, seeds each won in both orders with the exact sign-test p, a mirror control, and with opponent the paired field difference (deck minus other) on the same opponent lists, seeds and seats; no absolute win share is given for either deck, and the label reads "bot play (forceteki <policy>), relative comparison on identical shuffles, not a human or tournament win rate" (D108). Lookahead rungs rung3 and rung3v see hidden cards (#183), which the notes field says.',
     shape: { ...simulateMatchupShape, swudb: swudbField },
     handler: (store: CardStore, input: unknown): ToolResult => simulateMatchup(store, input),
   },

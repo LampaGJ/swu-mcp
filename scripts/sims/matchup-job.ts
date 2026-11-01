@@ -5,7 +5,7 @@
  * @tacticalObjective Reads the job file the tool wrote (src/sims/matchup.ts jobFileSchema), checks the engine pin and
  * card tables against the calibration gate record it names, builds the decks through the cardKey bridge, draws
  * opponents with the sampler (src/sims/opponents.ts: stratified field, one archetype, or a named tournament list;
- * melee lists only, D22), plays the games on the warm worker pool with the calibrated rung on both seats, summarises
+ * melee lists only, D22; a relative job draws them only when it names an opponent), plays the games on the warm worker pool with the calibrated rung on both seats, summarises
  * them (src/sims/matchup.ts) and writes result.json (deterministic: no clock field) and status.json; progress goes to
  * <job dir>/progress.json through scripts/lib/progress.mjs. Releases the one-job lock on exit.
  *
@@ -16,7 +16,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { loadStore } from "../../src/data.js";
 import { REPO_ROOT } from "../../src/paths.js";
-import { gateRecordSchema } from "../../src/sims/calibration.js";
+import { failedRelativeGateSentence, gateRecordSchema } from "../../src/sims/calibration.js";
 import { DEFAULT_FORCETEKI } from "../../src/sims/engine-pin.js";
 import type { DeckInput, MatchSpec } from "../../src/sims/match.js";
 import {
@@ -27,8 +27,11 @@ import {
   jobFileSchema,
   jobLockSchema,
   opponentPlan,
+  relativeLabel,
+  relativeNotes,
   renderResult,
   summarizeH2H,
+  summarizeRelative,
   summarizeVsOpponent,
   type MatchupDeck,
   type StratumInfo,
@@ -99,6 +102,9 @@ async function main(): Promise<void> {
     const input = job.input;
     const record = gateRecordSchema.parse(JSON.parse(readFileSync(path.join(REPO_ROOT, job.gateRecord), "utf8")));
     if (record.policy.spec !== input.policy) throw new Error(`gate record ${job.gateRecord} is for ${record.policy.spec}, not ${input.policy}`);
+    // The tool already chose by gate; a relative job re-checks the three gates its claim rests on (D108).
+    const relativeGate = input.mode === "relative" ? failedRelativeGateSentence(record) : null;
+    if (relativeGate !== null) throw new Error(relativeGate);
     const pilotRun = path.join(REPO_ROOT, "data/runs", record.pilotRun);
     const metaRun = path.join(REPO_ROOT, "data/runs", record.metaRun);
     const decksDir = path.join(REPO_ROOT, record.decks);
@@ -119,7 +125,10 @@ async function main(): Promise<void> {
     let draws: Draw[] = [];
     let strata: StratumInfo[] = [];
     let population: Record<string, unknown> = {};
-    if (input.mode !== "h2h") {
+    const withField = input.mode === "opponent" || input.mode === "variant-vs-opponent" || (input.mode === "relative" && input.opponent !== null);
+    const withH2h = input.mode === "h2h" || input.mode === "relative";
+    const secondDeck = input.opponentDeck !== null ? "the second deck given (opponentDeck)" : `the deck's own variant (${input.variant.join(", ")})`;
+    if (withField) {
       const cardMap = loadCardMap(pilotRun, path.join(DEFAULT_ORIGINALS_ROOT, "2026-10-16"));
       const pool = loadOpponentPool({
         archetypesFile: path.join(metaRun, "meta/archetypes.json"),
@@ -162,8 +171,9 @@ async function main(): Promise<void> {
         unplayableArchetypes: sample.unplayableArchetypes,
         listsSetAsideUnbuildable: sample.skippedUnmapped.length,
       };
+      if (input.mode === "relative") population = { comparison: secondDeck, ...population };
     } else {
-      population = { opponent: input.opponentDeck !== null ? "the second deck given (opponentDeck)" : `the deck's own variant (${input.variant.join(", ")})`, source: "the decks given, no tournament data", lists: 2 };
+      population = { opponent: secondDeck, source: "the decks given, no tournament data", lists: 2 };
     }
 
     // Opponent decks, one per distinct list.
@@ -177,23 +187,27 @@ async function main(): Promise<void> {
       ourSeat: 0 | 1 | null;
       stratum: string;
       group: "deck" | "variant" | "h2h" | "mirror";
+      phase: string;
     }
     const slots: Slot[] = [];
-    if (input.mode === "h2h") {
+    // A relative job reads its two parts as two phases, so the heartbeat never mixes a head-to-head share with a field one.
+    const phaseOf = (group: Slot["group"]): string => (input.mode !== "relative" ? "games" : group === "h2h" || group === "mirror" ? "head to head" : "field");
+    if (withH2h) {
       const o = other as DeckInput;
       const plan = h2hPlan(input.seed, input.games);
       for (const pr of plan.pairs) {
-        slots.push({ spec: spec(pr.seed, subject, o), ourSeat: 0, stratum: "h2h", group: "h2h" });
-        slots.push({ spec: spec(pr.seed, o, subject), ourSeat: 1, stratum: "h2h", group: "h2h" });
+        slots.push({ spec: spec(pr.seed, subject, o), ourSeat: 0, stratum: "h2h", group: "h2h", phase: phaseOf("h2h") });
+        slots.push({ spec: spec(pr.seed, o, subject), ourSeat: 1, stratum: "h2h", group: "h2h", phase: phaseOf("h2h") });
       }
-      for (const s of plan.mirror) slots.push({ spec: spec(s, subject, subject), ourSeat: null, stratum: "mirror", group: "mirror" });
-    } else {
+      for (const s of plan.mirror) slots.push({ spec: spec(s, subject, subject), ourSeat: null, stratum: "mirror", group: "mirror", phase: phaseOf("mirror") });
+    }
+    if (withField) {
       const plan = opponentPlan(input.seed, draws.map((d) => ({ stratum: d.stratum, index: d.index })));
-      const subjects: ["deck" | "variant", DeckInput][] = input.mode === "variant-vs-opponent" ? [["deck", subject], ["variant", other as DeckInput]] : [["deck", subject]];
+      const subjects: ["deck" | "variant", DeckInput][] = input.mode === "variant-vs-opponent" || input.mode === "relative" ? [["deck", subject], ["variant", other as DeckInput]] : [["deck", subject]];
       for (const [group, deck] of subjects)
         plan.forEach((pl, k) => {
           const opp = oppDecks.get(draws[k].list.key) as DeckInput;
-          slots.push({ spec: pl.subjectSeat === 1 ? spec(pl.seed, deck, opp) : spec(pl.seed, opp, deck), ourSeat: pl.subjectSeat === 1 ? 0 : 1, stratum: pl.stratum, group });
+          slots.push({ spec: pl.subjectSeat === 1 ? spec(pl.seed, deck, opp) : spec(pl.seed, opp, deck), ourSeat: pl.subjectSeat === 1 ? 0 : 1, stratum: pl.stratum, group, phase: phaseOf(group) });
         });
     }
 
@@ -202,7 +216,9 @@ async function main(): Promise<void> {
     const p = progress("progress", { dir, total: slots.length, everyN: 10, everyMs: 3000, keepAliveMs: KEEP_ALIVE_MS });
     // The running stats go to progress.json and the tool's status reply; result.json is built from the footers alone.
     const live = new LiveStats({ kind: "matchup", provenance: provenanceOf({ specs: [input.policy], seeds: null, enginePin: ctx.engine.pin.commit, codeCommit: ctx.codeCommit, run: record.pilotRun }) });
-    live.beginPhase("games", slots.length, { subject: "your deck", other: String(population.opponent) });
+    const phaseSides = (name: string) => ({ subject: "your deck", other: name === "head to head" ? secondDeck : String(population.opponent) });
+    let currentPhase = slots[0].phase;
+    live.beginPhase(currentPhase, slots.filter((x) => x.phase === currentPhase).length, phaseSides(currentPhase));
     p.log(() => ({ phase: "starting workers", stats: live.snapshot() }));
     const sim = await createPool({ workers: job.workers, pin: ctx.engine.pin });
     const footers: MatchFooter[] = [];
@@ -217,6 +233,10 @@ async function main(): Promise<void> {
         next = c + 1 < parts.length ? start(parts[c + 1]) : null;
         for (const r of await current) {
           const slot = slots[footers.length];
+          if (slot.phase !== currentPhase) {
+            currentPhase = slot.phase;
+            live.beginPhase(currentPhase, slots.filter((x) => x.phase === currentPhase).length, phaseSides(currentPhase));
+          }
           const f = r.footer;
           const [d0, d1] = f.coverage.decisions;
           const [a0, a1] = f.coverage.answered;
@@ -230,15 +250,15 @@ async function main(): Promise<void> {
             decisions: f.result.decisions,
             won: slot.ourSeat === null || !decided ? null : f.result.winner === slot.ourSeat + 1,
             stratum: slot.group === "mirror" || slot.group === "h2h" ? undefined : slot.stratum,
-            group: slot.group === "variant" ? "variant" : undefined,
+            group: input.mode === "relative" && slot.phase === "field" ? slot.group : slot.group === "variant" ? "variant" : undefined,
             pair: slot.group === "h2h" ? slot.spec.seed : undefined,
             mirror: slot.group === "mirror",
-            headline: slot.group !== "variant",
+            headline: input.mode === "relative" && slot.phase === "field" ? false : slot.group !== "variant",
             fallback: { decisions: d0 + d1, fallback: d0 + d1 - (a0 + a1) },
           });
           footers.push(f);
         }
-        p.tick(footers.length, () => ({ phase: "games", stats: live.snapshot() }));
+        p.tick(footers.length, () => ({ phase: currentPhase, stats: live.snapshot() }));
       }
     } finally {
       await sim.close();
@@ -293,6 +313,19 @@ async function main(): Promise<void> {
       const mirror = slots.map((s, k) => ({ s, f: footers[k] })).filter((x) => x.s.group === "mirror").map((x) => (decisive(x.f) ? (x.f.result.winner as 1 | 2) : null));
       const ours = h2h.map((x) => subjectGame(x.s, x.f));
       const sum = summarizeH2H(pairs, mirror);
+      if (input.mode === "relative") {
+        const gamesOf = (group: Slot["group"]): SubjectGame[] => slots.map((x, k) => ({ x, k })).filter((e) => e.x.group === group).map((e) => subjectGame(e.x, footers[e.k]));
+        const rel = summarizeRelative({ h2hPairs: pairs, mirrorWinners: mirror, h2hGames: ours, field: withField ? { deck: gamesOf("deck"), variant: gamesOf("variant"), strata } : null, seed: input.seed });
+        body = {
+          mode: input.mode,
+          population,
+          variant: input.variant.length > 0 ? input.variant : null,
+          design: "each seed played twice with the same engine seed and the decks' seats swapped, plus the first deck against itself on the same seeds as a mirror control; headToHead.winShare is the share of decisive games the first deck won over the second (Wilson 95%), seedsWonBothOrders counts seeds one deck won in both seat orders (exact two-sided sign test); no absolute win share is claimed for either deck",
+          ...rel,
+          notes: relativeNotes(input.policy),
+          health,
+        };
+      } else
       body = {
         mode: input.mode,
         population,
@@ -312,7 +345,7 @@ async function main(): Promise<void> {
       };
     }
     const header = policyHeader(parsePolicySpec(input.policy));
-    const result = renderResult({ body, policy: input.policy, policyVersion: `${header.id} v${header.version} params ${header.paramsSha256.slice(0, 12)}`, inputHash: job.inputHash, codeCommit: ctx.codeCommit, engine: { commit: ctx.engine.pin.commit, cardDataVersion: ctx.engine.pin.cardDataVersion }, seed: input.seed });
+    const result = renderResult({ label: input.mode === "relative" ? relativeLabel(input.policy) : undefined, body, policy: input.policy, policyVersion: `${header.id} v${header.version} params ${header.paramsSha256.slice(0, 12)}`, inputHash: job.inputHash, codeCommit: ctx.codeCommit, engine: { commit: ctx.engine.pin.commit, cardDataVersion: ctx.engine.pin.cardDataVersion }, seed: input.seed });
     writeFileSync(path.join(dir, "result.json"), `${JSON.stringify(result)}\n`);
     p.done({ stats: live.snapshot() });
     writeStatus("done", null);

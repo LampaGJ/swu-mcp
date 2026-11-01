@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { wilson } from "../meta/stats.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../swu/canonical.js";
-import { stratifiedEstimate } from "./field-stats.js";
-import { shareOf, summarizeLadder, type LadderPair, type Share } from "./policies/ladder-stats.js";
+import { pairedFieldDifference, stratifiedEstimate } from "./field-stats.js";
+import { pairedDeckTest, shareOf, summarizeLadder, type LadderPair, type Share } from "./policies/ladder-stats.js";
 
 /**
  * @displayName simulate_matchup job model
@@ -13,7 +13,9 @@ import { shareOf, summarizeLadder, type LadderPair, type Share } from "./policie
  * input and keys the job by its hash plus code commit, engine pin and gate record, applies OUT>IN swaps, lays out the
  * seeds (paired seat-swapped head-to-head with a mirror on the same seeds; one seed and seat per opponent draw shared
  * by both decks of a variant comparison), summarises games (Wilson per opponent, share-weighted field with a
- * stratified bootstrap, the sign test for a head-to-head) and renders the labelled, hashed result.
+ * stratified bootstrap, the sign test for a head-to-head) and renders the labelled, hashed result. Relative mode
+ * (D108) compares two decks only by difference, a head-to-head with a mirror control plus an optional paired field
+ * comparison, and carries its own label and gate set.
  */
 
 export const MATCHUP_LIMITS = {
@@ -65,12 +67,19 @@ export const simulateMatchupShape = {
     .describe(`Games per opponent (per stratum for the field) or seeds for a head-to-head; default ${MATCHUP_LIMITS.gamesDefault}, at most ${MATCHUP_LIMITS.gamesMax}`),
   seed: z.union([z.int().nonnegative(), z.string().regex(/^[A-Za-z0-9_-]{1,32}$/, { error: "seed is a number or up to 32 letters, digits, _ or -" })]).optional().describe("Seed for draws and games; default 1"),
   policy: z.string().min(1).optional().describe("Bot rung on both seats; default the highest rung whose calibration gate passed. Only a rung with a passing gate record may report a win share"),
+  relative: z
+    .boolean()
+    .optional()
+    .describe(
+      "Relative comparison of two decks (variant swaps, or opponentDeck), served on a rung that passes replay, health and ladder even when the external calibration gate fails, because it claims no absolute win rate: the head-to-head share of the deck over the other on identical seeds in both seat orders, seeds each won in both orders with the exact sign-test p, a mirror control, and, when opponent is given, the paired field difference (deck minus other, same opponent lists, seeds and seats). Absolute modes stay gated on all four gates",
+    ),
   dryRun: z.boolean().optional().describe("Return the plan (pilot rung, games, estimated time, job key) without starting a job"),
 };
 
 export const simulateMatchupInputSchema = z.strictObject(simulateMatchupShape);
 
-export type MatchupMode = "opponent" | "h2h" | "variant-vs-opponent";
+const matchupModeSchema = z.enum(["opponent", "h2h", "variant-vs-opponent", "relative"]);
+export type MatchupMode = z.infer<typeof matchupModeSchema>;
 
 export interface MatchupInput {
   mode: MatchupMode;
@@ -84,9 +93,10 @@ export interface MatchupInput {
   dryRun: boolean;
 }
 
-/** Games a job plays, before any is played: the cap check. */
+/** Games a job plays, before any is played: the cap check. A relative job plays the head-to-head and mirror, plus both decks on the opponent plan when opponent is given. */
 export function plannedGames(x: Pick<MatchupInput, "mode" | "opponent" | "games">): number {
   const perOpponent = x.opponent === "field" ? MATCHUP_LIMITS.fieldStrata * x.games : x.games;
+  if (x.mode === "relative") return 3 * x.games + (x.opponent === null ? 0 : 2 * perOpponent);
   if (x.mode === "h2h") return 3 * x.games;
   return x.mode === "variant-vs-opponent" ? 2 * perOpponent : perOpponent;
 }
@@ -97,9 +107,15 @@ export function parseMatchupInput(raw: unknown): { ok: true; input: MatchupInput
   const a = r.data;
   if (a.deck === undefined) return { ok: false, error: "give deck (leader, base and cards by cardKey) or swudb" };
   const deck = a.deck;
-  if (a.opponentDeck !== undefined && (a.opponent !== undefined || a.variant !== undefined)) return { ok: false, error: "give opponentDeck alone: it is a head-to-head, which takes no opponent and no variant" };
-  if (a.opponent === undefined && a.opponentDeck === undefined && a.variant === undefined) return { ok: false, error: 'give opponent (an archetype id, a tournament deck key or "field"), opponentDeck, or variant' };
-  const mode: MatchupMode = a.opponentDeck !== undefined || a.opponent === undefined ? "h2h" : a.variant !== undefined ? "variant-vs-opponent" : "opponent";
+  const relative = a.relative ?? false;
+  if (relative) {
+    if (a.opponentDeck !== undefined && a.variant !== undefined) return { ok: false, error: "give variant or opponentDeck as the second deck, not both" };
+    if (a.opponentDeck === undefined && a.variant === undefined) return { ok: false, error: "relative compares two decks: give variant or opponentDeck (opponent adds the paired field comparison)" };
+  } else {
+    if (a.opponentDeck !== undefined && (a.opponent !== undefined || a.variant !== undefined)) return { ok: false, error: "give opponentDeck alone: it is a head-to-head, which takes no opponent and no variant" };
+    if (a.opponent === undefined && a.opponentDeck === undefined && a.variant === undefined) return { ok: false, error: 'give opponent (an archetype id, a tournament deck key or "field"), opponentDeck, or variant' };
+  }
+  const mode: MatchupMode = relative ? "relative" : a.opponentDeck !== undefined || a.opponent === undefined ? "h2h" : a.variant !== undefined ? "variant-vs-opponent" : "opponent";
   const input: MatchupInput = {
     mode,
     deck,
@@ -286,7 +302,20 @@ export function summarizeH2H(pairs: readonly H2HPairInput[], mirrorWinners: read
 
 export const matchupLabel = (policy: string): string => `bot play (forceteki ${policy}), not human results`;
 
+/** The label of a relative comparison (D108): it claims a difference on identical shuffles, never a rate. */
+export const relativeLabel = (policy: string): string => `bot play (forceteki ${policy}), relative comparison on identical shuffles, not a human or tournament win rate`;
+
+/** rung3 top-K and rung3v search on the true engine state after a bookmark, so they see the opponent's hand and both deck orders (#183); rung3mc and rung4 re-deal hidden zones. */
+export const leaksHiddenInformation = (policy: string): boolean => ["rung3", "rung3v"].includes(policy.split(":")[0]);
+
+export const relativeNotes = (policy: string): string[] =>
+  leaksHiddenInformation(policy)
+    ? [`${policy} looks ahead on the true game state, so it sees the opponent's hand and both decks' order (#183); both decks are piloted with that advantage, and a fair rung may rank them differently.`]
+    : [];
+
 export interface RenderArgs {
+  /** Defaults to matchupLabel(policy). */
+  label?: string;
   body: Record<string, unknown>;
   policy: string;
   policyVersion: string;
@@ -299,8 +328,87 @@ export interface RenderArgs {
 /** The finished result: body, fixed label, candidate status and the replay record; outputHash covers everything else. */
 export function renderResult(a: RenderArgs) {
   const replay = { inputHash: a.inputHash, codeCommit: a.codeCommit, engineCommit: a.engine.commit, cardDataVersion: a.engine.cardDataVersion, seed: a.seed, policy: a.policy, policyVersion: a.policyVersion, rungs: [a.policy, a.policy] as [string, string] };
-  const unhashed = { label: matchupLabel(a.policy), status: "candidate" as const, ...a.body, replay };
+  const unhashed = { label: a.label ?? matchupLabel(a.policy), status: "candidate" as const, ...a.body, replay };
   return { ...unhashed, replay: { ...replay, outputHash: sha256Hex(canonicalJson(unhashed)) } };
+}
+
+export interface RelativeInput {
+  h2hPairs: readonly H2HPairInput[];
+  mirrorWinners: readonly (1 | 2 | null)[];
+  /** The deck's own game in every head-to-head slot, for draw and error rates. */
+  h2hGames: readonly SubjectGame[];
+  /** Both decks on the same opponent plan, index for index; null when no opponent was given. */
+  field: { deck: readonly SubjectGame[]; variant: readonly SubjectGame[]; strata: readonly StratumInfo[] } | null;
+  seed: string;
+}
+
+const rateOf = (games: readonly SubjectGame[], pick: (g: SubjectGame) => boolean): number => (games.length === 0 ? 0 : r4(games.filter(pick).length / games.length));
+
+/**
+ * The relative result (D108). Only differences between the two decks and a mirror control: no absolute win share is
+ * given for either deck against the field, because the calibration gate that licenses one has not passed.
+ */
+export function summarizeRelative(a: RelativeInput) {
+  const h = summarizeH2H(a.h2hPairs, a.mirrorWinners);
+  const headToHead = {
+    pairs: h.pairs,
+    games: h.games,
+    n: h.deckShare.n,
+    nonDecisive: h.nonDecisive,
+    wins: h.deckShare.wins,
+    winShare: h.deckShare.share,
+    wilson95: h.deckShare.low === null ? null : { low: h.deckShare.low, high: h.deckShare.high },
+    seedsWonBothOrders: { deck: h.discordant.deckWonBoth, variant: h.discordant.otherWonBoth, pValue: h.discordant.pValue },
+    mirror: h.mirror,
+    drawRate: rateOf(a.h2hGames, (g) => g.won === null && g.endCondition !== "error"),
+    errorRate: rateOf(a.h2hGames, (g) => g.endCondition === "error"),
+    meanRounds: a.h2hGames.length === 0 ? 0 : Math.round((a.h2hGames.reduce((s, g) => s + g.rounds, 0) / a.h2hGames.length) * 100) / 100,
+  };
+  if (a.field === null) return { headToHead, field: null };
+  const { deck, variant, strata } = a.field;
+  const test = pairedDeckTest(deck.map((g) => g.won), variant.map((g) => g.won));
+  const bothWon = deck.filter((g, k) => g.won === true && variant[k].won === true).length;
+  const tally = strata.map((s) => {
+    let deckOnly = 0;
+    let variantOnly = 0;
+    let same = 0;
+    deck.forEach((g, k) => {
+      const v = variant[k];
+      if (g.stratum !== s.id || g.won === null || v.won === null) return;
+      if (g.won && !v.won) deckOnly++;
+      else if (!g.won && v.won) variantOnly++;
+      else same++;
+    });
+    return { id: s.id, weight: s.weight, deckOnly, variantOnly, same };
+  });
+  const diff = pairedFieldDifference(tally, { seed: `simulate_matchup|relative|${a.seed}` });
+  const names = new Map(strata.map((s) => [s.id, s.name]));
+  return {
+    headToHead,
+    field: {
+      design: "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+      games: deck.length,
+      pairs: diff.pairs,
+      bothWon,
+      bothLost: diff.pairs - test.baseOnly - test.variantOnly - bothWon,
+      undecided: deck.length - diff.pairs,
+      pooledPairs: {
+        deckOnlyWon: test.baseOnly,
+        variantOnlyWon: test.variantOnly,
+        pValue: test.pValue,
+        weighting: "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share",
+      },
+      deckMinusVariant: {
+        difference: diff.difference,
+        ci95: diff.ci95,
+        method: `share-weighted strata, percentile bootstrap over pairs within each stratum (${diff.bootstrap.iterations} resamples)`,
+        coverage: diff.coverage,
+        emptyStrata: diff.empty,
+      },
+      errorRate: rateOf([...deck, ...variant], (g) => g.endCondition === "error"),
+      perArchetype: diff.strata.map((r) => ({ id: r.id, name: names.get(r.id) ?? r.id, weight: r4(r.weight), pairs: r.pairs, deckOnlyWon: r.deckOnlyWon, variantOnlyWon: r.variantOnlyWon, difference: r.difference })),
+    },
+  };
 }
 
 const hex64 = z.string().regex(/^[0-9a-f]{64}$/, { error: "expected a sha256 hex digest" });
@@ -309,7 +417,7 @@ const hex64 = z.string().regex(/^[0-9a-f]{64}$/, { error: "expected a sha256 hex
 export const SIMS_JOBS_DIR = "tmp/sims-jobs";
 
 export const canonicalInputSchema = z.strictObject({
-  mode: z.enum(["opponent", "h2h", "variant-vs-opponent"]),
+  mode: matchupModeSchema,
   deck: matchupDeckSchema,
   opponent: z.string().min(1).nullable(),
   opponentDeck: matchupDeckSchema.nullable(),

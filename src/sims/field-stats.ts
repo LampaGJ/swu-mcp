@@ -118,3 +118,77 @@ function mean(xs: Float64Array): number {
   for (const x of xs) sum += x;
   return sum / xs.length;
 }
+
+export interface PairedStratum {
+  id: string;
+  weight: number;
+  /** Pairs (same opponent list, engine seed and seat) that only the deck won. */
+  deckOnly: number;
+  variantOnly: number;
+  /** Pairs both decks decisively won or both decisively lost; a pair either deck did not decide is left out. */
+  same: number;
+}
+
+export interface PairedStratumRow {
+  id: string;
+  weight: number;
+  pairs: number;
+  deckOnlyWon: number;
+  variantOnlyWon: number;
+  /** Deck minus variant win share over this stratum's pairs; null with no pair. */
+  difference: number | null;
+}
+
+export interface PairedFieldDifference {
+  /** Share-weighted mean over strata of (deck wins minus variant wins) per pair, so +0.05 reads as the deck winning 5 points more of the same games. */
+  difference: number | null;
+  ci95: { low: number | null; high: number | null };
+  pairs: number;
+  coverage: number;
+  empty: string[];
+  strata: PairedStratumRow[];
+  bootstrap: { iterations: number; seed: string };
+}
+
+/**
+ * The paired counterpart of stratifiedEstimate: each stratum's pairs score +1 (only the deck won), -1 (only the
+ * variant won) or 0, the field difference is their share-weighted mean, and the interval is a seeded percentile
+ * bootstrap that resamples pairs within each stratum (the pairs, not the games, are the independent units).
+ */
+export function pairedFieldDifference(strata: readonly PairedStratum[], options: { iterations?: number; seed: string }): PairedFieldDifference {
+  const iterations = options.iterations ?? 2000;
+  const r4 = (x: number): number => round4(x) || 0;
+  const pairsOf = (s: PairedStratum): number => s.deckOnly + s.variantOnly + s.same;
+  const rows: PairedStratumRow[] = strata.map((s) => {
+    const m = pairsOf(s);
+    return { id: s.id, weight: s.weight, pairs: m, deckOnlyWon: s.deckOnly, variantOnlyWon: s.variantOnly, difference: m === 0 ? null : r4((s.deckOnly - s.variantOnly) / m) };
+  });
+  const live = strata.filter((s) => pairsOf(s) > 0 && s.weight > 0);
+  const totalWeight = strata.reduce((sum, s) => sum + s.weight, 0);
+  const liveWeight = live.reduce((sum, s) => sum + s.weight, 0);
+  const empty = strata.filter((s) => pairsOf(s) === 0).map((s) => s.id);
+  const pairs = rows.reduce((sum, r) => sum + r.pairs, 0);
+  const bootstrap = { iterations, seed: options.seed };
+  if (live.length === 0 || liveWeight === 0) return { difference: null, ci95: { low: null, high: null }, pairs, coverage: 0, empty, strata: rows, bootstrap };
+
+  const outcomes = live.map((s) => Int8Array.from({ length: pairsOf(s) }, (_, i) => (i < s.deckOnly ? 1 : i < s.deckOnly + s.variantOnly ? -1 : 0)));
+  const weights = live.map((s) => s.weight / liveWeight);
+  const meanOf = (o: Int8Array): number => o.reduce((sum, x) => sum + x, 0) / o.length;
+  const point = outcomes.reduce((sum, o, k) => sum + weights[k] * meanOf(o), 0);
+
+  const random = seededRandom(options.seed);
+  const draws = new Float64Array(iterations);
+  for (let b = 0; b < iterations; b++) {
+    let total = 0;
+    for (let k = 0; k < outcomes.length; k++) {
+      const o = outcomes[k];
+      let sum = 0;
+      for (let j = 0; j < o.length; j++) sum += o[Math.floor(random() * o.length)];
+      total += weights[k] * (sum / o.length);
+    }
+    draws[b] = total;
+  }
+  draws.sort();
+  const at = (q: number): number => draws[Math.min(draws.length - 1, Math.max(0, Math.round(q * (draws.length - 1))))];
+  return { difference: r4(point), ci95: { low: r4(at(0.025)), high: r4(at(0.975)) }, pairs, coverage: r4(totalWeight === 0 ? 0 : liveWeight / totalWeight), empty, strata: rows, bootstrap };
+}

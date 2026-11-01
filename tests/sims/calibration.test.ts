@@ -3,6 +3,7 @@ import {
   CALIBRATION_THRESHOLDS,
   averageRanks,
   choosePilot,
+  choosePilotRelative,
   externalGate,
   failedGateSentence,
   healthGate,
@@ -161,5 +162,34 @@ describe("pilot choice", () => {
   it("names the failed gate in one sentence", () => {
     expect(failedGateSentence(gateRecord("rung1", 1, true, { health: { pass: false, nonDecisiveShare: 0.05, fallbackShare: 0 } as never }) as GateRecord)).toMatch(/rung1 failed the health gate/);
     expect(failedGateSentence(gateRecord("rung1", 1, true) as GateRecord)).toBeNull();
+  });
+});
+
+describe("relative-mode pilot choice (D108)", () => {
+  it("needs replay, health and ladder and does not need the external gate", () => {
+    const records = [gateRecord("rung1", 1, false), gateRecord("rung3:k=8", 3, false)];
+    expect(choosePilot(records as GateRecord[], undefined, "e1")).toHaveProperty("error");
+    expect(choosePilotRelative(records as GateRecord[], undefined, "e1")).toMatchObject({ spec: "rung3:k=8" });
+    expect(choosePilotRelative(records as GateRecord[], "rung1", "e1")).toMatchObject({ spec: "rung1" });
+  });
+
+  it("defaults to the strongest rung that passes the three gates, skipping one that fails the ladder", () => {
+    const records = [gateRecord("rung1", 1, false), gateRecord("rung3:k=8", 3, false, { ladder: { pass: false } as never })];
+    expect(choosePilotRelative(records as GateRecord[], undefined, "e1")).toMatchObject({ spec: "rung1" });
+  });
+
+  it("refuses a rung that fails replay, health or ladder with a sentence naming that gate", () => {
+    const bad = (extra: Partial<GateRecord["gates"]>) => [gateRecord("rung1", 1, true, extra)] as GateRecord[];
+    expect((choosePilotRelative(bad({ replay: { pass: false } as never }), "rung1", "e1") as { error: string }).error).toMatch(/rung1 failed the replay gate, so it may not report a relative comparison/);
+    expect((choosePilotRelative(bad({ ladder: { pass: false } as never }), "rung1", "e1") as { error: string }).error).toMatch(/rung1 failed the ladder gate/);
+    const none = choosePilotRelative(bad({ health: { pass: false, nonDecisiveShare: 0.05, fallbackShare: 0.1 } as never }), undefined, "e1") as { error: string };
+    expect(none.error).toMatch(/no bot rung has passed the replay, health and ladder gates/);
+    expect(none.error).toMatch(/rung1 failed the health gate/);
+  });
+
+  it("refuses a rung with no record or a record for another engine commit", () => {
+    expect((choosePilotRelative([], "rung3mc", "e1") as { error: string }).error).toMatch(/rung3mc has no calibration gate record/);
+    expect((choosePilotRelative([gateRecord("rung1", 1, true)] as GateRecord[], "rung1", "e9") as { error: string }).error).toMatch(/engine commit e1, not the pinned e9/);
+    expect((choosePilotRelative([], undefined, "e1") as { error: string }).error).toMatch(/No calibration gate record exists yet/);
   });
 });

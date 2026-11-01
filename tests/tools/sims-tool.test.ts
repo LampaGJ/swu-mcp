@@ -187,4 +187,93 @@ describe("simulate_matchup tool", () => {
     expect(r.isError).toBe(true);
     expect(text(r)).toMatch(/policy rung9: unknown policy/);
   });
+
+  describe("relative mode (D108)", () => {
+    const swap = [`${mainKeys[0]}>${mainKeys[16]}`];
+    const LABEL = (spec: string) => `bot play (forceteki ${spec}), relative comparison on identical shuffles, not a human or tournament win rate`;
+    const failing = (spec: string, rung: number, gate: "replay" | "health" | "ladder") => {
+      const rec = passingRecord(spec, rung, false);
+      (rec.gates[gate] as { pass: boolean }).pass = false;
+      rec.failedGates = [gate, "external"];
+      return rec;
+    };
+
+    it("serves a relative comparison when no rung passes the external gate, labelled as the issue says, on the strongest rung that passes the other three", () => {
+      writeRecord(passingRecord("rung1", 1, false), "calibration-rung1.json");
+      writeRecord(passingRecord("rung3:k=8", 3, false), "calibration-rung3-k-8.json");
+      const plan = simulateMatchup(store, { deck, variant: swap, relative: true, dryRun: true }, deps());
+      expect(plan.isError).toBeUndefined();
+      expect(text(plan)).toMatch(/jobState: plan/);
+      expect(text(plan)).toMatch(/mode: relative/);
+      expect(text(plan)).toMatch(/policy: "?rung3:k=8"?/);
+      expect(text(plan)).toContain(LABEL("rung3:k=8"));
+      expect(text(plan)).toMatch(/#183/);
+      expect(text(plan)).toMatch(/plannedGames: 300/);
+      const started = simulateMatchup(store, { deck, variant: swap, relative: true, games: 10 }, deps());
+      expect(started.isError).toBeUndefined();
+      expect(text(started)).toMatch(/jobState: started/);
+      const job = JSON.parse(readFileSync(spawned[0], "utf8"));
+      expect(job.input).toMatchObject({ mode: "relative", policy: "rung3:k=8", variant: swap });
+      expect(job.gateRecord).toBe("data/pinned/sim-calibration-v1/calibration-rung3-k-8.json");
+      expect(job.plannedGames).toBe(30);
+    });
+
+    it("adds the paired field comparison when opponent is given, and takes a second full deck", () => {
+      writeRecord(passingRecord("rung1", 1, false), "calibration-rung1.json");
+      const field = text(simulateMatchup(store, { deck, variant: swap, opponent: "field", relative: true, games: 10, dryRun: true }, deps()));
+      expect(field).toMatch(/plannedGames: 170/);
+      const second = { ...deck, cards: [...deck.cards.slice(1), { cardKey: mainKeys[0], count: 3 }] };
+      const r = simulateMatchup(store, { deck, opponentDeck: second, relative: true, dryRun: true }, deps());
+      expect(r.isError).toBeUndefined();
+      expect(text(r)).toMatch(/policy: rung1/);
+      expect(text(r)).not.toMatch(/#183/);
+    });
+
+    it("serves the finished relative result from the cache with its label", () => {
+      writeRecord(passingRecord("rung1", 1, false), "calibration-rung1.json");
+      simulateMatchup(store, { deck, variant: swap, relative: true, games: 10 }, deps());
+      const dir = path.dirname(spawned[0]);
+      const job = JSON.parse(readFileSync(spawned[0], "utf8"));
+      writeFileSync(path.join(dir, "result.json"), JSON.stringify({ label: LABEL("rung1"), status: "candidate", mode: "relative", headToHead: { winShare: 0.6 }, replay: { inputHash: job.inputHash, outputHash: "d".repeat(64) } }));
+      alive.clear();
+      const done = text(simulateMatchup(store, { deck, variant: swap, relative: true, games: 10 }, deps()));
+      expect(done).toMatch(/jobState: done/);
+      expect(done).toContain(LABEL("rung1"));
+      expect(done).toMatch(/winShare: 0.6/);
+    });
+
+    it("keeps every absolute mode refused on the same records, and points a deck pair at relative mode", () => {
+      writeRecord(passingRecord("rung1", 1, false), "calibration-rung1.json");
+      writeRecord(passingRecord("rung3:k=8", 3, false), "calibration-rung3-k-8.json");
+      for (const args of [{ deck, opponent: "field" }, { deck, opponent: "t001" }, { deck, variant: swap }, { deck, variant: swap, opponent: "field" }, { deck, opponentDeck: deck }, { deck, variant: swap, relative: false }]) {
+        const r = simulateMatchup(store, args, deps());
+        expect(r.isError, JSON.stringify(args)).toBe(true);
+        expect(text(r)).toMatch(/no bot rung has passed every calibration gate/);
+      }
+      expect(text(simulateMatchup(store, { deck, variant: swap }, deps()))).toMatch(/relative: true/);
+      expect(text(simulateMatchup(store, { deck, opponent: "field" }, deps()))).not.toMatch(/relative: true/);
+      expect(spawned).toEqual([]);
+    });
+
+    it("still refuses relative mode when replay, health or ladder fails, naming the gate", () => {
+      for (const gate of ["replay", "health", "ladder"] as const) {
+        writeRecord(failing("rung1", 1, gate), "calibration-rung1.json");
+        const r = simulateMatchup(store, { deck, variant: swap, relative: true }, deps());
+        expect(r.isError, gate).toBe(true);
+        expect(text(r)).toMatch(/no bot rung has passed the replay, health and ladder gates/);
+        expect(text(r)).toContain(`rung1 failed the ${gate} gate`);
+      }
+      writeRecord(passingRecord("rung3:k=8", 3, false), "calibration-rung3-k-8.json");
+      const r = simulateMatchup(store, { deck, variant: swap, relative: true, policy: "rung1" }, deps());
+      expect(r.isError).toBe(true);
+      expect(text(r)).toMatch(/rung1 failed the ladder gate, so it may not report a relative comparison/);
+      expect(spawned).toEqual([]);
+    });
+
+    it("refuses a relative request that names no second deck, or two", () => {
+      writeRecord(passingRecord("rung1", 1, false), "calibration-rung1.json");
+      expect(text(simulateMatchup(store, { deck, opponent: "field", relative: true }, deps()))).toMatch(/relative compares two decks/);
+      expect(text(simulateMatchup(store, { deck, variant: swap, opponentDeck: deck, relative: true }, deps()))).toMatch(/not both/);
+    });
+  });
 });

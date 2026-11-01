@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bootstrapCI } from "../../scripts/bench/stats.js";
 import { wilson } from "../../src/meta/stats.js";
-import { stratifiedEstimate, type StratumResult } from "../../src/sims/field-stats.js";
+import { pairedFieldDifference, stratifiedEstimate, type PairedStratum, type StratumResult } from "../../src/sims/field-stats.js";
 
 const stratum = (id: string, weight: number, wins: number, losses: number, extra: Partial<StratumResult> = {}): StratumResult => ({
   id,
@@ -63,5 +63,43 @@ describe("stratified field estimate", () => {
   it("returns nulls when no stratum has a decisive game", () => {
     const got = stratifiedEstimate([stratum("a", 1, 0, 0)], { seed: "none" });
     expect(got).toMatchObject({ winShare: null, ci95: { low: null, high: null }, coverage: 0, n: 0 });
+  });
+});
+
+const paired = (id: string, weight: number, deckOnly: number, variantOnly: number, same: number): PairedStratum => ({ id, weight, deckOnly, variantOnly, same });
+
+describe("paired field difference (deck minus variant)", () => {
+  it("is the share-weighted mean of the per-stratum paired differences, with weights renormalised", () => {
+    const one = pairedFieldDifference([paired("a", 1, 30, 10, 60)], { seed: "s" });
+    expect(one.difference).toBe(0.2);
+    expect(one.pairs).toBe(100);
+    expect(one.ci95.low as number).toBeLessThan(0.2);
+    expect(one.ci95.high as number).toBeGreaterThan(0.2);
+    const two = pairedFieldDifference([paired("a", 3, 20, 0, 80), paired("b", 1, 0, 40, 60)], { seed: "s" });
+    expect(two.difference).toBeCloseTo((3 * 0.2 + 1 * -0.4) / 4, 4);
+    const unnormalised = pairedFieldDifference([paired("a", 0.3, 20, 0, 80), paired("b", 0.1, 0, 40, 60)], { seed: "s" });
+    expect(unnormalised.difference).toBe(two.difference);
+  });
+
+  it("is deterministic in its seed and brackets zero when the decks are alike", () => {
+    const strata = [paired("a", 1, 12, 11, 77), paired("b", 1, 9, 10, 81)];
+    expect(pairedFieldDifference(strata, { seed: "x" })).toEqual(pairedFieldDifference(strata, { seed: "x" }));
+    const r = pairedFieldDifference(strata, { seed: "x" });
+    expect(r.ci95.low as number).toBeLessThan(0);
+    expect(r.ci95.high as number).toBeGreaterThan(0);
+  });
+
+  it("gives a degenerate interval when every pair is the same and names a stratum with no pair", () => {
+    const r = pairedFieldDifference([paired("a", 1, 0, 0, 50), paired("empty", 1, 0, 0, 0)], { seed: "s" });
+    expect(r.difference).toBe(0);
+    expect(r.ci95).toEqual({ low: 0, high: 0 });
+    expect(r.empty).toEqual(["empty"]);
+    expect(r.coverage).toBe(0.5);
+    expect(r.strata.map((x) => x.difference)).toEqual([0, null]);
+  });
+
+  it("returns nulls when no stratum has a pair where both decks were decisive", () => {
+    const r = pairedFieldDifference([paired("a", 1, 0, 0, 0)], { seed: "s" });
+    expect(r).toMatchObject({ difference: null, ci95: { low: null, high: null }, pairs: 0, coverage: 0 });
   });
 });

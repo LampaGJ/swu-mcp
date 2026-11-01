@@ -6,11 +6,17 @@ import {
   endBoardTop,
   h2hPlan,
   jobKey,
+  jobFileSchema,
+  leaksHiddenInformation,
   matchupLabel,
+  plannedGames,
+  relativeLabel,
+  relativeNotes,
   opponentPlan,
   parseMatchupInput,
   renderResult,
   summarizeH2H,
+  summarizeRelative,
   summarizeVsOpponent,
   validateDeck,
   type CardLookup,
@@ -183,5 +189,78 @@ describe("rendering", () => {
     expect(out.replay.rungs).toEqual(["rung3:k=8", "rung3:k=8"]);
     const again = renderResult({ body: { mode: "opponent", n: 3 }, policy: "rung3:k=8", inputHash: "a".repeat(64), codeCommit: "abc1234", engine: { commit: "445792e", cardDataVersion: "v" }, seed: "1", policyVersion: "1" });
     expect(again.replay.outputHash).toBe(out.replay.outputHash);
+  });
+});
+
+describe("relative mode (D108)", () => {
+  const swap = ["0101100>0101300"];
+  it("parses the second deck from variant or opponentDeck and adds the field only when opponent is given", () => {
+    const v = parseMatchupInput({ deck: deck(), variant: swap, relative: true });
+    expect(v.ok && v.input.mode).toBe("relative");
+    expect(v.ok && plannedGames(v.input)).toBe(300);
+    const f = parseMatchupInput({ deck: deck(), variant: swap, opponent: "field", relative: true, games: 50 });
+    expect(f.ok && f.input.mode).toBe("relative");
+    expect(f.ok && plannedGames(f.input)).toBe(3 * 50 + 2 * 7 * 50);
+    const d = parseMatchupInput({ deck: deck(), opponentDeck: deck(), opponent: "t001", relative: true });
+    expect(d.ok && d.input.mode).toBe("relative");
+    expect(d.ok && plannedGames(d.input)).toBe(300 + 200);
+  });
+
+  it("refuses relative without a second deck, with two, and leaves the absolute rules alone when it is false", () => {
+    const none = parseMatchupInput({ deck: deck(), opponent: "field", relative: true });
+    expect(!none.ok && none.error).toMatch(/relative compares two decks: give variant or opponentDeck/);
+    const two = parseMatchupInput({ deck: deck(), opponentDeck: deck(), variant: swap, relative: true });
+    expect(!two.ok && two.error).toMatch(/not both/);
+    expect(parseMatchupInput({ deck: deck(), opponentDeck: deck(), opponent: "field", relative: false }).ok).toBe(false);
+    const abs = parseMatchupInput({ deck: deck(), variant: swap, relative: false });
+    expect(abs.ok && abs.input.mode).toBe("h2h");
+  });
+
+  it("caps the games of a relative job like any other", () => {
+    const r = parseMatchupInput({ deck: deck(), variant: swap, opponent: "field", relative: true, games: 200 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/at most 3000 games/);
+  });
+
+  it("keys a relative job apart from the absolute head-to-head and does not change an absolute key", () => {
+    const rel = parseMatchupInput({ deck: deck(), variant: swap, relative: true });
+    const abs = parseMatchupInput({ deck: deck(), variant: swap });
+    if (!rel.ok || !abs.ok) throw new Error("parse");
+    const pins = { codeCommit: "c", engineCommit: "e", cardDataSha256: "a".repeat(64), gateRecordSha256: "b".repeat(64) };
+    expect(jobKey(canonicalInput(rel.input, "rung1"), pins)).not.toBe(jobKey(canonicalInput(abs.input, "rung1"), pins));
+    expect(Object.keys(canonicalInput(abs.input, "rung1")).sort()).toEqual(["deck", "games", "mode", "opponent", "opponentDeck", "policy", "seed", "variant"]);
+    expect(jobFileSchema.shape.input.safeParse(canonicalInput(rel.input, "rung1")).success).toBe(true);
+  });
+
+  it("labels exactly as the issue says and notes the hidden-card lookahead only for the rungs that have it (#183)", () => {
+    expect(relativeLabel("rung3:k=8")).toBe("bot play (forceteki rung3:k=8), relative comparison on identical shuffles, not a human or tournament win rate");
+    for (const spec of ["rung3", "rung3:k=8", "rung3v:k=8,ev=v1,horizon=round,noPass=1"]) expect(leaksHiddenInformation(spec)).toBe(true);
+    for (const spec of ["rung1", "rung3mc:playout=rung1,n=2", "rung4:k=8"]) expect(leaksHiddenInformation(spec)).toBe(false);
+    expect(relativeNotes("rung3:k=8").join(" ")).toMatch(/#183/);
+    expect(relativeNotes("rung1")).toEqual([]);
+    const out = renderResult({ label: relativeLabel("rung1"), body: { mode: "relative" }, policy: "rung1", inputHash: "a".repeat(64), codeCommit: "abc1234", engine: { commit: "445792e", cardDataVersion: "v" }, seed: "1", policyVersion: "1" });
+    expect(out.label).toBe("bot play (forceteki rung1), relative comparison on identical shuffles, not a human or tournament win rate");
+    expect(out.status).toBe("candidate");
+  });
+
+  const sg = (stratum: string, won: boolean | null, end = won === null ? "draw" : "base_destroyed"): SubjectGame => ({ stratum, won, endCondition: end, rounds: 6, endBoard: ["A"] });
+  it("serves the head-to-head figures and the paired field difference, and no absolute win share for either deck", () => {
+    const pairs = Array.from({ length: 12 }, (_, i) => ({ seed: `s${i}`, a: i < 10 ? (1 as const) : (2 as const), b: i < 10 ? (2 as const) : (1 as const) }));
+    const h2hGames = pairs.flatMap((p) => [sg("h2h", p.a === 1), sg("h2h", p.b === 2)]);
+    const strata = [{ id: "t1", name: "One", weight: 0.75 }, { id: "rest", name: "Rest", weight: 0.25 }];
+    const deckG = [sg("t1", true), sg("t1", true), sg("t1", false), sg("t1", null), sg("rest", true), sg("rest", null, "error")];
+    const varG = [sg("t1", false), sg("t1", true), sg("t1", true), sg("t1", true), sg("rest", false), sg("rest", true)];
+    const out = summarizeRelative({ h2hPairs: pairs, mirrorWinners: [1, 2, 1, 2, null], h2hGames, field: { deck: deckG, variant: varG, strata }, seed: "7" });
+    expect(out.headToHead).toMatchObject({ pairs: 12, n: 24, wins: 20, winShare: 0.8333, nonDecisive: 0, seedsWonBothOrders: { deck: 10, variant: 2 }, mirror: { games: 5, nonDecisive: 1 }, errorRate: 0 });
+    expect(out.headToHead.seedsWonBothOrders.pValue).toBeCloseTo(0.0386, 3);
+    expect(out.headToHead.wilson95?.low).toBeLessThan(0.8333);
+    const f = out.field as NonNullable<typeof out.field>;
+    expect(f).toMatchObject({ pairs: 4, bothWon: 1, bothLost: 0, undecided: 2, errorRate: 0.0833, pooledPairs: { deckOnlyWon: 2, variantOnlyWon: 1, pValue: 1 } });
+    expect(f.perArchetype).toHaveLength(2);
+    expect(f.perArchetype[0]).toMatchObject({ id: "t1", pairs: 3, deckOnlyWon: 1, variantOnlyWon: 1, difference: 0 });
+    expect(f.deckMinusVariant.difference).toBe(0.25);
+    const text = JSON.stringify(out);
+    expect(text).not.toMatch(/variantDeck|"deck":\{/);
+    expect(summarizeRelative({ h2hPairs: pairs, mirrorWinners: [], h2hGames, field: null, seed: "7" }).field).toBeNull();
   });
 });
