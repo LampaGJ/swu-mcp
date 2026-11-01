@@ -76,10 +76,20 @@ describe.skipIf(!hasData)("a friendly-trait target is a trait lock, and a trio w
 });
 
 describe.skipIf(!hasData)("a trio's new card that adds no job the deck lacks at its standing is dropped (#164 item 1, D82)", () => {
+  // Flipped by #173 (D91): Figure of Unity is still kept (D82 drops only a card whose job a deck card holds at the same or better
+  // standing), but its keywords are links the deck already has, so its trios carry deckHasLinks and leave the six-row page.
   it("step 6 drops Accelerate Our Plans (Ahsoka Tano, I Learned It from You already gives Chewbacca the extra attack) and keeps Figure of Unity", () => {
     const trios = step6();
     for (const t of trios) expect(newCards(t), t.cards).not.toContain(ACCELERATE);
-    expect(trios.some((t) => newCards(t).includes(FIGURE_OF_UNITY)), trios.map((t) => t.cards).join("\n")).toBe(true);
+    const long = body(SYNERGY_TOOLS.find_trios.handler(real, { leaderAspects: ["Cunning", "Heroism"], baseAspects: ["Command"], decklist: DECKLIST, limit: 50, withAlternatives: false, evidence: false })).trios as Record<string, any>[];
+    for (const t of long) expect(newCards(t), t.cards).not.toContain(ACCELERATE);
+    // Coordinator ruling 2026-10-31: a deckHasLinks trio sharing two members with a listed row is listed under its alsoWith.
+    const fou = [
+      ...long.filter((t) => newCards(t).includes(FIGURE_OF_UNITY)).map((t) => t.deckHasLinks),
+      ...long.flatMap((t) => ((t.alsoWith ?? []) as Record<string, any>[]).filter((a) => a.title === "Figure of Unity").map((a) => a.deckHasLinks)),
+    ];
+    expect(fou.length, long.map((t) => t.cards).join("\n")).toBeGreaterThan(0);
+    for (const held of fou) expect(held).toBeDefined();
   });
 
   it("step 14 drops Kage Elite (Boba Fett already feeds Oppo's Raid and Saboteur) and the unplayed C-3PO (Grogu already uses Neel's ready), and keeps Insurgent Camp", () => {

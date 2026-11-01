@@ -48,6 +48,17 @@ const givesItself = (c: SwuClause, e: ClauseEffect, triggerText: string): boolea
   /\bthis unit\b/i.test(c.text) &&
   !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
 const THIS_UPGRADE = /\bdefeat this upgrade\b/i;
+/**
+ * D91 (#173): "Take control of a non-leader unit, then defeat it": the taker controls the unit when it is defeated (CR 8.27.1,
+ * 8.11.1), so for the pair graph the defeat is a friendly one; the enemy-unit tag stays for the removal readers (meta_answers).
+ */
+const defeatsSeized = (c: SwuClause, e: ClauseEffect): boolean =>
+  e.cat === "defeat" &&
+  e.rule === "defeat_ref" &&
+  c.effects.slice(0, c.effects.indexOf(e)).some((x) => x.cat === "take_control" && (x as { toOpponent?: unknown }).toOpponent !== true);
+/** D91 (#173): an effect that helps an enemy unit (a ready, a heal, a Shield, Experience or Advantage token, a buff) is a drawback. */
+const HELPING_CATS = new Set(["ready", "heal", "give_token", "stat_mod"]);
+const helpsEnemy = (e: ClauseEffect): boolean => pol(e.target) === "enemy" && HELPING_CATS.has(e.cat) && !hostile(e);
 /** D84 (#166): "This unit can't attack unless it's damaged" (Oggdo Bogdo): damage on the card is what lets it attack. */
 const ATTACKS_ONLY_DAMAGED = /\bcan['\u2019]?t attack unless (?:it['\u2019]?s|it is|he['\u2019]?s|she['\u2019]?s|this unit is) damaged\b/i;
 /** The bounce's object is the card ("this unit", or a pronoun) and no other unit is named in the clause or its trigger. */
@@ -174,6 +185,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
     if (!m.has(tag)) m.set(tag, why);
   };
   const s = card.structured;
+  const seizedWhys = new Set<string>();
 
   if (card.type === "Upgrade" || card.keywords.some((k) => k.keyword === "Piloting" && !k.granted)) {
     add(offers, "offers:upgrade-to-attach", "is an upgrade or Pilot");
@@ -246,7 +258,9 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
         if (/when played ability/i.test(c.text)) add(wants, "wants:when-played-cards", clauseWhy);
         if (/\b(?:dealt damage to an enemy base this phase|enemy base was damaged this phase)/i.test(c.text)) add(wants, "wants:enemy-base-damaged", clauseWhy);
         if (/\benemy (?:[\w-]+ )*unit with an? weakness token/i.test(c.text)) add(wants, "wants:enemy-weakened", clauseWhy);
-        if (/\bexhausted enemy\b|\benemy (?:[\w-]+ )*units? (?:is|are) exhausted\b/i.test(c.text)) add(wants, "wants:exhausted-enemy", clauseWhy);
+        // D91 (#173): "Ready an exhausted enemy unit" (Blue Ace) undoes what an exhaust effect did, so the exhausted enemy is no want.
+        const helpedExhausted = c.effects.some((x) => helpsEnemy(x) && /\bexhausted\b/i.test(x.target?.text ?? ""));
+        if (!helpedExhausted && /\bexhausted enemy\b|\benemy (?:[\w-]+ )*units? (?:is|are) exhausted\b/i.test(c.text)) add(wants, "wants:exhausted-enemy", clauseWhy);
         const users = KEYWORD_USERS.exec(c.text)?.[1];
         if (users !== undefined && HOLDER_KEYWORDS.has(users)) add(wants, `wants:keyword-${users.toLowerCase()}`, clauseWhy);
         const createsToken = c.effects.some((x) => x.cat === "create_token");
@@ -275,6 +289,10 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                 if (p === "friendly") add(offers, "offers:defeat-friendly-unit", why);
                 else if (p === "enemy") add(offers, "offers:defeat-enemy-unit", why);
                 else if (p === "any") add(offers, "offers:defeat-any-unit", why);
+                if (defeatsSeized(c, e)) {
+                  add(offers, "offers:defeat-friendly-unit", why);
+                  seizedWhys.add(why);
+                }
                 if (target?.kind === "token" && /credit/i.test(target.text)) add(wants, "wants:credit-tokens", why);
               }
               break;
@@ -324,7 +342,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
                   const opponentPicks = p === "ref" && clauses.some((x) => /\bopponent chooses\b/i.test(x.text));
                   add(offers, tp === "enemy" || opponentPicks ? "offers:give-weakness-enemy" : tp === "self" ? "offers:give-weakness-self" : p === "friendly" ? "offers:give-weakness-own" : "offers:give-weakness", why);
                 }
-                else add(offers, `offers:give-${tok.toLowerCase()}`, why);
+                // D91 (#173): an Advantage token given "to this unit" (Axe Woves, Undaunted) stays on the giver, like give-shield-self.
+                else add(offers, `offers:give-${tok.toLowerCase()}${tp === "self" ? "-self" : ""}`, why);
               }
               break;
             }
@@ -441,7 +460,8 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
       if (offersNothing) for (const k of [...offers.keys()]) if (!offersBeforeClauses.has(k)) offers.delete(k);
     }
   }
-  if (offers.has("offers:defeat-friendly-unit")) add(wants, "wants:sac-fodder", "defeats your own units");
+  // D91 (#173): a defeat of a unit taken from an opponent spends none of yours, so it wants no fodder.
+  if (offers.has("offers:defeat-friendly-unit") && !seizedWhys.has(offers.get("offers:defeat-friendly-unit") as string)) add(wants, "wants:sac-fodder", "defeats your own units");
   if (card.type === "Unit" || card.type === "Token Unit") for (const tr of s.traits) add(offers, `offers:is-trait-${tr}`, "printed trait");
   const asList = (m: Map<string, string>): { tag: string; why: string }[] =>
     [...m.keys()].sort(compareCodePoints).map((tag) => ({ tag, why: m.get(tag) as string }));

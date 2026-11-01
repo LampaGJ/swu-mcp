@@ -968,6 +968,10 @@ function printedKeywordsOf(syn: SynergyCard): ReadonlySet<string> {
   return new Set([...field, ...listed]);
 }
 
+/** D91 (#173): a pinned cluster label naming a job done to the opponent. */
+const OPPONENT_JOB = /\b(?:disruption|removal)\b/i;
+/** A tag that acts on your own side ("offers:discard-own", "offers:self-mill", "offers:defeat-friendly-unit"). */
+const OWN_SIDE_TAG = /[:-](?:own|self|friendly)(?:-|$)/;
 /** How many cards a cluster gap names. */
 const GAP_CARDS = 3;
 
@@ -1140,10 +1144,17 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
   /** The cards a gap points to (D75): cluster members the deck lacks, open clauses first, most played in the leader's lists first, then the lighter penalty. */
   // D89 (#170): a pinned label names a job, so under one a gap card must carry one of the cluster's defining tags; a member the embedding
   // placed there for its words alone ("hand" in 0-0-0's text) does not do the job.
-  const doesJob = (id: number, syn: SynergyCard): boolean => {
+  // D91 (#173): a label that names a job done to the opponent ("hand disruption", "removal") is done only by an offer aimed there, so a
+  // defining tag that acts on your own side (discard-own, self-mill: BT-1, Merrin) or a want does not fill it.
+  const jobTags = (id: number): ReadonlySet<string> | undefined => {
     const tags = defining.get(id);
-    if (labelOf.get(id)?.labelStatus !== "pinned" || tags === undefined || tags.size === 0) return true;
-    return [...syn.tags.offers, ...syn.tags.wants].some((t) => tags.has(t.tag));
+    if (tags === undefined || !OPPONENT_JOB.test(labelOf.get(id)?.label ?? "")) return tags;
+    return new Set([...tags].filter((t) => t.startsWith("offers:") && !OWN_SIDE_TAG.test(t)));
+  };
+  const doesJob = (id: number, syn: SynergyCard): boolean => {
+    const tags = jobTags(id);
+    if (labelOf.get(id)?.labelStatus !== "pinned" || defining.get(id) === undefined || defining.get(id)?.size === 0) return true;
+    return [...syn.tags.offers, ...syn.tags.wants].some((t) => tags?.has(t.tag) === true);
   };
   const gapCards = (id: number): string => {
     const picks = (membersOf.get(id) ?? []).flatMap((k) => {
@@ -1154,6 +1165,13 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
       const share = leaderData?.byCard.get(k)?.inclusion ?? null;
       return [{ syn, share, penalty: singlePenalty(syn, supplied), locked: isLocked(clauseLock(syn, locks)) }];
     });
+    // D91 (#173): an empty list reads as "nothing to add", so a cluster with no qualifying card names the tags it looked for.
+    if (picks.length === 0) {
+      const tags = labelOf.get(id)?.labelStatus === "pinned" ? [...(jobTags(id) ?? [])].sort(compareCodePoints) : [];
+      return tags.length === 0
+        ? "none: no card of the cluster that the deck lacks is open in Premier"
+        : `none: no card of the cluster that the deck lacks carries one of the tags that do its labelled job (${tags.join(", ")})`;
+    }
     return picks
       .sort(
         (x, y) =>
@@ -1189,7 +1207,7 @@ function clusterGapRows(env: DeckEnv, lines: readonly DeckLine[], supplied: read
         ? `a cluster's share of the ${weighted.length} Premier-scope cards this leader and base play penalty-free, scaled to the ${mainCopies} main-deck cards; gap is expected minus held; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`
         : `a cluster's inclusion-weighted share of the ${weighted.length} cards in this leader's decklists (${leaderSourceText(leaderData.entry, leaderData.selection)}), scaled to the ${mainCopies} main-deck cards; gap is expected minus held; poolCards counts those cards in the cluster; ${DECK_CARDS_RULE}; clusters made mostly of bases, leaders or tokens are skipped`,
     shown: Math.min(rows.length, limit),
-    gapCardsRule: `gapCards names, per shown cluster, the top ${GAP_CARDS} cards of the cluster that the deck lacks and that are not rotated out of Premier, with cost, the aspect penalty under this leader and base (+N), a lock when a clause needs what the deck does not supply, and the share of ${leaderData === null ? "the" : "this leader's"} decklists that play the card${leaderData === null ? " (no list data: ranked by play-calibrated score)" : ""}; open clauses rank first, then most played, then the lighter penalty, then play-calibrated score; under a pinned label (labelStatus pinned) a card is named only when it carries one of the cluster's defining tags, so it does the labelled job (D89)`,
+    gapCardsRule: `gapCards names, per shown cluster, the top ${GAP_CARDS} cards of the cluster that the deck lacks and that are not rotated out of Premier, with cost, the aspect penalty under this leader and base (+N), a lock when a clause needs what the deck does not supply, and the share of ${leaderData === null ? "the" : "this leader's"} decklists that play the card${leaderData === null ? " (no list data: ranked by play-calibrated score)" : ""}; open clauses rank first, then most played, then the lighter penalty, then play-calibrated score; under a pinned label (labelStatus pinned) a card is named only when it carries one of the cluster's defining tags, so it does the labelled job (D89); a label naming a job done to the opponent (disruption, removal) counts only defining offers that do not act on your own side, and a cluster with no qualifying card reads "none: ..." with the tags it looked for (D91)`,
     clusters: rows.slice(0, limit),
     gapCards: rows.slice(0, limit).map((r) => ({ clusterId: r.clusterId, label: r.label, cards: gapCards(r.clusterId) })),
   };
@@ -1561,12 +1579,14 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
   const perCost = new Map<number, number>();
   let others = 0;
   let negativeHidden = 0;
+  const hiddenAt = new Set<number>();
   // Decision D51: a staple is always listed and spends neither perCost nor limit; limit caps the other rows. D87: so is a kept negative card.
   const shown = rows.filter((r) => {
     if (r.staple === true || negativeKept(r)) return true;
     // D89 (#170): a measured-negative card the deck does not hold and the leader's lists play under 50% fills no slot, even an empty one.
     if ((r as { evidenceClass?: EvidenceClass }).evidenceClass === "negative") {
       negativeHidden++;
+      hiddenAt.add(r.cost);
       return false;
     }
     const n = perCost.get(r.cost) ?? 0;
@@ -1586,7 +1606,8 @@ export function playableCards(env: DeckEnv, input: unknown): ToolResult {
       leaderData === null
         ? null
         : { population: leaderData.entry.population, fallback: leaderData.entry.fallback, decks: leaderData.entry.decks, window: `${leaderData.entry.window.from}..${leaderData.entry.window.to}`, ...selectionFields(leaderData.selection) },
-    emptyCosts: emptyCostsText(emptyCosts, thinList, unusedCosts),
+    // D91 (#173): a cost whose every candidate is a hidden negative card is empty too, and says why.
+    emptyCosts: emptyCostsText(emptyCosts, thinList, unusedCosts, [...hiddenAt].filter((c) => !shown.some((r) => r.cost === c) && rows.every((r) => r.cost !== c || (r as { evidenceClass?: EvidenceClass }).evidenceClass === "negative")).sort((a, b) => a - b)),
     note: playableNote(leaderData?.entry ?? null, rankedBy, args.includeUnplayed, leaderData?.selection),
     matched: played.length,
     shown: shown.length,
@@ -1610,8 +1631,9 @@ const EVIDENCE_NOTE =
 
 const floorText = (cost: number): string => `no tournament-played card (>= ${LEADER_INCLUSION_FLOOR * 100}%) at cost ${cost}`;
 
-function emptyCostsText(never: readonly number[], thin: readonly number[], unused: readonly number[]): string {
+function emptyCostsText(never: readonly number[], thin: readonly number[], unused: readonly number[], negativeOnly: readonly number[] = []): string {
   const parts = [
+    ...negativeOnly.map((c) => `${c}: every candidate is measured negative (negativeHidden counts it)`),
     ...(never.length === 0 ? [] : [`${never.join(", ")}: no tournament-played card at ${never.length === 1 ? "this cost" : "these costs"}`]),
     ...thin.map(floorText),
     ...(unused.length === 0 ? [] : [`under ${LEADER_COST_MIN_COPIES} mean copies in the leader's lists at ${unused.length === 1 ? "cost" : "costs"} ${unused.join(", ")}`]),
@@ -1768,6 +1790,8 @@ const OPPONENT_GAIN = /\b(?:each|an|that|the) opponent (?:may )?(?:ready|readies
 const CONTROLLER_GAIN = /\bits controller (?:may )?(?:resources?|draws?|creates?|gains?|puts?)\b/i;
 /** D85 (#167): "Choose an opponent. For this phase, they may play this unit from its owner's discard pile for free" (Stolen AT-Hauler). */
 const OPPONENT_REPLAYS = /\bthey may play this (?:unit|card|upgrade)\b/i;
+/** D91 (#173): "Ready an exhausted enemy unit" (Blue Ace): a clause that readies, heals or gives a token to an enemy unit helps the opponent. */
+const ENEMY_HELP = /\bready (?:an? |another |each )?(?:exhausted )?enemy (?:[\w-]+ )*units?\b|\bheal (?:\d+|X) damage from (?:an? |each )?enemy\b|\bgive (?:an? |\d+ )(?:Shield|Experience|Advantage) tokens? to (?:an? |each )?enemy\b/i;
 
 /**
  * D83 (#165): the clause by which a card gives the opponent a resource, a card or a token (Display Piece: "Defeat an enemy
@@ -1777,7 +1801,7 @@ export function drawbackOf(syn: SynergyCard): string | null {
   const texts = clauseTextsOf(syn);
   const enemyOnly = texts.some((t) => /\benemy\b/i.test(t));
   const opponent = texts.some((t) => /\bopponent\b/i.test(t));
-  return texts.find((t) => (opponent && (OPPONENT_GAIN.test(t) || OPPONENT_REPLAYS.test(t))) || (enemyOnly && CONTROLLER_GAIN.test(t)) || OWN_BASE_DAMAGE.test(t)) ?? null;
+  return texts.find((t) => (opponent && (OPPONENT_GAIN.test(t) || OPPONENT_REPLAYS.test(t))) || (enemyOnly && CONTROLLER_GAIN.test(t)) || OWN_BASE_DAMAGE.test(t) || ENEMY_HELP.test(t)) ?? null;
 }
 
 /** D84 (#166): "Deal 5 damage to your base" (Boba Fett's Rancor): the card damages its own side's base. */
@@ -2464,7 +2488,7 @@ export const DECK_TOOLS = {
   ),
   playable_cards: deckTool(
     "Playable cards",
-    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty. A card whose own clause names a base location that the given base meets carries baseEnabled: <Location> and baseEnabledClause (the clause quoted), ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the 2% floor (D73). Each card row carries evidenceClass from the tournament deck evidence meta_answers reads, and a measured-negative card comes last within its cost (D86). evidenceGap is on every row, so the rows stay one table; a negative card the decklist holds or 50% or more of the leader's lists play keeps its place and is always listed, spending neither perCost nor limit (D87). D89: evidenceGap holds the measured difference on an ok row too (null only when unmeasured or thin-control), and any other negative card fills no slot, even an empty one: negativeHidden counts it.",
+    "The best cards for a leader and base: Unit, Event and Upgrade cards within an aspect penalty limit (default none), ranked within each cost by how many of this leader's tournament decklists play the card (leaderInclusion, with the population and window named), then by play-calibrated score; rankBy score, or a package without leader data, ranks by score alone. In leader mode a card in 60% or more of the leader's decks is a staple: always listed in full, even past perCost and limit (staple: true); limit caps the other rows. A card played in under 2% of the decks, or never, is left out unless includeUnplayed is true, and emptyCosts names a cost left with no played card; with emptyCostsOnly only a cost where the leader's lists hold at least 0.5 mean copies is reported, and emptyCosts names the other empty costs in one line. Give a partial decklist to skip cards already at 3 copies and, with emptyCostsOnly, to fill the costs it lacks. Or give the deck as swudb (the SWUDB JSON interchange document) instead of leader, base and decklist. A card whose clause needs a base location or a unit aspect the leader, base and decklist do not supply carries baseLocked or needsUnitAspect and follows the other cards of its cost. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. A staple that pays an aspect penalty under this leader and base is marked (penalty, penalised: true), never hidden. A staple that maxPenalty drops is listed apart under penalisedStaples with its penalty. A card whose own clause names a base location that the given base meets carries baseEnabled: <Location> and baseEnabledClause (the clause quoted), ranks first within its cost after any locked card, and is listed even when the leader's lists play it under the 2% floor (D73). Each card row carries evidenceClass from the tournament deck evidence meta_answers reads, and a measured-negative card comes last within its cost (D86). evidenceGap is on every row, so the rows stay one table; a negative card the decklist holds or 50% or more of the leader's lists play keeps its place and is always listed, spending neither perCost nor limit (D87). D89: evidenceGap holds the measured difference on an ok row too (null only when unmeasured or thin-control), and any other negative card fills no slot, even an empty one: negativeHidden counts it. D91: a cost whose every candidate is such a hidden negative card is named in emptyCosts.",
     playableCardsShape,
     playableCards,
   ),
@@ -2476,7 +2500,7 @@ export const DECK_TOOLS = {
   ),
   budget_alternatives: deckTool(
     "Budget alternatives",
-    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, the role no card in the cost band fills when band cards exist (D83), or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82). A substitute that gives the opponent a resource, a card or a token carries drawback, the clause quoted (Display Piece: \"Its controller resources it from its owner's discard pile.\") (D83); so does one that damages your own base (Boba Fett's Rancor: \"Deal 5 damage to your base.\"). An event that removes a unit keeps that job like a unit (job, keepsRole), and a removal swap whose clause caps what it removes by cost, power or HP carries limit, the clause quoted (The Tree Remembers: \"If it costs 3 or less, defeat it.\") (D84); a damage removal swap's limit names the damage and the target restriction before the clause (\"2 damage, unique units only: ...\"), a unit that creates token units or holds Sentinel keeps that job, and a swap that lets the opponent play it from the discard (Stolen AT-Hauler) carries drawback (D85). The limit names every damage mode (\"2 damage, ground units only, undamaged units only; or 5 damage, ...\", The Cyborg Mech) and adds damage dealt again to the same unit (Boba Fett's Rancor: 10 damage) (D86).",
+    "Cheaper fungible substitutes for the cards of a decklist: same role, lower canonical US price, with the price saved, the play-calibrated score difference and, with a leader and base, the aspect penalty (never above the replaced card's) and the leader's tournament decklist inclusion (leaderInclusion; most-played substitutes first, and a slot with no played substitute says so). With maxPrice, cards already at or under it are skipped and listed in alreadyUnderCap. A priced deck card with no swap is listed in noAlternative with its price and the reason (no cheaper same-slot card, the role no card in the cost band fills when band cards exist (D83), or no card within the cost band), so every priced card sits in slots, alreadyUnderCap or noAlternative. Cards without a price are listed. Or give the whole deck as swudb, the SWUDB JSON interchange document (SWUDB, melee.gg, Karabast and SWU Stats exports, ids like HMW_018), instead of decklist, leader and base. A card that readies a leader, or gives a keyword the leader or the deck supplies (Ambush, Raid), keeps that job, and so does a unit that readies a unit, draws a card or removes an enemy unit (read from its offers, D65): only substitutes that do the same are offered (keepsRole; job on the slot), and noAlternative says when none does or none is cheaper. Give candidates (cardKeys, SET_NNN ids or titles) to weigh named cards whatever the cost band: each is listed under candidates with its price, saving, score and penalty, outsideBand: true when the cost band or arena rules would not have offered it. When the leader's decklists hold a per-base split (D60), they are narrowed to the lists with the given base (or its aspect) when at least 10 remain; otherwise all of them are used and one line (populationNote) names the counts and the dominant base. With a leader and base, a substitute whose clause needs what the leader, base and decklist do not supply (the Force, a trait, a base location, a unit aspect, a named card) carries the lock (needsForce, needsTrait, baseLocked, needsUnitAspect, nameLocked) and sorts after the open substitutes of its slot (D75). An upgrade's substitute fills every role of the upgrade it replaces, so Ascension Cable is no swap for Chewbacca's Bowcaster (D82). A substitute that gives the opponent a resource, a card or a token carries drawback, the clause quoted (Display Piece: \"Its controller resources it from its owner's discard pile.\") (D83); so does one that damages your own base (Boba Fett's Rancor: \"Deal 5 damage to your base.\"). An event that removes a unit keeps that job like a unit (job, keepsRole), and a removal swap whose clause caps what it removes by cost, power or HP carries limit, the clause quoted (The Tree Remembers: \"If it costs 3 or less, defeat it.\") (D84); a damage removal swap's limit names the damage and the target restriction before the clause (\"2 damage, unique units only: ...\"), a unit that creates token units or holds Sentinel keeps that job, and a swap that lets the opponent play it from the discard (Stolen AT-Hauler) carries drawback (D85). The limit names every damage mode (\"2 damage, ground units only, undamaged units only; or 5 damage, ...\", The Cyborg Mech) and adds damage dealt again to the same unit (Boba Fett's Rancor: 10 damage) (D86). A substitute that readies, heals or gives a token to an enemy unit carries drawback too (Blue Ace: \"Ready an exhausted enemy unit.\") (D91).",
     budgetAlternativesShape,
     budgetAlternatives,
   ),

@@ -106,6 +106,8 @@ export interface TagQualifier {
   regroup?: boolean;
   /** D85 (#167): the offer is a mode an opponent picks ("An opponent chooses one:", Watto), so the card's controller cannot count on it. */
   opponentChooses?: boolean;
+  /** D91 (#173): the offer defeats a unit its own ability took control of first ("Take control of a non-leader unit, then defeat it"). */
+  seized?: boolean;
 }
 
 interface TargetLite {
@@ -118,6 +120,7 @@ interface TargetLite {
 }
 interface EffectLite {
   cat?: string;
+  toOpponent?: boolean;
   sign?: string;
   token?: string;
   target?: TargetLite;
@@ -344,7 +347,7 @@ function attachBound(card: SynergyCard): AttachBound | undefined {
 }
 
 /** Printed keywords of a card: `structured.keywordsField` and the non-granted entries of `keywords`. */
-function printedKeywords(card: SynergyCard): string[] {
+export function printedKeywords(card: SynergyCard): string[] {
   const field = ((card.structured.keywordsField as unknown[] | undefined) ?? []).filter((k): k is string => typeof k === "string");
   const listed = ((card.keywords as { keyword?: unknown; granted?: unknown }[] | undefined) ?? []).flatMap((k) => (typeof k.keyword === "string" && k.granted !== true ? [k.keyword] : []));
   return [...new Set([...field, ...listed])];
@@ -496,12 +499,16 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
   let subject: Subject = EMPTY;
   let viaCat: string | undefined;
   let relays: string | undefined;
+  let seized = false;
   const cats = catsFor(side === "offers" ? OFFER_CATS : WANT_CATS, tag);
   if (clause !== undefined && cats.length > 0) {
     const hit = clause.effects.find((e) => cats.includes(e.cat ?? ""));
     if (hit !== undefined) {
-      const seized = isRef(hit.target) ? seizedTarget(ability, clause) : undefined;
-      subject = subjectOf(seized ?? hit.target);
+      const seizedFrom = isRef(hit.target) ? seizedTarget(ability, clause) : undefined;
+      subject = subjectOf(seizedFrom ?? hit.target);
+      // D91 (#173): the taker controls the unit when it is defeated (CR 8.27.1, 8.11.1), so the friendly-defeat tag acts on your side.
+      seized = side === "offers" && hit.cat === "defeat" && clause.effects.slice(0, clause.effects.indexOf(hit)).some((x) => x.cat === "take_control" && x.toOpponent !== true);
+      if (seized && tag === "offers:defeat-friendly-unit") subject = { ...subject, side: "friendly" };
       if ((hit.cat === "ready" || hit.cat === "extra_attack") && ATTACHED_UNIT.test(hit.target?.text ?? "")) subject = boundToHost(subject, attachBound(card));
       if (isRef(hit.target) && RELAYED.test(hit.target?.text ?? "") && (ability.triggers ?? []).some((t) => t.trigger?.startsWith("reactive") === true)) relays = triggerText;
       // A ready aimed back at "them" readies only the tokens the clause just made; give-* offers stay open because an upgrade on a token still counts as an upgrade.
@@ -550,6 +557,7 @@ export function qualifierOf(card: SynergyCard, side: "offers" | "wants", tag: st
     ...(side === "wants" && spendsSelf(ability) ? { spendsSelf: true } : {}),
     ...(side === "offers" && REGROUP.test(`${triggerText} ${text}`) ? { regroup: true } : {}),
     ...(side === "offers" && opponentPicks(ability, clause) ? { opponentChooses: true } : {}),
+    ...(seized ? { seized } : {}),
   };
 }
 
@@ -671,6 +679,12 @@ export function conflictBetween(
   const token = DEFEATS_UNIT.test(offerTag) && offer.subject.kind === "token" ? NON_UNIT_TOKEN.exec(offer.text)?.[1] : undefined;
   if (token !== undefined) return `the offer defeats a ${token} token, which is not a unit`;
   if (touched.kind === "leader" && b.type !== "Leader") return "the offer acts on a non-unit leader, the wanting card is not a leader";
+  // D91 (#173): a unit taken, then defeated, is the taker's when it leaves play (CR 8.27.1, 8.11.1) and goes to its owner's discard pile (CR 8.27.2).
+  if (offer.seized === true) {
+    if (wantTag === "wants:enemy-unit-defeated") return "the offer takes control of the unit first, so it is yours when it is defeated (CR 8.27.1, 8.11.1)";
+    if (wantTag === "wants:self-defeated") return "the offer defeats a unit taken from an opponent, not the wanting card";
+    if (wantTag === "wants:cards-in-discard") return "the unit taken goes to its owner's discard pile, not yours (CR 8.27.2)";
+  }
   // D84 (#166): a want on the card itself is a want of your own unit, which an offer aimed at what an opponent controls never reaches.
   if (wantConcrete !== undefined && offer.subject.side === "enemy") return "the offer acts on what an opponent controls, the want is on the wanting card itself";
   if (touched.kind !== undefined && NON_UNIT.has(touched.kind) && needed.kind === "unit" && wantConcrete !== undefined) {

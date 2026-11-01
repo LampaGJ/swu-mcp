@@ -111,15 +111,18 @@ describe("enemy-only removal is no sacrifice outlet for your own units (#162 ite
     expect(offersOf(EVIL)).not.toContain("offers:defeat-friendly-unit");
     expect(wantsOf(EVIL)).not.toContain("wants:sac-fodder");
   });
-  it("No Glory, Only Results defeats the unit it took control of, which is an enemy's", () => {
+  // Flipped by #173 (D91): the unit No Glory takes is yours when it is defeated (CR 8.27.1, 8.11.1), so it also offers a friendly-unit
+  // defeat (for "a friendly unit was defeated", Koska Reeves) and no longer feeds an enemy-defeat watcher; the enemy-unit tag stays for meta_answers.
+  it("No Glory, Only Results defeats the unit it took control of: an enemy's unit, yours when it is defeated", () => {
     expect(offersOf(NO_GLORY)).toContain("offers:defeat-enemy-unit");
     expect(offersOf(NO_GLORY)).not.toContain("offers:defeat-any-unit");
-    expect(offersOf(NO_GLORY)).not.toContain("offers:defeat-friendly-unit");
+    expect(offersOf(NO_GLORY)).toContain("offers:defeat-friendly-unit");
+    expect(wantsOf(NO_GLORY)).not.toContain("wants:sac-fodder");
   });
-  it("No Glory feeds no When Defeated of your own (Onyx Squadron Brute, Grim Valor) but still feeds HK-47's enemy-defeat watcher", () => {
+  it("No Glory feeds no When Defeated of your own (Onyx Squadron Brute, Grim Valor), and no longer HK-47's enemy-defeat watcher", () => {
     expect(rowsOf(NO_GLORY, ONYX)).not.toContain(SAC_OUTLET);
     expect(rowsOf(NO_GLORY, GRIM_VALOR)).not.toContain(SAC_OUTLET);
-    expect(rowsOf(NO_GLORY, HK47)).toContain("removal-defeat-watcher");
+    expect(rowsOf(NO_GLORY, HK47)).not.toContain("removal-defeat-watcher");
   });
   it("a pair keeps a single-target 'defeat a unit' as a weak outlet (pairs-v1 labels Shatterpoint -> Koska correct)", () => {
     expect(rowsOf(EVIL, ONYX)).toContain(SAC_OUTLET);
@@ -127,7 +130,10 @@ describe("enemy-only removal is no sacrifice outlet for your own units (#162 ite
   it("a trio never rests on a single-target any-side defeat as its sacrifice outlet", () => {
     for (const t of allTrios) {
       const keys = [t.cardA, t.cardB, t.cardC];
-      if (keys.includes(EVIL) || keys.includes(NO_GLORY)) expect(t.reasons, `${keys.join("|")}: ${t.reasons}`).not.toMatch(/(?:Evil is Everywhere|No Glory, Only Results) -> [^|]*sac-outlet-when-defeated/);
+      // Flipped by #173 (D91): No Glory -> Koska Reeves rides the sac-outlet row through "a friendly unit was defeated", which is no
+      // sacrifice of your own unit; what stays barred is either card feeding a When Defeated of your own (wants:self-defeated).
+      if (keys.includes(EVIL)) expect(t.reasons, `${keys.join("|")}: ${t.reasons}`).not.toMatch(/Evil is Everywhere -> [^|]*sac-outlet-when-defeated/);
+      if (keys.includes(NO_GLORY)) expect(t.reasons, `${keys.join("|")}: ${t.reasons}`).not.toMatch(/No Glory, Only Results -> [^|]*-> wants:self-defeated/);
     }
     expect(chainOf(EVIL, GRIM_VALOR, MARROK)).toBeUndefined();
   });

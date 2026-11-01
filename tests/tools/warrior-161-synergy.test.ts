@@ -49,8 +49,6 @@ const newCards = (t: Record<string, any>): string[] => String(t.cardKeys).split(
 const RAW_TRIGGER = /^\w+: [a-z]+(?:_[a-z]+)+$/;
 
 describe.skipIf(!hasData)("find_trios ranks a mixed trio's new card by its standing (#161, D74)", () => {
-  const step6 = (): Record<string, any>[] =>
-    body(SYNERGY_TOOLS.find_trios.handler(real, { leaderAspects: ["Cunning", "Heroism"], baseAspects: ["Command"], decklist: DECKLIST, limit: 6, withAlternatives: false })).trios;
   const step14 = (): Record<string, any>[] =>
     body(SYNERGY_TOOLS.find_trios.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, decklist: DECKLIST, limit: 5, withAlternatives: false })).trios;
 
@@ -62,8 +60,22 @@ describe.skipIf(!hasData)("find_trios ranks a mixed trio's new card by its stand
     });
   };
 
-  it("step 6 (colours, no leader): Insurgent Camp or Figure of Unity outranks Regulations Bureaucrat, C-3PO and Han's Golden Dice as the new card", () => {
-    strongBeforeWeak(step6());
+  // Flipped by #173 (D91): with no leader, Insurgent Camp has no engine job, and its ready and Figure of Unity's keywords are links the
+  // deck already has (Neel readies Grogu, Chewbacca and Captain Tarpals give Oppo Rancisis the keywords), so those trios carry
+  // deckHasLinks and follow the idea-tier trios whose new card adds a link the deck lacks, Regulations Bureaucrat's among them; one that
+  // shares two members with a listed row is listed under that row's alsoWith (coordinator ruling 2026-10-31).
+  it("step 6 (colours, no leader): Figure of Unity carries deckHasLinks, as a row that follows every idea-tier trio whose new card adds a link or under a row's alsoWith", () => {
+    const trios = body(SYNERGY_TOOLS.find_trios.handler(real, { leaderAspects: ["Cunning", "Heroism"], baseAspects: ["Command"], decklist: DECKLIST, limit: 50, withAlternatives: false, evidence: false })).trios as Record<string, any>[];
+    const fou = [
+      ...trios.filter((t) => newCards(t).includes(FIGURE_OF_UNITY)).map((t) => t.deckHasLinks),
+      ...trios.flatMap((t) => ((t.alsoWith ?? []) as Record<string, any>[]).filter((a) => a.title === "Figure of Unity").map((a) => a.deckHasLinks)),
+    ];
+    expect(fou.length, trios.map((t) => t.cards).join("\n")).toBeGreaterThan(0);
+    for (const held of fou) expect(held).toMatch(/Figure of Unity > Oppo Rancisis/);
+    const idea = trios.filter((t) => t.newCardWeight !== undefined && t.riderUnmet === undefined && t.leaderAlreadyFeeds === undefined && t.penalty < 4);
+    const firstHeld = idea.findIndex((t) => t.deckHasLinks !== undefined);
+    expect(idea.slice(firstHeld).every((t) => t.deckHasLinks !== undefined), idea.map((t) => `${t.cards} ${t.deckHasLinks ?? ""}`).join("\n")).toBe(true);
+    expect(idea.findIndex((t) => newCards(t).some((k) => WEAK_NEW_CARDS.includes(k)))).toBeLessThan(firstHeld);
   });
 
   it("step 14 (leader and base): Insurgent Camp or Figure of Unity outranks them too", () => {

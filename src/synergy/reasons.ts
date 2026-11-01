@@ -57,8 +57,13 @@ const PLAYED_READY_REASON: Record<string, string> = {
  */
 const READY_AGAIN_REASON = "Readying a unit after it attacks lets it attack again this round, so what it gains while attacking pays off twice.";
 
+/** D91 (#173): "Take control of a non-leader unit, then defeat it" is no sacrifice outlet, so the sac-outlet row's reason misstates it. */
+const SEIZED_DEFEAT_REASON =
+  "It takes control of a unit, then defeats it: the unit is yours when it leaves play (CR 8.27.1, 8.11.1), so it counts as a friendly unit defeated.";
+
 /** The reason for one row hit of an edge, worded for the side the offer actually lands on. */
 export function reasonOfHit(graph: PairGraph, e: PairEdge, hit: PairRowHit): string {
+  if (hit.offer === "offers:defeat-friendly-unit" && graph.qualifier(e.a, "offers", hit.offer)?.seized === true) return SEIZED_DEFEAT_REASON;
   if (hit.offer === "offers:ready-unit" && PLAYED_READY_REASON[hit.want] !== undefined) {
     const a = graph.byKey.get(e.a) as SynergyCard;
     const why = hit.offerWhy ?? a.tags.offers.find((t) => t.tag === hit.offer)?.why;

@@ -53,12 +53,16 @@ describe.skipIf(!hasData)("leaderTier keeps one card per want class and folds th
     expect(new Set(classes).size, classes.join("\n")).toBe(classes.length);
   });
 
-  it("the first Grit row lists the other Grit units as alternatives, and Oggdo Bogdo (can't attack unless damaged) gets a row", () => {
+  // Flipped by #173 (D91): with weighting none the tier keeps one row per want class, so the self-damaged row (Lobot's Grit) lists the
+  // other wanting clauses first (Scimitar, Power from Pain, Oggdo Bogdo) instead of five more Grit units, and Oggdo is an alternative.
+  it("the Grit row lists the other self-damaged clauses as alternatives, Oggdo Bogdo (can't attack unless damaged) among them", () => {
     const rows = tier();
     const grit = rows.find((r) => ((r.evidence ?? []) as Record<string, any>[]).some((e) => e.want === "Grit")) as Record<string, any>;
     expect(grit, rows.map((r) => r.title).join("; ")).toBeDefined();
     expect(((grit.alternatives ?? []) as unknown[]).length).toBeGreaterThanOrEqual(4);
-    expect(rows.map((r) => r.cardKey)).toContain(OGGDO);
+    expect((grit.alternatives as string[]).some((a) => /Oggdo Bogdo/.test(a)), String(grit.alternatives)).toBe(true);
+    expect(rows.filter((r) => r.link === grit.link).length).toBe(1);
+    void OGGDO;
   });
 });
 

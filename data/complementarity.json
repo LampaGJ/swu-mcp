@@ -608,6 +608,10 @@
    "note": "Same as give-shield-self: the Experience stays on the granting card. Reviewed #14."
   },
   {
+   "tag": "offers:give-advantage-self",
+   "note": "Same as give-shield-self: an Advantage token given 'to this unit' (Axe Woves, Undaunted) stays on the granting card, so it upgrades no other card. D91 (#173)."
+  },
+  {
    "tag": "offers:give-shield-enemy",
    "note": "A Shield on an enemy unit helps the opponent; nothing wants it. Reviewed #14."
   },
