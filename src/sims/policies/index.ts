@@ -15,6 +15,8 @@ import type { BotPolicy } from "./types.js";
  * their parameters; `rung0` names the typed driver's own random rung and `greedy-hash` the spike's name-hash baseline (typed-adapter.ts).
  * `rung3v:k=..,ev=v1` and `rung4:d=..,k=..,m=..,ev=v1` are the learned rungs (#128): this file only names and hashes
  * them; their policy lives in scripts/sims/policy/ and is registered from there, so nothing under src/ runs a model (D1).
+ * `rung3h:k=..,hk=..,hp=v1` is rung 3 with human-play priors ordering and pruning its candidates (#181, D104); likewise
+ * named and hashed here and registered from scripts/human-priors/.
  */
 
 export const RUNG1_VERSION = "1";
@@ -27,7 +29,8 @@ export type PolicySpec =
   | { kind: "rules"; rung: 1 | 2; params: RuleParams }
   | { kind: "lookahead"; params: LookaheadParams }
   | { kind: "montecarlo"; params: MonteCarloParams }
-  | { kind: "learned"; rung: 3 | 4; params: LearnedParams };
+  | { kind: "learned"; rung: 3 | 4; params: LearnedParams }
+  | { kind: "human"; params: HumanParams };
 
 export const LEARNED_VERSION = "1";
 
@@ -94,6 +97,47 @@ function learnedName(rung: 3 | 4, p: LearnedParams): string {
   if (p.maxTrialDecisions !== def.maxTrialDecisions) parts.push(`maxTrialDecisions=${p.maxTrialDecisions}`);
   if (p.stub === 1) parts.push("stub=1");
   return `${rung === 3 ? "rung3v" : "rung4"}:${parts.join(",")}`;
+}
+
+export const HUMAN_VERSION = "1";
+
+/** Rung 3 with human-play priors (#181): rung 3's parameters plus the priors' budget and version. */
+export interface HumanParams extends LookaheadParams {
+  /** Candidates kept after the priors order rung 3's top k; rung 1's own pick is always kept as well. */
+  hk: number;
+  /** Priors version: 1 is /Volumes/Models/swu/swu-mcp/human-priors/v1. */
+  hp: number;
+  /** 1: the attack ranker picks our attack targets, in play and in trials; 0: rung 1 does. */
+  at: number;
+}
+
+export const RUNG3H_PARAMS: HumanParams = { ...RUNG3_PARAMS, k: 8, hk: 4, hp: 1, at: 1 };
+
+function parseHuman(text: string, rest: string | undefined): PolicySpec {
+  const params: HumanParams = { ...RUNG3H_PARAMS };
+  for (const kv of (rest ?? "").split(",").filter(Boolean)) {
+    const [k, v] = kv.split("=");
+    const hp = /^v([1-9][0-9]*)$/.exec(v ?? "");
+    if (k === "hp" && hp !== null) params.hp = Number(hp[1]);
+    else if (k === "at" && (v === "0" || v === "1")) params.at = Number(v);
+    else if (k === "horizon" && (v === "reply" || v === "round")) params.horizon = HORIZON[v];
+    else if ((RUNG3_PILOT_KEYS as readonly string[]).includes(k)) setSwitch(params as unknown as Record<string, number>, k, v, text);
+    else if ((k === "hk" || (RUNG3_TUNABLE as readonly string[]).includes(k)) && /^[0-9]+(\.[0-9]+)?$/.test(v ?? "")) (params as unknown as Record<string, number>)[k] = Number(v);
+    else throw new Error(`bad policy parameter ${kv} in ${text}`);
+  }
+  if (!Number.isInteger(params.k) || params.k < 1) throw new Error(`rung3h needs an integer k >= 1 in ${text}`);
+  if (!Number.isInteger(params.hk) || params.hk < 1) throw new Error(`rung3h needs an integer hk >= 1 in ${text}`);
+  return { kind: "human", params };
+}
+
+/** Canonical rung3h name: k, hk and hp always, then at=0, then any rung 3 parameter off its default, then switches. */
+function humanName(p: HumanParams): string {
+  const parts = [`k=${p.k}`, `hk=${p.hk}`, `hp=v${p.hp}`];
+  if (p.at === 0) parts.push("at=0");
+  if (p.horizon !== RUNG3H_PARAMS.horizon) parts.push(`horizon=${p.horizon === HORIZON.reply ? "reply" : "round"}`);
+  for (const k of RUNG3_TUNABLE) if (k !== "k" && p[k] !== RUNG3H_PARAMS[k]) parts.push(`${k}=${p[k]}`);
+  parts.push(...switchSuffix(p as unknown as Record<string, number>, RUNG3_PILOT_KEYS));
+  return `rung3h:${parts.join(",")}`;
 }
 
 const MC_TUNABLE = ["n", "cap", "sub", "depth", "maxPlayoutDecisions", "determinize", "wBase", "wBoard", "wHand", "wResources", "wReady", "wScore"] as const;
@@ -164,6 +208,7 @@ export function parsePolicySpec(text: string): PolicySpec {
   if (name === "rung3mc") return parseMonteCarlo(text, rest);
   if (name === "rung3v") return parseLearned(3, text, rest);
   if (name === "rung4") return parseLearned(4, text, rest);
+  if (name === "rung3h") return parseHuman(text, rest);
   if (name !== "rung1" && name !== "rung2") throw new Error(`unknown policy ${text}`);
   const params: RuleParams = { ...RUNG1_PARAMS };
   for (const kv of (rest ?? "").split(",").filter(Boolean)) {
@@ -180,7 +225,9 @@ export function parsePolicySpec(text: string): PolicySpec {
 }
 
 export const specName = (s: PolicySpec): string =>
-  s.kind === "learned"
+  s.kind === "human"
+    ? humanName(s.params)
+    : s.kind === "learned"
     ? learnedName(s.rung, s.params)
     : s.kind === "montecarlo"
     ? monteCarloName(s.params)
@@ -206,6 +253,10 @@ export function policyOf(spec: PolicySpec, tables: CardTables): BotPolicy | null
 }
 
 export function policyHeader(spec: PolicySpec): { spec: string; id: string; version: string; rung: number; params: Record<string, number>; paramsSha256: string } {
+  if (spec.kind === "human") {
+    const params = { ...spec.params } as unknown as Record<string, number>;
+    return { spec: specName(spec), id: "rung3-human", version: HUMAN_VERSION, rung: 3, params, paramsSha256: paramsSha256(params) };
+  }
   if (spec.kind === "learned") {
     const params = { ...spec.params } as unknown as Record<string, number>;
     return { spec: specName(spec), id: spec.rung === 3 ? "rung3-value" : "rung4-search", version: LEARNED_VERSION, rung: spec.rung, params, paramsSha256: paramsSha256(params) };

@@ -4,7 +4,8 @@
  * from scripts/, so nothing under src/ imports a model runtime (D1) and every worker thread builds the same policies.
  * @tacticalObjective The parent loads the inputs once to fail fast (weights hash, layout, vocabulary), writes the
  * state-view keys to a file and names everything in SIMS_* variables; the preload in each worker reads them and
- * registers the same chains. A learned rung's header inputs carry the evaluator's and the vocabulary's sha256.
+ * registers the same chains. A learned rung's header inputs carry the evaluator's and the vocabulary's sha256. The
+ * human-trained pilot (`rung3h`, #181) rides the same path: its header inputs carry the priors' two sha256.
  */
 import { parsePolicySpec, specName } from "../../../src/sims/policies/index.js";
 import type { CardTables } from "../../../src/sims/policies/tables.js";
@@ -13,6 +14,7 @@ import type { DecisionObserver } from "../../../src/sims/policy.js";
 import type { StateViewKeys } from "../../../src/sims/state-view.js";
 import { buildViewKeys, createScorer, evaluatorObserver, LEARNED_ENV, loadLearnedInputs, OBSERVER_NAMES, readViewKeysFile, writeViewKeysFile, type LearnedInputs } from "../evaluator-hook.js";
 import { learnedSearchPolicy } from "./search.js";
+import { humanPolicy, loadPriors, priorsDir, type Priors } from "../../human-priors/pilot.js";
 
 export const isLearned = (name: string): boolean => {
   try {
@@ -21,6 +23,24 @@ export const isLearned = (name: string): boolean => {
     return false;
   }
 };
+
+export const isHuman = (name: string): boolean => {
+  try {
+    return parsePolicySpec(name).kind === "human";
+  } catch {
+    return false;
+  }
+};
+
+const priorsCache = new Map<number, Priors>();
+function priorsFor(version: number): Priors {
+  let p = priorsCache.get(version);
+  if (p === undefined) {
+    p = loadPriors(priorsDir(version));
+    priorsCache.set(version, p);
+  }
+  return p;
+}
 
 const cache = new Map<string, LearnedInputs>();
 function inputsFor(evaluator: string, viewKeys: StateViewKeys, vocab?: string): LearnedInputs {
@@ -36,6 +56,15 @@ function inputsFor(evaluator: string, viewKeys: StateViewKeys, vocab?: string): 
 export function registerLearned(registry: Record<string, () => unknown>, makeChain: (ps: unknown[]) => unknown, names: readonly string[], tables: CardTables, o: { viewKeys: StateViewKeys; vocab?: string }): void {
   for (const name of names) {
     const spec = parsePolicySpec(name);
+    if (spec.kind === "human") {
+      const pr = priorsFor(spec.params.hp);
+      const inputs = { ...inputsOf(spec, tables), humanModels: pr.sha256.models, humanCardPrior: pr.sha256.cardPrior };
+      const params = spec.params;
+      const make = () => makeChain([humanPolicy(tables, params, inputs, pr)]);
+      registry[name] = make;
+      registry[specName(spec)] = make;
+      continue;
+    }
     if (spec.kind !== "learned") continue;
     const li = inputsFor(`v${spec.params.ev}`, o.viewKeys, o.vocab);
     const inputs = { ...inputsOf(spec, tables), evaluator: li.evaluator.sha256, vocab: li.vocab.contentSha256 };
@@ -56,7 +85,9 @@ export function registerObservers(observers: Record<string, () => DecisionObserv
  */
 export function prepareLearned(o: { names: readonly string[]; engineCardKeys: Readonly<Record<string, string>>; evaluator?: string; vocab?: string }): StateViewKeys | null {
   const learned = o.names.filter(isLearned);
-  if (learned.length === 0 && o.evaluator === undefined) return null;
+  const human = o.names.filter(isHuman);
+  if (learned.length === 0 && human.length === 0 && o.evaluator === undefined) return null;
+  for (const name of human) priorsFor((parsePolicySpec(name) as { params: { hp: number } }).params.hp);
   const viewKeys = buildViewKeys(o.engineCardKeys);
   process.env[LEARNED_ENV.viewKeys] = writeViewKeysFile(viewKeys);
   if (o.vocab !== undefined) process.env[LEARNED_ENV.vocab] = o.vocab;

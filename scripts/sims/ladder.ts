@@ -289,7 +289,7 @@ async function main(): Promise<void> {
   const provenance = (specs: readonly string[], seeds: { from: number; to: number } | null) => provenanceOf({ specs, seeds, enginePin: pin.commit, codeCommit: myCommit, run: path.basename(runDir) });
   const live = new LiveStats({ kind: values.mode as LiveKind, provenance: provenance([], null) });
 
-  const searches = (spec: string): boolean => ["lookahead", "montecarlo", "learned"].includes(parsePolicySpec(spec).kind);
+  const searches = (spec: string): boolean => ["lookahead", "montecarlo", "learned", "human"].includes(parsePolicySpec(spec).kind);
   const toSpec = (j: Job) => ({ seed: String(j.seed), decks: [deckInputs[j.deck1], deckInputs[j.deck2]], policies: j.specs.map(driverName), recordMode: "none", undo: j.specs.some(searches), codeCommit: myCommit });
   const toResult = (j: Job, f: Footer): GameResult => ({
     seed: j.seed,

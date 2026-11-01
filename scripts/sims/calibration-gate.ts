@@ -108,7 +108,7 @@ async function main(): Promise<void> {
   const spec = values.policy;
   const name = driverName(spec);
   const parsed = parsePolicySpec(spec);
-  const searches = ["lookahead", "montecarlo", "learned"].includes(parsed.kind);
+  const searches = ["lookahead", "montecarlo", "learned", "human"].includes(parsed.kind);
   const fidelityRecord = fidelityRecordOf(parsed.kind, parsed.kind === "learned" ? parsed.rung : 3);
   const gamesPerPair = Number(values.games);
   const listsPer = Number(values.lists);

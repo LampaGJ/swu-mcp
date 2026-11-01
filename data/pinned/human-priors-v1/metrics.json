@@ -1,0 +1,130 @@
+{
+ "actionType": {
+  "accuracy": 0.5036,
+  "baseline": {
+   "accuracy": 0.3913,
+   "logLoss": 1.3386,
+   "name": "training class frequencies"
+  },
+  "logLoss": 1.0999,
+  "testClassShares": {
+   "ability": 0.3913,
+   "attack": 0.243,
+   "claim": 0.0942,
+   "pass": 0.0127,
+   "play": 0.2589
+  },
+  "testRows": 74958,
+  "trainRows": 286596
+ },
+ "attack": {
+  "heuristic": {
+   "name": "free kill, then favourable trade, then base (rung-1-like)",
+   "top1": 0.4149,
+   "top3": 0.831
+  },
+  "meanOptions": 4.2695,
+  "model": {
+   "top1": 0.5486,
+   "top3": 0.9002
+  },
+  "testDecisions": 8493,
+  "trainDecisions": 32794,
+  "trainOptions": 142586,
+  "uniform": {
+   "top1": 0.3188,
+   "top3": 0.7819
+  }
+ },
+ "cardPrior": {
+  "decisions": 33234,
+  "popularity": {
+   "top1": 0.2694,
+   "top3": 0.7086
+  },
+  "prior": {
+   "top1": 0.2874,
+   "top3": 0.7047
+  },
+  "uniform": {
+   "top1": 0.2604,
+   "top3": 0.6933
+  }
+ },
+ "coverage": {
+  "boardUnits": {
+   "inVocab": 1907135,
+   "resolved": 1907135,
+   "seen": 2011828
+  },
+  "cards": {
+   "distinct": 1529,
+   "distinctInVocab": 1507,
+   "inVocab": 649495,
+   "refs": 651945,
+   "resolved": 650059
+  },
+  "descriptor": {
+   "ability": {
+    "mapped": 272044,
+    "records": 297292
+   },
+   "attack": {
+    "mapped": 189073,
+    "records": 189712
+   },
+   "claim": {
+    "mapped": 69846,
+    "records": 69846
+   },
+   "other": {
+    "mapped": 0,
+    "records": 98927
+   },
+   "pass": {
+    "mapped": 83527,
+    "records": 83527
+   },
+   "play": {
+    "mapped": 188942,
+    "records": 189403
+   }
+  },
+  "leaders": {
+   "inVocab": 914100,
+   "resolved": 914100,
+   "seen": 928707
+  }
+ },
+ "models": {
+  "card-prior.json": "ff9b1610b01d537f7e285acab39fd06344f00de5e49936c752de4d5a610b5559",
+  "models.json": "0ae0b6b45d351b4a4ba42cdd42065fdbb407b4149ce38e0af2f9e0bbe4e6031a"
+ },
+ "value": {
+  "auc": 0.7761,
+  "baseline": {
+   "brier": 0.2494,
+   "logLoss": 0.692,
+   "name": "constant training win rate"
+  },
+  "brier": 0.1915,
+  "byRound": {
+   "rounds 0-2": {
+    "auc": 0.6915,
+    "rows": 22473
+   },
+   "rounds 3-5": {
+    "auc": 0.8098,
+    "rows": 20480
+   },
+   "rounds 6+": {
+    "auc": 0.8752,
+    "rows": 6964
+   }
+  },
+  "forfeitGamesExcluded": true,
+  "logLoss": 0.5609,
+  "testRows": 49917,
+  "trainRows": 187467
+ }
+}

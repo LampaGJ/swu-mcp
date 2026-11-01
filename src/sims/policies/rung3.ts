@@ -8,7 +8,7 @@ import { RUNG1_VERSION } from "./index.js";
 import { evaluateV, HORIZON, maskState, pickCandidate, rankByExclusion, RUNG3_VERSION, withoutPass, type Candidate, type LookaheadParams, type RawSide, type RawState } from "./lookahead.js";
 import { makeRulePolicy, RULE_PILOT_KEYS, RUNG1_PARAMS, type RuleParams } from "./rules.js";
 import type { CardTables } from "./tables.js";
-import type { BotPolicy, LegalAnswer } from "./types.js";
+import type { BotPolicy, GameView, LegalAnswer } from "./types.js";
 import type { DriverPolicy } from "./typed-adapter.js";
 
 /**
@@ -132,6 +132,18 @@ export function runToHorizon(
   return { decisions, cut: true };
 }
 
+/**
+ * A variant's changes to rung 3 (#181): its own id, a candidate order and prune at main-action prompts, and an answer
+ * for our own other prompts tried before rung 1, in play and in our seat's trial bot. Without hooks rung 3 is unchanged.
+ */
+export interface LookaheadHooks {
+  policyId: string;
+  policyVersion: string;
+  /** From rung 1's ranked top k (ranked[0] is rung 1's pick): the indices to try, best first. */
+  candidates(answers: readonly LegalAnswer[], view: GameView, ranked: readonly number[]): number[];
+  override?(answers: readonly LegalAnswer[], view: GameView): number | null;
+}
+
 /** The driver view rung 3 reads: typed-adapter's view plus the session's search hooks. */
 interface View {
   seat: 1 | 2;
@@ -142,7 +154,7 @@ interface View {
   search?: SearchHooks;
 }
 
-export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inputs: Record<string, string>): DriverPolicy & { counters: LookaheadCounters } {
+export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inputs: Record<string, string>, variant?: LookaheadHooks): DriverPolicy & { counters: LookaheadCounters } {
   let game: unknown = null;
   let builder: ViewBuilder | null = null;
   const bot = rung1(params);
@@ -165,7 +177,12 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
         const fresh = enumerateActions(g, players, v.seat, hooks.cardKeys);
         if (fresh.length !== actions.length || fresh.some((a, i) => a.action.descriptor !== actions[i].descriptor)) throw new Error(`rung 3: legal actions changed across a rollback at decision ${v.k}`);
         const builders = [new ViewBuilder(g, 1, tables), new ViewBuilder(g, 2, tables)] as const;
-        const bots = [rung1(params), rung1(params)] as const;
+        const bots: [BotPolicy, BotPolicy] = [rung1(params), rung1(params)];
+        const override = variant?.override;
+        if (override !== undefined) {
+          const mine = bots[v.seat - 1];
+          bots[v.seat - 1] = { ...mine, tryChoose: (a, gv) => override(a, gv) ?? mine.tryChoose(a, gv) };
+        }
         builders[v.seat - 1].record(rootView, answers[idx]);
         const random = seededRandom(`trial|${hooks.seed}|${v.seat}|${v.k}|${idx}`);
         let value: number | null;
@@ -194,8 +211,8 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
 
   return {
     rung: 3,
-    policyId: RUNG3_POLICY_ID,
-    policyVersion: RUNG3_VERSION,
+    policyId: variant?.policyId ?? RUNG3_POLICY_ID,
+    policyVersion: variant?.policyVersion ?? RUNG3_VERSION,
     params,
     inputs,
     counters,
@@ -207,6 +224,13 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
         builder = new ViewBuilder(v.game, v.seat, tables);
       }
       const { view: gv, answers } = builder.build(actions, random);
+      if (variant?.override !== undefined && v.promptKind !== "mainAction") {
+        const o = variant.override(answers, gv);
+        if (o !== null) {
+          builder.record(gv, answers[o]);
+          return { index: o };
+        }
+      }
       const top = bot.tryChoose(answers, gv);
       if (top === null) return null;
       let pick = top;
@@ -214,7 +238,10 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
         const ranked = rankByExclusion(answers, gv, decide, params.k);
         const order = params.noPass === 1 ? withoutPass(ranked, answers) : ranked;
         if (order[0] !== top) throw new Error(`rung 3: rung 1's pure order starts at ${order[0]}, its choice was ${top}`);
-        if (order.length > 1) pick = search(actions, answers, order, v, gv);
+        if (variant !== undefined) {
+          const tried = variant.candidates(answers, gv, order);
+          pick = tried.length > 1 ? search(actions, answers, tried, v, gv) : (tried[0] ?? top);
+        } else if (order.length > 1) pick = search(actions, answers, order, v, gv);
       }
       builder.record(gv, answers[pick]);
       return { index: pick };
