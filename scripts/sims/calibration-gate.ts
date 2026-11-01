@@ -1,0 +1,319 @@
+/**
+ * @displayName Simulation calibration gate
+ * @strategicPurpose Decides whether one bot rung may report win shares through simulate_matchup (#115): it replays,
+ * it is healthy, it beats the rungs below it, and its matchup win shares rank tournament matchups the way
+ * swumetastats' tournament results do. Bot play and tournament results sit side by side, never pooled (D21); no
+ * Karabast data is read (D22).
+ * @tacticalObjective Takes the top archetypes by share with distinct leader and base aspects (one highest-placing
+ * buildable melee list each, the sampler's deckPanel), plays every archetype pair on seeded seat-swapped game pairs
+ * with the rung on both seats on the warm worker pool, reads the tournament matchup of each pair from
+ * meta/winrates.json, replays a spread sample of the matches in this thread (worker equals thread, replay to the
+ * same trace, undo on equals off for rungs 0 to 2), checks health from the same games and the ladder from the pinned
+ * ladder records, and writes one deterministic gate record (src/sims/calibration.ts gateRecordSchema) per rung.
+ * Emits pollable progress to reports/.progress/sims-calibration-<rung>.json.
+ *
+ * Seeds: the calibration range 4,000,000+, disjoint from the ladder's (scripts/sims/ladder.ts). Pair p (archetypes
+ * i < j in panel order) plays seeds 4,000,000 + 1,000p + q for q < gamesPerPair / 2, each seed twice with the seats
+ * swapped.
+ *
+ *   node --import tsx --import ./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung1 [--games 40] [--top 12]
+ *   ... --policy rung3:k=8 --ladder rung3-vs-rung0.json:random-spike,rung3-vs-rung1.json:rung1
+ */
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { parseArgs } from "node:util";
+import { loadStore } from "../../src/data.js";
+import { winRatesFileSchema } from "../../src/meta/schema.js";
+import { REPO_ROOT } from "../../src/paths.js";
+import {
+  CALIBRATION_THRESHOLDS,
+  CALIBRATION_VERSION,
+  externalGate,
+  gateRecordSchema,
+  healthGate,
+  ladderStep,
+  tournamentRecord,
+  type CalibrationRow,
+} from "../../src/sims/calibration.js";
+import { DEFAULT_FORCETEKI } from "../../src/sims/engine-pin.js";
+import { playMatch, replayMatch, type DeckInput, type MatchSpec } from "../../src/sims/match.js";
+import { deckPanel, engineSetCodes, engineUnmappedCards, loadOpponentPool, mapCardKeyOf, storeAspectsOf } from "../../src/sims/opponents.js";
+import { parsePolicySpec, policyHeader } from "../../src/sims/policies/index.js";
+import { shareOf } from "../../src/sims/policies/ladder-stats.js";
+import { loadTables } from "../../src/sims/policies/tables.js";
+import { driverName, registerRungs } from "../../src/sims/policies/typed-adapter.js";
+import { POLICIES, PolicyChain } from "../../src/sims/policy.js";
+import { createPool } from "../../src/sims/pool.js";
+import type { MatchFooter } from "../../src/sims/schemas.js";
+import { compareCodePoints } from "../../src/swu/canonical.js";
+import { DEFAULT_ORIGINALS_ROOT, loadCardMap } from "../bench/card-map.js";
+import { progress } from "../lib/progress.mjs";
+import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
+import { prepareDeck } from "./decks.js";
+
+const SEED0 = 4_000_000;
+const GAMES_PER_WORKER_PER_CHUNK = 40;
+const FIDELITY_RECORD = "data/pinned/sim-ladder-v1/rung3-fidelity.json";
+/** Default ladder steps per rung: against rung 0, and against its promoted predecessor (D79: rung 2 is not promoted). */
+const DEFAULT_LADDER: Record<string, string> = {
+  rung1: "rung1-vs-rung0.json:random-spike",
+  "rung3:k=8": "rung3-vs-rung0.json:random-spike,rung3-vs-rung1.json:rung1",
+  "rung3mc:playout=rung1,n=2": "rung3mc-vs-rung0.json:random-spike,rung3mc-vs-rung1.json:rung1",
+};
+
+const sha256 = (s: string | Buffer): string => createHash("sha256").update(s).digest("hex");
+const rel = (p: string): string => path.relative(REPO_ROOT, p).split(path.sep).join("/");
+const recordFileName = (spec: string): string => `calibration-${spec.replace(/[^A-Za-z0-9]+/g, "-")}.json`;
+
+async function main(): Promise<void> {
+  const { values } = parseArgs({
+    allowNegative: true,
+    options: {
+      policy: { type: "string" },
+      top: { type: "string", default: "12" },
+      games: { type: "string", default: "40" },
+      replay: { type: "string", default: String(CALIBRATION_THRESHOLDS.replayMatches) },
+      workers: { type: "string", default: "12" },
+      heap: { type: "string" },
+      run: { type: "string", default: path.join(REPO_ROOT, "data/runs/2026-10-31") },
+      meta: { type: "string", default: path.join(REPO_ROOT, "data/runs/2026-11-01") },
+      decks: { type: "string", default: path.join(REPO_ROOT, "data/originals/decks/2026-10-17") },
+      "ladder-dir": { type: "string", default: path.join(REPO_ROOT, "data/pinned/sim-ladder-v1") },
+      ladder: { type: "string" },
+      out: { type: "string", default: path.join(REPO_ROOT, "data/pinned/sim-calibration-v1") },
+      write: { type: "boolean", default: true },
+    },
+  });
+  if (values.policy === undefined) throw new Error("--policy is required");
+  if (!process.execArgv.some((a) => a.includes("ladder-preload"))) throw new Error("run with --import ./scripts/sims/ladder-preload.ts so the workers know the rungs");
+  const spec = values.policy;
+  const name = driverName(spec);
+  const searches = ["lookahead", "montecarlo"].includes(parsePolicySpec(spec).kind);
+  const gamesPerPair = Number(values.games);
+  if (!Number.isInteger(gamesPerPair) || gamesPerPair < 2 || gamesPerPair % 2 !== 0) throw new Error("--games must be an even integer >= 2");
+  const pilotRun = path.resolve(values.run);
+  const metaRun = path.resolve(values.meta);
+  const decksDir = path.resolve(values.decks);
+
+  const tables = loadTables({ runDir: pilotRun, complementarity: path.join(REPO_ROOT, "data/complementarity.json"), pairs: false });
+  const ctx = loadContext({ forceteki: DEFAULT_FORCETEKI, run: pilotRun, originals: DEFAULT_ORIGINALS, "no-memo": false });
+  const keys = ctx.bridge.engineCardKeys;
+  const pin = ctx.engine.pin;
+
+  const winratesFile = path.join(metaRun, "meta/winrates.json");
+  const archetypesFile = path.join(metaRun, "meta/archetypes.json");
+  const winrates = winRatesFileSchema.parse(JSON.parse(readFileSync(winratesFile, "utf8")));
+  if (winrates.matchups === null || winrates.matchups === undefined) throw new Error(`${winratesFile} has no tournament matchups`);
+  const cardMap = loadCardMap(pilotRun, path.join(DEFAULT_ORIGINALS_ROOT, "2026-10-16"));
+  const pool = loadOpponentPool({
+    archetypesFile,
+    decksDir,
+    cardKeyOf: mapCardKeyOf(cardMap.setNumber.byId),
+    baseAspectsOf: storeAspectsOf(loadStore(pilotRun)),
+    unmappedCards: engineUnmappedCards(engineSetCodes(DEFAULT_FORCETEKI)),
+  });
+  const info = new Map(pool.archetypes.map((a) => [a.id, a]));
+  const seen = new Set<string>();
+  const panel: { archetype: string; name: string; leader: string; baseAspects: string; share: number; list: string; sha256: string; deck: DeckInput }[] = [];
+  for (const e of deckPanel(pool, { top: pool.archetypes.length })) {
+    const a = info.get(e.archetypeId);
+    if (a === undefined || e.list === null) continue;
+    const k = `${a.leaderKey}|${a.baseAspects}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const file = path.join(decksDir, `${e.list.key}.json`);
+    const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
+    panel.push({ archetype: a.id, name: a.name, leader: a.leaderKey, baseAspects: a.baseAspects, share: a.share, list: `file:${rel(file)}`, sha256: sha256(JSON.stringify(raw)), deck: prepareDeck(ctx.bridge, raw, `file:${rel(file)}`) });
+    if (panel.length === Number(values.top)) break;
+  }
+
+  interface Job {
+    pair: number;
+    i: number;
+    j: number;
+    seed: number;
+    /** True when archetype i sits in seat 1. */
+    iFirst: boolean;
+  }
+  const pairs: [number, number][] = [];
+  for (let i = 0; i < panel.length; i++) for (let j = i + 1; j < panel.length; j++) pairs.push([i, j]);
+  const jobs: Job[] = [];
+  pairs.forEach(([i, j], p) => {
+    for (let q = 0; q < gamesPerPair / 2; q++) {
+      const seed = SEED0 + 1000 * p + q;
+      jobs.push({ pair: p, i, j, seed, iFirst: true }, { pair: p, i, j, seed, iFirst: false });
+    }
+  });
+  const toSpec = (jb: Job, recordMode: MatchSpec["recordMode"] = "none", undo = searches): MatchSpec => ({
+    seed: String(jb.seed),
+    decks: jb.iFirst ? [panel[jb.i].deck, panel[jb.j].deck] : [panel[jb.j].deck, panel[jb.i].deck],
+    policies: [name, name],
+    recordMode,
+    undo,
+    codeCommit: ctx.codeCommit,
+  });
+
+  const nReplay = Math.min(Number(values.replay), jobs.length);
+  const replayIdx = Array.from({ length: nReplay }, (_, k) => Math.floor((k * jobs.length) / nReplay));
+  const job = `sims-calibration-${name.replace(/[^A-Za-z0-9]+/g, "-")}`;
+  const p = progress(job, { total: jobs.length + nReplay * (searches ? 2 : 3), everyN: 25 });
+  process.env.SIMS_POLICY_SPECS = name;
+  process.env.SIMS_RUN = pilotRun;
+  const workers = Number(values.workers);
+  const resourceLimits = values.heap === undefined ? undefined : { maxOldGenerationSizeMb: Number(values.heap), maxYoungGenerationSizeMb: 24 };
+  p.log({ phase: "starting workers", pairs: pairs.length, archetypes: panel.length });
+  const sim = await createPool({ workers, pin, resourceLimits });
+  const footers: MatchFooter[] = [];
+  try {
+    const parts: Job[][] = [];
+    const chunk = GAMES_PER_WORKER_PER_CHUNK * workers;
+    for (let k = 0; k < jobs.length; k += chunk) parts.push(jobs.slice(k, k + chunk));
+    const start = (part: Job[]) => sim.run({ specs: part.map((jb) => toSpec(jb)), cardKeys: keys });
+    let next = parts.length > 0 ? start(parts[0]) : null;
+    for (let c = 0; c < parts.length; c++) {
+      const current = next as ReturnType<typeof start>;
+      next = c + 1 < parts.length ? start(parts[c + 1]) : null;
+      for (const r of await current) footers.push(r.footer);
+      p.tick(footers.length, { phase: "games" });
+    }
+  } finally {
+    await sim.close();
+  }
+
+  // Replay gate, in this thread.
+  registerRungs(POLICIES, (ps) => new PolicyChain(ps as never), [name], tables);
+  let done = jobs.length;
+  let workerEqualsThread = 0;
+  let replayed = 0;
+  let undoIdentical = searches ? null : 0;
+  const failures: string[] = [];
+  for (const idx of replayIdx) {
+    const jb = jobs[idx];
+    const rec = (await playMatch(ctx.engine, toSpec(jb, "compact"), keys)).record;
+    if (rec.footer.traceSha256 === footers[idx].traceSha256) workerEqualsThread++;
+    else failures.push(`seed ${jb.seed} pair ${jb.pair}: thread trace differs from the worker's`);
+    p.tick(++done, { phase: "replay" });
+    const out = await replayMatch(ctx.engine, JSON.parse(JSON.stringify(rec)), keys, { byDescriptor: searches });
+    if (out.ok && out.traceSha256 === rec.footer.traceSha256) replayed++;
+    else failures.push(`seed ${jb.seed} pair ${jb.pair}: replay ${JSON.stringify(out.mismatch)}`);
+    p.tick(++done, { phase: "replay" });
+    if (!searches) {
+      const undo = (await playMatch(ctx.engine, toSpec(jb, "none", true), keys)).record;
+      if (undo.footer.traceSha256 === rec.footer.traceSha256) undoIdentical = (undoIdentical ?? 0) + 1;
+      else failures.push(`seed ${jb.seed} pair ${jb.pair}: undo on changes the trace`);
+      p.tick(++done, { phase: "undo" });
+    }
+  }
+  const evidence = searches && existsSync(path.join(REPO_ROOT, FIDELITY_RECORD)) ? [{ file: FIDELITY_RECORD, sha256: sha256(readFileSync(path.join(REPO_ROOT, FIDELITY_RECORD))) }] : [];
+  const replayGate = {
+    pass: failures.length === 0 && workerEqualsThread === nReplay && replayed === nReplay && (searches ? evidence.length === 1 : undoIdentical === nReplay),
+    matches: nReplay,
+    workerEqualsThread,
+    replayed,
+    undoIdentical,
+    evidence,
+    note: searches
+      ? "a search rung needs undo, so undo on and off are not compared here; rollback fidelity (every rollback restores the full state fingerprint, records replay by descriptor) is the pinned rung 3 fidelity record; replay here is by descriptor (the oracle)"
+      : "replay re-runs the policies on the compact record; undo on is compared with undo off trace for trace",
+    failures: failures.slice(0, 10),
+  };
+
+  // Health gate, from the calibration games.
+  const decisive = (f: MatchFooter): boolean => f.result.endCondition === "base_destroyed" && f.result.winner !== null;
+  const ends: Record<string, number> = {};
+  let decisions = 0;
+  let answered = 0;
+  for (const f of footers) {
+    const e = f.result.endCondition === "base_destroyed" && f.result.winner === null ? "draw" : f.result.endCondition;
+    ends[e] = (ends[e] ?? 0) + 1;
+    decisions += f.coverage.decisions[0] + f.coverage.decisions[1];
+    answered += f.coverage.answered[0] + f.coverage.answered[1];
+  }
+  const health = {
+    ...healthGate({ games: footers.length, nonDecisive: footers.filter((f) => !decisive(f)).length, decisions, fallback: decisions - answered }, CALIBRATION_THRESHOLDS),
+    endConditions: Object.fromEntries(Object.entries(ends).sort(([a], [b]) => compareCodePoints(a, b))),
+  };
+
+  // Ladder gate, from the pinned ladder records.
+  const want = { candidate: spec, engineCommit: pin.commit, inputs: { scoresSha256: tables.pins.scoresSha256, coefficientsSha256: tables.pins.coefficientsSha256, featuresSha256: tables.pins.featuresSha256 } };
+  const ladderSpec = values.ladder ?? DEFAULT_LADDER[spec];
+  if (ladderSpec === undefined) throw new Error(`no default ladder steps for ${spec}; pass --ladder <file>:<baseline>,...`);
+  const steps = ladderSpec.split(",").map((s) => {
+    const [file, baseline] = s.split(":");
+    const full = path.join(values["ladder-dir"], file);
+    const bytes = existsSync(full) ? readFileSync(full) : null;
+    return ladderStep(rel(full), bytes === null ? null : JSON.parse(bytes.toString("utf8")), bytes === null ? null : sha256(bytes), { ...want, baseline });
+  });
+  const ladder = { pass: steps.length > 0 && steps.every((s) => s.pass), steps };
+
+  // External calibration gate.
+  const rows: CalibrationRow[] = [];
+  pairs.forEach(([i, j], pIdx) => {
+    const t = tournamentRecord(winrates.matchups?.pairs ?? [], { leader: panel[i].leader, baseAspects: panel[i].baseAspects }, { leader: panel[j].leader, baseAspects: panel[j].baseAspects }, CALIBRATION_THRESHOLDS.minN);
+    if (t === null) return;
+    let wins = 0;
+    let n = 0;
+    let nonDecisive = 0;
+    jobs.forEach((jb, k) => {
+      if (jb.pair !== pIdx) return;
+      const f = footers[k];
+      if (!decisive(f)) {
+        nonDecisive++;
+        return;
+      }
+      n++;
+      if ((f.result.winner === 1) === jb.iFirst) wins++;
+    });
+    const s = shareOf(wins, n);
+    rows.push({ a: panel[i].archetype, b: panel[j].archetype, aName: panel[i].name, bName: panel[j].name, tournament: t, sim: { wins, n, share: s.share, low: s.low, high: s.high, nonDecisive } });
+  });
+  const ext = externalGate(rows, CALIBRATION_THRESHOLDS);
+  const m = winrates.matchups;
+  const external = {
+    ...ext,
+    simLabel: `bot play (forceteki ${spec}), not human results: ${gamesPerPair} games per archetype pair, one highest-placing buildable melee list per archetype, the rung on both seats`,
+    tournamentLabel: `${m?.label ?? "tournament matchups"}, ${m?.period.from} to ${m?.period.to}, minN ${CALIBRATION_THRESHOLDS.minN}`,
+    rows,
+  };
+
+  const gates = { replay: replayGate, health, ladder, external };
+  const failedGates = (["replay", "health", "ladder", "external"] as const).filter((g) => !gates[g].pass);
+  const header = policyHeader(parsePolicySpec(spec));
+  const record = gateRecordSchema.parse({
+    schemaVersion: 1,
+    step: `calibration-${name}`,
+    calibrationVersion: CALIBRATION_VERSION,
+    label: `bot play (forceteki ${spec}), not human results`,
+    policy: { ...header, driverPolicy: name },
+    engine: { repo: pin.repo, commit: pin.commit, cardDataVersion: pin.cardDataVersion, cardDataSha256: pin.cardDataSha256 },
+    inputs: {
+      scoresSha256: tables.pins.scoresSha256,
+      coefficientsSha256: tables.pins.coefficientsSha256,
+      featuresSha256: tables.pins.featuresSha256,
+      leaderCardsSha256: tables.pins.leaderCardsSha256,
+      winratesSha256: sha256(readFileSync(winratesFile)),
+      archetypesSha256: sha256(readFileSync(archetypesFile)),
+    },
+    pilotRun: path.basename(pilotRun),
+    metaRun: path.basename(metaRun),
+    decks: rel(decksDir),
+    codeCommit: ctx.codeCommit,
+    thresholds: { ...CALIBRATION_THRESHOLDS },
+    seeds: { from: SEED0, to: SEED0 + 1000 * (pairs.length - 1) + gamesPerPair / 2 - 1, gamesPerPair, scheme: "engine seed <seed>; pair p (archetypes i < j in panel order) plays seeds 4000000 + 1000p + q, q < gamesPerPair / 2, each seed twice with the seats swapped" },
+    panel: panel.map((e) => ({ archetype: e.archetype, name: e.name, leader: e.leader, baseAspects: e.baseAspects, share: e.share, list: e.list, sha256: e.sha256 })),
+    gates,
+    pass: failedGates.length === 0,
+    servesWinShare: failedGates.length === 0,
+    failedGates,
+  });
+  if (values.write) {
+    mkdirSync(values.out, { recursive: true });
+    writeFileSync(path.join(values.out, recordFileName(spec)), `${JSON.stringify(record, null, 1)}\n`);
+  }
+  p.done({ pass: record.pass, failedGates });
+  const brief = { policy: spec, pass: record.pass, failedGates, replay: { ...replayGate }, health, ladder: steps.map((s) => ({ record: s.record, pass: s.pass, stale: s.stale })), external: { spearman: ext.spearman, favourite: ext.favourite, pairs: ext.pairs, failed: ext.failed } };
+  process.stdout.write(`${JSON.stringify(brief, null, 1)}\n`);
+}
+
+await main();
