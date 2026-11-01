@@ -22,3 +22,7 @@ One gate record per bot-ladder step (#114, D79), written by `scripts/sims/ladder
 ## sim-models/
 
 The inventory of the models already trained on /Volumes/Models/swu (#123, D93), written by `pnpm sims:inventory --parity` and `pnpm sims:feature-map`: `manifest.json` holds each model file's sha256, size, format, objective, feature layout, producer and the enums provenance, d22, verdict, reason and parity; `feature-map.json` tiers the old harness's 595 feature columns; `README.md` lists them. Weights and metrics are never here: every entry is D22 quarantined (D52), and recorded metrics go to the git-ignored data/originals/sims/model-inventory/.
+
+## sim-vocab/
+
+The evaluator's card and keyword vocabulary per data release (#124, D94), written by `pnpm sims:vocab`: `<dataVersion>.json` from the release's cards.toon and the engine's `KeywordName`, `<dataVersion>.v<n>.json` for a revision that appends the #109 bridge's printing keys of engine cards outside the release, each with a `.replay.json`. A pinned vocabulary is never overwritten; a later one only appends (indices stay stable).
