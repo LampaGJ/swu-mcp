@@ -162,3 +162,14 @@ describe("rung 3 flat Monte Carlo, pure parts", () => {
     expect(() => parsePolicySpec("rung3mc:n=0")).toThrow(/n >= 1/);
   });
 });
+
+describe("fair lookahead mean (#183)", () => {
+  it("averages the trials that scored, a decided game clamped at plus or minus 1000, so a win and a loss in two worlds give 0, not NaN", async () => {
+    const { meanV, fairWorldKey } = await import("../../../src/sims/policies/lookahead.js");
+    expect(meanV([Infinity, -Infinity])).toBe(0);
+    expect(meanV([Infinity, 0])).toBe(500);
+    expect(meanV([3, null, 5])).toBe(4);
+    expect(meanV([null, null])).toBeNull();
+    expect(fairWorldKey("7", 2, 41, 3)).toBe("fair-det|7|2|41|3");
+  });
+});

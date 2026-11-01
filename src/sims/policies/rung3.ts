@@ -5,7 +5,8 @@ import type { SearchHooks } from "../policy.js";
 import { decidingSeats } from "../search-leaf.js";
 import { ViewBuilder, type TypedAction } from "./engine-view.js";
 import { RUNG1_VERSION } from "./index.js";
-import { evaluateV, HORIZON, maskState, pickCandidate, rankByExclusion, RUNG3_VERSION, withoutPass, type Candidate, type LookaheadParams, type RawSide, type RawState } from "./lookahead.js";
+import { BELIEF, redealHidden } from "./hidden-sampler.js";
+import { evaluateV, fairWorldKey, HORIZON, maskState, meanV, pickCandidate, rankByExclusion, RUNG3_VERSION, withoutPass, type Candidate, type LookaheadParams, type RawSide, type RawState } from "./lookahead.js";
 import { makeRulePolicy, RULE_PILOT_KEYS, RUNG1_PARAMS, type RuleParams } from "./rules.js";
 import type { CardTables } from "./tables.js";
 import type { BotPolicy, GameView, LegalAnswer } from "./types.js";
@@ -21,7 +22,10 @@ import type { DriverPolicy } from "./typed-adapter.js";
  * main-action prompt, or the end of the action phase), score the masked state with V, roll back. Pick by
  * `pickCandidate`. Every other prompt is rung 1 on the same view builder, so a K = 1 rung 3 plays rung 1's trace.
  * Trials draw no decision randomness from the match: a rung 1 fallback inside a trial draws from the counter-based
- * stream `trial|seed|seat|k|candidate`.
+ * stream `trial|seed|seat|k|candidate`. Without det the trials read the true hidden state (the opponent's real hand,
+ * both decks' real order), a leak kept only so pinned records replay (#183). With det=D each candidate is tried in D
+ * worlds re-dealt by the belief's hidden-card sampler (`redealHidden`, key `fair-det|seed|seat|k|d`, shared by every
+ * candidate; trial stream `trial|seed|seat|k|candidate|d`) and scored by the mean clamped V (`meanV`).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- engine objects are untyped JavaScript */
@@ -46,6 +50,8 @@ export interface LookaheadCounters {
   /** Searches whose pick differed from rung 1's. */
   overrides: number;
   cutAtCap: number;
+  /** Fair re-deals applied (det=D): one per trial. */
+  redeals: number;
 }
 
 const safe = <T>(f: () => T, fallback: T): T => {
@@ -160,7 +166,40 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
   const bot = rung1(params);
   const decide = bot.decide;
   if (decide === undefined) throw new Error("rung 1 exposes no pure decide");
-  const counters: LookaheadCounters = { searches: 0, trials: 0, trialDecisions: 0, trialErrors: 0, overrides: 0, cutAtCap: 0 };
+  const counters: LookaheadCounters = { searches: 0, trials: 0, trialDecisions: 0, trialErrors: 0, overrides: 0, cutAtCap: 0, redeals: 0 };
+
+  /** A fair candidate's value: the mean clamped V over D trials, each in its own re-dealt world, rolled back after. */
+  const fairValue = (idx: number, v: View, hooks: SearchHooks, mark: ReturnType<SearchHooks["bookmark"]>, actions: readonly TypedAction[], answers: readonly LegalAnswer[], rootView: Parameters<ViewBuilder["record"]>[0], rootHand: ReadonlySet<string>, D: number): number | null => {
+    const g = v.game;
+    const players = v.players as unknown as readonly [EnginePlayer, EnginePlayer];
+    const values: (number | null)[] = [];
+    for (let d = 0; d < D; d++) {
+      const fresh = enumerateActions(g, players, v.seat, hooks.cardKeys);
+      if (fresh.length !== actions.length || fresh.some((a, i) => a.action.descriptor !== actions[i].descriptor)) throw new Error(`rung 3: legal actions changed across a rollback at decision ${v.k}`);
+      const builders = [new ViewBuilder(g, 1, tables), new ViewBuilder(g, 2, tables)] as const;
+      const bots = [rung1(params), rung1(params)] as const;
+      builders[v.seat - 1].record(rootView, answers[idx]);
+      const random = seededRandom(`trial|${hooks.seed}|${v.seat}|${v.k}|${idx}|${d}`);
+      let value: number | null;
+      try {
+        redealHidden(g, players, v.seat, params.belief ?? BELIEF.known, fairWorldKey(hooks.seed, v.seat, v.k, d));
+        counters.redeals++;
+        fresh[idx].run(random);
+        g.continue();
+        const r = runToHorizon(g, players, hooks.cardKeys, params, builders, bots, random);
+        counters.trialDecisions += r.decisions;
+        if (r.cut) counters.cutAtCap++;
+        value = evaluateV(maskState(readRaw(g, v.seat, builders[v.seat - 1]), rootHand), params);
+      } catch {
+        counters.trialErrors++;
+        value = null;
+      }
+      counters.trials++;
+      hooks.rollback(mark);
+      values.push(value);
+    }
+    return meanV(values);
+  };
 
   const search = (actions: readonly TypedAction[], answers: readonly LegalAnswer[], order: readonly number[], v: View, rootView: Parameters<ViewBuilder["record"]>[0]): number => {
     const hooks = v.search;
@@ -174,6 +213,10 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
     const cands: Candidate[] = [];
     try {
       for (const [rank, idx] of order.entries()) {
+        if (params.det !== undefined) {
+          cands.push({ index: idx, rank, descriptor: actions[idx].descriptor, v: fairValue(idx, v, hooks, mark, actions, answers, rootView, rootHand, params.det) });
+          continue;
+        }
         const fresh = enumerateActions(g, players, v.seat, hooks.cardKeys);
         if (fresh.length !== actions.length || fresh.some((a, i) => a.action.descriptor !== actions[i].descriptor)) throw new Error(`rung 3: legal actions changed across a rollback at decision ${v.k}`);
         const builders = [new ViewBuilder(g, 1, tables), new ViewBuilder(g, 2, tables)] as const;

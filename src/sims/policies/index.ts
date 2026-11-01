@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { compareCodePoints } from "../../swu/canonical.js";
 import { makeRandomPolicy } from "./random.js";
-import { HORIZON, LOOKAHEAD_PILOT_KEYS, MC_LENGTH, MC_PARAMS, MC_PLAYOUT, MC_VERSION, RUNG3_PARAMS, RUNG3_VERSION, type LookaheadParams, type MonteCarloParams } from "./lookahead.js";
+import { BELIEF, BELIEF_NAMES, HORIZON, LOOKAHEAD_PILOT_KEYS, MC_LENGTH, MC_PARAMS, MC_PLAYOUT, MC_VERSION, RUNG3_PARAMS, RUNG3_VERSION, type LookaheadParams, type MonteCarloParams } from "./lookahead.js";
 import { makeRulePolicy, RULE_PILOT_KEYS, RUNG1_PARAMS, type RuleParams } from "./rules.js";
 import type { CardTables } from "./tables.js";
 import type { BotPolicy } from "./types.js";
@@ -13,6 +13,8 @@ import type { BotPolicy } from "./types.js";
  * @tacticalObjective Parses `random`, `rung1`, `rung2[:mu=..,lambda=..,...]` and `rung3[:k=..,horizon=reply|round,wBase=..,...]`
  * (rung 3 has a driver form only, src/sims/policies/rung3.ts) into policies and hashes
  * their parameters; `rung0` names the typed driver's own random rung and `greedy-hash` the spike's name-hash baseline (typed-adapter.ts).
+ * `det=D,belief=known` on rung3 and rung3v names the fair search (#183): D re-deals of the hidden zones per candidate
+ * by the named hidden-card sampler (hidden-sampler.ts); det alone means belief=known.
  * `rung3v:k=..,ev=v1` and `rung4:d=..,k=..,m=..,ev=v1` are the learned rungs (#128): this file only names and hashes
  * them; their policy lives in scripts/sims/policy/ and is registered from there, so nothing under src/ runs a model (D1).
  * `rung3h:k=..,hk=..,hp=v1` is rung 3 with human-play priors ordering and pruning its candidates (#181, D104); likewise
@@ -57,11 +59,38 @@ export interface LearnedParams {
   handCap: number;
   /** 1: every leaf scores 0, so the choice is the ranking pilot's own (the neutrality test). */
   stub?: number;
+  /**
+   * Rung 3 only: absent, trials read the true hidden state (hidden-information-leaking, kept so pinned records
+   * replay); D at least 1, each candidate is the mean over D re-deals of what the actor cannot see by the belief's sampler (#183).
+   */
+  det?: number;
+  /** The hidden-card sampler a fair rung 3 re-deals with (hidden-sampler.ts BELIEF); present exactly when det is. */
+  belief?: number;
 }
 
 export const RUNG3V_PARAMS: LearnedParams = { k: 8, m: 0, d: 1, ev: 1, maxTrialDecisions: 400, sacGuard: 1, handCap: 1 };
 /** d 3, k 5, m 2 is #128's design point; measured to fit a 2,640-game calibration run in about 1.1 hours on 12 workers (D97). */
 export const RUNG4_PARAMS: LearnedParams = { k: 5, m: 2, d: 3, ev: 1, maxTrialDecisions: 400, sacGuard: 1, handCap: 1 };
+
+/** A fair rung 3's determinization count (#183): an integer of at least 1. */
+function detCount(v: string | undefined, text: string): number {
+  if (!/^[1-9][0-9]*$/.test(v ?? "")) throw new Error(`det takes an integer of at least 1 in ${text}`);
+  return Number(v);
+}
+
+function beliefCode(v: string | undefined, text: string): number {
+  const code = (BELIEF as Record<string, number>)[v ?? ""];
+  if (code === undefined) throw new Error(`belief takes ${Object.keys(BELIEF).join(" or ")} in ${text}`);
+  return code;
+}
+
+/** det without a belief means the known decklist; a belief without det is refused. */
+function settleBelief(p: { det?: number; belief?: number }, text: string): void {
+  if (p.det === undefined && p.belief !== undefined) throw new Error(`belief needs det in ${text}`);
+  if (p.det !== undefined && p.belief === undefined) p.belief = BELIEF.known;
+}
+
+const fairSuffix = (p: { det?: number; belief?: number }): string[] => (p.det === undefined ? [] : [`det=${p.det}`, `belief=${BELIEF_NAMES[p.belief ?? BELIEF.known]}`]);
 
 function parseLearned(rung: 3 | 4, text: string, rest: string | undefined): PolicySpec {
   const params: LearnedParams = { ...(rung === 3 ? RUNG3V_PARAMS : RUNG4_PARAMS) };
@@ -77,10 +106,13 @@ function parseLearned(rung: 3 | 4, text: string, rest: string | undefined): Poli
     else if (k === "horizon" && v === "reply") delete params.horizon;
     else if (k === "noPass" && v === "1") params.noPass = 1;
     else if (k === "noPass" && v === "0") delete params.noPass;
+    else if (rung === 3 && k === "det") params.det = detCount(v, text);
+    else if (rung === 3 && k === "belief") params.belief = beliefCode(v, text);
     else if (allowed.includes(k) && /^[0-9]+$/.test(v ?? "")) (params as unknown as Record<string, number>)[k] = Number(v);
     else throw new Error(`bad policy parameter ${kv} in ${text}${rung === 3 && (k === "d" || k === "m") ? " (rung3v reads the true state: no determinizations, no replies)" : ""}`);
   }
   if (params.k < 1) throw new Error(`${text}: k must be at least 1`);
+  settleBelief(params, text);
   if (rung === 4 && params.d < 2) throw new Error(`${text}: rung 4 needs at least 2 determinizations`);
   if (rung === 4 && params.m < 1) throw new Error(`${text}: rung 4 needs at least 1 reply`);
   return { kind: "learned", rung, params };
@@ -96,6 +128,7 @@ function learnedName(rung: 3 | 4, p: LearnedParams): string {
   if (p.noPass === 1) parts.push("noPass=1");
   if (p.maxTrialDecisions !== def.maxTrialDecisions) parts.push(`maxTrialDecisions=${p.maxTrialDecisions}`);
   if (p.stub === 1) parts.push("stub=1");
+  parts.push(...fairSuffix(p));
   return `${rung === 3 ? "rung3v" : "rung4"}:${parts.join(",")}`;
 }
 
@@ -183,10 +216,13 @@ function parseLookahead(text: string, rest: string | undefined): PolicySpec {
     const [k, v] = kv.split("=");
     if (k === "horizon" && (v === "reply" || v === "round")) params.horizon = HORIZON[v];
     else if ((RUNG3_PILOT_KEYS as readonly string[]).includes(k)) setSwitch(params as unknown as Record<string, number>, k, v, text);
+    else if (k === "det") params.det = detCount(v, text);
+    else if (k === "belief") params.belief = beliefCode(v, text);
     else if ((RUNG3_TUNABLE as readonly string[]).includes(k) && Number.isFinite(Number(v))) (params as unknown as Record<string, number>)[k] = Number(v);
     else throw new Error(`bad policy parameter ${kv} in ${text}`);
   }
   if (!Number.isInteger(params.k) || params.k < 1) throw new Error(`rung3 needs an integer k >= 1 in ${text}`);
+  settleBelief(params, text);
   return { kind: "lookahead", params };
 }
 
@@ -195,6 +231,7 @@ function lookaheadName(p: LookaheadParams): string {
   const parts: string[] = [];
   if (p.horizon !== RUNG3_PARAMS.horizon) parts.push(`horizon=${p.horizon === HORIZON.reply ? "reply" : "round"}`);
   for (const k of RUNG3_TUNABLE) if (p[k] !== RUNG3_PARAMS[k]) parts.push(`${k}=${p[k]}`);
+  parts.push(...fairSuffix(p));
   parts.push(...switchSuffix(p as unknown as Record<string, number>, RUNG3_PILOT_KEYS));
   return parts.length === 0 ? "rung3" : `rung3:${parts.join(",")}`;
 }

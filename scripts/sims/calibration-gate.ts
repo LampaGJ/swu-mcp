@@ -68,8 +68,9 @@ import { prepareLearned, registerLearned } from "./policy/learned.js";
 const LIST_SEED = "calibration-lists-v1";
 /** Draws per archetype from which the first k distinct lists are kept. */
 const LIST_DRAWS = 200;
-/** The pinned rollback-fidelity record a search rung cites in place of the undo comparison. */
-const fidelityRecordOf = (kind: string, rung: number): string => `data/pinned/sim-ladder-v1/${kind === "learned" ? (rung === 4 ? "rung4" : "rung3v") : "rung3"}-fidelity.json`;
+/** The pinned rollback-fidelity record a search rung cites in place of the undo comparison; a fair rung 3 (det, #183) cites its own. */
+const fidelityRecordOf = (kind: string, rung: number, fair: boolean): string =>
+  `data/pinned/sim-ladder-v1/${fair ? "fair-lookahead" : kind === "learned" ? (rung === 4 ? "rung4" : "rung3v") : "rung3"}-fidelity.json`;
 /** Default ladder steps per rung: against rung 0, and against its promoted predecessor (D79: rung 2 is not promoted). */
 const DEFAULT_LADDER: Record<string, string> = {
   rung1: "rung1-vs-rung0.json:random-spike",
@@ -109,7 +110,8 @@ async function main(): Promise<void> {
   const name = driverName(spec);
   const parsed = parsePolicySpec(spec);
   const searches = ["lookahead", "montecarlo", "learned", "human"].includes(parsed.kind);
-  const fidelityRecord = fidelityRecordOf(parsed.kind, parsed.kind === "learned" ? parsed.rung : 3);
+  const fair = (parsed.kind === "lookahead" || parsed.kind === "learned") && parsed.params.det !== undefined;
+  const fidelityRecord = fidelityRecordOf(parsed.kind, parsed.kind === "learned" ? parsed.rung : 3, fair);
   const gamesPerPair = Number(values.games);
   const listsPer = Number(values.lists);
   if (!Number.isInteger(listsPer) || listsPer < 1) throw new Error("--lists must be a positive integer");
@@ -266,7 +268,7 @@ async function main(): Promise<void> {
     undoIdentical,
     evidence,
     note: searches
-      ? `a search rung needs undo, so undo on and off are not compared here; rollback fidelity (every rollback restores the full state fingerprint, records replay by descriptor) is the ${parsed.kind === "learned" ? "rung's pinned" : "pinned rung 3"} fidelity record; replay here is by descriptor (the oracle)`
+      ? `a search rung needs undo, so undo on and off are not compared here; rollback fidelity (every rollback restores the full state fingerprint, records replay by descriptor) is the ${fair ? "fair lookahead's pinned" : parsed.kind === "learned" ? "rung's pinned" : "pinned rung 3"} fidelity record; replay here is by descriptor (the oracle)`
       : "replay re-runs the policies on the compact record; undo on is compared with undo off trace for trace",
     failures: failures.slice(0, 10),
   };

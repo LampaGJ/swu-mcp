@@ -13,7 +13,9 @@
  * start of the action, D95) and, where the candidate ends at the opponent's fresh main-action prompt, bookmarks it and
  * takes the minimum over the opponent's top m replies by the same pilot. Leaves round to 4 decimals, the mean over
  * determinizations is rounded again, the highest mean wins (ties by rank, then descriptor), and the decision record
- * carries the whole search block. Every other prompt is the pilot on the same view builder.
+ * carries the whole search block. Every other prompt is the pilot on the same view builder. Rung 3 without det reads the
+ * true hidden state, a leak kept only so pinned records replay; with det=D (#183) every trial first re-deals what the
+ * actor cannot see with the belief's hidden-card sampler (`redealHidden`, key `fair-det|seed|seat|k|d`), mode canonical.
  */
 import { seededRandom } from "../../bench/stats.js";
 import { enumerateActions, promptKindOf, type CanonicalAction } from "../../../src/sims/actions.js";
@@ -23,8 +25,9 @@ import { decidingSeats } from "../../../src/sims/search-leaf.js";
 import type { SearchBlock } from "../../../src/sims/schemas.js";
 import { ViewBuilder, type TypedAction } from "../../../src/sims/policies/engine-view.js";
 import { determinize } from "../../../src/sims/policies/flat-mc.js";
+import { BELIEF, redealHidden } from "../../../src/sims/policies/hidden-sampler.js";
 import { LEARNED_VERSION, RUNG1_VERSION, type LearnedParams } from "../../../src/sims/policies/index.js";
-import { HORIZON, rankByExclusion, RUNG3_PARAMS, type LookaheadParams } from "../../../src/sims/policies/lookahead.js";
+import { fairWorldKey, HORIZON, rankByExclusion, RUNG3_PARAMS, type LookaheadParams } from "../../../src/sims/policies/lookahead.js";
 import { makeRulePolicy, RUNG1_PARAMS, type RuleParams } from "../../../src/sims/policies/rules.js";
 import { runToHorizon } from "../../../src/sims/policies/rung3.js";
 import type { CardTables } from "../../../src/sims/policies/tables.js";
@@ -95,7 +98,8 @@ export function learnedSearchPolicy(o: LearnedPolicyOptions) {
   const horizon: LookaheadParams = { ...RUNG3_PARAMS, horizon: HORIZON.reply, maxTrialDecisions: params.maxTrialDecisions };
   const round: LookaheadParams = { ...horizon, horizon: HORIZON.round };
   const recent: string[] = [];
-  const D = rung === 4 ? params.d : 1;
+  const fair = rung === 3 && params.det !== undefined;
+  const D = rung === 4 ? params.d : (params.det ?? 1);
 
   /**
    * horizon=round: the pilots play both seats on to the end of the action phase before the leaf is scored.
@@ -229,6 +233,9 @@ export function learnedSearchPolicy(o: LearnedPolicyOptions) {
             if (rung === 4) {
               determinize(g, players, seat, detKey(hooks.seed, seat, v.k, d));
               counters.determinizations++;
+            } else if (fair) {
+              redealHidden(g, players, seat, params.belief ?? BELIEF.known, fairWorldKey(hooks.seed, seat, v.k, d));
+              counters.determinizations++;
             }
             applyAndResolve(g, players, hooks.cardKeys, seat, fresh[c.index], rootView, answers[c.index], seededRandom(key));
             const ended = Boolean(g.isEnded);
@@ -266,7 +273,7 @@ export function learnedSearchPolicy(o: LearnedPolicyOptions) {
     if (best.index !== order[0]) counters.overrides++;
     const block: SearchBlock = {
       rung,
-      mode: rung === 3 ? "none" : "multiset",
+      mode: rung === 4 ? "multiset" : fair ? "canonical" : "none",
       determinizations: D,
       replies: rung === 4 ? params.m : 0,
       candidates: cands.map((c) => ({ descriptor: c.descriptor, rank: c.rank, values: c.values, mean: c.mean, fallback: c.fallback })),

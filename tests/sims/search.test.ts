@@ -45,6 +45,42 @@ describe("learned rung names (#128)", () => {
   });
 });
 
+describe("fair lookahead names (#183)", () => {
+  it("det=D with a belief names a fair rung3 and rung3v; the old names, params and hashes stay exactly as pinned", () => {
+    expect(driverName("rung3:k=8,det=2")).toBe("rung3:k=8,det=2,belief=known");
+    expect(driverName("rung3:k=8,det=2,belief=known")).toBe("rung3:k=8,det=2,belief=known");
+    expect(driverName("rung3:belief=known,det=4,k=8,noPass=1")).toBe("rung3:k=8,det=4,belief=known,noPass=1");
+    expect(driverName("rung3v:k=8,ev=v1,horizon=round,noPass=1,det=2")).toBe("rung3v:k=8,ev=v1,horizon=round,noPass=1,det=2,belief=known");
+    expect(driverName("rung3v:det=1,noPass=1,horizon=round")).toBe("rung3v:k=8,ev=v1,horizon=round,noPass=1,det=1,belief=known");
+    const fair = policyHeader(parsePolicySpec("rung3:k=8,det=2"));
+    expect(fair.params).toMatchObject({ k: 8, det: 2, belief: 1 });
+    expect(fair.paramsSha256).not.toBe(pinned("rung3-vs-rung1.json"));
+    expect(policyHeader(parsePolicySpec("rung3:k=8")).params).not.toHaveProperty("det");
+    expect(policyHeader(parsePolicySpec("rung3:k=8")).params).not.toHaveProperty("belief");
+    expect(policyHeader(parsePolicySpec("rung3v:k=8,ev=v1,horizon=round,noPass=1")).paramsSha256).toBe(pinned("rung3v-vs-rung3-k8-final.json"));
+    expect(policyHeader(parsePolicySpec("rung3v:k=8,ev=v1,horizon=round,noPass=1")).params).not.toHaveProperty("det");
+    expect(policyHeader(parsePolicySpec("rung3v:k=8,ev=v1,horizon=round,noPass=1,det=2")).params).toMatchObject({ det: 2, belief: 1, d: 1 });
+  });
+
+  it("refuses det below 1, a non-integer det, an unknown belief, a belief without det, and det on rung 4 (which re-deals with d)", () => {
+    expect(() => parsePolicySpec("rung3:det=0")).toThrow(/det/);
+    expect(() => parsePolicySpec("rung3:det=1.5")).toThrow(/det/);
+    expect(() => parsePolicySpec("rung3v:det=0")).toThrow(/det/);
+    expect(() => parsePolicySpec("rung3:det=2,belief=tournament")).toThrow(/belief/);
+    expect(() => parsePolicySpec("rung3:belief=known")).toThrow(/belief needs det/);
+    expect(() => parsePolicySpec("rung3v:belief=known")).toThrow(/belief needs det/);
+    expect(() => parsePolicySpec("rung4:det=2")).toThrow(/bad policy parameter/);
+  });
+
+  it("a fair rung3v search block is mode canonical with one value per determinization, at least one", () => {
+    const block = { rung: 3, mode: "canonical", determinizations: 2, replies: 0, candidates: [{ descriptor: "pass", rank: 0, values: [0.5, 0.25], mean: 0.375, fallback: null }], chosen: "pass" };
+    expect(searchBlockSchema.safeParse(block).success).toBe(true);
+    expect(searchBlockSchema.safeParse({ ...block, determinizations: 1, candidates: [{ ...block.candidates[0], values: [0.5] }] }).success).toBe(true);
+    expect(searchBlockSchema.safeParse({ ...block, rung: 4 }).success).toBe(false);
+    expect(searchBlockSchema.safeParse({ ...block, mode: "none" }).success).toBe(false);
+  });
+});
+
 describe("search block schema (#128)", () => {
   const block = (over: Record<string, unknown>) => ({ rung: 3, mode: "none", determinizations: 1, replies: 0, candidates: [{ descriptor: "pass", rank: 0, values: [0.5], mean: 0.5, fallback: null }], chosen: "pass", ...over });
   it("accepts a rung 3 block and a rung 4 block with two determinizations", () => {

@@ -39,6 +39,13 @@ export interface LookaheadParams {
   aspectCall?: number;
   /** 1: Pass is a candidate only when rung 1 itself passes (a rollout after Pass plays the card a real Pass never plays, #174). */
   noPass?: number;
+  /**
+   * Absent: trials read the true hidden state (hidden-information-leaking, kept so pinned records replay). D at least
+   * 1: each candidate's V is the mean over D re-deals by the `belief` sampler (hidden-sampler.ts `redealHidden`), #183.
+   */
+  det?: number;
+  /** The hidden-card sampler (hidden-sampler.ts BELIEF); present exactly when det is. */
+  belief?: number;
 }
 
 export const LOOKAHEAD_PILOT_KEYS = ["noPass"] as const;
@@ -260,6 +267,19 @@ export function playoutScore(length: MonteCarloParams["length"], outcome: Public
 
 /** The playout stream's name: seed, seat, decision index, candidate index, playout index (sha256-to-mulberry32 like the bot draws). */
 export const mcStreamKey = (seed: string, seat: 1 | 2, k: number, candidate: number, playout: number): string => `mc|${seed}|${seat}|${k}|${candidate}|${playout}`;
+
+/** Hidden-card sampler codes (hidden-sampler.ts), numeric so the params hash stays a number map; the policy name spells them (`belief=known`). */
+export const BELIEF = { known: 1 } as const;
+export const BELIEF_NAMES: Readonly<Record<number, string>> = { [BELIEF.known]: "known" };
+
+/** Re-deal d of a fair lookahead's decision k (#183), shared by every candidate (common random numbers). */
+export const fairWorldKey = (seed: string, seat: 1 | 2, k: number, d: number): string => `fair-det|${seed}|${seat}|${k}|${d}`;
+
+/** Mean over a fair lookahead's re-deals of the trials that scored, each clamped like a playout (a won game at +1000, so a win and a loss in two worlds average to 0, not NaN); null when none scored. */
+export function meanV(values: readonly (number | null)[]): number | null {
+  const ok = values.filter((v): v is number => v !== null).map((v) => Math.max(-V_CLAMP, Math.min(V_CLAMP, v)));
+  return ok.length === 0 ? null : ok.reduce((a, b) => a + b, 0) / ok.length;
+}
 
 /** World p of decision k: the engine reseed that shuffles the hidden zones, the same for every candidate (common random numbers). */
 export const mcWorldKey = (seed: string, seat: 1 | 2, k: number, world: number): string => `mc-world|${seed}|${seat}|${k}|${world}`;

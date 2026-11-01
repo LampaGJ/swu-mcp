@@ -129,12 +129,13 @@ export const legalActionsSha256 = (descriptors: readonly string[]): string => sh
 
 /**
  * A learned search's decision (#128): every value it used, so a reader recomputes the choice from the record. Rung 3
- * reads the true state (mode none, one determinization); rung 4 averages at least two multiset re-deals.
+ * reads the true state (mode none, one determinization) or, fair (#183), averages one or more canonical re-deals (mode
+ * canonical: the hidden zones put in a fixed order before the shuffle); rung 4 averages at least two multiset re-deals.
  */
 export const searchBlockSchema = z
   .strictObject({
     rung: z.union([z.literal(3), z.literal(4)]),
-    mode: z.enum(["none", "multiset"]),
+    mode: z.enum(["none", "multiset", "canonical"]),
     determinizations: z.int().positive(),
     replies: z.int().nonnegative(),
     candidates: z
@@ -152,8 +153,8 @@ export const searchBlockSchema = z
       .min(1),
     chosen: descriptorSchema,
   })
-  .refine((s) => (s.rung === 3 ? s.mode === "none" && s.determinizations === 1 : s.mode === "multiset" && s.determinizations >= 2), {
-    error: "rung 3 reads the true state (mode none, one determinization); rung 4 needs mode multiset and at least two determinizations",
+  .refine((s) => (s.rung === 3 ? (s.mode === "none" && s.determinizations === 1) || s.mode === "canonical" : s.mode === "multiset" && s.determinizations >= 2), {
+    error: "rung 3 reads the true state (mode none, one determinization) or re-deals canonically (mode canonical); rung 4 needs mode multiset and at least two determinizations",
   })
   .refine((s) => s.candidates.every((c) => c.values.length === s.determinizations), { error: "every candidate needs one value per determinization" })
   .refine((s) => s.candidates.some((c) => c.descriptor === s.chosen), { error: "chosen must be one of the candidates" });
