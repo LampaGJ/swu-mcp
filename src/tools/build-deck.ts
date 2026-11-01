@@ -56,21 +56,21 @@ const MAX_COPIES = 3;
 
 // Ranking weights. Each term rests on one evidence tier and is printed in the card's why line, so a reader sees what moved it.
 /** Per unit of leaderInclusion, counted only at or above the 2% floor: a 78% staple adds 3.1. */
-const PLAYED_WEIGHT = 4;
+export const PLAYED_WEIGHT = 4;
 /** Per unit of measured win-rate gap: +5 points adds 1.0. */
-const MEASURED_WEIGHT = 20;
+export const MEASURED_WEIGHT = 20;
 /** A measured card the leader's lists do not play counts a quarter: the gap comes from other leaders' decks. */
 const UNPLAYED_MEASURED_FACTOR = 0.25;
 /** Per unit of find_pairings rank above 0.5 (the unplayed floor of a leader-weighted rank) on a leader-engine row. */
-const ENGINE_WEIGHT = 2;
+export const ENGINE_WEIGHT = 2;
 /** The same for a pair-graph link from the leader that is not its engine. */
-const LINK_WEIGHT = 1;
+export const LINK_WEIGHT = 1;
 /** A leader-engine partner at this rank or more is an engine core card and wants 3 copies (The Chieftain 1.91, Insurgent Camp 1.65). */
 const ENGINE_CORE_RANK = 1.5;
 /** Per point of play-calibrated score above 0. */
-const SCORE_WEIGHT = 0.2;
+export const SCORE_WEIGHT = 0.2;
 /** The base enables the card's own clause (D73): an evidence line, but not play evidence, so it weighs less than a 20% card. */
-const BASE_ENABLED_BONUS = 0.75;
+export const BASE_ENABLED_BONUS = 0.75;
 const DRAWBACK_COST = 0.5;
 /** A card of the starting list keeps a lead over an equal newcomer. */
 const HELD_BONUS = 0.75;
@@ -117,7 +117,7 @@ const buildDeckInput = z.strictObject(buildDeckShape);
 type BuildDeckInput = z.infer<typeof buildDeckInput>;
 
 // Tool-to-tool seams: the outputs of find_pairings, find_trios, deck_audit and deck_legality_check are parsed here, at the consumer.
-const pairingsOutput = z.looseObject({
+export const pairingsOutput = z.looseObject({
   pairings: z
     .array(z.looseObject({ cardKey: z.string(), linkKind: z.string(), link: z.string(), score: z.number(), rank: z.number().optional() }))
     .default([]),
@@ -129,7 +129,7 @@ const triosOutput = z.looseObject({
     .array(z.looseObject({ cards: z.string(), cardKeys: z.string(), score: z.number(), rank: z.number().optional(), penalty: z.number(), reasons: z.string() }))
     .default([]),
 });
-const auditOutput = z.looseObject({
+export const auditOutput = z.looseObject({
   aspect: z.looseObject({ penalty: z.number(), uncovered: z.array(z.unknown()) }),
   score: z.looseObject({ meanPlayCalibrated: z.number().nullable() }).optional(),
   curveGlut: z.looseObject({ cost: z.union([z.number(), z.string()]).optional() }).optional(),
@@ -140,14 +140,14 @@ const auditOutput = z.looseObject({
     .nullable()
     .optional(),
 });
-const legalityOutput = z.looseObject({
+export const legalityOutput = z.looseObject({
   legal: z.boolean(),
   counts: z.looseObject({ mainDeck: z.number() }),
   failures: z.array(z.unknown()),
   warnings: z.array(z.unknown()),
 });
 
-function decoded<T extends z.ZodType>(schema: T, result: ToolResult, what: string): z.infer<T> | string {
+export function decoded<T extends z.ZodType>(schema: T, result: ToolResult, what: string): z.infer<T> | string {
   if (result.isError === true) return `${what}: ${result.content[0]?.text ?? "error"}`;
   const parsed = schema.safeParse(decode(result.content[0].text));
   return parsed.success ? parsed.data : `${what} answered in an unexpected shape: ${z.prettifyError(parsed.error)}`;

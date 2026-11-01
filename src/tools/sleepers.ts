@@ -57,9 +57,20 @@ export const sleeperCardsShape = {
     .describe("Also list cards from sets Premier has rotated out (measured in the seasons they were legal; not playable in Premier now)"),
 };
 
+export const byLowerBound = (a: SleeperRow, b: SleeperRow): number =>
+  b.gap.low - a.gap.low || a.gap.p - b.gap.p || compareCodePoints(a.cardKey, b.cardKey);
+export const holdsForSamePlayers = (r: SleeperRow): boolean => r.withinPlayer !== null && r.withinPlayer.low > 0;
+
+/** The rows that pass the gate as underplayed winners or as helping strong players more; a gap that also holds inside the same players' own decks is the stronger evidence, so it leads. */
+export function flaggedRows(measured: readonly SleeperRow[]): SleeperRow[] {
+  return measured
+    .filter((r) => r.verdict === "sleeper" || r.skilledEdge)
+    .sort((a, b) => Number(holdsForSamePlayers(b)) - Number(holdsForSamePlayers(a)) || byLowerBound(a, b));
+}
+
 const pts = (x: number): number => Math.round(x * 1000) / 10;
 
-function scopeOf(
+export function scopeOf(
   store: CardStore,
   file: SleepersFile,
   args: { leader?: string; base?: string; aspects?: string[] },
@@ -109,13 +120,7 @@ export function sleeperCards(store: CardStore, dataVersion: string, file: Sleepe
   const q = file.method.q;
   const rotatedHidden = args.includeRotated ? 0 : scope.rows.filter((r) => r.rotated && r.decksWith >= args.minDecks).length;
   const measured = scope.rows.filter((r) => r.decksWith >= args.minDecks && (args.includeRotated || !r.rotated));
-  const byLowerBound = (a: SleeperRow, b: SleeperRow): number =>
-    b.gap.low - a.gap.low || a.gap.p - b.gap.p || compareCodePoints(a.cardKey, b.cardKey);
-  const holdsForSamePlayers = (r: SleeperRow): boolean => r.withinPlayer !== null && r.withinPlayer.low > 0;
-  // A gap that also holds inside the same players' own decks is the stronger evidence, so it leads.
-  const flagged = measured
-    .filter((r) => r.verdict === "sleeper" || r.skilledEdge)
-    .sort((a, b) => Number(holdsForSamePlayers(b)) - Number(holdsForSamePlayers(a)) || byLowerBound(a, b));
+  const flagged = flaggedRows(measured);
   const chosen = args.show === "all" ? measured.slice().sort(byLowerBound) : flagged;
   const shown = chosen.slice(0, args.limit);
   const fill =

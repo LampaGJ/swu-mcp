@@ -423,7 +423,7 @@ interface Slot {
 }
 
 /** The role tags of a card and, for each other card in any of those role classes, how many of the roles it fills. */
-function slotMembers(env: DeckEnv, cardKey: string): Slot | null {
+export function slotMembers(env: DeckEnv, cardKey: string): Slot | null {
   const fungibility = env.ctx.fungibility;
   const tags = [
     ...new Set((fungibility.rolesByCard.get(cardKey) ?? []).map((id) => (fungibility.classById.get(id) as { tag: string }).tag)),
@@ -481,7 +481,7 @@ function substituteCandidates(
 const arenaKey = (c: SynergyCard): string => (c.structured.arenas ?? []).map((a) => a.toLowerCase()).sort(compareCodePoints).join("+");
 
 /** A budget swap keeps the card's type, a unit's arena and its cost to within one. */
-function sameSlotShape(slotCard: SynergyCard, other: SynergyCard): boolean {
+export function sameSlotShape(slotCard: SynergyCard, other: SynergyCard): boolean {
   if (slotCard.type !== other.type) return false;
   if (slotCard.type === "Unit" && arenaKey(slotCard) !== arenaKey(other)) return false;
   const [a, b] = [slotCard.structured.cost, other.structured.cost];
