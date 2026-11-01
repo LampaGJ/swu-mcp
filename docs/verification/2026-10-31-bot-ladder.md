@@ -17,6 +17,7 @@ Every figure is bot play on the forceteki engine (D21's last tier) through the t
 - Rung 1 beats the old greedy bot that scored cards by a hash of their names: 95.73% of 398 decisive games [93.27, 97.32], discordant 181 to 0, p = 6.5e-55, above 50% in all six decks (Krennic lowest at 82.9% [72.4, 89.9]).
 - Rung 2 does not pass. On the tuning seeds no (mu, lambda) setting differed from rung 1 by more than noise (47.0% to 51.6%); the best, mu = 0 and lambda = 1, won 48.55% [46.10, 51.01] of 1,588 decisive held-out games over 800 pairs, discordant 51 to 78 (p = 0.022, leaning against it). The pair bonus helps four decks (56% to 65%) and hurts Krennic (14.0%) and Ahsoka (35.4%).
 - Owner's deck (The Warrior / Origin Tree) against the panel, rung 1 on both seats, 1,800 games per variant on the same seeds: base 42.61% [40.34, 44.91]. Oppo Rancisis swapped for Anakin Skywalker, Force Prodigy moves it to 45.44% [43.16, 47.75], above the base interval; the paired test on the same seeds gives 160 to 109, p = 0.0022, so this one-card swap is detected. One The Chieftain swapped for Champion's KT9 Podracer gives 45.00% (paired 189 to 146, p = 0.022): a move, but upward, so in this bot's hands the Podracer outplays the Chieftain, and it misses the 0.01 bar. Three larger control swaps moved it at most 2.2 points and none past p = 0.01, so at 1,800 paired games rung 1 resolves changes of about 2 to 3 points.
+- Learned evaluator (E9 v1, D98), bot play (forceteki rung3v), not human results: `rung3v:k=8,ev=v1,horizon=round,noPass=1` on both seats puts the owner's deck at 37.3% [35.1, 39.5] against the panel, 4.5 points under top-K rung 3 on the same seeds. It detects the dead-card control (p = 4.8e-12) and the Tarpals and Boba control (p = 0.0054) and not Oppo to Anakin (p = 0.21). Head to head it detects both controls (p = 2.3e-14 and 2.8e-8), where top-K rung 3 saw neither; mirror seat 1 49.7%. The rung is not promoted and fails the external calibration gate, so these figures measure the bot, not the deck in tournaments.
 - Health: non-decisive share 0% to 0.75% (forceteki errors and draws, no timeouts), rung 1 fallback share at most 0.02%. Speed: 32 to 59 games per second on 12 workers.
 
 ## What was built
@@ -208,3 +209,64 @@ Warm pool, 12 workers (the performance cores, the measured best), other agents' 
 - The K and horizon tuning record was written before two later code changes: a rung 1 fallback inside a top-K trial now draws from a stream that includes the match seed, and a rollback now trims the engine's chat log. The first can change a trial only when rung 1 declines inside it (in play, rung 1 declined 2 of rung 3's 25,084 ladder decisions; inside trials it is not counted); the second changes no decision. The ladder and deck records were run on the final code.
 - Open question: random playouts to the end of the game were the owner's literal "random actions, see who wins". At one playout per candidate they play far worse than rung 1, and at this machine's speed (a 160-decision playout plus a rollback per candidate) dozens of playouts per candidate per decision would make a 1,800-game check take days. Whether a few hundred playouts would rank moves well is untested.
 - Open question: rung 3 is not yet compared head to head with rung 2. Rung 2 failed its own step (D79), so the ladder doc's plan to make rung 3 the default only if it beats rung 2 head to head (`docs/research/sim-bot-policy-ladder.md:16`) needs a ruling on which comparison now decides it.
+
+## Learned evaluator, E9 v1: the owner's deck (D98)
+
+Every figure in this section is bot play (forceteki rung3v), not human results: `rung3v:k=8,ev=v1,horizon=round,noPass=1` (D97) on both seats, engine `445792e`, card data `20260423_00`, pilot tables `data/runs/2026-10-31`. The rung is not promoted: it fails its ladder step over `rung3:k=8` on the per-deck clause (D97 (8)). `simulate_matchup` does not serve it; these runs measure it.
+
+Tournament side: swumetastats has no matchup row for The Warrior, Deft Duelist (leader `09010018`) in its 2026-07-20 to 2026-10-17 window, so no tournament figure stands beside these sim figures. Community decklist shares (SWUDB) exist but carry no outcomes, so no tier of play data gives a win share to compare (D21).
+
+The deck changes are #114's, with the swap strings of the pinned records:
+
+- Oppo Rancisis to Anakin: `LOF_105>LOF_190`.
+- Dead-card control: `HMW_254>HMW_093` twice and `ASH_248>HMW_093` twice (both Captain Tarpals and both Neel for four Coastal Catamarans).
+- Tarpals and Boba control: `HMW_254>LAW_232` twice and `HMW_225>LAW_232` (both Captain Tarpals and one Boba Fett, Family Found for three Champion's KT9 Podracers).
+
+### Against the panel
+
+The #114 design and seeds: each deck against the six panel decks, both seats, 150 seeds per opponent per seat, 1,800 games per deck on seeds 3,000,000 to 3,001,799; the paired test compares each variant with the base on the same seeds. Rung 1 was replayed in the same run (`--compare rung1`), and its counts and its trace hash (`35a7a5b5…`) equal the pinned `warrior-deck-rung3.json` run's, so the seeds line up with every earlier record. Top-K rung 3 figures are from that pinned record; it was not rerun. Record `data/pinned/sim-ladder-v1/warrior-deck-rung3v.json`, 14,400 games, all decided, fallback 3 of 378,134 decisions on the owner's side and 9 of 408,974 on the panel's.
+
+- Base: 671 of 1,800, 37.3% [35.1, 39.5]. Against Krennic 37.0%, Cad Bane 15.3%, Luke 55.3%, Boba Fett 37.7%, Vader 42.7%, Ahsoka 35.7%.
+- Oppo Rancisis to Anakin: 695 of 1,800, 38.6% [36.4, 40.9]; seeds won only by the base 158, only by the variant 182, p = 0.21. Not detected, as under top-K rung 3 (p = 0.44); rung 1 detects it (p = 0.0022).
+- Dead-card control: 499 of 1,800, 27.7% [25.7, 29.8]; 396 against 224, p = 4.8e-12. Detected, a 9.6-point drop (top-K rung 3: 10.2 points, p = 1.7e-13; rung 1: 2.2 points, p = 0.090).
+- Tarpals and Boba control: 601 of 1,800, 33.4% [31.3, 35.6]; 343 against 273, p = 0.0054. Detected at the 0.01 bar, a 3.9-point drop, weaker than top-K rung 3's 5.8 points at p = 4.4e-5 (rung 1: 1.0 point, p = 0.46).
+
+The climb per deck, each against the same panel on the same seeds, in points (rung 1 to top-K rung 3, then top-K rung 3 to rung3v; the paired test is rung 1 against rung3v on the same seeds, because the top-K run's per-seed outcomes are not in its record):
+
+- Base: 42.6% to 41.8% to 37.3%; -0.8, then -4.5; rung 1 to rung3v -5.3, seeds won only by the rung 1 run 354 against 258, p = 1.2e-4.
+- Oppo to Anakin: 45.4% to 42.7% to 38.6%; -2.8, then -4.1; -6.8, 401 against 278, p = 2.7e-6.
+- Dead-card control: 40.4% to 31.6% to 27.7%; -8.8, then -3.9; -12.7, 396 against 168, p = 3.2e-22.
+- Tarpals and Boba control: 41.6% to 36.0% to 33.4%; -5.6, then -2.6; -8.2, 377 against 229, p = 2.0e-9.
+
+Reading: with the learned rung on both seats, every version of the owner's deck loses more to the panel than under top-K rung 3, by 2.6 to 4.5 points. The same direction showed from rung 1 to top-K rung 3: the panel's tournament lists gain more from a stronger pilot than this deck does. The learned rung keeps top-K rung 3's view of the dead cards. It sees the Tarpals and Boba control less sharply, and like top-K rung 3 it does not separate Oppo from Anakin. The calibration section of `docs/verification/2026-10-31-sim-calibration.md` shows this rung ranks tournament matchups no better than the others (Spearman -0.24), so these shares say how this bot plays the deck, not how the deck fares in tournaments.
+
+### Head to head
+
+The base deck against each variant on seeds 1 to 900, two games per seed with the decks' seats swapped, an exact sign test on the seeds one deck won both; the mirror (base against base, one game per seed on the same 900 seeds) is the seat control. Rung 1 was replayed on the same seeds in the same run (`--compare rung1`); its dead-card, Anakin and mirror traces equal the pinned `warrior-h2h-rung3.json` run's hash for hash, and the Tarpals and Boba control is new under rung 1 too. Top-K rung 3 figures are from that pinned record; it never ran the Tarpals and Boba control head to head. Record `data/pinned/sim-ladder-v1/warrior-h2h-rung3v.json`, 12,600 games, all decided.
+
+- Dead-card control: base wins 1,065 of 1,800, 59.2% [56.9, 61.4]; seeds won both by base 318 against 153 by the variant, p = 2.3e-14. Detected. Top-K rung 3: 51.1%, p = 0.37, not detected; rung 1: 57.8%, p = 3.0e-11.
+- Oppo Rancisis to Anakin: base 927 of 1,800, 51.5% [49.2, 53.8]; 185 against 158, p = 0.16. Not detected. Top-K rung 3: 50.7%, p = 0.51; rung 1: base 47.7%, Anakin ahead, p = 0.023.
+- Tarpals and Boba control: base 1,016 of 1,800, 56.4% [54.1, 58.7]; 275 against 159, p = 2.8e-8. Detected. Rung 1: 54.6% [52.3, 56.9], 251 against 168, p = 5.9e-5.
+- Mirror, seat 1's share: 447 of 900, 49.7% [46.4, 52.9]; the interval holds 50%, so the seat order shows no bias. Rung 1: 52.7% [49.4, 55.9].
+
+Reading: head to head, the learned rung sees both controls more sharply than rung 1 does, where top-K rung 3 saw neither. That reopens the gap whose closing #163's open question asked about. Top-K rung 3 rolls out with plain rung 1; the learned rung's trials play the pilot `rung1:sacGuard=1,handCap=1`, and V scores the leaf instead of the hand-written V. These runs do not say which of the two restores the gap. Like every rung above rung 1, it does not separate Oppo Rancisis from Anakin.
+
+### Cost
+
+Wall clock on 12 workers, one pool job at a time, printed by the harnesses and kept out of every record. Other agents loaded the machine during the head-to-head run (load average 57 to 69), so treat those figures as upper bounds.
+
+- Calibration: 2,640 games in 1,549 s (1.7 games per second), then 50 replays in this thread in 183 s; 29 minutes in all. D97 (10) estimated 22 minutes at 2.0 games per second.
+- Against the panel: 7,200 rung3v games in 3,890 s (1.9 games per second), then the 7,200 rung 1 games in about 133 s.
+- Head to head: 6,300 rung3v games in about 4,990 s (1.3 games per second; head-to-head games average 9.3 rounds over both rungs, against 6.9 for rung3v against the panel), then the 6,300 rung 1 games in about 185 s.
+- In all about 3 hours 3 minutes of wall clock for 29,640 pool games plus the 50 replayed matches, local compute only.
+
+### Limits and open questions
+
+- Bot play only (D21's last tier); both seats run the same policy, so every figure is "this deck as that bot plays it". The rung fails the external calibration gate, so no figure here predicts a tournament result.
+- The top-K rung 3 climb to rung3v has no same-seed paired test against the panel, because `warrior-deck-rung3.json` keeps per-deck counts, not per-seed outcomes. Rerunning top-K rung 3 on the same seeds would add about 100 minutes.
+- Open question: the learned rung keeps the dead-card view head to head where top-K rung 3 lost it. Is that the rung 1 pilot switches in its trials or the evaluator at the leaf? Running `rung3:k=8,sacGuard=1,handCap=1` head to head on seeds 1 to 900 would separate the two, at about 25 minutes per variant.
+
+### Reproduce
+
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode field --policy rung3v:k=8,ev=v1,horizon=round,noPass=1 --subject base=tests/fixtures/decks/warrior-chewie-raid.swudb.json --subject 'oppo-to-anakin=tests/fixtures/decks/warrior-chewie-raid.swudb.json:LOF_105>LOF_190' --subject 'dead-card-control=tests/fixtures/decks/warrior-chewie-raid.swudb.json:HMW_254>HMW_093,HMW_254>HMW_093,ASH_248>HMW_093,ASH_248>HMW_093' --subject 'tarpals-boba-control=tests/fixtures/decks/warrior-chewie-raid.swudb.json:HMW_254>LAW_232,HMW_254>LAW_232,HMW_225>LAW_232' --per 150 --compare rung1 --workers 12 --step warrior-deck-rung3v
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode h2h --policy rung3v:k=8,ev=v1,horizon=round,noPass=1 --subject base=tests/fixtures/decks/warrior-chewie-raid.swudb.json --subject 'dead-card-control=tests/fixtures/decks/warrior-chewie-raid.swudb.json:HMW_254>HMW_093,HMW_254>HMW_093,ASH_248>HMW_093,ASH_248>HMW_093' --subject 'oppo-to-anakin=tests/fixtures/decks/warrior-chewie-raid.swudb.json:LOF_105>LOF_190' --subject 'tarpals-boba-control=tests/fixtures/decks/warrior-chewie-raid.swudb.json:HMW_254>LAW_232,HMW_254>LAW_232,HMW_225>LAW_232' --pairs 900 --compare rung1 --workers 12 --step warrior-h2h-rung3v

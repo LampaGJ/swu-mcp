@@ -19,6 +19,7 @@
  *   node --import tsx --import ./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung1 [--games 40] [--top 12]
  *   ... --policy rung3:k=8 --ladder rung3-vs-rung0.json:random-spike,rung3-vs-rung1.json:rung1
  *   ... --policy rung1 --lists 3 --games 72 --out data/pinned/sim-calibration-v1/lists3
+ *   ... --policy rung3v:k=8,ev=v1,horizon=round,noPass=1 --ladder rung3v-vs-rung0-final.json:random-spike,rung3v-vs-rung3-k8-final.json:rung3:k=8 --out data/pinned/sim-calibration-v1/e9
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -61,12 +62,14 @@ import { progress } from "../lib/progress.mjs";
 import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
 import { prepareDeck } from "./decks.js";
 import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
+import { prepareLearned, registerLearned } from "./policy/learned.js";
 
 /** The sampler seed of the --lists draw; fixed, so the same pool gives the same lists. */
 const LIST_SEED = "calibration-lists-v1";
 /** Draws per archetype from which the first k distinct lists are kept. */
 const LIST_DRAWS = 200;
-const FIDELITY_RECORD = "data/pinned/sim-ladder-v1/rung3-fidelity.json";
+/** The pinned rollback-fidelity record a search rung cites in place of the undo comparison. */
+const fidelityRecordOf = (kind: string, rung: number): string => `data/pinned/sim-ladder-v1/${kind === "learned" ? (rung === 4 ? "rung4" : "rung3v") : "rung3"}-fidelity.json`;
 /** Default ladder steps per rung: against rung 0, and against its promoted predecessor (D79: rung 2 is not promoted). */
 const DEFAULT_LADDER: Record<string, string> = {
   rung1: "rung1-vs-rung0.json:random-spike",
@@ -104,7 +107,9 @@ async function main(): Promise<void> {
   if (!process.execArgv.some((a) => a.includes("ladder-preload"))) throw new Error("run with --import ./scripts/sims/ladder-preload.ts so the workers know the rungs");
   const spec = values.policy;
   const name = driverName(spec);
-  const searches = ["lookahead", "montecarlo"].includes(parsePolicySpec(spec).kind);
+  const parsed = parsePolicySpec(spec);
+  const searches = ["lookahead", "montecarlo", "learned"].includes(parsed.kind);
+  const fidelityRecord = fidelityRecordOf(parsed.kind, parsed.kind === "learned" ? parsed.rung : 3);
   const gamesPerPair = Number(values.games);
   const listsPer = Number(values.lists);
   if (!Number.isInteger(listsPer) || listsPer < 1) throw new Error("--lists must be a positive integer");
@@ -175,6 +180,7 @@ async function main(): Promise<void> {
   live.beginPhase("games", jobs.length, null);
   process.env.SIMS_POLICY_SPECS = name;
   process.env.SIMS_RUN = pilotRun;
+  const viewKeys = prepareLearned({ names: [name], engineCardKeys: keys });
   const workers = Number(values.workers);
   const resourceLimits = values.heap === undefined ? undefined : { maxOldGenerationSizeMb: Number(values.heap), maxYoungGenerationSizeMb: 24 };
   p.log(() => ({ phase: "starting workers", pairs: pairs.length, archetypes: panel.length, stats: live.snapshot() }));
@@ -218,6 +224,7 @@ async function main(): Promise<void> {
 
   // Replay gate, in this thread.
   registerRungs(POLICIES, (ps) => new PolicyChain(ps as never), [name], tables);
+  if (viewKeys !== null) registerLearned(POLICIES, (ps) => new PolicyChain(ps as never), [name], tables, { viewKeys });
   let done = jobs.length;
   let workerEqualsThread = 0;
   let replayed = 0;
@@ -250,7 +257,7 @@ async function main(): Promise<void> {
       tickCheck("undo");
     }
   }
-  const evidence = searches && existsSync(path.join(REPO_ROOT, FIDELITY_RECORD)) ? [{ file: FIDELITY_RECORD, sha256: sha256(readFileSync(path.join(REPO_ROOT, FIDELITY_RECORD))) }] : [];
+  const evidence = searches && existsSync(path.join(REPO_ROOT, fidelityRecord)) ? [{ file: fidelityRecord, sha256: sha256(readFileSync(path.join(REPO_ROOT, fidelityRecord))) }] : [];
   const replayGate = {
     pass: failures.length === 0 && workerEqualsThread === nReplay && replayed === nReplay && (searches ? evidence.length === 1 : undoIdentical === nReplay),
     matches: nReplay,
@@ -259,7 +266,7 @@ async function main(): Promise<void> {
     undoIdentical,
     evidence,
     note: searches
-      ? "a search rung needs undo, so undo on and off are not compared here; rollback fidelity (every rollback restores the full state fingerprint, records replay by descriptor) is the pinned rung 3 fidelity record; replay here is by descriptor (the oracle)"
+      ? `a search rung needs undo, so undo on and off are not compared here; rollback fidelity (every rollback restores the full state fingerprint, records replay by descriptor) is the ${parsed.kind === "learned" ? "rung's pinned" : "pinned rung 3"} fidelity record; replay here is by descriptor (the oracle)`
       : "replay re-runs the policies on the compact record; undo on is compared with undo off trace for trace",
     failures: failures.slice(0, 10),
   };
@@ -284,7 +291,10 @@ async function main(): Promise<void> {
   const ladderSpec = values.ladder ?? DEFAULT_LADDER[spec];
   if (ladderSpec === undefined) throw new Error(`no default ladder steps for ${spec}; pass --ladder <file>:<baseline>,...`);
   const steps = ladderSpec.split(",").map((s) => {
-    const [file, baseline] = s.split(":");
+    // A baseline name can hold a colon (rung3:k=8), so only the first one separates it from the file.
+    const cut = s.indexOf(":");
+    if (cut < 0) throw new Error(`--ladder step ${s} needs <file>:<baseline>`);
+    const [file, baseline] = [s.slice(0, cut), s.slice(cut + 1)];
     const full = path.join(values["ladder-dir"], file);
     const bytes = existsSync(full) ? readFileSync(full) : null;
     return ladderStep(rel(full), bytes === null ? null : JSON.parse(bytes.toString("utf8")), bytes === null ? null : sha256(bytes), { ...want, baseline });
