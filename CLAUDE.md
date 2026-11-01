@@ -29,11 +29,15 @@ pnpm release:data --date <d>  # deterministic release tarball + src/data-release
 
 ## Release
 
-The server downloads its data from a GitHub Release pinned by `src/data-release.json`. Order: `pnpm build:data --date <d>`, `pnpm verify:audit --run data/runs/<d>`, `pnpm release:data --date <d>`, commit the pin, gitleaks-scan the outgoing commits, push main, `git tag data-<d>` + `git push origin data-<d>`, then `gh release create data-<d> <tarball> --verify-tag` (gh's token lacks the workflow scope, so the tag is pushed with git). Verify with a clean `npx -y github:LampaGJ/swu-mcp` in a scratch dir with `SWU_MCP_CACHE` set. The repo is public: only the owner asks for pushes.
+The server downloads its data from a GitHub Release pinned by `src/data-release.json`. Order: `pnpm build:data --date <d>`, `pnpm verify:audit --run data/runs/<d>`, `pnpm release:data --date <d>`, commit the pin, gitleaks-scan the outgoing commits, push main, `git tag data-<d>` + `git push origin data-<d>`, then `gh release create data-<d> <tarball> --verify-tag` (gh's token lacks the workflow scope, so the tag is pushed with git). Verify with a clean `npx -y github:LampaGJ/swu-mcp` in a scratch dir with `SWU_MCP_CACHE` set.
 
 ## Accuracy, honestly
 
-Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings are about 84% precise on pairs-v1 (docs/verification/2026-10-17-pair-fixture.md; measured on data/runs/2026-11-01 at aa42dd2, 147/175): about 82% for mechanical links and about 94% for trait-only links, which rank separately (#24), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
+Copied data is exact (`verify:audit`). Parsed card text is wrong on about 1 card in 5; pairings fall well short of exact on pairs-v1 (current precision by link kind: README "Honest limits"; trait-only links rank separately, #24), so pairing, trio and substitute tools return clause evidence with `status: candidate`. Any matcher change is measured with `pnpm verify:pairs` before and after; re-label only by adding a new fixture version.
+
+## Judged deck sessions
+
+An advice-tool change (synergy, deck, meta) is measured by rerunning the 14-step judged sessions on both reference decks against rebuilt data and a restarted server (docs/runbooks/judged-deck-sessions.md). VALUABLE means a mean of at least 2.0 with no step at 0, reported with blind and calibrated totals side by side. Each named defect becomes a wave issue, fixed at its cause behind a failing-first test. Session dumps, the judge prompt and judge reports are kept and hashed, never only in a scratchpad (D3; pinning under data/pinned/judged-sessions/ is #177).
 
 ## Play-data precedence (owner rule, 2026-10-17)
 
@@ -41,9 +45,9 @@ Prefer actual tournament decks and match outcomes over casual and simulated game
 
 ## Private data
 
-Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code and synthetic-fixture tests only. Never commit player names, player ids or game ids. Karabast-derived numbers, aggregates included, never appear in the data release, in tool output or in committed docs; they belong in local benchmark reports only (decision D22 in `docs/decisions.md`). Public win rates come from swumetastats tournament data.
+Karabast spectated human games (`/Volumes/Models/swu/human-games/`) are private player data. Raw rows and per-game extracts live only in git-ignored `data/originals/karabast/`; commit code and synthetic-fixture tests only. Never commit player names, player ids or game ids. Karabast-derived numbers, aggregates included, never appear in the data release, in tool output or in committed docs; they belong in local benchmark reports only (decision D22 in `docs/decisions.md`). Public win rates come from swumetastats tournament data. Models fitted on these games, and any win share, rank or model produced by a bot that uses them, are quarantined the same way (D52); every model on `/Volumes/Models/swu` is quarantined (D93), which overrides the reuse-an-existing-model default.
 
-The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored). This volume stalls on executable launches (Gatekeeper scan) and intermittently on links and renames: never `pnpm install` in a worktree (use `scripts/dev/worktree-add.sh`), call `node <package entry>` instead of a `node_modules/.bin` shim inside scripts, and bound every wait.
+The system disk is full: work only under `/Volumes/Local Files/Projects`, and run tools that need temp space with `TMPDIR` set to `<repo>/tmp` (git-ignored). This volume stalls on executable launches (Gatekeeper scan) and intermittently on links and renames: call `node <package entry>` instead of a `node_modules/.bin` shim inside scripts, run one sims pool job at a time (each takes 12 workers), and bound every wait: check a backgrounded command within 5 minutes and kill it if its `reports/.progress` file has not moved.
 
 ## Layout
 
@@ -53,6 +57,7 @@ The system disk is full: work only under `/Volumes/Local Files/Projects`, and ru
 - `src/tools/` holds the tool groups (value, synergy, market, rules, similarity, catalog, deck), registered in `src/tools.ts`; `src/resources.ts` serves the `swu://` resources and the two prompts. The README tool list is the user-facing catalogue; `tests/e2e.test.ts` fails if a registered tool has no e2e arguments.
 - `data/fixtures/pairs-v1.json` is the labelled pairing benchmark; its model verdicts are pinned in `data/pinned/pair-fixture-v1/`.
 - `src/rules/` parses the Comprehensive Rules; `src/tools/rules.ts` serves them. `data/rules-core.json` is the ordered core-rule list (boosts search, feeds the primer). The CR PDF lives in git-ignored `data/originals/rules/<version>/`.
+- `src/sims/` drives the pinned forceteki engine and `scripts/sims/` holds its CLIs (`pnpm sims:*`); ladder, calibration, vocabulary and model records pin under `data/pinned/sim-*/`. Runbook: docs/runbooks/simulation-pipeline.md.
 - `data/curated-rules.json` is the curated ability table (pinned input). `data/runs/<date>/` is generated output (git-ignored). `data/pinned/` holds small pinned captures.
 - `docs/` field guide, JSON Schemas, glossary, value rubric. Copied from mault; edit here from now on.
 
@@ -72,11 +77,11 @@ mault owns the raw card-list cache (`~/.local/state/mault/raw/swu-cards`) and TC
 
 ## No model in the scoring path
 
-Card scoring is fully deterministic. No LLM call, embedding lookup or other model output decides a score at runtime. Models may only produce captured, hashed inputs (for example curated tables) that deterministic code then reads.
+Card scoring is fully deterministic. No LLM call, embedding lookup or other model output decides a score at runtime. Models may only produce captured, hashed inputs (for example curated tables) that deterministic code then reads. A learned play evaluator (E9, #122) is such a captured, hashed fit: it may steer simulation bots only, and no tool reads its output before its own D-entry (D53, #133).
 
 ## Git
 
-Stage explicit paths, never `git add -A`, `.` or `-u`. One logical change per commit. Do not push without the owner asking.
+Stage explicit paths, never `git add -A`, `.` or `-u`. One logical change per commit. Push only when the owner asks, after a gitleaks scan of the outgoing commits (D24).
 
 ## Code style
 

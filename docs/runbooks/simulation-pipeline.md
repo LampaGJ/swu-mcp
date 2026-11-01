@@ -1,0 +1,125 @@
+---
+type: runbook
+status: active
+review_by: 2026-12-31
+related: ["CLAUDE.md", "docs/decisions.md", "docs/specs/learned-play-policies.spec.md", "docs/verification/2026-10-31-sim-calibration.md", "docs/verification/2026-10-31-bot-ladder.md", "docs/research/sim-compute-measurements.md"]
+---
+
+# Simulation pipeline
+
+What this is: how the bot-versus-bot simulation code is set up, run, gated and re-run. Simulations are local only and never ship in the data release (D88). Bot play is the last tier of play data (D21), so a simulated win share never mixes with tournament numbers.
+
+Status today: every bot rung fails the external calibration gate, so `simulate_matchup` serves no win share. Details are under "Current status" below.
+
+## Engine pin
+
+The rules engine is forceteki, an input like any decklist (`src/sims/engine-pin.ts:9-16`). One commit, one card-data snapshot and the Node version are recorded in `data/pinned/forceteki/pin.json` (`src/sims/engine-pin.ts:19`).
+
+- `pnpm sims:pin` verifies the local clone against the pin and exits 1 on any mismatch (`scripts/sims/pin-engine.ts:1-10`).
+- `pnpm sims:pin --setup` clones the engine at the pinned commit and builds it. A clone at another commit is refused, never checked out over (`src/sims/engine-pin.ts:137-140`).
+- `pnpm sims:pin --write` records the clone's current state as the new pin. Use it only for a deliberate re-pin; it makes every ladder and gate record stale (see "Rerun triggers").
+- Every simulation verifies the pin before it loads the engine (`src/sims/engine.ts:143-144`).
+- The engine runs with `NODE_ENV=test` because forceteki words prompts by environment (`src/sims/engine.ts:120-125`).
+
+## Typed driver and determinism
+
+Every match is a record that replays (D80, `docs/decisions.md:186`).
+
+- Each legal answer becomes a descriptor, sorted in code-point order, so no choice depends on the engine's enumeration order (`src/sims/actions.ts:98`).
+- Bot randomness is counter-based: draw j at decision k for seat s is `seededRandom("bot|seed|s|k|j")` (`src/sims/rng.ts:15`). A branch at decision k leaves every earlier decision byte-identical, and a policy change cannot shift the other seat's draws.
+- The engine seed is set before the deck is selected, and the adapter's counting wrapper throws on any engine draw before the seed (`src/sims/engine.ts:269`, D80).
+- Header, decision and footer records use strict Zod schemas with no wall-clock field (`src/sims/schemas.ts:86`).
+- The replay gate is `pnpm sims:replay-gate`. It plays the panel matches, replays every record to an identical `traceSha256`, checks that worker threads equal one thread, and checks that rung 0 traces do not depend on undo mode (`scripts/sims/replay-gate.ts:1-14`). `pnpm sims:replay` replays one record and stops at the first mismatch.
+
+## Bot ladder
+
+A rung is a pure function from the actor's view, the canonical legal actions, its pinned tables and the decision randomness to one index (`src/sims/policy.ts:7-15`). A prompt a rung does not cover descends to the next rung down, ending at rung 0, and the share it answered itself is reported.
+
+- Rung 0: uniform over the canonical actions, `Done` half the time on a multi-select prompt (`src/sims/policy.ts:64`).
+- Rung 1: plays from card data (cost, power, HP, damage, keywords, aspects, parsed text). It is the first promoted rung (D79, `docs/decisions.md:184`; `src/sims/policies/rules.ts:115`).
+- Pilot switches on rung 1: `sacGuard`, `initDraw`, `handCap`, `aspectCall` (`src/sims/policies/rules.ts:50`). A switch is a 0-or-1 flag in the policy name. It enters the params hash only when set to 1 (`src/sims/policies/index.ts:58`), so `rung1` keeps its pinned hash. D92 keeps `sacGuard` and `handCap`; it rejects `initDraw` and `aspectCall` (`docs/decisions.md:210`). The pilot named `rung1:sacGuard=1,handCap=1` is the kept form.
+- Rung 2: adds pair and leader bonuses to rung 1. It is not promoted. At 800 held-out pairs it won 48.55% against rung 1 (D79, `docs/verification/2026-10-31-bot-ladder.md:54`).
+- Rung 3: searches on the engine with snapshots and rollback (D81, `docs/decisions.md:188`). It has two forms, both deterministic counts with no time budget:
+  - `rung3` is a top-K lookahead ranked by rung 1 (`src/sims/policies/rung3.ts:145`). The measured form is `rung3:k=8`.
+  - `rung3mc` is flat Monte Carlo over every legal main action (`src/sims/policies/flat-mc.ts:89`), for example `rung3mc:playout=rung1,n=2`.
+- Rung 4 is the planned learned evaluator (see "E9 lifecycle").
+
+Throughput on 12 workers, both seats on the rung: rung 1 about 47 games per second, rung 3 top-K about 1.2, flat Monte Carlo about 0.24 (`src/tools/sims.ts:49`).
+
+## Calibration gate
+
+A rung's win share reaches `simulate_matchup` only when its pinned gate record passes four gates (D88, `docs/decisions.md:202`). `scripts/sims/calibration-gate.ts` writes one record per rung to `data/pinned/sim-calibration-v1/` (`gateRecordSchema`, `src/sims/calibration.ts:229`).
+
+The four parts and their thresholds (`CALIBRATION_THRESHOLDS`, `src/sims/calibration.ts:23-30`):
+
+1. Replay: 50 calibration matches replay to the worker's trace (`replayMatches: 50`).
+2. Health: non-decisive games at most 2% (`nonDecisiveMax: 0.02`) and fallback decisions at most 5% (`fallbackMax: 0.05`).
+3. Ladder: the rung beats rung 0 and its promoted predecessor, from pinned ladder records under `data/pinned/sim-ladder-v1/` with the same candidate, engine and card tables (`ladderStep`, `src/sims/calibration.ts:187`).
+4. External: Spearman rank correlation between sim shares and swumetastats tournament shares of at least 0.5 (`spearmanMin: 0.5`), and the sim favourite agrees with the tournament favourite more often than chance by a one-sided exact sign test at p < 0.05 (`favouriteAlpha: 0.05`). Tournament matchups need at least 10 decisive matches (`minN: 10`).
+
+The thresholds were fixed before the first measurement. Changing one needs a measurement posted on #118 first and a D-entry that says so (D53, `docs/decisions.md:134`).
+
+To measure a rung, run `scripts/sims/calibration-gate.ts --policy <spec>` with the preload shown in the README (`README.md:221`). Use `pnpm sims:batch` for batches and `scripts/sims/ladder.ts` for ladder records. Each long run emits a progress file under `reports/.progress/`.
+
+## `simulate_matchup`
+
+- It is registered only when the server runs with `SWU_MCP_SIMS=1` (`src/tools.ts:197-198`). The public endpoint and the `npx` path never start the engine.
+- It picks the pilot with `choosePilot` and returns a plain error naming the failed gate when no rung passes (`src/tools/sims.ts:196`, `src/sims/calibration.ts:331`). With no passing record it refuses to report a win share.
+- It runs one deterministic background job at a time, keyed by its input (`src/tools/sims.ts:227-229`).
+- Its output is labelled bot play, `status: candidate`, and never a tournament win rate (D21).
+
+## Current status
+
+- Rung 1 and rung 3 top-K pass replay, health and ladder, and fail the external gate: Spearman -0.17 and -0.21, favourite agreement 15 and 16 of 37 (D88, `docs/verification/2026-10-31-sim-calibration.md`).
+- The failure is real. It is not an orientation or identity bug, and not the choice of one list per archetype (D90, `docs/decisions.md:206`).
+- The cause is a tempo bias in the bot pilots. They play some archetypes far below their tournament share, for example Krennic. Pilot switches moved the shares toward the tournaments but no pilot passes (D92, `docs/decisions.md:210`).
+- The next lever is the learned evaluator, E9.
+
+## E9 lifecycle
+
+E9 (#122) trains an evaluator that steers rung 4. The spec is `docs/specs/learned-play-policies.spec.md`. The phases, in order:
+
+1. #123 inventory: the models already on `/Volumes/Models/swu`, pinned by hash and provenance. All are quarantined (D52, D93); none is reused. Landed in commit e08c163.
+2. #124 encoding: a versioned state encoding (`STATE_VERSION`, `src/sims/state.ts:15`) and a pinned card vocabulary under `data/pinned/sim-vocab/`. Landed in commit 8ee9932.
+3. #125 dataset: branch-sampled decision values from seeded games, with a manifest under `data/pinned/` and the bulk data on `/Volumes/Models/swu`.
+4. #126 training: the model is fitted once, captured as a pinned, hashed input, and never trained inline (D3). The committed baseline is the constant model until a model trained on allowed data exists (D52).
+5. #127 inference: the evaluator runs inside the game loop under a throughput gate.
+6. #128 rung 4: lookahead with the evaluator, determinized over seeds, then the ladder and the four gates.
+7. #130 self-play: an iteration loop with a stop rule and its own seed ranges.
+
+#133 holds the D-entries. Rung 4 needs its own D-entry before any tool reads an evaluator output (D53, CLAUDE.md "No model in the scoring path"). Check the tracker for the current open state of each issue; this list gives the order, not the status.
+
+## Rerun triggers
+
+Each rerun posts its measurement on #118 before any threshold or default moves (D53).
+
+- Engine pin change: every ladder and gate record goes stale. Rerun the ladder step, then the gate, for the best candidate rung and for any rung currently serving.
+- New data release:
+  - If the card-table hash moved, rerun the ladder and the gate.
+  - If only the meta hash moved (new swumetastats or melee data), rerun the external gate only. Replay, health and ladder do not read meta.
+- New vocabulary revision (a new set): the evaluator goes stale. Retrain, then run the rung 4 ladder and gate.
+- New rung or new policy params hash, including a new evaluator capture: the ladder step against its promoted predecessor, then the four gates.
+- A rung is served only from a record whose engine commit equals the pinned one (`src/sims/calibration.ts:331-336`), so a stale record serves nothing.
+
+## Pool rule
+
+Run one sims pool job at a time. Each job takes 12 workers, the number of performance cores on the dev machine (`src/tools/sims.ts:104`). More workers do not raise throughput and do raise memory. The measurements are in `docs/research/sim-compute-measurements.md`.
+
+Bound every wait. Check a backgrounded run within 5 minutes and kill it if its `reports/.progress` file has not moved (CLAUDE.md, volume and operations).
+
+## Scripts
+
+The `pnpm sims:*` scripts in `package.json:45-54`:
+
+- `sims:pin`: verify, set up or re-pin the forceteki engine (`scripts/sims/pin-engine.ts`).
+- `sims:bridge-coverage`: engine id coverage report over a deck folder (`scripts/sims/bridge-coverage.ts`).
+- `sims:play`: the batch runner on this thread only, one game by default (`scripts/sims/play.ts`).
+- `sims:batch`: the batch runner on the worker pool (`scripts/sims/run-batch.ts`).
+- `sims:replay`: replay match records from a JSONL file and stop at the first mismatch.
+- `sims:replay-gate`: the replay gate (see "Typed driver and determinism").
+- `sims:branch-probe`: probe a snapshot branch from a decision K of a seeded game.
+- `sims:feature-map`: the legacy feature map the existing models use (`scripts/sims/feature-map.ts`).
+- `sims:inventory`: inventory the models on `/Volumes/Models/swu` into `data/pinned/sim-models/` (D93).
+- `sims:vocab`: build the pinned card vocabulary under `data/pinned/sim-vocab/`.
+
+Other scripts in `scripts/sims/` have no `pnpm` alias: `calibration-gate.ts`, `calibration-report.ts`, `ladder.ts`, `trace-calibration.ts`, `model-parity.ts`, `matchup-job.ts`. Run them with `tsx` and read each file's header for its usage.
