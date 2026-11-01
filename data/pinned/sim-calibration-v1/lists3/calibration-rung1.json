@@ -1,0 +1,1966 @@
+{
+ "schemaVersion": 1,
+ "step": "calibration-rung1",
+ "calibrationVersion": "1",
+ "label": "bot play (forceteki rung1), not human results",
+ "policy": {
+  "spec": "rung1",
+  "id": "rung1-rules",
+  "version": "1",
+  "rung": 1,
+  "params": {
+   "mu": 0,
+   "lambda": 0,
+   "handWeight": 0.5,
+   "protectThreshold": 1,
+   "tempo": 0.5,
+   "mulliganCheap": 2,
+   "resourceCap": 7
+  },
+  "paramsSha256": "587af70cb95bb0e4512c2a0154955f47d1ee0f0d9ce65c71194918ada9c46a07",
+  "driverPolicy": "rung1"
+ },
+ "engine": {
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "inputs": {
+  "scoresSha256": "edbc91eb4b7d18d3e5fe76c4e31ac2092697047c033cb3da58b9885bd00b4284",
+  "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "featuresSha256": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "leaderCardsSha256": "6f828e4f54941acaff7691db4ded2ea5a236b4c2de87226a319dc322a1b726eb",
+  "winratesSha256": "383292f2063475ecc4d0dc83b3b2d692b8a18f20f1060e55bfdce3249bfd7188",
+  "archetypesSha256": "08d3fa57aefbefe10f2e976551e80184a6898d8fe1e49d4f3e28013aab101fb3"
+ },
+ "pilotRun": "2026-10-31",
+ "metaRun": "2026-11-01",
+ "decks": "data/originals/decks/2026-10-17",
+ "codeCommit": "e3beee281233b924dc70c0084418312d0d800bae-dirty",
+ "thresholds": {
+  "spearmanMin": 0.5,
+  "favouriteAlpha": 0.05,
+  "nonDecisiveMax": 0.02,
+  "fallbackMax": 0.05,
+  "replayMatches": 50,
+  "minN": 10
+ },
+ "seeds": {
+  "from": 4000000,
+  "to": 4065035,
+  "gamesPerPair": 72,
+  "scheme": "engine seed <seed>; pair p (archetypes i < j in panel order) plays seeds 4000000 + 1000p + q, q < gamesPerPair / 2, each seed twice with the seats swapped; seed q plays list pairing c = q mod 9, list floor(c / 3) of i against list c mod 3 of j (panel entries of an archetype in list order)",
+  "listsPerArchetype": 3
+ },
+ "panel": [
+  {
+   "archetype": "t001-a98697",
+   "name": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "leader": "07010008",
+   "baseAspects": "Vigilance",
+   "share": 0.0754,
+   "list": "file:data/originals/decks/2026-10-17/melee-6a7d11f7-a357-4f02-b07d-b4920022aa43.json",
+   "sha256": "88bed48450b323e78f4d994d62d8122346a21264f7b09b65eed91ebd7d20c5ed"
+  },
+  {
+   "archetype": "t001-a98697",
+   "name": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "leader": "07010008",
+   "baseAspects": "Vigilance",
+   "share": 0.0754,
+   "list": "file:data/originals/decks/2026-10-17/melee-4fbee92e-9a23-48d2-8ce0-b4de01834292.json",
+   "sha256": "92eca1e07b23d3a9ca82abb0436d20d99f910f730ff086eeec87945712b45a5e"
+  },
+  {
+   "archetype": "t001-a98697",
+   "name": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "leader": "07010008",
+   "baseAspects": "Vigilance",
+   "share": 0.0754,
+   "list": "file:data/originals/decks/2026-10-17/melee-69321e94-13c2-4abf-8c8f-b4b5007e4b41.json",
+   "sha256": "5f82997e814d885f5ba07c411bbca8761c8e082dba84aa2f69d1e6f2a93887ec"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "name": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "leader": "08010011",
+   "baseAspects": "Vigilance",
+   "share": 0.0716,
+   "list": "file:data/originals/decks/2026-10-17/melee-0bd9a40c-4a18-4303-b32a-b4a600064f8d.json",
+   "sha256": "638539cb7db7a1f5e812638a7fe7b0efa1064a2d0513ad1bf46aa4f86e97f64f"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "name": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "leader": "08010011",
+   "baseAspects": "Vigilance",
+   "share": 0.0716,
+   "list": "file:data/originals/decks/2026-10-17/melee-543c95f6-c6a2-44d6-b630-b4a6016317a7.json",
+   "sha256": "5f7228c1c95877d0f6e58a6c4c589fa6b8620bff18333ba6359a037a182e0529"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "name": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "leader": "08010011",
+   "baseAspects": "Vigilance",
+   "share": 0.0716,
+   "list": "file:data/originals/decks/2026-10-17/melee-3f0bec44-e3a4-4749-a520-b4ae00c2a0de.json",
+   "sha256": "1e9456efb914f536d589be8c040fb09fa74ca68767f9197e8de7e7f98cd1e75f"
+  },
+  {
+   "archetype": "t003-75e861",
+   "name": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "leader": "04010012",
+   "baseAspects": "Command",
+   "share": 0.051,
+   "list": "file:data/originals/decks/2026-10-17/melee-259bb00c-2827-4cd7-b8e5-b4bc0137be7d.json",
+   "sha256": "34b73b572063eab262d06bf3d239a4d2d717c9980bc3acfdafc0ed597407b132"
+  },
+  {
+   "archetype": "t003-75e861",
+   "name": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "leader": "04010012",
+   "baseAspects": "Command",
+   "share": 0.051,
+   "list": "file:data/originals/decks/2026-10-17/melee-e7e9dffd-6254-4e98-a708-b49f0072a27d.json",
+   "sha256": "95ca8621b3c4572d97a58349e2111b69a13d38f8d22d17b95ebf94137da8aa7c"
+  },
+  {
+   "archetype": "t003-75e861",
+   "name": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "leader": "04010012",
+   "baseAspects": "Command",
+   "share": 0.051,
+   "list": "file:data/originals/decks/2026-10-17/melee-971d3857-e925-4483-b08b-b4900135c21f.json",
+   "sha256": "6419a5dbe9cce00eecccec7ecba7ad356f03977026fd79835402419c40413d14"
+  },
+  {
+   "archetype": "t004-15109d",
+   "name": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "leader": "04010009",
+   "baseAspects": "",
+   "share": 0.0478,
+   "list": "file:data/originals/decks/2026-10-17/melee-737fb7c6-696d-4f9a-bd1b-b4ac011eac11.json",
+   "sha256": "25e69a82e8b77934ac9e45f8d02b25672c5e27797b86f39aa311d570963698f3"
+  },
+  {
+   "archetype": "t004-15109d",
+   "name": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "leader": "04010009",
+   "baseAspects": "",
+   "share": 0.0478,
+   "list": "file:data/originals/decks/2026-10-17/melee-1b1c2b91-2354-4d8c-9c88-b4a000e47265.json",
+   "sha256": "d80985e4322f4fa41b7ee9bdbb53f97a461a09993397fe612b081672b4808dc0"
+  },
+  {
+   "archetype": "t004-15109d",
+   "name": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "leader": "04010009",
+   "baseAspects": "",
+   "share": 0.0478,
+   "list": "file:data/originals/decks/2026-10-17/melee-406cfba2-8b0b-4760-86e0-b4910000431d.json",
+   "sha256": "2f9f3e3eba00864adf2173671f9a4dfde199a6efd44b9e032a6927941d51e616"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "name": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "leader": "04010006",
+   "baseAspects": "Cunning",
+   "share": 0.0385,
+   "list": "file:data/originals/decks/2026-10-17/melee-3df0d3f0-37be-4479-ad92-b4bb0131e619.json",
+   "sha256": "b0d01997a515504fd43069bbeb760493e1c9d1e42a4f31d46d0592ba1b5f42f2"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "name": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "leader": "04010006",
+   "baseAspects": "Cunning",
+   "share": 0.0385,
+   "list": "file:data/originals/decks/2026-10-17/melee-838dcac3-2128-4fb5-9553-b4bc00fa6ac6.json",
+   "sha256": "3cf687d697144c011045a661db353e589f3bf9f45a552df9ff92817949e22768"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "name": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "leader": "04010006",
+   "baseAspects": "Cunning",
+   "share": 0.0385,
+   "list": "file:data/originals/decks/2026-10-17/melee-417e467a-9dea-4b2b-b32f-b4ad013fa3ca.json",
+   "sha256": "6680b4b30f3e814865439f135baad2601cf8edec84c935939d4437351c1f67f5"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "name": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "leader": "08010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0365,
+   "list": "file:data/originals/decks/2026-10-17/melee-ac444189-f030-4882-bfdd-b4d10140d07f.json",
+   "sha256": "8e2200d91237986f6675b9af75ce03832957779ba18a63428050ddc858f9c87f"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "name": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "leader": "08010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0365,
+   "list": "file:data/originals/decks/2026-10-17/melee-a650c30c-2b93-48c9-a0f7-b4ca0023780d.json",
+   "sha256": "944fce1a0666efeb56af3b1dc1dbfe4908f469096453203bbf3b69f27c1f3a15"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "name": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "leader": "08010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0365,
+   "list": "file:data/originals/decks/2026-10-17/melee-9f6e8dbf-a095-4285-a24a-b4a7001486bf.json",
+   "sha256": "ed8340067015190cc68a448fcb873aed83b65d04d3562c1c36f2050ff34fdd60"
+  },
+  {
+   "archetype": "t007-90bc66",
+   "name": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+   "leader": "04010005",
+   "baseAspects": "Aggression",
+   "share": 0.0205,
+   "list": "file:data/originals/decks/2026-10-17/melee-37042314-8b28-4d12-b147-b49100fa1e4e.json",
+   "sha256": "cda1ff55de42c5f15a916e719c4357e6f49e3af641bf132b1a452796b7a83ba4"
+  },
+  {
+   "archetype": "t007-90bc66",
+   "name": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+   "leader": "04010005",
+   "baseAspects": "Aggression",
+   "share": 0.0205,
+   "list": "file:data/originals/decks/2026-10-17/melee-b29105c5-1b20-456c-82a8-b4c9010e4cbd.json",
+   "sha256": "c0f9c8cdd26bf43efe97f348678208827cbdfe0bc0554dc9af259c5bf732a068"
+  },
+  {
+   "archetype": "t007-90bc66",
+   "name": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+   "leader": "04010005",
+   "baseAspects": "Aggression",
+   "share": 0.0205,
+   "list": "file:data/originals/decks/2026-10-17/melee-6e247ea7-6d17-4285-817e-b49c01827a8f.json",
+   "sha256": "09ea80ee484679bf0a77109b849caa8ff3b1999e2f25fb645e2390047e9858bf"
+  },
+  {
+   "archetype": "t008-830d46",
+   "name": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+   "leader": "08010014",
+   "baseAspects": "Vigilance",
+   "share": 0.0183,
+   "list": "file:data/originals/decks/2026-10-17/melee-75fab57d-8cad-4d58-9f8e-b491016f6fb1.json",
+   "sha256": "63c71fd8a6b2a2fc1e636f1e61a3699bc6ab41cdda07d8cf06c9e92a80c0fcae"
+  },
+  {
+   "archetype": "t008-830d46",
+   "name": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+   "leader": "08010014",
+   "baseAspects": "Vigilance",
+   "share": 0.0183,
+   "list": "file:data/originals/decks/2026-10-17/melee-b3ef261e-c465-4849-931a-b4c400737255.json",
+   "sha256": "bdadfdc424d59d245d22125cb32f293337c159216d8c71c41a8b72dc1c40aa7f"
+  },
+  {
+   "archetype": "t008-830d46",
+   "name": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+   "leader": "08010014",
+   "baseAspects": "Vigilance",
+   "share": 0.0183,
+   "list": "file:data/originals/decks/2026-10-17/melee-dfb98c83-3f3f-46b8-950e-b4bd00757f4c.json",
+   "sha256": "bc8f4e4686c332d3d6e23fbc6c30e0a17d094145e370af535aea22f572a6388a"
+  },
+  {
+   "archetype": "t009-5bf7bb",
+   "name": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+   "leader": "08010005",
+   "baseAspects": "Command",
+   "share": 0.0169,
+   "list": "file:data/originals/decks/2026-10-17/melee-73bc9801-258b-4d3e-b633-b4b400c4b3d4.json",
+   "sha256": "422c86c7b152f65c3b87dc7f794e727debad438c52ab38e09da550bc764a28d7"
+  },
+  {
+   "archetype": "t009-5bf7bb",
+   "name": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+   "leader": "08010005",
+   "baseAspects": "Command",
+   "share": 0.0169,
+   "list": "file:data/originals/decks/2026-10-17/melee-37daf94d-aa6c-438b-b29b-b49100121065.json",
+   "sha256": "0ba2da13ae7072c99d42ed76fdec156bf41f21766d2d02afe7fea2daa0fc4ed6"
+  },
+  {
+   "archetype": "t009-5bf7bb",
+   "name": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+   "leader": "08010005",
+   "baseAspects": "Command",
+   "share": 0.0169,
+   "list": "file:data/originals/decks/2026-10-17/melee-c2788612-65c5-4ca2-a1ca-b4b500fa73d6.json",
+   "sha256": "0ab85ea243e723517faec32437b4062ae3c791a09f4084c741ac8c25e99230ec"
+  },
+  {
+   "archetype": "t010-95fa5e",
+   "name": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+   "leader": "07010018",
+   "baseAspects": "Vigilance",
+   "share": 0.0162,
+   "list": "file:data/originals/decks/2026-10-17/melee-9973c161-d8d9-4165-b31a-b4a301736c77.json",
+   "sha256": "254dffee4ac31520822d4c8bfc864bc06145f408dad617137d97856dbca41f63"
+  },
+  {
+   "archetype": "t010-95fa5e",
+   "name": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+   "leader": "07010018",
+   "baseAspects": "Vigilance",
+   "share": 0.0162,
+   "list": "file:data/originals/decks/2026-10-17/melee-9f8c2a49-dc75-4735-9014-b4a700cc9c25.json",
+   "sha256": "add31ac6cefb44f362d16e85e8ca448a49667ff61e2734db667a9408f2b77604"
+  },
+  {
+   "archetype": "t010-95fa5e",
+   "name": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+   "leader": "07010018",
+   "baseAspects": "Vigilance",
+   "share": 0.0162,
+   "list": "file:data/originals/decks/2026-10-17/melee-00ebfea7-40a9-40c9-8e87-b4b600532999.json",
+   "sha256": "a1963c5cff87c368e7bfa3265d0dc3cbe6be7c24b9826231d3d286321f00f008"
+  },
+  {
+   "archetype": "t012-68fbb7",
+   "name": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+   "leader": "05010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0135,
+   "list": "file:data/originals/decks/2026-10-17/melee-14349fdb-b690-406f-b112-b4c40104e2cc.json",
+   "sha256": "7968c63c643a4279460f4798e0070cec8f11f3ce1bc99e053be2e230595b63e4"
+  },
+  {
+   "archetype": "t012-68fbb7",
+   "name": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+   "leader": "05010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0135,
+   "list": "file:data/originals/decks/2026-10-17/melee-f758aa41-5db6-4433-9ba1-b49900167e25.json",
+   "sha256": "9036d2d1ae2566209951a479a3944428a6117ea619d8ac5c05d24f5b56ad14b5"
+  },
+  {
+   "archetype": "t012-68fbb7",
+   "name": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+   "leader": "05010009",
+   "baseAspects": "Vigilance",
+   "share": 0.0135,
+   "list": "file:data/originals/decks/2026-10-17/melee-54d2313a-533d-414e-b61c-b4d800ce8a0d.json",
+   "sha256": "48cb296ac417becdfc38d9a0b5a92e4fd2a71ba712a57d958df8861ed7de7a55"
+  },
+  {
+   "archetype": "t014-7c7808",
+   "name": "Aurra Sing, Assassin / Command base",
+   "leader": "07010004",
+   "baseAspects": "Command",
+   "share": 0.0126,
+   "list": "file:data/originals/decks/2026-10-17/melee-5e1251bc-8122-42c4-8470-b4bc0065c5c4.json",
+   "sha256": "1faa7f0a08b523ba58ccf223201d93a11e44a1cb373fe45c0dbaa2589e82965e"
+  },
+  {
+   "archetype": "t014-7c7808",
+   "name": "Aurra Sing, Assassin / Command base",
+   "leader": "07010004",
+   "baseAspects": "Command",
+   "share": 0.0126,
+   "list": "file:data/originals/decks/2026-10-17/melee-c772e51a-9575-42f6-b9c5-b4910006f5a0.json",
+   "sha256": "eea4ca82735ca092d0b7174765bd580512d1ddf340fc19aae8f6a40a248319dc"
+  },
+  {
+   "archetype": "t014-7c7808",
+   "name": "Aurra Sing, Assassin / Command base",
+   "leader": "07010004",
+   "baseAspects": "Command",
+   "share": 0.0126,
+   "list": "file:data/originals/decks/2026-10-17/melee-878dea98-1214-437e-8375-b491002d0f3e.json",
+   "sha256": "2fa3da077ea999aa3dc2f3957fe5ffc44d9f51e6bf928158659cfc8bca9678c8"
+  }
+ ],
+ "gates": {
+  "replay": {
+   "pass": true,
+   "matches": 50,
+   "workerEqualsThread": 50,
+   "replayed": 50,
+   "undoIdentical": 50,
+   "evidence": [],
+   "note": "replay re-runs the policies on the compact record; undo on is compared with undo off trace for trace",
+   "failures": []
+  },
+  "health": {
+   "pass": true,
+   "games": 4752,
+   "nonDecisive": 26,
+   "decisions": 737412,
+   "fallback": 2054,
+   "nonDecisiveShare": 0.0055,
+   "fallbackShare": 0.0028,
+   "endConditions": {
+    "base_destroyed": 4726,
+    "draw": 1,
+    "error": 25
+   }
+  },
+  "ladder": {
+   "pass": true,
+   "steps": [
+    {
+     "record": "data/pinned/sim-ladder-v1/rung1-vs-rung0.json",
+     "sha256": "5f1c274655fcd96aa13885be7150a52d1ac8f24b0a9c0ef80b49c8e6b04525f1",
+     "candidate": "rung1",
+     "against": "random-spike",
+     "pass": true,
+     "share": 0.9975,
+     "pValue": 2.489e-60,
+     "stale": null
+    }
+   ]
+  },
+  "external": {
+   "pass": false,
+   "failed": [
+    "spearman",
+    "favourite"
+   ],
+   "pairs": 66,
+   "spearman": -0.2073,
+   "favourite": {
+    "counted": 37,
+    "agree": 13,
+    "disagree": 23,
+    "simTies": 1,
+    "pValue": 0.9765
+   },
+   "simLabel": "bot play (forceteki rung1), not human results: 72 games per archetype pair, 3 placement-weighted buildable melee lists per archetype (sampler seed calibration-lists-v1), every list pairing on the same number of seeds, the rung on both seats",
+   "tournamentLabel": "tournament matchups (melee.gg Premier events via swumetastats.com), aggregate per leader and base, 2026-07-20 to 2026-10-17, minN 10",
+   "rows": [
+    {
+     "a": "t001-a98697",
+     "b": "t002-6d0fc3",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "tournament": {
+      "wins": 180,
+      "losses": 259,
+      "n": 439,
+      "share": 0.41,
+      "low": 0.365,
+      "high": 0.4566,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 2,
+      "n": 72,
+      "share": 0.0278,
+      "low": 0.0077,
+      "high": 0.0957,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t003-75e861",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "tournament": {
+      "wins": 213,
+      "losses": 168,
+      "n": 381,
+      "share": 0.5591,
+      "low": 0.5089,
+      "high": 0.6081,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 2,
+      "n": 72,
+      "share": 0.0278,
+      "low": 0.0077,
+      "high": 0.0957,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t004-15109d",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "tournament": {
+      "wins": 136,
+      "losses": 107,
+      "n": 243,
+      "share": 0.5597,
+      "low": 0.4968,
+      "high": 0.6207,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 1,
+      "n": 72,
+      "share": 0.0139,
+      "low": 0.0025,
+      "high": 0.0746,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t005-46ed7e",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "tournament": {
+      "wins": 224,
+      "losses": 133,
+      "n": 357,
+      "share": 0.6275,
+      "low": 0.5762,
+      "high": 0.676,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 5,
+      "n": 72,
+      "share": 0.0694,
+      "low": 0.03,
+      "high": 0.1525,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t006-beda5a",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "tournament": {
+      "wins": 241,
+      "losses": 181,
+      "n": 422,
+      "share": 0.5711,
+      "low": 0.5234,
+      "high": 0.6175,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 1,
+      "n": 72,
+      "share": 0.0139,
+      "low": 0.0025,
+      "high": 0.0746,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t007-90bc66",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 74,
+      "losses": 36,
+      "n": 110,
+      "share": 0.6727,
+      "low": 0.5805,
+      "high": 0.7533,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 13,
+      "n": 72,
+      "share": 0.1806,
+      "low": 0.1087,
+      "high": 0.2848,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t008-830d46",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 61,
+      "losses": 82,
+      "n": 143,
+      "share": 0.4266,
+      "low": 0.3485,
+      "high": 0.5085,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 31,
+      "n": 72,
+      "share": 0.4306,
+      "low": 0.3226,
+      "high": 0.5456,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t009-5bf7bb",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 90,
+      "losses": 42,
+      "n": 132,
+      "share": 0.6818,
+      "low": 0.5982,
+      "high": 0.7552,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 1,
+      "n": 72,
+      "share": 0.0139,
+      "low": 0.0025,
+      "high": 0.0746,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t010-95fa5e",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 103,
+      "losses": 82,
+      "n": 185,
+      "share": 0.5568,
+      "low": 0.4847,
+      "high": 0.6265,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 13,
+      "n": 72,
+      "share": 0.1806,
+      "low": 0.1087,
+      "high": 0.2848,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t012-68fbb7",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 142,
+      "losses": 92,
+      "n": 234,
+      "share": 0.6068,
+      "low": 0.543,
+      "high": 0.6672,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 3,
+      "n": 72,
+      "share": 0.0417,
+      "low": 0.0143,
+      "high": 0.1155,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t001-a98697",
+     "b": "t014-7c7808",
+     "aName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 45,
+      "losses": 25,
+      "n": 70,
+      "share": 0.6429,
+      "low": 0.5259,
+      "high": 0.745,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 29,
+      "n": 72,
+      "share": 0.4028,
+      "low": 0.2972,
+      "high": 0.5182,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t003-75e861",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "tournament": {
+      "wins": 278,
+      "losses": 232,
+      "n": 510,
+      "share": 0.5451,
+      "low": 0.5017,
+      "high": 0.5878,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 26,
+      "n": 72,
+      "share": 0.3611,
+      "low": 0.2598,
+      "high": 0.4765,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t004-15109d",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "tournament": {
+      "wins": 224,
+      "losses": 177,
+      "n": 401,
+      "share": 0.5586,
+      "low": 0.5097,
+      "high": 0.6064,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 36,
+      "n": 72,
+      "share": 0.5,
+      "low": 0.3875,
+      "high": 0.6125,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t005-46ed7e",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "tournament": {
+      "wins": 310,
+      "losses": 205,
+      "n": 515,
+      "share": 0.6019,
+      "low": 0.5591,
+      "high": 0.6433,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 34,
+      "n": 70,
+      "share": 0.4857,
+      "low": 0.3725,
+      "high": 0.6005,
+      "nonDecisive": 2
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t006-beda5a",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "tournament": {
+      "wins": 289,
+      "losses": 203,
+      "n": 492,
+      "share": 0.5874,
+      "low": 0.5434,
+      "high": 0.6301,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 40,
+      "n": 63,
+      "share": 0.6349,
+      "low": 0.5115,
+      "high": 0.7428,
+      "nonDecisive": 9
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t007-90bc66",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 73,
+      "losses": 80,
+      "n": 153,
+      "share": 0.4771,
+      "low": 0.3995,
+      "high": 0.5559,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 63,
+      "n": 72,
+      "share": 0.875,
+      "low": 0.7792,
+      "high": 0.9328,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t008-830d46",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 137,
+      "losses": 109,
+      "n": 246,
+      "share": 0.5569,
+      "low": 0.4944,
+      "high": 0.6176,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 72,
+      "n": 72,
+      "share": 1,
+      "low": 0.9493,
+      "high": 1,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t009-5bf7bb",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 89,
+      "losses": 54,
+      "n": 143,
+      "share": 0.6224,
+      "low": 0.5407,
+      "high": 0.6977,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 36,
+      "n": 69,
+      "share": 0.5217,
+      "low": 0.4059,
+      "high": 0.6353,
+      "nonDecisive": 3
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t010-95fa5e",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 146,
+      "losses": 102,
+      "n": 248,
+      "share": 0.5887,
+      "low": 0.5266,
+      "high": 0.6481,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 66,
+      "n": 72,
+      "share": 0.9167,
+      "low": 0.8299,
+      "high": 0.9612,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t012-68fbb7",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 74,
+      "losses": 53,
+      "n": 127,
+      "share": 0.5827,
+      "low": 0.4957,
+      "high": 0.6648,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 51,
+      "n": 72,
+      "share": 0.7083,
+      "low": 0.5949,
+      "high": 0.8006,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t002-6d0fc3",
+     "b": "t014-7c7808",
+     "aName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 59,
+      "losses": 25,
+      "n": 84,
+      "share": 0.7024,
+      "low": 0.5975,
+      "high": 0.7896,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 70,
+      "n": 72,
+      "share": 0.9722,
+      "low": 0.9043,
+      "high": 0.9923,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t004-15109d",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "tournament": {
+      "wins": 155,
+      "losses": 103,
+      "n": 258,
+      "share": 0.6008,
+      "low": 0.54,
+      "high": 0.6586,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 23,
+      "n": 72,
+      "share": 0.3194,
+      "low": 0.2233,
+      "high": 0.4339,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t005-46ed7e",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "tournament": {
+      "wins": 221,
+      "losses": 124,
+      "n": 345,
+      "share": 0.6406,
+      "low": 0.5887,
+      "high": 0.6894,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 55,
+      "n": 72,
+      "share": 0.7639,
+      "low": 0.654,
+      "high": 0.847,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t006-beda5a",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "tournament": {
+      "wins": 156,
+      "losses": 233,
+      "n": 389,
+      "share": 0.401,
+      "low": 0.3535,
+      "high": 0.4505,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 47,
+      "n": 72,
+      "share": 0.6528,
+      "low": 0.5376,
+      "high": 0.7525,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t007-90bc66",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 46,
+      "losses": 62,
+      "n": 108,
+      "share": 0.4259,
+      "low": 0.3368,
+      "high": 0.5201,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 58,
+      "n": 72,
+      "share": 0.8056,
+      "low": 0.6997,
+      "high": 0.8805,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t008-830d46",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 68,
+      "losses": 81,
+      "n": 149,
+      "share": 0.4564,
+      "low": 0.3785,
+      "high": 0.5364,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 56,
+      "n": 72,
+      "share": 0.7778,
+      "low": 0.6691,
+      "high": 0.8583,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t009-5bf7bb",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 46,
+      "losses": 60,
+      "n": 106,
+      "share": 0.434,
+      "low": 0.3436,
+      "high": 0.529,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 33,
+      "n": 72,
+      "share": 0.4583,
+      "low": 0.3483,
+      "high": 0.5726,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t010-95fa5e",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 50,
+      "losses": 90,
+      "n": 140,
+      "share": 0.3571,
+      "low": 0.2826,
+      "high": 0.4394,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 65,
+      "n": 72,
+      "share": 0.9028,
+      "low": 0.8126,
+      "high": 0.9521,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t012-68fbb7",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 91,
+      "losses": 60,
+      "n": 151,
+      "share": 0.6026,
+      "low": 0.523,
+      "high": 0.6772,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 34,
+      "n": 72,
+      "share": 0.4722,
+      "low": 0.3613,
+      "high": 0.586,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t003-75e861",
+     "b": "t014-7c7808",
+     "aName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 35,
+      "losses": 51,
+      "n": 86,
+      "share": 0.407,
+      "low": 0.3093,
+      "high": 0.5126,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 53,
+      "n": 72,
+      "share": 0.7361,
+      "low": 0.6242,
+      "high": 0.8241,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t005-46ed7e",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "tournament": {
+      "wins": 163,
+      "losses": 130,
+      "n": 293,
+      "share": 0.5563,
+      "low": 0.4991,
+      "high": 0.6121,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 54,
+      "n": 70,
+      "share": 0.7714,
+      "low": 0.6605,
+      "high": 0.8541,
+      "nonDecisive": 2
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t006-beda5a",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "tournament": {
+      "wins": 104,
+      "losses": 209,
+      "n": 313,
+      "share": 0.3323,
+      "low": 0.2824,
+      "high": 0.3862,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 54,
+      "n": 69,
+      "share": 0.7826,
+      "low": 0.6718,
+      "high": 0.8636,
+      "nonDecisive": 3
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t007-90bc66",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 28,
+      "losses": 42,
+      "n": 70,
+      "share": 0.4,
+      "low": 0.2933,
+      "high": 0.5171,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 57,
+      "n": 72,
+      "share": 0.7917,
+      "low": 0.6843,
+      "high": 0.8695,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t008-830d46",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 81,
+      "losses": 55,
+      "n": 136,
+      "share": 0.5956,
+      "low": 0.5116,
+      "high": 0.6743,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 66,
+      "n": 72,
+      "share": 0.9167,
+      "low": 0.8299,
+      "high": 0.9612,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t009-5bf7bb",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 56,
+      "losses": 51,
+      "n": 107,
+      "share": 0.5234,
+      "low": 0.4296,
+      "high": 0.6155,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 39,
+      "n": 70,
+      "share": 0.5571,
+      "low": 0.4408,
+      "high": 0.6675,
+      "nonDecisive": 2
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t010-95fa5e",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 52,
+      "losses": 45,
+      "n": 97,
+      "share": 0.5361,
+      "low": 0.4374,
+      "high": 0.6321,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 63,
+      "n": 72,
+      "share": 0.875,
+      "low": 0.7792,
+      "high": 0.9328,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t012-68fbb7",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 84,
+      "losses": 34,
+      "n": 118,
+      "share": 0.7119,
+      "low": 0.6245,
+      "high": 0.7859,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 47,
+      "n": 72,
+      "share": 0.6528,
+      "low": 0.5376,
+      "high": 0.7525,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t004-15109d",
+     "b": "t014-7c7808",
+     "aName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 28,
+      "losses": 51,
+      "n": 79,
+      "share": 0.3544,
+      "low": 0.258,
+      "high": 0.4644,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 61,
+      "n": 72,
+      "share": 0.8472,
+      "low": 0.7468,
+      "high": 0.9125,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t006-beda5a",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "tournament": {
+      "wins": 183,
+      "losses": 184,
+      "n": 367,
+      "share": 0.4986,
+      "low": 0.4478,
+      "high": 0.5495,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 38,
+      "n": 72,
+      "share": 0.5278,
+      "low": 0.414,
+      "high": 0.6387,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t007-90bc66",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 52,
+      "losses": 35,
+      "n": 87,
+      "share": 0.5977,
+      "low": 0.4926,
+      "high": 0.6945,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 48,
+      "n": 72,
+      "share": 0.6667,
+      "low": 0.5518,
+      "high": 0.7647,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t008-830d46",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 44,
+      "losses": 66,
+      "n": 110,
+      "share": 0.4,
+      "low": 0.3133,
+      "high": 0.4934,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 53,
+      "n": 72,
+      "share": 0.7361,
+      "low": 0.6242,
+      "high": 0.8241,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t009-5bf7bb",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 67,
+      "losses": 55,
+      "n": 122,
+      "share": 0.5492,
+      "low": 0.4607,
+      "high": 0.6346,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 23,
+      "n": 72,
+      "share": 0.3194,
+      "low": 0.2233,
+      "high": 0.4339,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t010-95fa5e",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 22,
+      "losses": 107,
+      "n": 129,
+      "share": 0.1705,
+      "low": 0.1154,
+      "high": 0.2447,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 49,
+      "n": 72,
+      "share": 0.6806,
+      "low": 0.5661,
+      "high": 0.7767,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t012-68fbb7",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 73,
+      "losses": 65,
+      "n": 138,
+      "share": 0.529,
+      "low": 0.4461,
+      "high": 0.6104,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 28,
+      "n": 72,
+      "share": 0.3889,
+      "low": 0.2847,
+      "high": 0.5044,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t005-46ed7e",
+     "b": "t014-7c7808",
+     "aName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 18,
+      "losses": 38,
+      "n": 56,
+      "share": 0.3214,
+      "low": 0.214,
+      "high": 0.4518,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 39,
+      "n": 72,
+      "share": 0.5417,
+      "low": 0.4274,
+      "high": 0.6517,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t007-90bc66",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "tournament": {
+      "wins": 69,
+      "losses": 22,
+      "n": 91,
+      "share": 0.7582,
+      "low": 0.661,
+      "high": 0.8346,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 52,
+      "n": 72,
+      "share": 0.7222,
+      "low": 0.6095,
+      "high": 0.8124,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t008-830d46",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 114,
+      "losses": 28,
+      "n": 142,
+      "share": 0.8028,
+      "low": 0.7298,
+      "high": 0.8599,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 72,
+      "n": 72,
+      "share": 1,
+      "low": 0.9493,
+      "high": 1,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t009-5bf7bb",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 61,
+      "losses": 36,
+      "n": 97,
+      "share": 0.6289,
+      "low": 0.5295,
+      "high": 0.7184,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 39,
+      "n": 72,
+      "share": 0.5417,
+      "low": 0.4274,
+      "high": 0.6517,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t010-95fa5e",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 61,
+      "losses": 87,
+      "n": 148,
+      "share": 0.4122,
+      "low": 0.3361,
+      "high": 0.4927,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 71,
+      "n": 72,
+      "share": 0.9861,
+      "low": 0.9254,
+      "high": 0.9975,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t012-68fbb7",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 54,
+      "losses": 113,
+      "n": 167,
+      "share": 0.3234,
+      "low": 0.2571,
+      "high": 0.3976,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 25,
+      "n": 70,
+      "share": 0.3571,
+      "low": 0.255,
+      "high": 0.4741,
+      "nonDecisive": 2
+     }
+    },
+    {
+     "a": "t006-beda5a",
+     "b": "t014-7c7808",
+     "aName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 25,
+      "losses": 48,
+      "n": 73,
+      "share": 0.3425,
+      "low": 0.2439,
+      "high": 0.4567,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 40,
+      "n": 72,
+      "share": 0.5556,
+      "low": 0.4409,
+      "high": 0.6646,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t007-90bc66",
+     "b": "t008-830d46",
+     "aName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "bName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "tournament": {
+      "wins": 23,
+      "losses": 16,
+      "n": 39,
+      "share": 0.5897,
+      "low": 0.4342,
+      "high": 0.7292,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 46,
+      "n": 72,
+      "share": 0.6389,
+      "low": 0.5235,
+      "high": 0.7402,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t007-90bc66",
+     "b": "t009-5bf7bb",
+     "aName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 26,
+      "losses": 19,
+      "n": 45,
+      "share": 0.5778,
+      "low": 0.433,
+      "high": 0.7103,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 21,
+      "n": 72,
+      "share": 0.2917,
+      "low": 0.1994,
+      "high": 0.4051,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t007-90bc66",
+     "b": "t010-95fa5e",
+     "aName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 17,
+      "losses": 28,
+      "n": 45,
+      "share": 0.3778,
+      "low": 0.2511,
+      "high": 0.5237,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 37,
+      "n": 72,
+      "share": 0.5139,
+      "low": 0.4007,
+      "high": 0.6257,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t007-90bc66",
+     "b": "t012-68fbb7",
+     "aName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 24,
+      "losses": 26,
+      "n": 50,
+      "share": 0.48,
+      "low": 0.348,
+      "high": 0.6149,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 18,
+      "n": 72,
+      "share": 0.25,
+      "low": 0.1644,
+      "high": 0.3609,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t007-90bc66",
+     "b": "t014-7c7808",
+     "aName": "Admiral Piett, Commanding the Armada / Aggression base, signature Craving Power",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 7,
+      "losses": 8,
+      "n": 15,
+      "share": 0.4667,
+      "low": 0.2481,
+      "high": 0.6988,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 27,
+      "n": 72,
+      "share": 0.375,
+      "low": 0.2722,
+      "high": 0.4905,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t008-830d46",
+     "b": "t009-5bf7bb",
+     "aName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "bName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "tournament": {
+      "wins": 26,
+      "losses": 26,
+      "n": 52,
+      "share": 0.5,
+      "low": 0.3689,
+      "high": 0.6311,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 3,
+      "n": 72,
+      "share": 0.0417,
+      "low": 0.0143,
+      "high": 0.1155,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t008-830d46",
+     "b": "t010-95fa5e",
+     "aName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 36,
+      "losses": 33,
+      "n": 69,
+      "share": 0.5217,
+      "low": 0.4059,
+      "high": 0.6353,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 11,
+      "n": 72,
+      "share": 0.1528,
+      "low": 0.0875,
+      "high": 0.2532,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t008-830d46",
+     "b": "t012-68fbb7",
+     "aName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 44,
+      "losses": 18,
+      "n": 62,
+      "share": 0.7097,
+      "low": 0.5871,
+      "high": 0.8078,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 6,
+      "n": 71,
+      "share": 0.0845,
+      "low": 0.0393,
+      "high": 0.1724,
+      "nonDecisive": 1
+     }
+    },
+    {
+     "a": "t008-830d46",
+     "b": "t014-7c7808",
+     "aName": "The Mandalorian, We Can't Keep Running / Vigilance base, signature Charged with Treason",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 24,
+      "losses": 7,
+      "n": 31,
+      "share": 0.7742,
+      "low": 0.6019,
+      "high": 0.886,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 15,
+      "n": 72,
+      "share": 0.2083,
+      "low": 0.1305,
+      "high": 0.3157,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t009-5bf7bb",
+     "b": "t010-95fa5e",
+     "aName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "bName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "tournament": {
+      "wins": 13,
+      "losses": 35,
+      "n": 48,
+      "share": 0.2708,
+      "low": 0.1657,
+      "high": 0.41,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 61,
+      "n": 71,
+      "share": 0.8592,
+      "low": 0.7598,
+      "high": 0.9217,
+      "nonDecisive": 1
+     }
+    },
+    {
+     "a": "t009-5bf7bb",
+     "b": "t012-68fbb7",
+     "aName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 21,
+      "losses": 37,
+      "n": 58,
+      "share": 0.3621,
+      "low": 0.2505,
+      "high": 0.4907,
+      "excludesHalf": true
+     },
+     "sim": {
+      "wins": 20,
+      "n": 71,
+      "share": 0.2817,
+      "low": 0.1904,
+      "high": 0.3954,
+      "nonDecisive": 1
+     }
+    },
+    {
+     "a": "t009-5bf7bb",
+     "b": "t014-7c7808",
+     "aName": "Luke Skywalker, I Can Save Him / Command base, signature Rey, Skywalker",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 11,
+      "losses": 13,
+      "n": 24,
+      "share": 0.4583,
+      "low": 0.2789,
+      "high": 0.6493,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 55,
+      "n": 72,
+      "share": 0.7639,
+      "low": 0.654,
+      "high": 0.847,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t010-95fa5e",
+     "b": "t012-68fbb7",
+     "aName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "bName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "tournament": {
+      "wins": 52,
+      "losses": 36,
+      "n": 88,
+      "share": 0.5909,
+      "low": 0.4865,
+      "high": 0.6877,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 8,
+      "n": 72,
+      "share": 0.1111,
+      "low": 0.0574,
+      "high": 0.2042,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t010-95fa5e",
+     "b": "t014-7c7808",
+     "aName": "Lando Calrissian, Full Sabacc / Vigilance base, signature B-Wing Rearguard",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 21,
+      "losses": 11,
+      "n": 32,
+      "share": 0.6563,
+      "low": 0.4831,
+      "high": 0.7959,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 39,
+      "n": 72,
+      "share": 0.5417,
+      "low": 0.4274,
+      "high": 0.6517,
+      "nonDecisive": 0
+     }
+    },
+    {
+     "a": "t012-68fbb7",
+     "b": "t014-7c7808",
+     "aName": "Darth Maul, Sith Revealed / Vigilance base (variant 1)",
+     "bName": "Aurra Sing, Assassin / Command base",
+     "tournament": {
+      "wins": 19,
+      "losses": 18,
+      "n": 37,
+      "share": 0.5135,
+      "low": 0.3589,
+      "high": 0.6655,
+      "excludesHalf": false
+     },
+     "sim": {
+      "wins": 59,
+      "n": 72,
+      "share": 0.8194,
+      "low": 0.7152,
+      "high": 0.8913,
+      "nonDecisive": 0
+     }
+    }
+   ]
+  }
+ },
+ "pass": false,
+ "servesWinShare": false,
+ "failedGates": [
+  "external"
+ ]
+}
