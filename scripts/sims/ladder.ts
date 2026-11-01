@@ -20,7 +20,8 @@
  *   ... --mode cost --specs "rung0|rung1|rung2:mu=1,lambda=1" [--games 72]
  *   ... --mode panel
  * Policy names: rung0 (the driver's random rung), greedy-hash (the spike's name-hash baseline), rung1, rung2:mu=..,lambda=..,
- * rung3[:k=..,horizon=reply|round,wBase=..,...], rung3mc[:n=..,length=game|round,playout=rung0|rung1,...] (src/sims/policies/index.ts).
+ * rung3[:k=..,horizon=reply|round,wBase=..,...], rung3mc[:n=..,length=game|round,playout=rung0|rung1,...], and the learned
+ * rung3v:k=..,ev=v1 and rung4:d=..,k=..,m=..,ev=v1 (#128, registered from scripts/sims/policy/learned.ts) (src/sims/policies/index.ts).
  * A game with a rung 3 seat runs with undo on,
  * which rung 3's snapshots need; undo does not change rung 0 to 2 traces (tests/sims/policies/rung3-engine.test.ts).
  * SIMS_DRIVER_ROOT points at another checkout's driver (default: this repo).
@@ -39,6 +40,7 @@ import { driverName, registerRungs, type DriverPolicy } from "../../src/sims/pol
 import { loadTables } from "../../src/sims/policies/tables.js";
 import { codeCommit } from "../bench/code-commit.js";
 import { progress } from "../lib/progress.mjs";
+import { prepareLearned, registerLearned } from "./policy/learned.js";
 
 const SEEDS = { tuning: 1_000_000, evaluation: 2_000_000, deckCheck: 3_000_000, headToHead: 1 } as const;
 const DEFAULT_RUN = path.join(REPO_ROOT, "data/runs/2026-10-31");
@@ -58,7 +60,7 @@ interface Footer {
 }
 interface Driver {
   policy: { POLICIES: Record<string, () => unknown>; PolicyChain: new (ps: unknown[]) => any };
-  match: { playMatch(engine: any, spec: unknown, cardKeys: Record<string, string>): Promise<{ record: { footer: Footer } }> };
+  match: { playMatch(engine: any, spec: unknown, cardKeys: Record<string, string>): Promise<{ record: { footer: Footer }; session: { search: { bookmarks: number; rollbacks: number } } | null }> };
   pool: { createPool(opts: { workers: number; forceteki?: string; pin: unknown; resourceLimits?: { maxOldGenerationSizeMb: number; maxYoungGenerationSizeMb: number } }): Promise<{ run(req: { specs: unknown[]; cardKeys: Record<string, string> }): Promise<{ footer: Footer }[]>; close(): Promise<void> }> };
   engine: { topCoreClassSize(): number };
   context: { DEFAULT_ORIGINALS: string; loadContext(v: { forceteki: string; run: string; originals: string; "no-memo": boolean }): { engine: any; bridge: { engineCardKeys: Record<string, string> }; codeCommit: string } };
@@ -231,6 +233,7 @@ async function main(): Promise<void> {
   process.env.SIMS_POLICY_SPECS = names.join(";");
   process.env.SIMS_RUN = runDir;
   process.env.SIMS_DRIVER_ROOT = DRIVER_ROOT;
+  const viewKeys = prepareLearned({ names, engineCardKeys: ctx.bridge.engineCardKeys });
   if (tables.pairTable !== null) {
     const file = path.join(REPO_ROOT, "tmp", `sims-pair-table-${tables.pins.pairsSha256}.json`);
     mkdirSync(path.dirname(file), { recursive: true });
@@ -252,7 +255,7 @@ async function main(): Promise<void> {
   const t0 = performance.now();
   let played = 0;
 
-  const searches = (spec: string): boolean => ["lookahead", "montecarlo"].includes(parsePolicySpec(spec).kind);
+  const searches = (spec: string): boolean => ["lookahead", "montecarlo", "learned"].includes(parsePolicySpec(spec).kind);
   const toSpec = (j: Job) => ({ seed: String(j.seed), decks: [deckInputs[j.deck1], deckInputs[j.deck2]], policies: j.specs.map(driverName), recordMode: "none", undo: j.specs.some(searches), codeCommit: myCommit });
   const toResult = (j: Job, f: Footer): GameResult => ({
     seed: j.seed,
@@ -564,6 +567,7 @@ async function main(): Promise<void> {
       };
       const registry: Record<string, () => unknown> = {};
       registerRungs(registry, (ps) => new driver.policy.PolicyChain(ps.map(timed)), names, tables);
+      if (viewKeys !== null) registerLearned(registry, (ps) => new driver.policy.PolicyChain((ps as DriverPolicy[]).map(timed)), names, tables, { viewKeys });
       for (const [k, make] of Object.entries(registry)) driver.policy.POLICIES[k] = make;
       const rows = [];
       for (const spec of specs) {
@@ -574,10 +578,14 @@ async function main(): Promise<void> {
         instances.length = 0;
         const t = performance.now();
         let decisions = 0;
+        const engineSearch = { bookmarks: 0, rollbacks: 0 };
         const results: GameResult[] = [];
         for (let g = 0; g < n; g++) {
           const j: Job = { deck1: ordered[g % ordered.length][0], deck2: ordered[g % ordered.length][1], seed: SEEDS.evaluation + 500_000 + g, specs: [spec, spec] };
-          const f = (await driver.match.playMatch(ctx.engine, toSpec(j), ctx.bridge.engineCardKeys)).record.footer;
+          const pm = await driver.match.playMatch(ctx.engine, toSpec(j), ctx.bridge.engineCardKeys);
+          const f = pm.record.footer;
+          engineSearch.bookmarks += pm.session?.search.bookmarks ?? 0;
+          engineSearch.rollbacks += pm.session?.search.rollbacks ?? 0;
           results.push(toResult(j, f));
           decisions += f.result.decisions;
           p.tick(++played, { phase: spec });
@@ -593,8 +601,10 @@ async function main(): Promise<void> {
           search: (() => {
             const cs = instances.map((x) => (x as unknown as { counters?: Record<string, number> }).counters).filter((c): c is Record<string, number> => c !== undefined);
             if (cs.length === 0) return null;
-            const sum = (k: string): number => cs.reduce((a, c) => a + c[k], 0);
-            return { ...Object.fromEntries(Object.keys(cs[0]).map((k) => [k, sum(k)])), mainActionMsPerSearch: sum("searches") === 0 ? null : Math.round((timing.mainMs / sum("searches")) * 1e3) / 1e3 };
+            // chainForHeader builds one chain of every registered policy per match, so other rungs' counters are here too.
+            const sum = (k: string): number => cs.reduce((a, c) => a + (c[k] ?? 0), 0);
+            const keys = [...new Set(cs.flatMap((c) => Object.keys(c)))];
+            return { ...Object.fromEntries(keys.map((k) => [k, sum(k)])), mainActionMsPerSearch: sum("searches") === 0 ? null : Math.round((timing.mainMs / sum("searches")) * 1e3) / 1e3, bookmarksPerSearch: sum("searches") === 0 ? null : Math.round((engineSearch.bookmarks / sum("searches")) * 100) / 100, rollbacksPerSearch: sum("searches") === 0 ? null : Math.round((engineSearch.rollbacks / sum("searches")) * 100) / 100 };
           })(),
           gamesPerSecondOneThread: Math.round((n / (ms / 1000)) * 10) / 10,
           endConditions: health(results, () => 0).endConditions,

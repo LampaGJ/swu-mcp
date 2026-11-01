@@ -53,7 +53,9 @@
     "sims:inventory": "tsx scripts/sims/inventory-models.ts",
     "sims:vocab": "tsx scripts/sims/build-vocab.ts",
     "sims:branches": "tsx scripts/sims/sample-branches.ts",
-    "sims:train-evaluator": "tsx scripts/sims/train-evaluator.ts"
+    "sims:train-evaluator": "tsx scripts/sims/train-evaluator.ts",
+    "sims:bench-evaluator": "node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/bench-evaluator.ts",
+    "sims:evaluator-parity": "tsx scripts/sims/evaluator-parity.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",

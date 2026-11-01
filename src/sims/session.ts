@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { compareCodePoints } from "../swu/canonical.js";
+import { canonicalJson, compareCodePoints } from "../swu/canonical.js";
 import { enumerateActions, promptKindOf, type CanonicalAction, type PromptKind } from "./actions.js";
 import { bookmarkState, engineStateSha, releaseBookmark, rngCursor, rollbackState, type EngineBookmark, type EngineGame, type EnginePlayer, type StartedGame } from "./engine.js";
-import { PolicyChain, type ChainChoice, type SearchBookmark, type SearchHooks } from "./policy.js";
+import { PolicyChain, type ChainChoice, type DecisionObserver, type SearchBookmark, type SearchHooks } from "./policy.js";
 import { DecisionRandom, type Seat } from "./rng.js";
 import { legalActionsSha256, type CompactDecision, type FullDecision, type MatchFooter, type RngCursor } from "./schemas.js";
 
@@ -14,7 +14,8 @@ import { legalActionsSha256, type CompactDecision, type FullDecision, type Match
  * pause, so pausing changes where the loop yields, not what it does. Every engine or driver exception ends the match
  * with endCondition error and a null winner; nothing is dropped. Each policy view carries bookmark and rollback hooks
  * for a search (rung 3, #163); after a rollback the chosen action is re-enumerated, because the rebuilt prompt has a
- * new uuid.
+ * new uuid. An optional observer scores every main-action state before the policy chooses (#127), and a learned
+ * search's block is kept per decision (#128); each adds its own hashes to the footer only when present.
  */
 
 export type EndCondition = MatchFooter["result"]["endCondition"];
@@ -40,6 +41,18 @@ export interface SessionOptions {
   manualSnapshotType?: unknown;
   /** Fidelity mode: every rollback must restore the full state fingerprint taken at its bookmark, or the match errors. */
   verifyRollback?: boolean;
+  /** Scores every main-action state before the policy chooses (#127); the values never reach the choice. */
+  observer?: DecisionObserver;
+}
+
+const r4 = (x: number): number => Math.round(x * 1e4) / 1e4;
+
+/**
+ * The decision record an observed match hashes into recordSha256 (#127). No timing field may appear here: two runs of
+ * the same seed must hash alike on any worker count.
+ */
+export function observedRecord(d: { k: number; phase: string; actor: Seat; promptKind: PromptKind; legalActionsSha256: string; chosen: string; rngCursor: RngCursor; values: readonly number[] | null }) {
+  return { k: d.k, phase: d.phase, actor: d.actor, promptKind: d.promptKind, legalActionsSha256: d.legalActionsSha256, chosen: d.chosen, rngCursor: d.rngCursor, values: d.values === null ? null : d.values.map(r4) };
 }
 
 /**
@@ -107,6 +120,11 @@ export class Session {
   private idle = 0;
   private readonly hash = createHash("sha256");
   private readonly started: StartedGame;
+  private readonly recordHash = createHash("sha256");
+  private readonly valueHash = createHash("sha256");
+  private readonly searchHash = createHash("sha256");
+  private readonly observed = { mainDecisions: 0, calls: 0 };
+  private searchDecisions = 0;
 
   constructor(
     started: StartedGame,
@@ -194,7 +212,7 @@ export class Session {
           this.advance();
           continue;
         }
-        const pending = this.pendingFor(seat, actions, opts.until !== undefined || opts.check !== undefined);
+        const pending = this.pendingFor(seat, actions, opts.until !== undefined || opts.check !== undefined || this.opts.observer !== undefined);
         if (opts.until?.(pending, this) === true) return "paused";
         if (!this.decide(pending, opts)) return "paused";
         this.actedThisPass = true;
@@ -213,6 +231,8 @@ export class Session {
     const { seat, actions } = pending;
     const random = new DecisionRandom(this.opts.seed, seat, this.k);
     const chain = this.opts.chains[seat - 1];
+    const observer = this.opts.observer;
+    const values = observer !== undefined && pending.promptKind === "mainAction" ? this.observe(observer, seat, actions.length) : null;
     const forced = opts.force?.(pending, this) ?? null;
     const choice: ChainChoice =
       forced === null
@@ -221,7 +241,7 @@ export class Session {
             { seat, k: this.k, promptKind: pending.promptKind, multi: this.players[seat - 1].promptState.selectCardMode === "multiple", game: this.game, players: this.players, search: this.hooks[seat - 1] },
             random.next,
           )
-        : { index: forced, policy: chain.top, fallback: "forced", utilities: null };
+        : { index: forced, policy: chain.top, fallback: "forced", utilities: null, search: null };
     if (opts.check?.(pending, choice, this) === true) return false;
     let chosen = actions[choice.index];
     if (this.rolledBack) {
@@ -240,6 +260,14 @@ export class Session {
       }
     }
     this.hash.update(`${seat}|${chosen.action.descriptor}\n`);
+    if (observer !== undefined) {
+      const phase = String(this.game.currentPhase ?? "none");
+      this.recordHash.update(`${JSON.stringify(observedRecord({ k: this.k, phase, actor: seat, promptKind: pending.promptKind, legalActionsSha256: pending.legalActionsSha256, chosen: chosen.action.descriptor, rngCursor: pending.rngCursor, values }))}\n`);
+    }
+    if (choice.search !== null) {
+      this.searchDecisions += 1;
+      this.searchHash.update(`${this.k}|${canonicalJson(choice.search)}\n`);
+    }
     if (this.opts.recordMode === "full") {
       const phase = this.game.currentPhase;
       if (phase !== "setup" && phase !== "action" && phase !== "regroup") throw new Error(`unexpected engine phase ${String(phase)} at decision ${this.k}`);
@@ -253,9 +281,11 @@ export class Session {
         legalActionsSha256: pending.legalActionsSha256,
         chosen: { i: choice.index, descriptor: chosen.action.descriptor },
         rngCursor: pending.rngCursor,
-        evaluator: { rung: choice.policy.rung, version: choice.policy.policyVersion, sha256: null },
+        evaluator: { rung: choice.policy.rung, version: choice.policy.policyVersion, sha256: choice.policy.evaluatorSha256 ?? null },
         utilities: choice.utilities,
         fallback: choice.fallback,
+        ...(values === null ? {} : { values: values.map(r4) }),
+        ...(choice.search === null ? {} : { search: choice.search }),
       });
     } else if (this.opts.recordMode === "compact") {
       this.decisions.push({ k: this.k, actor: seat, legalActionsSha256: pending.legalActionsSha256, chosen: chosen.action.descriptor, rngCursor: pending.rngCursor });
@@ -265,6 +295,15 @@ export class Session {
     this.botDraws += random.draws;
     this.game.continue();
     return true;
+  }
+
+  private observe(observer: DecisionObserver, seat: Seat, nAnswers: number): number[] {
+    const values = observer.score(this.game, seat, nAnswers);
+    this.observed.mainDecisions += 1;
+    this.observed.calls += values.length;
+    const bits = new Float64Array(values);
+    this.valueHash.update(new Uint8Array(bits.buffer));
+    return values;
   }
 
   traceSha256(): string {
@@ -298,6 +337,20 @@ export class Session {
       ) as MatchFooter["endBoard"],
       finalRngCursor: this.cursorNow(),
       traceSha256: this.traceSha256(),
+      ...(this.opts.observer === undefined
+        ? {}
+        : {
+            observer: {
+              version: this.opts.observer.version,
+              sha256: this.opts.observer.sha256,
+              load: this.opts.observer.load,
+              mainDecisions: this.observed.mainDecisions,
+              calls: this.observed.calls,
+              recordSha256: this.recordHash.copy().digest("hex"),
+              valueSha256: this.valueHash.copy().digest("hex"),
+            },
+          }),
+      ...(this.searchDecisions === 0 ? {} : { search: { decisions: this.searchDecisions, searchSha256: this.searchHash.copy().digest("hex") } }),
     };
   }
 }

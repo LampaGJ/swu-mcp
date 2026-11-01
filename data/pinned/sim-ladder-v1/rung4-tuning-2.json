@@ -1,0 +1,268 @@
+{
+ "schemaVersion": 1,
+ "step": "rung4-tuning-2",
+ "label": "bot play (forceteki, typed driver), not human results",
+ "baseline": {
+  "spec": "rung3:k=8",
+  "id": "rung3-lookahead",
+  "version": "1",
+  "rung": 3,
+  "params": {
+   "k": 8,
+   "horizon": 1,
+   "wBase": 1.5,
+   "wBoard": 1,
+   "wHand": 1,
+   "wResources": 1,
+   "wReady": 1,
+   "wScore": 0,
+   "maxTrialDecisions": 400,
+   "vVersion": 1
+  },
+  "paramsSha256": "15de7a05de373f65de29a3ccd4de4c691422b47176b5f80065ed546d5efbc856",
+  "driverPolicy": "rung3:k=8"
+ },
+ "driver": {
+  "name": "typed (src/sims)",
+  "codeCommit": "97ed6bd5d522506c03b8e2528bb80d13d202881c-dirty",
+  "botScheme": "sha256-counter-v1",
+  "recordMode": "none"
+ },
+ "engine": {
+  "repo": "https://github.com/SWU-Karabast/forceteki.git",
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "inputs": {
+  "scoresSha256": "edbc91eb4b7d18d3e5fe76c4e31ac2092697047c033cb3da58b9885bd00b4284",
+  "coefficientsSha256": "ef8341c6b6673d59e790ff9d79279bed5292c8fc0b254ee9c374b4a7d476936f",
+  "featuresSha256": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "leaderCardsSha256": "6f828e4f54941acaff7691db4ded2ea5a236b4c2de87226a319dc322a1b726eb",
+  "pairsSha256": null,
+  "pairPrecisionSha256": null,
+  "complementaritySha256": null
+ },
+ "run": "2026-10-31",
+ "panel": [
+  {
+   "archetype": "t001-a98697",
+   "archetypeName": "Director Krennic, Amidst My Achievement / Vigilance base, signature Imperial Door Technician",
+   "share": 0.0754,
+   "file": "melee-5681125d-f7a1-4c75-87ca-b4bc0160f8a6.json",
+   "placement": 1,
+   "field": 72,
+   "date": "2026-09-06",
+   "sha256": "a94a1f812a931cdc081e752bb3bc115618cddd980d45127bb4e30d82d635cf3b"
+  },
+  {
+   "archetype": "t002-6d0fc3",
+   "archetypeName": "Cad Bane, Still Faster than You / Vigilance base, signature Oggdo Bogdo, Bogano Brute",
+   "share": 0.0716,
+   "file": "melee-2162c700-3b5a-424d-95cb-b4920028faa5.json",
+   "placement": 1,
+   "field": 545,
+   "date": "2026-07-25",
+   "sha256": "6fffe102c14b889b8fbb59aab8416e6f7216ab7d28d40226f813e21374281cc6"
+  },
+  {
+   "archetype": "t003-75e861",
+   "archetypeName": "Luke Skywalker, Hero of Yavin / Command base, signature Crackshot V-Wing",
+   "share": 0.051,
+   "file": "melee-46ae29fa-01b5-4a84-8a78-b4d101228caf.json",
+   "placement": 1,
+   "field": 97,
+   "date": "2026-09-27",
+   "sha256": "bd507aa9298d16e212de6a7bc40ff68914f3e9e65c7b144187d264071c2b0d53"
+  },
+  {
+   "archetype": "t004-15109d",
+   "archetypeName": "Boba Fett, Any Methods Necessary / neutral base, signature Syril Karn, Where Is He?",
+   "share": 0.0478,
+   "file": "melee-94acf967-5ed2-4f3f-9b7c-b4c90186712e.json",
+   "placement": 1,
+   "field": 42,
+   "date": "2026-09-19",
+   "sha256": "6750dc1aa20b17a8a8d23be4bfef84c3c7ec905a04a9a51c92e37b53a1f51323"
+  },
+  {
+   "archetype": "t005-46ed7e",
+   "archetypeName": "Darth Vader, Victor Squadron Leader / Cunning base, signature The Axe Forgets",
+   "share": 0.0385,
+   "file": "melee-56969b6a-395c-41f9-91cb-b4ad00fe690f.json",
+   "placement": 1,
+   "field": 24,
+   "date": "2026-08-23",
+   "sha256": "50dfdf3d84b841de1d18e555b1267b5ba4ac0e45c8aa705c1bab6e7290f6dc0e"
+  },
+  {
+   "archetype": "t006-beda5a",
+   "archetypeName": "Ahsoka Tano, Trust in the Force / Vigilance base, signature Sabine's Masterpiece, Crazy Colorful",
+   "share": 0.0365,
+   "file": "melee-4ae98532-3303-470b-b77d-b4d1002ee4ac.json",
+   "placement": 1,
+   "field": 74,
+   "date": "2026-09-26",
+   "sha256": "62784817ef64f28396b388843e5a5a1509a4b0e57bf9a91745b2e5594493fdbe"
+  }
+ ],
+ "codeCommit": "97ed6bd5d522506c03b8e2528bb80d13d202881c-dirty",
+ "seeds": {
+  "range": "tuning",
+  "from": 1000000,
+  "to": 1000071
+ },
+ "candidates": [
+  "rung4:d=2,k=4,m=1,ev=v1,horizon=round,noPass=1",
+  "rung4:d=2,k=3,m=2,ev=v1,horizon=round,noPass=1"
+ ],
+ "rows": [
+  {
+   "spec": "rung4:d=2,k=4,m=1,ev=v1,horizon=round,noPass=1",
+   "params": {
+    "k": 4,
+    "m": 1,
+    "d": 2,
+    "ev": 1,
+    "maxTrialDecisions": 400,
+    "sacGuard": 1,
+    "handCap": 1,
+    "horizon": 1,
+    "noPass": 1
+   },
+   "pooled": {
+    "wins": 63,
+    "n": 144,
+    "share": 0.4375,
+    "low": 0.3591,
+    "high": 0.5191
+   },
+   "discordant": {
+    "candidate2to0": 4,
+    "baseline2to0": 13,
+    "pValue": 0.04904
+   },
+   "nonDecisiveShare": 0,
+   "perDeck": {
+    "t001-a98697": {
+     "wins": 6,
+     "n": 24,
+     "share": 0.25,
+     "low": 0.12,
+     "high": 0.449
+    },
+    "t002-6d0fc3": {
+     "wins": 10,
+     "n": 24,
+     "share": 0.4167,
+     "low": 0.2447,
+     "high": 0.6117
+    },
+    "t003-75e861": {
+     "wins": 11,
+     "n": 24,
+     "share": 0.4583,
+     "low": 0.2789,
+     "high": 0.6493
+    },
+    "t004-15109d": {
+     "wins": 19,
+     "n": 24,
+     "share": 0.7917,
+     "low": 0.5953,
+     "high": 0.9076
+    },
+    "t005-46ed7e": {
+     "wins": 10,
+     "n": 24,
+     "share": 0.4167,
+     "low": 0.2447,
+     "high": 0.6117
+    },
+    "t006-beda5a": {
+     "wins": 7,
+     "n": 24,
+     "share": 0.2917,
+     "low": 0.1491,
+     "high": 0.4917
+    }
+   },
+   "decksAbove": 1,
+   "fallbackShare": 0.0001
+  },
+  {
+   "spec": "rung4:d=2,k=3,m=2,ev=v1,horizon=round,noPass=1",
+   "params": {
+    "k": 3,
+    "m": 2,
+    "d": 2,
+    "ev": 1,
+    "maxTrialDecisions": 400,
+    "sacGuard": 1,
+    "handCap": 1,
+    "horizon": 1,
+    "noPass": 1
+   },
+   "pooled": {
+    "wins": 62,
+    "n": 144,
+    "share": 0.4306,
+    "low": 0.3525,
+    "high": 0.5122
+   },
+   "discordant": {
+    "candidate2to0": 7,
+    "baseline2to0": 17,
+    "pValue": 0.06391
+   },
+   "nonDecisiveShare": 0,
+   "perDeck": {
+    "t001-a98697": {
+     "wins": 8,
+     "n": 24,
+     "share": 0.3333,
+     "low": 0.1797,
+     "high": 0.5329
+    },
+    "t002-6d0fc3": {
+     "wins": 11,
+     "n": 24,
+     "share": 0.4583,
+     "low": 0.2789,
+     "high": 0.6493
+    },
+    "t003-75e861": {
+     "wins": 11,
+     "n": 24,
+     "share": 0.4583,
+     "low": 0.2789,
+     "high": 0.6493
+    },
+    "t004-15109d": {
+     "wins": 18,
+     "n": 24,
+     "share": 0.75,
+     "low": 0.551,
+     "high": 0.88
+    },
+    "t005-46ed7e": {
+     "wins": 11,
+     "n": 24,
+     "share": 0.4583,
+     "low": 0.2789,
+     "high": 0.6493
+    },
+    "t006-beda5a": {
+     "wins": 3,
+     "n": 24,
+     "share": 0.125,
+     "low": 0.0434,
+     "high": 0.31
+    }
+   },
+   "decksAbove": 1,
+   "fallbackShare": 0.0001
+  }
+ ],
+ "best": "rung4:d=2,k=4,m=1,ev=v1,horizon=round,noPass=1"
+}

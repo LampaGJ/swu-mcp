@@ -11,6 +11,10 @@
  * (run with --import=./scripts/sims/ladder-preload.ts); --out writes that part as a deterministic gate record.
  * Exit 1 on any difference.
  *
+ * The learned rungs (#128, rung3v and rung4) go in --rung3 too; their searchSha256 must match as well as the trace.
+ * --neutral N plays N seeds of each learned spec with stub=1 (every leaf 0) against rung 1 and requires the trace of
+ * its ranking pilot rung1:sacGuard=1,handCap=1 played with undo on.
+ *
  * Usage: tsx scripts/sims/replay-gate.ts [--matches 50] [--workers 8] [--seed0 1] [--search 20 --rung3 "rung3|rung3mc" --out <file>]
  */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -28,6 +32,7 @@ import { canonicalJson } from "../../src/swu/canonical.js";
 import { isMain } from "../bench/code-commit.js";
 import { progress } from "../lib/progress.mjs";
 import { contextOptions, loadContext } from "./context.js";
+import { isLearned, prepareLearned, registerLearned } from "./policy/learned.js";
 import { loadDeck } from "./decks.js";
 
 const DECKS = path.join(REPO_ROOT, "data/originals/decks/2026-10-17");
@@ -52,6 +57,7 @@ async function main(): Promise<void> {
       rung2: { type: "string", default: "rung2:mu=0,lambda=1" },
       out: { type: "string" },
       "search-workers": { type: "string", default: "3,12" },
+      neutral: { type: "string", default: "0" },
     },
   });
   const ctx = loadContext(values);
@@ -66,7 +72,7 @@ async function main(): Promise<void> {
     return { seed: String(Number(values.seed0) + i), decks: swap ? [panel[b], panel[a]] : [panel[a], panel[b]], policies: ["rung0", "rung0"], recordMode: "compact", undo: false, codeCommit: ctx.codeCommit };
   });
   const nSearch = Number(values.search);
-  const p = progress("sims-replay-gate", { total: n * 5 + nSearch * (2 + (values.rung3 as string).split("|").filter(Boolean).length), everyN: 1 });
+  const p = progress("sims-replay-gate", { total: n * 5 + (nSearch + Number(values.neutral)) * (2 + (values.rung3 as string).split("|").filter(Boolean).length), everyN: 1 });
   let done = 0;
   const failures: string[] = [];
 
@@ -119,7 +125,10 @@ async function main(): Promise<void> {
   let searchReport: Record<string, unknown> | null = null;
   if (nSearch > 0) {
     const tables = loadTables({ runDir: values.run, complementarity: path.join(REPO_ROOT, "data/complementarity.json"), pairs: true });
-    registerRungs(POLICIES, (ps) => new PolicyChain(ps as never), ["rung1", values.rung2, ...values.rung3.split("|").filter(Boolean)], tables);
+    const searchNames = ["rung1", values.rung2, ...values.rung3.split("|").filter(Boolean)];
+    registerRungs(POLICIES, (ps) => new PolicyChain(ps as never), searchNames, tables);
+    const viewKeys = prepareLearned({ names: searchNames, engineCardKeys: keys });
+    if (viewKeys !== null) registerLearned(POLICIES, (ps) => new PolicyChain(ps as never), searchNames, tables, { viewKeys });
     const searchSpecs = specs.length >= nSearch ? specs.slice(0, nSearch) : Array.from({ length: nSearch }, (_, i) => {
       const [a, b] = pairs[i % pairs.length];
       return { ...specs[0], seed: String(Number(values.seed0) + i), decks: [panel[a], panel[b]] as const };
@@ -137,12 +146,39 @@ async function main(): Promise<void> {
       }
     }
     const rung3Specs = values.rung3.split("|").filter(Boolean);
+    const neutrality: { spec: string; seeds: number; identical: number; firstDifferingSeed: string | null }[] = [];
+    const nNeutral = Number(values.neutral);
+    if (nNeutral > 0) {
+      const pilotName = "rung1:sacGuard=1,handCap=1";
+      const stubs = rung3Specs.filter(isLearned).map((r3) => `${r3},stub=1`);
+      registerRungs(POLICIES, (ps) => new PolicyChain(ps as never), [pilotName], tables);
+      if (viewKeys !== null) registerLearned(POLICIES, (ps) => new PolicyChain(ps as never), stubs, tables, { viewKeys });
+      for (const stub of stubs) {
+        const row = { spec: stub, seeds: 0, identical: 0, firstDifferingSeed: null as string | null };
+        for (let i = 0; i < nNeutral; i++) {
+          const [a, b] = pairs[i % pairs.length];
+          const sp: MatchSpec = { ...specs[0], seed: String(Number(values.seed0) + 500 + i), decks: [panel[a], panel[b]], undo: true };
+          const ref = (await playMatch(ctx.engine, { ...sp, policies: [pilotName, "rung1"] }, keys)).record.footer.traceSha256;
+          const got = (await playMatch(ctx.engine, { ...sp, policies: [stub, "rung1"] }, keys)).record.footer.traceSha256;
+          row.seeds += 1;
+          if (got === ref) row.identical += 1;
+          else {
+            row.firstDifferingSeed = row.firstDifferingSeed ?? sp.seed;
+            failures.push(`neutrality: ${stub} seed ${sp.seed} differs from its pilot`);
+          }
+          p.tick(++done);
+        }
+        neutrality.push(row);
+      }
+    }
     const fidelity = [];
     const searchMatchSpecs: MatchSpec[][] = [];
     const singleTraces: string[][] = [];
+    const singleSearch: (string | null)[][] = [];
     for (const r3 of rung3Specs) {
       const fid = { spec: r3, matches: 0, decisions: 0, searches: 0, rollbacks: 0, verifiedRollbacks: 0, searchErrors: 0, oracleIdentical: 0, policyReplayIdentical: 0, endConditions: {} as Record<string, number>, tracesSha256: "" };
       const traces: string[] = [];
+      const searchHashes: (string | null)[] = [];
       searchMatchSpecs.push([]);
       for (const [i, sp] of searchSpecs.entries()) {
         const seat = i % 2;
@@ -154,6 +190,7 @@ async function main(): Promise<void> {
         fid.decisions += record.footer.result.decisions;
         fid.endConditions[record.footer.result.endCondition] = (fid.endConditions[record.footer.result.endCondition] ?? 0) + 1;
         traces.push(record.footer.traceSha256);
+        searchHashes.push(record.footer.search?.searchSha256 ?? null);
         if (record.footer.error !== null) failures.push(`rung 3 fidelity ${r3} seed ${sp.seed}: ${record.footer.error}`);
         if (session !== null) {
           const c = (session.opts.chains[seat].top as unknown as { counters: Record<string, number> }).counters;
@@ -173,6 +210,7 @@ async function main(): Promise<void> {
       fid.tracesSha256 = createHash("sha256").update(traces.join("\n")).digest("hex");
       fidelity.push(fid);
       singleTraces.push(traces);
+      singleSearch.push(searchHashes);
     }
     // The same rung 3 matches on worker pools of different sizes: every trace must equal the single-thread one.
     if (!process.execArgv.some((a) => a.includes("ladder-preload"))) throw new Error("--search needs --import=./scripts/sims/ladder-preload.ts so pool workers know the rung 3 policies");
@@ -186,27 +224,27 @@ async function main(): Promise<void> {
       try {
         for (const [si, r3] of rung3Specs.entries()) {
           const recs = await wpool.run({ specs: searchMatchSpecs[si], cardKeys: keys });
-          const identical = recs.filter((r, i) => r.footer.traceSha256 === singleTraces[si][i]).length;
+          const identical = recs.filter((r, i) => r.footer.traceSha256 === singleTraces[si][i] && (r.footer.search?.searchSha256 ?? null) === singleSearch[si][i]).length;
           acrossWorkers.push({ workers: w, spec: r3, identical, of: recs.length });
-          if (identical !== recs.length) failures.push(`rung 3 ${r3} on ${w} workers: ${recs.length - identical} traces differ from one thread`);
+          if (identical !== recs.length) failures.push(`rung 3 ${r3} on ${w} workers: ${recs.length - identical} traces or search hashes differ from one thread, first at seed ${searchMatchSpecs[si][recs.findIndex((r, i) => r.footer.traceSha256 !== singleTraces[si][i] || (r.footer.search?.searchSha256 ?? null) !== singleSearch[si][i])].seed}`);
         }
       } finally {
         await wpool.close();
       }
     }
-    searchReport = { matches: searchSpecs.length, seeds: searchSpecs.map((x) => x.seed), undoOnIdentical: undoSame, rung3: fidelity, acrossWorkers };
+    searchReport = { matches: searchSpecs.length, seeds: searchSpecs.map((x) => x.seed), undoOnIdentical: undoSame, rung3: fidelity, acrossWorkers, ...(neutrality.length === 0 ? {} : { neutrality }) };
     if (values.out) {
       mkdirSync(path.dirname(path.resolve(values.out)), { recursive: true });
       const record = {
         schemaVersion: 1,
-        step: "rung3-fidelity",
+        step: path.basename(path.resolve(values.out), ".json"),
         label: "bot play (forceteki, typed driver), not human results",
         engine: { commit: ctx.engine.pin.commit, cardDataVersion: ctx.engine.pin.cardDataVersion, cardDataSha256: ctx.engine.pin.cardDataSha256 },
         codeCommit: ctx.codeCommit,
         panel: panel.map((d) => d.source),
         method: "each match: rung 3 seat in fidelity mode (every rollback compared with the full state fingerprint taken at its bookmark), then the record replayed by descriptor with no trials (the oracle: legal-action hash and engine RNG cursor at every decision, then result, cards played, base damage, end board and trace) and replayed with its own policies; rung 1 and rung 2 matches played with undo off and on and compared record for record; the rung 3 matches played again on worker pools of each size in acrossWorkers and compared trace for trace with one thread",
         ...searchReport,
-        failures: failures.filter((x) => /rung 3|undo on: rung/.test(x)),
+        failures: failures.filter((x) => /rung 3|undo on: rung|neutrality/.test(x)),
       };
       writeFileSync(path.resolve(values.out), `${JSON.stringify(record, null, 1)}\n`);
     }

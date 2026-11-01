@@ -1,0 +1,85 @@
+{
+ "schemaVersion": 1,
+ "step": "rung3v-fidelity",
+ "label": "bot play (forceteki, typed driver), not human results",
+ "engine": {
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+ },
+ "codeCommit": "97ed6bd5d522506c03b8e2528bb80d13d202881c-dirty",
+ "panel": [
+  "file:tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+  "file:data/originals/decks/2026-10-17/melee-0b373cb2-6dfb-425e-842d-b4a700e2d337.json",
+  "file:data/originals/decks/2026-10-17/melee-6563300e-ae56-49d6-b88c-b3ea0151a4da.json",
+  "file:data/originals/decks/2026-10-17/melee-1a7b3451-7300-4e19-b69b-b44200bbce01.json"
+ ],
+ "method": "each match: rung 3 seat in fidelity mode (every rollback compared with the full state fingerprint taken at its bookmark), then the record replayed by descriptor with no trials (the oracle: legal-action hash and engine RNG cursor at every decision, then result, cards played, base damage, end board and trace) and replayed with its own policies; rung 1 and rung 2 matches played with undo off and on and compared record for record; the rung 3 matches played again on worker pools of each size in acrossWorkers and compared trace for trace with one thread",
+ "matches": 20,
+ "seeds": [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "11",
+  "12",
+  "13",
+  "14",
+  "15",
+  "16",
+  "17",
+  "18",
+  "19",
+  "20"
+ ],
+ "undoOnIdentical": {
+  "rung1": 20,
+  "rung2:mu=0,lambda=1": 20
+ },
+ "rung3": [
+  {
+   "spec": "rung3v:k=8,ev=v1,horizon=round,noPass=1",
+   "matches": 20,
+   "decisions": 2257,
+   "searches": 386,
+   "rollbacks": 1896,
+   "verifiedRollbacks": 1896,
+   "searchErrors": 0,
+   "oracleIdentical": 20,
+   "policyReplayIdentical": 20,
+   "endConditions": {
+    "base_destroyed": 20
+   },
+   "tracesSha256": "6037bb7edfbd0d6ba0a140f3e0ce051e5ee936e7fd18c97d81cf0028c5f05e45"
+  }
+ ],
+ "acrossWorkers": [
+  {
+   "workers": 1,
+   "spec": "rung3v:k=8,ev=v1,horizon=round,noPass=1",
+   "identical": 20,
+   "of": 20
+  },
+  {
+   "workers": 12,
+   "spec": "rung3v:k=8,ev=v1,horizon=round,noPass=1",
+   "identical": 20,
+   "of": 20
+  }
+ ],
+ "neutrality": [
+  {
+   "spec": "rung3v:k=8,ev=v1,horizon=round,noPass=1,stub=1",
+   "seeds": 20,
+   "identical": 20,
+   "firstDifferingSeed": null
+  }
+ ],
+ "failures": []
+}

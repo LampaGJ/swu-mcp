@@ -36,15 +36,15 @@ export interface DriverPolicy {
   params: unknown;
   inputs: Record<string, string>;
   covers(kind: string): boolean;
-  choose(actions: readonly TypedAction[], view: DriverPolicyView, random: () => number): { index: number } | null;
+  choose(actions: readonly TypedAction[], view: DriverPolicyView, random: () => number): { index: number; search?: unknown } | null;
 }
 
 /** The pinned tables a rung reads, by name, for the match header (only the ones it reads). */
 export function inputsOf(spec: PolicySpec, tables: CardTables): Record<string, string> {
-  if (spec.kind !== "rules" && spec.kind !== "lookahead" && spec.kind !== "montecarlo") return {};
+  if (spec.kind !== "rules" && spec.kind !== "lookahead" && spec.kind !== "montecarlo" && spec.kind !== "learned") return {};
   const p = tables.pins;
   const base: Record<string, string> = { scores: p.scoresSha256, coefficients: p.coefficientsSha256, features: p.featuresSha256 };
-  if (spec.kind === "lookahead" || spec.kind === "montecarlo" || spec.rung === 1) return base;
+  if (spec.kind === "lookahead" || spec.kind === "montecarlo" || spec.kind === "learned" || spec.rung === 1) return base;
   if (p.pairsSha256 === null || p.pairPrecisionSha256 === null || p.complementaritySha256 === null) throw new Error("rung 2 needs the pair table loaded");
   return { ...base, leaderCards: p.leaderCardsSha256, pairs: p.pairsSha256, pairPrecision: p.pairPrecisionSha256, complementarity: p.complementaritySha256 };
 }
@@ -137,6 +137,8 @@ export function registerRungs(
       continue;
     }
     const spec = parsePolicySpec(name);
+    // The learned rungs read the evaluator, so their registration lives under scripts/ and src/ never imports it (D1).
+    if (spec.kind === "learned") continue;
     if (spec.kind === "montecarlo") {
       const inputs = inputsOf(spec, tables);
       const params = spec.params;

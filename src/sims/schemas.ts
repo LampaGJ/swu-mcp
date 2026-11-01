@@ -127,6 +127,38 @@ export type RngCursor = z.infer<typeof rngCursorSchema>;
 
 export const legalActionsSha256 = (descriptors: readonly string[]): string => sha256Hex(descriptors.join("\n"));
 
+/**
+ * A learned search's decision (#128): every value it used, so a reader recomputes the choice from the record. Rung 3
+ * reads the true state (mode none, one determinization); rung 4 averages at least two multiset re-deals.
+ */
+export const searchBlockSchema = z
+  .strictObject({
+    rung: z.union([z.literal(3), z.literal(4)]),
+    mode: z.enum(["none", "multiset"]),
+    determinizations: z.int().positive(),
+    replies: z.int().nonnegative(),
+    candidates: z
+      .array(
+        z.strictObject({
+          descriptor: descriptorSchema,
+          /** Position in the ranking policy's order; 0 is its own pick. */
+          rank: z.int().nonnegative(),
+          /** One value per determinization, each rounded to 4 decimals; null where the trial failed or was a no-op. */
+          values: z.array(z.number().nullable()),
+          mean: z.number().nullable(),
+          fallback: z.string().nullable(),
+        }),
+      )
+      .min(1),
+    chosen: descriptorSchema,
+  })
+  .refine((s) => (s.rung === 3 ? s.mode === "none" && s.determinizations === 1 : s.mode === "multiset" && s.determinizations >= 2), {
+    error: "rung 3 reads the true state (mode none, one determinization); rung 4 needs mode multiset and at least two determinizations",
+  })
+  .refine((s) => s.candidates.every((c) => c.values.length === s.determinizations), { error: "every candidate needs one value per determinization" })
+  .refine((s) => s.candidates.some((c) => c.descriptor === s.chosen), { error: "chosen must be one of the candidates" });
+export type SearchBlock = z.infer<typeof searchBlockSchema>;
+
 export const fullDecisionSchema = z
   .strictObject({
     k: z.int().nonnegative(),
@@ -141,6 +173,10 @@ export const fullDecisionSchema = z
     evaluator: z.strictObject({ rung: z.int().min(0).max(4), version: z.string().min(1), sha256: hex64.nullable() }),
     utilities: z.array(z.number()).nullable(),
     fallback: z.string().nullable(),
+    /** The match observer's logits for this state (#127), rounded to 4 decimals; absent when no observer scored it. */
+    values: z.array(z.number()).optional(),
+    /** A learned search's block (#128); absent for every other policy, so their records keep their bytes. */
+    search: searchBlockSchema.optional(),
   })
   .refine((d) => d.legalActions.every((a, i) => a.i === i && (i === 0 || compareCodePoints(d.legalActions[i - 1].descriptor, a.descriptor) < 0)), {
     error: "legalActions must be indexed in order and sorted by descriptor (compareCodePoints), without repeats",
@@ -182,6 +218,23 @@ export const matchFooterSchema = z
     finalRngCursor: rngCursorSchema,
     /** sha256 over "actor|descriptor\n" of every chosen action in order. */
     traceSha256: hex64,
+    /**
+     * Present only when a match observer scored main-action states (#127): recordSha256 over every observed decision
+     * record in order, valueSha256 over the float64 bits of every logit in call order.
+     */
+    observer: z
+      .strictObject({
+        version: z.string().min(1),
+        sha256: hex64,
+        load: z.enum(["per-prompt", "per-action"]),
+        mainDecisions: z.int().nonnegative(),
+        calls: z.int().nonnegative(),
+        recordSha256: hex64,
+        valueSha256: hex64,
+      })
+      .optional(),
+    /** Present only when a learned search reported blocks (#128): their count and sha256 over "k|canonical block\n". */
+    search: z.strictObject({ decisions: z.int().nonnegative(), searchSha256: hex64 }).optional(),
   })
   .refine((f) => f.result.winner === null || f.result.endCondition === "base_destroyed", { error: "only a destroyed base has a winner; an error, draw, timeout or stuck game has winner null" })
   .refine((f) => (f.result.endCondition === "error") === (f.error !== null), { error: "error text is present exactly when endCondition is error" });

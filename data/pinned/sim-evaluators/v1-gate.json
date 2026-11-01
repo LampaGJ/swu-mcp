@@ -1,0 +1,991 @@
+{
+ "schemaVersion": 1,
+ "label": "bot play (forceteki, typed driver), not human results",
+ "proxy": "rung1:sacGuard=1,handCap=1 on both seats stands in for rung 2, which was never promoted (D79); the closing run is on the ladder-passing pilot (D92, D95)",
+ "gate": {
+  "minRatio": 0.85,
+  "minGamesPerSecond": 15,
+  "minReps": 5,
+  "p50Us": 250,
+  "p99Us": 1000
+ },
+ "inputs": {
+  "policy": "rung1:sacGuard=1,handCap=1",
+  "evaluator": {
+   "version": "v1",
+   "sha256": "75a972ea6de8b132b91f7c64e48dd13a5654c8ea2c3d6b7c0fdc98cc318dcd27",
+   "featureLayoutSha256": "e35f4e44d692085dfae72b44cf8cd15041901502f9c8d0c3862594935a529fd5"
+  },
+  "vocabSha256": "4254d5928c4a50926cdb2d5fb3c43ea57696527ddeaa7c7fde9d08932d8ad2fc",
+  "decks": [
+   "data/originals/decks/2026-10-17/melee-0b373cb2-6dfb-425e-842d-b4a700e2d337.json",
+   "data/originals/decks/2026-10-17/melee-6563300e-ae56-49d6-b88c-b3ea0151a4da.json",
+   "data/originals/decks/2026-10-17/melee-1a7b3451-7300-4e19-b69b-b44200bbce01.json"
+  ],
+  "engine": {
+   "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+   "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27"
+  },
+  "games": 240,
+  "reps": 5,
+  "seed0": 100,
+  "workers": 12,
+  "identitySeeds": 30,
+  "identityWorkers": [
+   1,
+   4,
+   8,
+   12
+  ]
+ },
+ "inputsHash": "2d6449a872b73da5f5ed6952ccb46b6fd377738e8fa245a526ef9a446bdcea3e",
+ "codeCommit": "97ed6bd5d522506c03b8e2528bb80d13d202881c-dirty",
+ "latency": {
+  "synthetic:64,32": {
+   "calls": 1979,
+   "extract": {
+    "p50Us": 185.458,
+    "p99Us": 336.166
+   },
+   "encodeFlatten": {
+    "p50Us": 78,
+    "p99Us": 223.5
+   },
+   "forward": {
+    "p50Us": 8.083,
+    "p99Us": 20.958
+   },
+   "total": {
+    "p50Us": 273,
+    "p99Us": 781.334
+   },
+   "pass": false
+  },
+  "v1": {
+   "calls": 1979,
+   "extract": {
+    "p50Us": 175.292,
+    "p99Us": 310.917
+   },
+   "encodeFlatten": {
+    "p50Us": 76.917,
+    "p99Us": 137.584
+   },
+   "forward": {
+    "p50Us": 1.166,
+    "p99Us": 4.625
+   },
+   "total": {
+    "p50Us": 254.292,
+    "p99Us": 884.792
+   },
+   "pass": false
+  }
+ },
+ "throughput": {
+  "repetitions": [
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "off",
+    "gamesPerSecond": 43.05,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 61.507,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 58.564,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-prompt",
+    "gamesPerSecond": 38.183,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 76.317,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 51.628,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 56.179,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 47.38,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 60.475,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-action",
+    "gamesPerSecond": 39.34,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 348.592,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 53.243,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 256.279,
+    "callsOk": true
+   },
+   {
+    "rep": 0,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 54.012,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 285.704,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-prompt",
+    "gamesPerSecond": 37.969,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 76.317,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 47.306,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 56.179,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 46.88,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 60.475,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-action",
+    "gamesPerSecond": 38.65,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 348.592,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 53.129,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 256.279,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 52.174,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 285.704,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "off",
+    "gamesPerSecond": 45.556,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 68.981,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 1,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 61.769,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-action",
+    "gamesPerSecond": 39.774,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 348.592,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 52.662,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 256.279,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 50.123,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 285.704,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "off",
+    "gamesPerSecond": 46.239,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 67.27,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 65.494,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-prompt",
+    "gamesPerSecond": 39.533,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 76.317,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 51.856,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 56.179,
+    "callsOk": true
+   },
+   {
+    "rep": 2,
+    "order": [
+     "per-action",
+     "off",
+     "per-prompt"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 50.272,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 60.475,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "off",
+    "gamesPerSecond": 48.381,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 66.468,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 67.735,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-prompt",
+    "gamesPerSecond": 37.096,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 76.317,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 54.275,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 56.179,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 53.532,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 60.475,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-action",
+    "gamesPerSecond": 39.453,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 348.592,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 54.188,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 256.279,
+    "callsOk": true
+   },
+   {
+    "rep": 3,
+    "order": [
+     "off",
+     "per-prompt",
+     "per-action"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 51.657,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 285.704,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-prompt",
+    "gamesPerSecond": 38.608,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 76.317,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 54.356,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 56.179,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-prompt",
+    "gamesPerSecond": 44.498,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 60.475,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "per-action",
+    "gamesPerSecond": 35.535,
+    "mainDecisionsPerGame": 76.317,
+    "callsPerGame": 348.592,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 48.808,
+    "mainDecisionsPerGame": 56.179,
+    "callsPerGame": 256.279,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "per-action",
+    "gamesPerSecond": 49.395,
+    "mainDecisionsPerGame": 60.475,
+    "callsPerGame": 285.704,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-cad-bane",
+    "config": "off",
+    "gamesPerSecond": 44.192,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "krennic-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 68.443,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   },
+   {
+    "rep": 4,
+    "order": [
+     "per-prompt",
+     "per-action",
+     "off"
+    ],
+    "pair": "cad-bane-vs-luke",
+    "config": "off",
+    "gamesPerSecond": 35.841,
+    "mainDecisionsPerGame": 0,
+    "callsPerGame": 0,
+    "callsOk": true
+   }
+  ],
+  "perPair": [
+   {
+    "pair": "krennic-vs-cad-bane",
+    "off": {
+     "gamesPerSecond": {
+      "median": 45.556,
+      "min": 43.05,
+      "max": 48.381,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 0,
+     "callsPerGame": 0
+    },
+    "per-prompt": {
+     "gamesPerSecond": {
+      "median": 38.183,
+      "min": 37.096,
+      "max": 39.533,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 76.317,
+     "callsPerGame": 76.317
+    },
+    "per-action": {
+     "gamesPerSecond": {
+      "median": 39.34,
+      "min": 35.535,
+      "max": 39.774,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 76.317,
+     "callsPerGame": 348.592
+    },
+    "per-promptRatio": {
+     "median": 0.855,
+     "min": 0.767,
+     "max": 0.887,
+     "n": 5
+    },
+    "per-promptPass": {
+     "pass": true,
+     "ratio": true,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    },
+    "per-actionRatio": {
+     "median": 0.848,
+     "min": 0.804,
+     "max": 0.914,
+     "n": 5
+    },
+    "per-actionPass": {
+     "pass": false,
+     "ratio": false,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    }
+   },
+   {
+    "pair": "krennic-vs-luke",
+    "off": {
+     "gamesPerSecond": {
+      "median": 67.27,
+      "min": 61.507,
+      "max": 68.981,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 0,
+     "callsPerGame": 0
+    },
+    "per-prompt": {
+     "gamesPerSecond": {
+      "median": 51.856,
+      "min": 47.306,
+      "max": 54.356,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 56.179,
+     "callsPerGame": 56.179
+    },
+    "per-action": {
+     "gamesPerSecond": {
+      "median": 53.129,
+      "min": 48.808,
+      "max": 54.188,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 56.179,
+     "callsPerGame": 256.279
+    },
+    "per-promptRatio": {
+     "median": 0.794,
+     "min": 0.686,
+     "max": 0.839,
+     "n": 5
+    },
+    "per-promptPass": {
+     "pass": false,
+     "ratio": false,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    },
+    "per-actionRatio": {
+     "median": 0.783,
+     "min": 0.713,
+     "max": 0.866,
+     "n": 5
+    },
+    "per-actionPass": {
+     "pass": false,
+     "ratio": false,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    }
+   },
+   {
+    "pair": "cad-bane-vs-luke",
+    "off": {
+     "gamesPerSecond": {
+      "median": 61.769,
+      "min": 35.841,
+      "max": 67.735,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 0,
+     "callsPerGame": 0
+    },
+    "per-prompt": {
+     "gamesPerSecond": {
+      "median": 47.38,
+      "min": 44.498,
+      "max": 53.532,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 60.475,
+     "callsPerGame": 60.475
+    },
+    "per-action": {
+     "gamesPerSecond": {
+      "median": 51.657,
+      "min": 49.395,
+      "max": 54.012,
+      "n": 5
+     },
+     "mainDecisionsPerGame": 60.475,
+     "callsPerGame": 285.704
+    },
+    "per-promptRatio": {
+     "median": 0.79,
+     "min": 0.759,
+     "max": 1.242,
+     "n": 5
+    },
+    "per-promptPass": {
+     "pass": false,
+     "ratio": false,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    },
+    "per-actionRatio": {
+     "median": 0.845,
+     "min": 0.763,
+     "max": 1.378,
+     "n": 5
+    },
+    "per-actionPass": {
+     "pass": false,
+     "ratio": false,
+     "absolute": true,
+     "calls": true,
+     "reps": true
+    }
+   }
+  ]
+ },
+ "identity": [
+  {
+   "pair": "krennic-vs-cad-bane",
+   "seeds": {
+    "from": 100,
+    "to": 129
+   },
+   "acrossWorkers": [
+    {
+     "workers": 1,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 4,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 8,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 12,
+     "firstDifferingSeed": null
+    }
+   ],
+   "traceVsOffFirstDifferingSeed": null,
+   "fresh105Identical": true,
+   "recordsSha256": "7f07dc563fa6253836df278e8ca065b951ea4a8afbeb8b9b3e25b2ec74dfc9f5"
+  },
+  {
+   "pair": "krennic-vs-luke",
+   "seeds": {
+    "from": 100,
+    "to": 129
+   },
+   "acrossWorkers": [
+    {
+     "workers": 1,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 4,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 8,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 12,
+     "firstDifferingSeed": null
+    }
+   ],
+   "traceVsOffFirstDifferingSeed": null,
+   "fresh105Identical": true,
+   "recordsSha256": "0fa91acffd129776bda3cfe2dc2553a07a2c482ccf07a1289f47dad7eb225934"
+  },
+  {
+   "pair": "cad-bane-vs-luke",
+   "seeds": {
+    "from": 100,
+    "to": 129
+   },
+   "acrossWorkers": [
+    {
+     "workers": 1,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 4,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 8,
+     "firstDifferingSeed": null
+    },
+    {
+     "workers": 12,
+     "firstDifferingSeed": null
+    }
+   ],
+   "traceVsOffFirstDifferingSeed": null,
+   "fresh105Identical": true,
+   "recordsSha256": "a48c6fab6958d22eabc08124332c3cd211acf95e2fac4f09b52afc2a67f83a19"
+  }
+ ],
+ "failures": [],
+ "pass": {
+  "throughput": false,
+  "latency": false,
+  "identity": true,
+  "all": false
+ }
+}

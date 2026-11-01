@@ -1,6 +1,6 @@
 import { canonicalJson, sha256Hex } from "../swu/canonical.js";
 import { ENGINE_NODE_ENV, startGame, type Engine } from "./engine.js";
-import { POLICIES, PolicyChain, policyHeader } from "./policy.js";
+import { OBSERVERS, POLICIES, PolicyChain, policyHeader, type DecisionObserver } from "./policy.js";
 import { BOT_SCHEME } from "./rng.js";
 import {
   deckSha256,
@@ -42,6 +42,8 @@ export interface MatchSpec {
   recordMode: "full" | "compact" | "none";
   undo: boolean;
   codeCommit: string;
+  /** A registered match observer (src/sims/policy.ts OBSERVERS, #127): scores main-action states, never steers. Not in the header, because it changes no decision. */
+  observer?: string;
 }
 
 export const cardKeyMapSha256 = (cardKeys: Readonly<Record<string, string>>): string => sha256Hex(canonicalJson(cardKeys));
@@ -96,7 +98,13 @@ export interface PlayedMatch {
 /** Plays one match. An exception while building the game also ends as an error record; nothing is dropped. */
 export async function playMatch(engine: Engine, spec: MatchSpec, cardKeys: Readonly<Record<string, string>>, opts: { maxDecisions?: number; verifyRollback?: boolean } = {}): Promise<PlayedMatch> {
   const header = buildHeader(engine, spec, cardKeys);
-  return playHeader(engine, header, cardKeys, spec.recordMode, opts);
+  let observer: DecisionObserver | undefined;
+  if (spec.observer !== undefined) {
+    const make = OBSERVERS[spec.observer];
+    if (make === undefined) throw new Error(`unknown match observer ${spec.observer}; known: ${Object.keys(OBSERVERS).join(", ") || "none"}`);
+    observer = make();
+  }
+  return playHeader(engine, header, cardKeys, spec.recordMode, { ...opts, observer });
 }
 
 /** The footer of a match that failed before its first decision, for example a deck the engine refused. */
@@ -114,7 +122,7 @@ export function setupErrorFooter(message: string): MatchFooter {
   };
 }
 
-async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonly<Record<string, string>>, mode: RecordMode, opts: { maxDecisions?: number; verifyRollback?: boolean }): Promise<PlayedMatch> {
+async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonly<Record<string, string>>, mode: RecordMode, opts: { maxDecisions?: number; verifyRollback?: boolean; observer?: DecisionObserver }): Promise<PlayedMatch> {
   let started;
   try {
     started = await startGame(engine, [header.decks[0].engineList, header.decks[1].engineList], { engineSeed: header.rng.engineSeed, undo: header.engine.undoMode === "free" });
@@ -130,6 +138,7 @@ async function playHeader(engine: Engine, header: MatchHeader, cardKeys: Readonl
     maxDecisions: opts.maxDecisions,
     manualSnapshotType: engine.SnapshotType.Manual,
     verifyRollback: opts.verifyRollback,
+    observer: opts.observer,
   });
   session.run();
   const record: MatchRecord = { header, decisions: mode === "none" ? [] : session.decisions, footer: session.footer() };

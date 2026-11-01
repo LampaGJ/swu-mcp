@@ -2,7 +2,7 @@ import { canonicalJson, sha256Hex } from "../swu/canonical.js";
 import type { PromptKind } from "./actions.js";
 import type { EngineGame, EnginePlayer } from "./engine.js";
 import type { Seat } from "./rng.js";
-import type { LegalAction } from "./schemas.js";
+import type { LegalAction, SearchBlock } from "./schemas.js";
 
 /**
  * @displayName Bot policy contract and rung 0
@@ -45,7 +45,23 @@ export interface SearchHooks {
 export interface PolicyChoice {
   index: number;
   utilities?: number[];
+  /** A learned search's values for this decision (#128). */
+  search?: SearchBlock;
 }
+
+/**
+ * Scores a state before the policy chooses, for measurement (#127): the values never reach the choice, and scoring
+ * must not change the engine state. Registered by name, so a match spec can name it across worker threads.
+ */
+export interface DecisionObserver {
+  version: string;
+  sha256: string;
+  load: "per-prompt" | "per-action";
+  /** One logit per scored input: one at per-prompt, one per legal answer at per-action. */
+  score(game: EngineGame, seat: Seat, nAnswers: number): number[];
+}
+
+export const OBSERVERS: Record<string, () => DecisionObserver> = {};
 
 export interface Policy {
   rung: number;
@@ -54,6 +70,8 @@ export interface Policy {
   params: unknown;
   /** Table name to sha256 of each pinned table the policy reads. */
   inputs: Record<string, string>;
+  /** sha256 of the evaluator weights a learned rung reads; the decision record's evaluator block names it. */
+  evaluatorSha256?: string;
   covers(kind: PromptKind): boolean;
   /** Null hands the decision to the next rung down. */
   choose(actions: readonly LegalAction[], view: PolicyView, random: () => number): PolicyChoice | null;
@@ -82,6 +100,7 @@ export interface ChainChoice {
   policy: Policy;
   fallback: string | null;
   utilities: number[] | null;
+  search: SearchBlock | null;
 }
 
 /** Policies from the top rung down; rung 0 is appended when absent, so every decision gets an answer. */
@@ -112,7 +131,7 @@ export class PolicyChain {
         continue;
       }
       if (!Number.isInteger(c.index) || c.index < 0 || c.index >= actions.length) throw new Error(`${policy.policyId} returned index ${c.index} of ${actions.length}`);
-      return { index: c.index, policy, fallback: reasons.length === 0 ? null : reasons.join("; "), utilities: c.utilities ?? null };
+      return { index: c.index, policy, fallback: reasons.length === 0 ? null : reasons.join("; "), utilities: c.utilities ?? null, search: c.search ?? null };
     }
     throw new Error("no policy answered; the chain must end at rung 0");
   }

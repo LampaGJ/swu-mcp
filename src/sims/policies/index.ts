@@ -13,6 +13,8 @@ import type { BotPolicy } from "./types.js";
  * @tacticalObjective Parses `random`, `rung1`, `rung2[:mu=..,lambda=..,...]` and `rung3[:k=..,horizon=reply|round,wBase=..,...]`
  * (rung 3 has a driver form only, src/sims/policies/rung3.ts) into policies and hashes
  * their parameters; `rung0` names the typed driver's own random rung and `greedy-hash` the spike's name-hash baseline (typed-adapter.ts).
+ * `rung3v:k=..,ev=v1` and `rung4:d=..,k=..,m=..,ev=v1` are the learned rungs (#128): this file only names and hashes
+ * them; their policy lives in scripts/sims/policy/ and is registered from there, so nothing under src/ runs a model (D1).
  */
 
 export const RUNG1_VERSION = "1";
@@ -24,7 +26,75 @@ export type PolicySpec =
   | { kind: "random" }
   | { kind: "rules"; rung: 1 | 2; params: RuleParams }
   | { kind: "lookahead"; params: LookaheadParams }
-  | { kind: "montecarlo"; params: MonteCarloParams };
+  | { kind: "montecarlo"; params: MonteCarloParams }
+  | { kind: "learned"; rung: 3 | 4; params: LearnedParams };
+
+export const LEARNED_VERSION = "1";
+
+/** Learned rung parameters (#128), numbers only so the params hash stays a number map. */
+export interface LearnedParams {
+  /** Candidates: the ranking pilot's top k by exclusion (Pass and Claim Initiative are added when legal). */
+  k: number;
+  /** Opponent replies per candidate (rung 4); 0 at rung 3. */
+  m: number;
+  /** Determinizations (rung 4, at least 2); 1 at rung 3, which reads the true state. */
+  d: number;
+  /** Evaluator version: 1 is data/pinned/sim-evaluators/v1.json. */
+  ev: number;
+  maxTrialDecisions: number;
+  /**
+   * Leaf: absent or 0 at the next main-action prompt (where #125 took its afterstates); 1 after the pilots play on to
+   * the end of the action phase (rung 3's round horizon); 2 on through the regroup phase to the next round's first main action.
+   */
+  horizon?: number;
+  /** 1: Pass is a candidate only when the pilot itself passes (V at a leaf rates unspent cards and resources above their use, D97). */
+  noPass?: number;
+  /** The ranking and trial pilot is rung 1 with these switches on (D92, D95): rung 2 was never promoted (D79). */
+  sacGuard: number;
+  handCap: number;
+  /** 1: every leaf scores 0, so the choice is the ranking pilot's own (the neutrality test). */
+  stub?: number;
+}
+
+export const RUNG3V_PARAMS: LearnedParams = { k: 8, m: 0, d: 1, ev: 1, maxTrialDecisions: 400, sacGuard: 1, handCap: 1 };
+/** d 3, k 5, m 2 is #128's design point; measured to fit a 2,640-game calibration run in about 1.1 hours on 12 workers (D97). */
+export const RUNG4_PARAMS: LearnedParams = { k: 5, m: 2, d: 3, ev: 1, maxTrialDecisions: 400, sacGuard: 1, handCap: 1 };
+
+function parseLearned(rung: 3 | 4, text: string, rest: string | undefined): PolicySpec {
+  const params: LearnedParams = { ...(rung === 3 ? RUNG3V_PARAMS : RUNG4_PARAMS) };
+  const allowed = rung === 3 ? ["k", "maxTrialDecisions"] : ["k", "m", "d", "maxTrialDecisions"];
+  for (const kv of (rest ?? "").split(",").filter(Boolean)) {
+    const [k, v] = kv.split("=");
+    const ev = /^v([1-9][0-9]*)$/.exec(v ?? "");
+    if (k === "ev" && ev !== null) params.ev = Number(ev[1]);
+    else if (k === "stub" && v === "1") params.stub = 1;
+    else if (k === "stub" && v === "0") delete params.stub;
+    else if (k === "horizon" && v === "round") params.horizon = 1;
+    else if (k === "horizon" && v === "next") params.horizon = 2;
+    else if (k === "horizon" && v === "reply") delete params.horizon;
+    else if (k === "noPass" && v === "1") params.noPass = 1;
+    else if (k === "noPass" && v === "0") delete params.noPass;
+    else if (allowed.includes(k) && /^[0-9]+$/.test(v ?? "")) (params as unknown as Record<string, number>)[k] = Number(v);
+    else throw new Error(`bad policy parameter ${kv} in ${text}${rung === 3 && (k === "d" || k === "m") ? " (rung3v reads the true state: no determinizations, no replies)" : ""}`);
+  }
+  if (params.k < 1) throw new Error(`${text}: k must be at least 1`);
+  if (rung === 4 && params.d < 2) throw new Error(`${text}: rung 4 needs at least 2 determinizations`);
+  if (rung === 4 && params.m < 1) throw new Error(`${text}: rung 4 needs at least 1 reply`);
+  return { kind: "learned", rung, params };
+}
+
+/** Canonical learned name: k (and d, m at rung 4) and ev always, then any other parameter off its default. */
+function learnedName(rung: 3 | 4, p: LearnedParams): string {
+  const def = rung === 3 ? RUNG3V_PARAMS : RUNG4_PARAMS;
+  const parts = rung === 3 ? [`k=${p.k}`] : [`d=${p.d}`, `k=${p.k}`, `m=${p.m}`];
+  parts.push(`ev=v${p.ev}`);
+  if (p.horizon === 1) parts.push("horizon=round");
+  if (p.horizon === 2) parts.push("horizon=next");
+  if (p.noPass === 1) parts.push("noPass=1");
+  if (p.maxTrialDecisions !== def.maxTrialDecisions) parts.push(`maxTrialDecisions=${p.maxTrialDecisions}`);
+  if (p.stub === 1) parts.push("stub=1");
+  return `${rung === 3 ? "rung3v" : "rung4"}:${parts.join(",")}`;
+}
 
 const MC_TUNABLE = ["n", "cap", "sub", "depth", "maxPlayoutDecisions", "determinize", "wBase", "wBoard", "wHand", "wResources", "wReady", "wScore"] as const;
 
@@ -92,6 +162,8 @@ export function parsePolicySpec(text: string): PolicySpec {
   if (name === "random") return { kind: "random" };
   if (name === "rung3") return parseLookahead(text, rest);
   if (name === "rung3mc") return parseMonteCarlo(text, rest);
+  if (name === "rung3v") return parseLearned(3, text, rest);
+  if (name === "rung4") return parseLearned(4, text, rest);
   if (name !== "rung1" && name !== "rung2") throw new Error(`unknown policy ${text}`);
   const params: RuleParams = { ...RUNG1_PARAMS };
   for (const kv of (rest ?? "").split(",").filter(Boolean)) {
@@ -108,7 +180,9 @@ export function parsePolicySpec(text: string): PolicySpec {
 }
 
 export const specName = (s: PolicySpec): string =>
-  s.kind === "montecarlo"
+  s.kind === "learned"
+    ? learnedName(s.rung, s.params)
+    : s.kind === "montecarlo"
     ? monteCarloName(s.params)
     : s.kind === "lookahead"
     ? lookaheadName(s.params)
@@ -132,6 +206,10 @@ export function policyOf(spec: PolicySpec, tables: CardTables): BotPolicy | null
 }
 
 export function policyHeader(spec: PolicySpec): { spec: string; id: string; version: string; rung: number; params: Record<string, number>; paramsSha256: string } {
+  if (spec.kind === "learned") {
+    const params = { ...spec.params } as unknown as Record<string, number>;
+    return { spec: specName(spec), id: spec.rung === 3 ? "rung3-value" : "rung4-search", version: LEARNED_VERSION, rung: spec.rung, params, paramsSha256: paramsSha256(params) };
+  }
   if (spec.kind === "montecarlo") {
     const params = { ...spec.params } as unknown as Record<string, number>;
     return { spec: specName(spec), id: "rung3-flat-mc", version: MC_VERSION, rung: 3, params, paramsSha256: paramsSha256(params) };

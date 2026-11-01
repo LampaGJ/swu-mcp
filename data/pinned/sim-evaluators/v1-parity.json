@@ -1,0 +1,49 @@
+{
+ "schemaVersion": 1,
+ "label": "bot play (D21): branch values under the named rung, test split only; parity is arithmetic, not play",
+ "inputs": {
+  "evaluator": {
+   "version": "v1",
+   "sha256": "75a972ea6de8b132b91f7c64e48dd13a5654c8ea2c3d6b7c0fdc98cc318dcd27"
+  },
+  "dataset": {
+   "manifestSha256": "284b93db6d4a6cec76a1cd04353d2dbf960075bb8049a743a2d120f11fb7e7b4",
+   "gzSha256": "2ad00810a223994e4337cb014c473254e2bc9330156010253543599efd9de35d",
+   "test": {
+    "from": 6000510,
+    "count": 90
+   }
+  },
+  "states": 1000,
+  "layoutSha256": "e35f4e44d692085dfae72b44cf8cd15041901502f9c8d0c3862594935a529fd5"
+ },
+ "parity": {
+  "tolerance": 0.00001,
+  "states": 1000,
+  "maxAbsDiffNumpyFloat64": 0,
+  "pass": true
+ },
+ "mlxFloat32": {
+  "available": true,
+  "maxAbsDiff": 0.0000014185206964612007,
+  "gated": false
+ },
+ "moveChoice": {
+  "rule": "untied top-1: decisions whose best action label is unique; the model's argmax V(afterstate) against the constant model's first action in code-point order (#126, coordinator ruling 2)",
+  "decisions": 1449,
+  "untied": 285,
+  "model": 112,
+  "constant": 68,
+  "modelOnly": 74,
+  "constantOnly": 30,
+  "modelShare": 0.393,
+  "constantShare": 0.2386,
+  "pValue": 0.000018940835677418383,
+  "pass": true
+ },
+ "replay": {
+  "inputHash": "577b2bf2ca5b4d97b614d9e079da43603cf88ca6abc7e762ad63c45d6ec173f3",
+  "codeCommit": "97ed6bd5d522506c03b8e2528bb80d13d202881c-dirty",
+  "outputHash": "efa8c0dcacf3b7e9df7f01f1252ae1e93b4db9f327f47ab4c83feb928e6699f4"
+ }
+}
