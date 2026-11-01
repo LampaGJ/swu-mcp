@@ -1,0 +1,11 @@
+# Training extras for scripts/sims/py/train_evaluator.py on top of requirements.txt, every cache under <repo>/tmp (CLAUDE.md:45).
+# requirements-train.lock is the pin; the trainer runs with --python, SWU_SIMS_PYTHON or <repo>/.venv/bin/python:
+#   TMPDIR="$PWD/tmp" UV_CACHE_DIR="$PWD/tmp/uv-cache" uv pip compile --python-version 3.12 --python-platform aarch64-apple-darwin --generate-hashes scripts/sims/py/requirements-train.txt -o scripts/sims/py/requirements-train.lock
+#   TMPDIR="$PWD/tmp" UV_CACHE_DIR="$PWD/tmp/uv-cache" uv venv --python 3.12 tmp/venv-train
+#   TMPDIR="$PWD/tmp" UV_CACHE_DIR="$PWD/tmp/uv-cache" uv pip sync --python tmp/venv-train/bin/python scripts/sims/py/requirements-train.lock
+# The v1 capture ran from tmp/venv-train: a <repo>/.venv is not in eslint.config.js's ignores and switches on #123's Booster parity test.
+# mlx is resolved by the lock, not chosen here.
+-r requirements.txt
+scikit-learn
+scipy
+mlx

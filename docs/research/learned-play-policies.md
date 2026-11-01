@@ -76,6 +76,9 @@ Practices to skip:
 - Skip 2: end-to-end PPO from scratch. ByteRL used a recurrent network, YGO Agent's strongest model used 100M games, and a drifting policy breaks the replay and ladder gates. https://arxiv.org/pdf/2305.11814 [sub-claim 4: pitfalls]
 - Skip 3: an LLM in the game loop or as a reward. About 79 calls per game, at 1 to 3 s each (ladder doc `:201`), cannot coexist with 15+ games/s, and D1 and D3 forbid it. Keep LLMs offline. https://arxiv.org/pdf/2605.29653 [sub-claim 3: LLMs as players]
 
+Training results. Each captured evaluator has a generated report at `data/pinned/sim-evaluators/<version>.md` and a manifest beside it, written by `pnpm sims:train-evaluator` (#126).
+`data/pinned/sim-evaluators/README.md` explains how the models already on the volume are reused or rejected.
+
 ## Gaps
 
 - Source budget: the brief asked for 12 to 20 primary sources, but the 12-fetch cap left six readable ones. Three PDFs that WebFetch could not parse were read from saved copies with Read; six others stayed unreadable.

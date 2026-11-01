@@ -52,7 +52,8 @@
     "sims:feature-map": "tsx scripts/sims/feature-map.ts",
     "sims:inventory": "tsx scripts/sims/inventory-models.ts",
     "sims:vocab": "tsx scripts/sims/build-vocab.ts",
-    "sims:branches": "tsx scripts/sims/sample-branches.ts"
+    "sims:branches": "tsx scripts/sims/sample-branches.ts",
+    "sims:train-evaluator": "tsx scripts/sims/train-evaluator.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",

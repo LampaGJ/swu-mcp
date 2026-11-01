@@ -1,0 +1,89 @@
+{
+  "evaluatorVersion": "v1",
+  "seed": 20261031,
+  "dataset": {
+    "manifest": "data/pinned/sim-datasets/branches-2026-11-01.manifest.json",
+    "records": "data/originals/sims/branches/2026-11-01/branches.jsonl.gz",
+    "expectSha256": "284b93db6d4a6cec76a1cd04353d2dbf960075bb8049a743a2d120f11fb7e7b4"
+  },
+  "vocab": {
+    "file": "data/pinned/sim-vocab/2026-10-30.r6.v2.json",
+    "expectSha256": "b5d1ce31d31d1afd97de1c383366e438ea5854d9315bb8127b4f647db4108e91"
+  },
+  "inventoryManifest": "data/pinned/sim-models/manifest.json",
+  "ladderSeedRanges": null,
+  "splits": {
+    "train": {
+      "from": 6000000,
+      "count": 420
+    },
+    "validation": {
+      "from": 6000420,
+      "count": 90
+    },
+    "test": {
+      "from": 6000510,
+      "count": 90
+    }
+  },
+  "floor": {
+    "minDecisions": 10000,
+    "minSourceGames": 500,
+    "minTestGames": 75
+  },
+  "outcomeWeightGrid": [
+    0,
+    0.1,
+    0.25,
+    0.5
+  ],
+  "scalingGrid": [
+    "rms",
+    "none"
+  ],
+  "logistic": {
+    "cGrid": [
+      0.0001,
+      0.0003,
+      0.001,
+      0.003,
+      0.01,
+      0.1,
+      1,
+      10,
+      100
+    ],
+    "tol": 1e-8,
+    "maxIter": 10000
+  },
+  "mlp": {
+    "device": "cpu",
+    "hidden": [
+      64,
+      32
+    ],
+    "learningRate": 0.001,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "weightDecay": 0.0001,
+    "batchSize": 512,
+    "maxEpochs": 60,
+    "patience": 5
+  },
+  "xgboost": {
+    "enabled": true,
+    "minMlpGain": 0.005,
+    "rounds": 300,
+    "maxDepth": 6,
+    "eta": 0.1,
+    "minChildWeight": 1,
+    "lambda": 1
+  },
+  "bootstrap": {
+    "iterations": 2000,
+    "seed": "eval-bootstrap-v1"
+  },
+  "maxEce": 0.05
+}
