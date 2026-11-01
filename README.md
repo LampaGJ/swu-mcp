@@ -2,7 +2,7 @@
 
 Star Wars: Unlimited (SWU) card data, deterministic card scoring, synergy discovery and card similarity, served to AI assistants over the Model Context Protocol (MCP, stdio). Every number comes from deterministic code over pinned inputs. No model runs at query time and none decides a score.
 
-Status: MVP (swu-mcp#7). All 49 tools below are served and an end-to-end test calls each one over real stdio. One command rebuilds every data product.
+Status: MVP (swu-mcp#7). 52 of the 53 tools below are served by default (`simulate_matchup` is local only, under `SWU_MCP_SIMS=1`) and an end-to-end test calls each served one over real stdio. One command rebuilds every data product.
 
 ## Install
 
@@ -59,7 +59,7 @@ Claude's connectors reach an MCP server by URL, so the stdio server is bridged t
 - [Verification report](docs/verification/2026-10-16.md).
 - [Decisions and intentions](docs/decisions.md): the standing intent the code is reviewed against.
 
-## Tools (50)
+## Tools (53)
 
 Cards and search
 
