@@ -67,11 +67,13 @@ describe.skipIf(!hasData)("a negative row the deck holds or the leader's lists p
 });
 
 describe.skipIf(!hasData)("playable_cards prints evidenceGap on every row (#169 item 9, D87)", () => {
-  it("Cad Bane's step 4: every row carries evidenceGap (null unless negative), so the rows stay one TOON table", () => {
+  // D89 (#170) flips "null unless negative": an ok row prints its measured gap too; only unmeasured and thin-control rows print null.
+  it("Cad Bane's step 4: every row carries evidenceGap (null unless measured), so the rows stay one TOON table", () => {
     const result = DECK_TOOLS.playable_cards.handler(real, { leader: CAD_BANE, base: NEVARRO, limit: 24, perCost: 3 });
     const cards = body(result).cards as Record<string, any>[];
     for (const r of cards) expect(r, r.title).toHaveProperty("evidenceGap");
-    for (const r of cards.filter((x) => x.evidenceClass !== "negative")) expect(r.evidenceGap, r.title).toBeNull();
+    for (const r of cards.filter((x) => x.evidenceClass !== "negative" && x.evidenceClass !== "ok")) expect(r.evidenceGap, r.title).toBeNull();
+    expect(cards.some((x) => x.evidenceClass === "ok" && typeof x.evidenceGap === "number")).toBe(true);
     expect(result.content[0].text).toMatch(/^cards\[\d+\]\{/m);
   });
 });
@@ -121,8 +123,9 @@ const cadAnswers = (extra: Record<string, unknown> = {}): Record<string, any> =>
 const answerRows = (out: Record<string, any>): Record<string, any>[] => [...(out.staples as Record<string, any>[]), ...(out.additions as Record<string, any>[])];
 
 describe.skipIf(!hasData)("meta_answers: an answer whose condition no deck card feeds covers nothing (#169 item 7, D87)", () => {
-  it("Marrok (Saboteur only while upgraded, no upgrade in the core): coverage 0, and threatsCovered counts him apart as unfed", () => {
-    const out = cadAnswers();
+  // D89 (#170): Justifier's Advantage token is an upgrade, so the full core feeds Marrok; the rule is held on the core without Justifier.
+  it("Marrok (Saboteur only while upgraded, no upgrade in the core without Justifier): coverage 0, and threatsCovered counts him apart as unfed", () => {
+    const out = cadAnswers({ decklist: CAD_CORE.filter((d) => d.card !== "Justifier, Relentless") });
     const marrok = answerRows(out).find((r) => r.cardKey === MARROK) as Record<string, any>;
     expect(marrok).toBeDefined();
     expect((marrok.answers as Record<string, any>[]).every((a) => a.conditionUnfed !== undefined), JSON.stringify(marrok.answers)).toBe(true);

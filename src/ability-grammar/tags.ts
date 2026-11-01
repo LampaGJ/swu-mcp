@@ -57,6 +57,15 @@ const returnsOnlyItself = (c: SwuClause, e: ClauseEffect, triggerText: string): 
   !/\bunits?\b/i.test(`${c.text} ${triggerText}`.replace(/\bthis unit\b/gi, ""));
 const returnsItself = (c: SwuClause, e: ClauseEffect): boolean =>
   e.cat === "recursion" && (SELF_OBJECT.test(e.target?.text ?? "") || isSelfGated(c, e));
+/**
+ * D89 (#170): "Discard 2 cards from your deck. Return each of those cards with an odd cost to your hand" (BoShek): the return's
+ * object is an anaphor bound to the ability's own earlier discard, so the rest of the pile is no want.
+ */
+const OWN_DISCARDS_ANAPHOR = /^(?:(?:each|any|one|all|some) of )?(?:those|these|the discarded) cards?\b|^(?:that|the discarded) card\b|^(?:it|them)$/i;
+const returnsOwnDiscards = (clauses: readonly SwuClause[], c: SwuClause, e: ClauseEffect): boolean =>
+  e.cat === "recursion" &&
+  OWN_DISCARDS_ANAPHOR.test(e.target?.text ?? "") &&
+  clauses.slice(0, clauses.indexOf(c)).some((x) => x.effects.some((y) => (y.cat === "mill" && y.whose === "your") || y.cat === "discard_self"));
 const DISCARD_READERS = new Set(["recursion", "play_extra", "tuck", "recycle"]);
 /** Every effect of the clause that reads the discard pile returns the card itself. */
 const onlyReturnsItself = (c: SwuClause): boolean =>
@@ -294,7 +303,7 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             case "mill": add(offers, e.whose === "your" ? "offers:self-mill" : "offers:mill-opponent", why); break;
             case "recursion":
               add(offers, "offers:return-from-discard", why);
-              if (!SELF_DISCARD.test(c.text) && !returnsItself(c, e)) add(wants, "wants:cards-in-discard", why);
+              if (!SELF_DISCARD.test(c.text) && !returnsItself(c, e) && !returnsOwnDiscards(clauses, c, e)) add(wants, "wants:cards-in-discard", why);
               break;
             case "create_token": {
               const token = e.token ?? "";
@@ -388,7 +397,9 @@ export function buildTags(card: TagInput): SwuCardFeatures["tags"] {
             if (what?.kind === "token" || /token/i.test(what?.text ?? "")) add(wants, "wants:tokens", why);
             if (what?.restrict.includes("damaged")) add(wants, "wants:damaged-units", why);
             if (what?.restrict.includes("exhausted")) add(wants, what.kind === "resource" ? "wants:exhausted-resources" : "wants:exhausted-own", why);
-            if (/upgrade/i.test(what?.text ?? "")) add(wants, "wants:upgrades-attached", why);
+            // D89 (#170): "an upgraded base" (Queen Amidala, Retaking Theed) needs an upgrade on a base, which only Fortify attaches.
+            if (what?.kind === "base" && /upgrade/i.test(what.text ?? "")) add(wants, "wants:base-upgrade", why);
+            else if (/upgrade/i.test(what?.text ?? "")) add(wants, "wants:upgrades-attached", why);
             if (typeof k.n === "number" && k.n >= 2) add(wants, "wants:wide-board", why);
           }
           if (k.cat === "target_check" && k.check === "attached_is") for (const tr of traitsOf(asTarget(k.what))) add(wants, `wants:trait-${tr}`, why);

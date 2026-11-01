@@ -75,7 +75,8 @@ describe.skipIf(!hasData)("a variant passes the member's rider and gate checks (
     for (const t of cadStep6().trios as Record<string, any>[]) expect(variantTitles(t).join("; "), t.cards).not.toContain("Vice Admiral Rampart, A New Era of Safety");
     const withRampart = cadStep6({ cardKey: RAMPART }).trios as Record<string, any>[];
     expect(withRampart.length).toBeGreaterThan(0);
-    const lastWords = withRampart.find((x) => keysOf(x).includes(LAST_WORDS) && keysOf(x).includes(MARROK)) as Record<string, any>;
+    // D89 (#170): Justifier's Advantage token already feeds Marrok, so Last Words into Marrok proposes nothing (D82); any Last Words trio carries the rider.
+    const lastWords = withRampart.find((x) => keysOf(x).includes(LAST_WORDS)) as Record<string, any>;
     expect(lastWords, withRampart.map((x) => x.cards).join("; ")).toBeDefined();
     expect(lastWords.riderUnmet).toContain("upgrade on your base");
     // Sinister War Memorial is a Fortify upgrade on your base, so beside it Rampart's replacement can fire.

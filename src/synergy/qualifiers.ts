@@ -685,6 +685,7 @@ export function conflictBetween(
   if (touched.side !== undefined && needed.side !== undefined && touched.side !== needed.side) {
     return `the offer acts on ${touched.side} things, the want is ${needed.side}`;
   }
+  if (wantTag === "wants:base-upgrade" && offer.attach?.base !== true) return "the offer attaches to a unit, the want needs an upgraded base";
   if (offer.attach?.base === true && RECEIVING_WANTS.has(wantTag) && !BASE_OR_ANY_UPGRADE.test(want.text)) {
     return "the offer is a Fortify upgrade, which attaches to your base, not a unit";
   }

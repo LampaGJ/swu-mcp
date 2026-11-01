@@ -103,13 +103,26 @@
    "offers": {
     "offers:give-experience": 1,
     "offers:give-shield": 0.8,
+    "offers:give-advantage": 0.6,
     "offers:upgrade-to-attach": 1
    },
    "wants": {
     "wants:upgrades-attached": 1
    },
    "strength": 0.8,
-   "reason": "Experience, Shield tokens and upgrades all count as upgrades for 'upgraded' payoffs.",
+   "reason": "Experience, Shield and Advantage tokens and upgrades all count as upgrades for 'upgraded' payoffs. An Advantage token is a Token Upgrade defeated when its unit's attack or defense ends, so it weighs less (D89).",
+   "example": null
+  },
+  {
+   "id": "base-upgrade",
+   "offers": {
+    "offers:upgrade-to-attach": 1
+   },
+   "wants": {
+    "wants:base-upgrade": 1
+   },
+   "strength": 0.8,
+   "reason": "Only a Fortify upgrade attaches to your base, so only it makes an upgraded base (Insurgent Camp feeds Queen Amidala, Retaking Theed; D89).",
    "example": null
   },
   {
@@ -585,10 +598,6 @@
   {
    "tag": "offers:grant-support",
    "note": "No card text acts on 'units with Support'. Reviewed #14."
-  },
-  {
-   "tag": "offers:give-advantage",
-   "note": "Advantage tokens have givers only; no card reads 'a unit with an Advantage token'. Reviewed #14."
   },
   {
    "tag": "offers:give-shield-self",

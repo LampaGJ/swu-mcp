@@ -98,8 +98,9 @@ describe.skipIf(!hasData)("an upgrade swap fills every role of the upgrade it re
 });
 
 describe.skipIf(!hasData)("deck_audit names attaching upgrades as orphan feeders and no free penalty through a taxed carrier (#164 item 6, D82)", () => {
+  // D89 (#170): Justifier's Advantage token feeds Marrok, so he is an orphan only in the core without Justifier.
   it("Marrok's upgrades-attached feeders name an in-colour upgrade that attaches to him before any unplayed unit", () => {
-    const a = body(DECK_TOOLS.deck_audit.handler(real, { leader: CAD_BANE, base: NEVARRO_CITY, decklist: CAD_CORE }));
+    const a = body(DECK_TOOLS.deck_audit.handler(real, { leader: CAD_BANE, base: NEVARRO_CITY, decklist: CAD_CORE.filter((d) => d.card !== "Justifier, Relentless") }));
     const row = (a.orphanWants as Record<string, any>[]).find((r) => String(r.card).startsWith("Marrok"));
     expect(row).toBeDefined();
     const named = String(row?.feeders).split("; ");

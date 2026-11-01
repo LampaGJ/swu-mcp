@@ -80,8 +80,9 @@ describe.skipIf(!hasData)("meta_answers: a locked or opponent-chosen answer take
 });
 
 describe.skipIf(!hasData)("meta_answers: an unfed conditional answer does not hold a reserved slot alone (#168 item 2, D86)", () => {
-  it("Marrok's Saboteur needs an upgrade nothing in the deck supplies: his row says so, and sentinel-wall also shows an unconditional answer", () => {
-    const shown = shownRows(cadAnswers());
+  // D89 (#170): Justifier's Advantage token feeds Marrok, so the unfed case is the core without Justifier.
+  it("Marrok's Saboteur needs an upgrade nothing in the core without Justifier supplies: his row says so, and sentinel-wall also shows an unconditional answer", () => {
+    const shown = shownRows(cadAnswers({ decklist: CAD_CORE.filter((d) => d.card !== "Justifier, Relentless") }));
     const marrok = shown.find((r) => r.cardKey === MARROK) as Record<string, any>;
     expect(marrok, shown.map((r) => r.title).join("; ")).toBeDefined();
     const conditional = (marrok.answers as Record<string, any>[]).find((a) => a.relation === "sentinel-bypass-conditional") as Record<string, any>;
@@ -167,8 +168,10 @@ describe.skipIf(!hasData)("deck_audit glut fills count specific links, the leade
 describe.skipIf(!hasData)("playable_cards rows carry evidenceClass, a measured negative last in its cost (#168 item 5, D86)", () => {
   const cards = (): Record<string, any>[] => body(DECK_TOOLS.playable_cards.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, limit: 24, perCost: 3 })).cards;
 
+  // D89 (#170): a negative card neither held nor a 50% staple is no longer listed, so the flag is checked with a decklist that holds them.
   it("Ahsoka Tano, Chasing Whispers, Depa Billaba and Liberty are flagged negative, as meta_answers measures them", () => {
-    const rows = cards();
+    const decklist = [AHSOKA_WHISPERS, DEPA, LIBERTY].map((card) => ({ card, count: 1 }));
+    const rows = body(DECK_TOOLS.playable_cards.handler(real, { leader: WARRIOR, base: ORIGIN_TREE, decklist, limit: 24, perCost: 3 })).cards as Record<string, any>[];
     for (const k of [AHSOKA_WHISPERS, DEPA, LIBERTY]) {
       const r = rows.find((x) => x.cardKey === k);
       if (r !== undefined) expect(r.evidenceClass, r.title).toBe("negative");
