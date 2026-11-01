@@ -48,7 +48,9 @@
     "sims:batch": "tsx scripts/sims/run-batch.ts",
     "sims:replay": "tsx scripts/sims/replay.ts",
     "sims:replay-gate": "tsx scripts/sims/replay-gate.ts",
-    "sims:branch-probe": "tsx scripts/sims/branch-probe.ts"
+    "sims:branch-probe": "tsx scripts/sims/branch-probe.ts",
+    "sims:feature-map": "tsx scripts/sims/feature-map.ts",
+    "sims:inventory": "tsx scripts/sims/inventory-models.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",

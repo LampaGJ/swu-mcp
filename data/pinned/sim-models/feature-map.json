@@ -1,0 +1,3585 @@
+{
+ "schemaVersion": 1,
+ "harness": {
+  "path": "swu-data/simulation",
+  "repoCommit": "50de7ff70887bac17e498a57c789620ec6db34b4"
+ },
+ "coreCount": 500,
+ "columns": [
+  {
+   "index": 0,
+   "name": "turn",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 1,
+   "name": "p1_resources",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 2,
+   "name": "p2_resources",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 3,
+   "name": "p1_base_damage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 4,
+   "name": "p2_base_damage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 5,
+   "name": "p1_board_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 6,
+   "name": "p2_board_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 7,
+   "name": "p1_hand_size",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 8,
+   "name": "p2_hand_size",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 9,
+   "name": "p1_unit_count",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 10,
+   "name": "p2_unit_count",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 11,
+   "name": "p1_ground_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 12,
+   "name": "p1_space_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 13,
+   "name": "p1_ground_units",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 14,
+   "name": "p1_space_units",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 15,
+   "name": "p2_ground_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 16,
+   "name": "p2_space_power",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 17,
+   "name": "p2_ground_units",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 18,
+   "name": "p2_space_units",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 19,
+   "name": "resource_advantage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 20,
+   "name": "base_damage_advantage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 21,
+   "name": "board_power_advantage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 22,
+   "name": "hand_size_advantage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 23,
+   "name": "unit_count_advantage",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 24,
+   "name": "p1_health_pct",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 25,
+   "name": "p2_health_pct",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 26,
+   "name": "game_progress",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 27,
+   "name": "is_mid_game",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 28,
+   "name": "is_late_game",
+   "tier": "exact",
+   "rule": "named engine-state column"
+  },
+  {
+   "index": 29,
+   "name": "action_mulligan",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 30,
+   "name": "action_resource",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 31,
+   "name": "action_play",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 32,
+   "name": "action_attack",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 33,
+   "name": "action_ability",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 34,
+   "name": "action_pass",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 35,
+   "name": "action_response",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 36,
+   "name": "action_distribute",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 37,
+   "name": "action_choice",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 38,
+   "name": "action_target",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 39,
+   "name": "action_leader_ability",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 40,
+   "name": "p1_deck_size",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 41,
+   "name": "p1_discard_size",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 42,
+   "name": "p1_resource_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 43,
+   "name": "p1_deck_ratio",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 44,
+   "name": "p1_discard_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 45,
+   "name": "p1_resource_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 46,
+   "name": "p2_deck_size",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 47,
+   "name": "p2_discard_size",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 48,
+   "name": "p2_resource_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 49,
+   "name": "p2_deck_ratio",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 50,
+   "name": "p2_discard_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 51,
+   "name": "p2_resource_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 52,
+   "name": "p1_avg_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 53,
+   "name": "p1_median_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 54,
+   "name": "p1_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 55,
+   "name": "p1_event_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 56,
+   "name": "p1_upgrade_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 57,
+   "name": "p1_ground_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 58,
+   "name": "p1_space_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 59,
+   "name": "p1_aspect_villainy",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 60,
+   "name": "p1_aspect_heroism",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 61,
+   "name": "p1_aspect_vigilance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 62,
+   "name": "p2_avg_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 63,
+   "name": "p2_median_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 64,
+   "name": "p2_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 65,
+   "name": "p2_event_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 66,
+   "name": "p2_upgrade_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 67,
+   "name": "p2_ground_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 68,
+   "name": "p2_space_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 69,
+   "name": "p2_aspect_villainy",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 70,
+   "name": "p2_aspect_heroism",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 71,
+   "name": "p2_aspect_vigilance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 72,
+   "name": "kw_ambush",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 73,
+   "name": "kw_grit",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 74,
+   "name": "kw_overwhelm",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 75,
+   "name": "kw_raid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 76,
+   "name": "kw_restore",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 77,
+   "name": "kw_saboteur",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 78,
+   "name": "kw_sentinel",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 79,
+   "name": "kw_shielded",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 80,
+   "name": "kw_smuggle",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 81,
+   "name": "kw_bounty",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 82,
+   "name": "trigger_whenplayed",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 83,
+   "name": "trigger_onattack",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 84,
+   "name": "trigger_whendefeated",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 85,
+   "name": "trigger_action",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 86,
+   "name": "trigger_epicaction",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 87,
+   "name": "trigger_passive",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 88,
+   "name": "effect_damage",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 89,
+   "name": "effect_heal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 90,
+   "name": "effect_draw",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 91,
+   "name": "effect_ready",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 92,
+   "name": "effect_exhaust",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 93,
+   "name": "effect_defeat",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 94,
+   "name": "effect_statbuff",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 95,
+   "name": "effect_statdebuff",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 96,
+   "name": "effect_shield",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 97,
+   "name": "effect_resourcegain",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 98,
+   "name": "effect_bounce",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 99,
+   "name": "effect_discard",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 100,
+   "name": "faction_imperial",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 101,
+   "name": "faction_rebel",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 102,
+   "name": "faction_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 103,
+   "name": "faction_separatist",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 104,
+   "name": "faction_resistance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 105,
+   "name": "faction_new_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 106,
+   "name": "faction_fringe",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 107,
+   "name": "faction_underworld",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 108,
+   "name": "type_droid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 109,
+   "name": "type_clone",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 110,
+   "name": "type_trooper",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 111,
+   "name": "type_jedi",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 112,
+   "name": "type_sith",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 113,
+   "name": "type_bounty_hunter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 114,
+   "name": "type_force",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 115,
+   "name": "type_creature",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 116,
+   "name": "type_mandalorian",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 117,
+   "name": "vehicle_vehicle",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 118,
+   "name": "vehicle_fighter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 119,
+   "name": "vehicle_capital_ship",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 120,
+   "name": "vehicle_speeder",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 121,
+   "name": "vehicle_transport",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 122,
+   "name": "has_on_play_effect",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 123,
+   "name": "has_on_attack_effect",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 124,
+   "name": "has_action_ability",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 125,
+   "name": "can_afford",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 126,
+   "name": "on_curve",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 127,
+   "name": "ahead_of_curve",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 128,
+   "name": "cost_efficiency",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 129,
+   "name": "resources_after",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 130,
+   "name": "card_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 131,
+   "name": "card_hp",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 132,
+   "name": "stats_per_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 133,
+   "name": "power_hp_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 134,
+   "name": "my_board_imperial",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 135,
+   "name": "my_board_rebel",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 136,
+   "name": "my_board_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 137,
+   "name": "my_board_separatist",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 138,
+   "name": "my_board_resistance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 139,
+   "name": "my_board_new_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 140,
+   "name": "my_board_fringe",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 141,
+   "name": "my_board_underworld",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 142,
+   "name": "my_board_droid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 143,
+   "name": "my_board_clone",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 144,
+   "name": "my_board_trooper",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 145,
+   "name": "my_board_jedi",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 146,
+   "name": "my_board_sith",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 147,
+   "name": "my_board_bounty_hunter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 148,
+   "name": "my_board_force",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 149,
+   "name": "my_board_creature",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 150,
+   "name": "my_board_mandalorian",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 151,
+   "name": "my_board_vehicle",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 152,
+   "name": "my_board_fighter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 153,
+   "name": "my_board_capital_ship",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 154,
+   "name": "my_board_speeder",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 155,
+   "name": "my_board_transport",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 156,
+   "name": "their_board_imperial",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 157,
+   "name": "their_board_rebel",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 158,
+   "name": "their_board_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 159,
+   "name": "their_board_separatist",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 160,
+   "name": "their_board_resistance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 161,
+   "name": "their_board_new_republic",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 162,
+   "name": "their_board_fringe",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 163,
+   "name": "their_board_underworld",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 164,
+   "name": "their_board_droid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 165,
+   "name": "their_board_clone",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 166,
+   "name": "their_board_trooper",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 167,
+   "name": "their_board_jedi",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 168,
+   "name": "their_board_sith",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 169,
+   "name": "their_board_bounty_hunter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 170,
+   "name": "their_board_force",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 171,
+   "name": "their_board_creature",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 172,
+   "name": "their_board_mandalorian",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 173,
+   "name": "their_board_vehicle",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 174,
+   "name": "their_board_fighter",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 175,
+   "name": "their_board_capital_ship",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 176,
+   "name": "their_board_speeder",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 177,
+   "name": "their_board_transport",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 178,
+   "name": "trait_overlap",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 179,
+   "name": "synergy_droid_droid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 180,
+   "name": "synergy_trooper_trooper",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 181,
+   "name": "synergy_jedi_force",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 182,
+   "name": "synergy_sith_force",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 183,
+   "name": "synergy_imperial_imperial",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 184,
+   "name": "synergy_rebel_rebel",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 185,
+   "name": "enabler_defeat_has_target",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 186,
+   "name": "enabler_heal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 187,
+   "name": "enabler_ready_has_unit",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 188,
+   "name": "enabler_buff_has_unit",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 189,
+   "name": "enabler_damage_has_target",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 190,
+   "name": "kw_sentinel_protecting",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 191,
+   "name": "kw_ambush_has_target",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 192,
+   "name": "kw_overwhelm",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 193,
+   "name": "kw_raid_has_target",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 194,
+   "name": "kw_saboteur",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 195,
+   "name": "board_empty_mine",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 196,
+   "name": "board_empty_theirs",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 197,
+   "name": "board_wide_mine",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 198,
+   "name": "hand_total_cards",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 199,
+   "name": "hand_playable_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 200,
+   "name": "hand_playable_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 201,
+   "name": "hand_cheapest_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 202,
+   "name": "hand_avg_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 203,
+   "name": "hand_max_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 204,
+   "name": "hand_smuggle_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 205,
+   "name": "card_was_playable",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 206,
+   "name": "card_has_smuggle",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 207,
+   "name": "card_has_bounty",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 208,
+   "name": "card_cost_vs_hand_avg",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 209,
+   "name": "card_synergy_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 210,
+   "name": "card_unique_traits",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 211,
+   "name": "attack_attacker_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 212,
+   "name": "attack_attacker_hp",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 213,
+   "name": "attack_target_is_base",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 214,
+   "name": "attack_target_hp",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 215,
+   "name": "attack_is_trade",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 216,
+   "name": "attack_is_favorable",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 217,
+   "name": "attack_damage_to_base",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 218,
+   "name": "attack_is_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 219,
+   "name": "attack_has_overwhelm",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 220,
+   "name": "attack_has_raid",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 221,
+   "name": "attack_sentinel_blocks",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 222,
+   "name": "deck_aspect_count",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 223,
+   "name": "deck_primary_density",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 224,
+   "name": "deck_secondary_density",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 225,
+   "name": "card_matches_primary",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 226,
+   "name": "card_matches_secondary",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 227,
+   "name": "card_aspect_penalty",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 228,
+   "name": "deck_aggression",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 229,
+   "name": "deck_vigilance",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 230,
+   "name": "card_cost_6_plus",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 231,
+   "name": "card_cost_3_or_less",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 232,
+   "name": "deck_cost_6_payoffs",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 233,
+   "name": "deck_cheap_payoffs",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 234,
+   "name": "board_cost_6_count",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 235,
+   "name": "cost_reducer_active",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 236,
+   "name": "effective_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 237,
+   "name": "can_play_two_cards",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 238,
+   "name": "leader_deployed",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 239,
+   "name": "card_synergizes_leader",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 240,
+   "name": "card_enables_leader",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 241,
+   "name": "leader_trait_density",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 242,
+   "name": "base_ability_active",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 243,
+   "name": "deck_is_aggro",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 244,
+   "name": "deck_is_control",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 245,
+   "name": "deck_is_midrange",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 246,
+   "name": "deck_tribal_density",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 247,
+   "name": "deck_vehicle_ratio",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 248,
+   "name": "deck_ambush_count",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 249,
+   "name": "deck_removal_count",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 250,
+   "name": "deck_draw_count",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 251,
+   "name": "deck_avg_power",
+   "tier": "derived",
+   "rule": "needs the decklist tracker"
+  },
+  {
+   "index": 252,
+   "name": "card_enables_hand",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 253,
+   "name": "card_payoff_on_board",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 254,
+   "name": "card_is_engine",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 255,
+   "name": "card_is_payoff",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 256,
+   "name": "card_is_removal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 257,
+   "name": "card_is_protection",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 258,
+   "name": "opponent_threat_level",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 259,
+   "name": "board_needs_removal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 260,
+   "name": "can_opponent_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 261,
+   "name": "can_i_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 262,
+   "name": "turns_to_opponent_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 263,
+   "name": "turns_to_my_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 264,
+   "name": "action_count",
+   "tier": "derived",
+   "rule": "action type of the decision being scored"
+  },
+  {
+   "index": 265,
+   "name": "is_forced_decision",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 266,
+   "name": "can_attack",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 267,
+   "name": "can_use_ability",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 268,
+   "name": "can_play_from_hand",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 269,
+   "name": "pass_available",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 270,
+   "name": "my_max_unit_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 271,
+   "name": "my_avg_unit_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 272,
+   "name": "their_max_unit_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 273,
+   "name": "their_avg_unit_power",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 274,
+   "name": "my_board_concentration",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 275,
+   "name": "their_board_concentration",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 276,
+   "name": "ground_power_balance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 277,
+   "name": "space_power_balance",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 278,
+   "name": "hand_unit_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 279,
+   "name": "hand_event_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 280,
+   "name": "hand_upgrade_ratio",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 281,
+   "name": "hand_removal_available",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 282,
+   "name": "hand_draw_available",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 283,
+   "name": "hand_max_playable_cost",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 284,
+   "name": "hand_curve_score",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 285,
+   "name": "hand_synergy_density",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 286,
+   "name": "mulligan_has_turn1_play",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 287,
+   "name": "mulligan_has_turn2_play",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 288,
+   "name": "mulligan_curve_score",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 289,
+   "name": "mulligan_has_key_card",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 290,
+   "name": "mulligan_has_resource_card",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 291,
+   "name": "mulligan_synergy_potential",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 292,
+   "name": "pass_resources_floating",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 293,
+   "name": "pass_could_play_card",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 294,
+   "name": "pass_gains_initiative",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 295,
+   "name": "pass_opponent_passed",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 296,
+   "name": "combat_profitable_attacks",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 297,
+   "name": "combat_lethal_available",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 298,
+   "name": "combat_total_damage",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 299,
+   "name": "combat_opponent_can_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 300,
+   "name": "combat_opponent_damage",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 301,
+   "name": "combat_turns_until_lethal",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 302,
+   "name": "combat_my_units_at_risk",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 303,
+   "name": "combat_their_units_at_risk",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 304,
+   "name": "combat_best_trade_value",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 305,
+   "name": "combat_worst_exposure",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 306,
+   "name": "combat_can_clear_board",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 307,
+   "name": "combat_sentinel_blocking",
+   "tier": "unavailable",
+   "rule": "fail-closed default: needs the old CardAbilityParser, timing, stat or tracker state"
+  },
+  {
+   "index": 308,
+   "name": "emb_stat_cost",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 309,
+   "name": "emb_stat_power",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 310,
+   "name": "emb_stat_hp",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 311,
+   "name": "emb_stat_cost_efficiency",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 312,
+   "name": "emb_stat_power_hp_ratio",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 313,
+   "name": "emb_stat_arena_ground",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 314,
+   "name": "emb_stat_arena_space",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 315,
+   "name": "emb_stat_unique",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 316,
+   "name": "emb_kw_ambush",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 317,
+   "name": "emb_kw_grit",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 318,
+   "name": "emb_kw_overwhelm",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 319,
+   "name": "emb_kw_raid",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 320,
+   "name": "emb_kw_restore",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 321,
+   "name": "emb_kw_saboteur",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 322,
+   "name": "emb_kw_sentinel",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 323,
+   "name": "emb_kw_shielded",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 324,
+   "name": "emb_kw_smuggle",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 325,
+   "name": "emb_kw_bounty",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 326,
+   "name": "emb_type_unit",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 327,
+   "name": "emb_type_event",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 328,
+   "name": "emb_type_upgrade",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 329,
+   "name": "emb_type_leader",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 330,
+   "name": "emb_type_base",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 331,
+   "name": "emb_aspect_aggression",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 332,
+   "name": "emb_aspect_command",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 333,
+   "name": "emb_aspect_cunning",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 334,
+   "name": "emb_aspect_heroism",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 335,
+   "name": "emb_aspect_villainy",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 336,
+   "name": "emb_aspect_vigilance",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 337,
+   "name": "emb_trait_droid",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 338,
+   "name": "emb_trait_imperial",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 339,
+   "name": "emb_trait_rebel",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 340,
+   "name": "emb_trait_jedi",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 341,
+   "name": "emb_trait_sith",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 342,
+   "name": "emb_trait_bounty_hunter",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 343,
+   "name": "emb_trait_vehicle",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 344,
+   "name": "emb_trait_mandalorian",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 345,
+   "name": "emb_trait_clone",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 346,
+   "name": "emb_trait_separatist",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 347,
+   "name": "emb_trait_spectre",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 348,
+   "name": "emb_trait_inquisitor",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 349,
+   "name": "emb_trait_fringe",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 350,
+   "name": "emb_trait_underworld",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 351,
+   "name": "emb_trait_official",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 352,
+   "name": "emb_trait_trooper",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 353,
+   "name": "emb_trait_fighter",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 354,
+   "name": "emb_trait_transport",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 355,
+   "name": "emb_trait_capital_ship",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 356,
+   "name": "emb_trait_creature",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 357,
+   "name": "emb_trait_wookiee",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 358,
+   "name": "emb_trait_force",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 359,
+   "name": "emb_trait_scoundrel",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 360,
+   "name": "emb_trait_hutt",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 361,
+   "name": "emb_trait_ewok",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 362,
+   "name": "emb_trait_resistance",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 363,
+   "name": "emb_trait_first_order",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 364,
+   "name": "emb_trait_republic",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 365,
+   "name": "emb_trait_trade_federation",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 366,
+   "name": "emb_trait_tactic",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 367,
+   "name": "emb_static_reserved_0",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 368,
+   "name": "emb_static_reserved_1",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 369,
+   "name": "emb_static_reserved_2",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 370,
+   "name": "emb_static_reserved_3",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 371,
+   "name": "emb_static_reserved_4",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 372,
+   "name": "emb_semantic_0",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 373,
+   "name": "emb_semantic_1",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 374,
+   "name": "emb_semantic_2",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 375,
+   "name": "emb_semantic_3",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 376,
+   "name": "emb_semantic_4",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 377,
+   "name": "emb_semantic_5",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 378,
+   "name": "emb_semantic_6",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 379,
+   "name": "emb_semantic_7",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 380,
+   "name": "emb_semantic_8",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 381,
+   "name": "emb_semantic_9",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 382,
+   "name": "emb_semantic_10",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 383,
+   "name": "emb_semantic_11",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 384,
+   "name": "emb_semantic_12",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 385,
+   "name": "emb_semantic_13",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 386,
+   "name": "emb_semantic_14",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 387,
+   "name": "emb_semantic_15",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 388,
+   "name": "emb_semantic_16",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 389,
+   "name": "emb_semantic_17",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 390,
+   "name": "emb_semantic_18",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 391,
+   "name": "emb_semantic_19",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 392,
+   "name": "emb_semantic_20",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 393,
+   "name": "emb_semantic_21",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 394,
+   "name": "emb_semantic_22",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 395,
+   "name": "emb_semantic_23",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 396,
+   "name": "emb_semantic_24",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 397,
+   "name": "emb_semantic_25",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 398,
+   "name": "emb_semantic_26",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 399,
+   "name": "emb_semantic_27",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 400,
+   "name": "emb_semantic_28",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 401,
+   "name": "emb_semantic_29",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 402,
+   "name": "emb_semantic_30",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 403,
+   "name": "emb_semantic_31",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 404,
+   "name": "emb_semantic_32",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 405,
+   "name": "emb_semantic_33",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 406,
+   "name": "emb_semantic_34",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 407,
+   "name": "emb_semantic_35",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 408,
+   "name": "emb_semantic_36",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 409,
+   "name": "emb_semantic_37",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 410,
+   "name": "emb_semantic_38",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 411,
+   "name": "emb_semantic_39",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 412,
+   "name": "emb_semantic_40",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 413,
+   "name": "emb_semantic_41",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 414,
+   "name": "emb_semantic_42",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 415,
+   "name": "emb_semantic_43",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 416,
+   "name": "emb_semantic_44",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 417,
+   "name": "emb_semantic_45",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 418,
+   "name": "emb_semantic_46",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 419,
+   "name": "emb_semantic_47",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 420,
+   "name": "emb_semantic_48",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 421,
+   "name": "emb_semantic_49",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 422,
+   "name": "emb_semantic_50",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 423,
+   "name": "emb_semantic_51",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 424,
+   "name": "emb_semantic_52",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 425,
+   "name": "emb_semantic_53",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 426,
+   "name": "emb_semantic_54",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 427,
+   "name": "emb_semantic_55",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 428,
+   "name": "emb_semantic_56",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 429,
+   "name": "emb_semantic_57",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 430,
+   "name": "emb_semantic_58",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 431,
+   "name": "emb_semantic_59",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 432,
+   "name": "emb_semantic_60",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 433,
+   "name": "emb_semantic_61",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 434,
+   "name": "emb_semantic_62",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 435,
+   "name": "emb_semantic_63",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 436,
+   "name": "emb_cooccur_0",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 437,
+   "name": "emb_cooccur_1",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 438,
+   "name": "emb_cooccur_2",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 439,
+   "name": "emb_cooccur_3",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 440,
+   "name": "emb_cooccur_4",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 441,
+   "name": "emb_cooccur_5",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 442,
+   "name": "emb_cooccur_6",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 443,
+   "name": "emb_cooccur_7",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 444,
+   "name": "emb_cooccur_8",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 445,
+   "name": "emb_cooccur_9",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 446,
+   "name": "emb_cooccur_10",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 447,
+   "name": "emb_cooccur_11",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 448,
+   "name": "emb_cooccur_12",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 449,
+   "name": "emb_cooccur_13",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 450,
+   "name": "emb_cooccur_14",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 451,
+   "name": "emb_cooccur_15",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 452,
+   "name": "emb_cooccur_16",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 453,
+   "name": "emb_cooccur_17",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 454,
+   "name": "emb_cooccur_18",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 455,
+   "name": "emb_cooccur_19",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 456,
+   "name": "emb_cooccur_20",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 457,
+   "name": "emb_cooccur_21",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 458,
+   "name": "emb_cooccur_22",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 459,
+   "name": "emb_cooccur_23",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 460,
+   "name": "emb_cooccur_24",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 461,
+   "name": "emb_cooccur_25",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 462,
+   "name": "emb_cooccur_26",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 463,
+   "name": "emb_cooccur_27",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 464,
+   "name": "emb_cooccur_28",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 465,
+   "name": "emb_cooccur_29",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 466,
+   "name": "emb_cooccur_30",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 467,
+   "name": "emb_cooccur_31",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 468,
+   "name": "emb_meta_popularity",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 469,
+   "name": "emb_meta_avg_copies",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 470,
+   "name": "emb_meta_commitment",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 471,
+   "name": "emb_meta_splash",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 472,
+   "name": "emb_meta_leader_diversity",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 473,
+   "name": "emb_meta_archetype_diversity",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 474,
+   "name": "emb_meta_staple_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 475,
+   "name": "emb_meta_tech_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 476,
+   "name": "emb_meta_salt_factor",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 477,
+   "name": "emb_meta_complexity",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 478,
+   "name": "emb_meta_johnny_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 479,
+   "name": "emb_meta_skimmer_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 480,
+   "name": "emb_meta_threat_axis",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 481,
+   "name": "emb_meta_independence",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 482,
+   "name": "emb_meta_text_density",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 483,
+   "name": "emb_meta_keyword_density",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 484,
+   "name": "emb_meta_fifty_first_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 485,
+   "name": "emb_meta_hidden_gem_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 486,
+   "name": "emb_meta_clock_speed",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 487,
+   "name": "emb_meta_value_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 488,
+   "name": "emb_meta_topdeck_score",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 489,
+   "name": "emb_meta_annoying_complex",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 490,
+   "name": "emb_meta_undervalued_skimmer",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 491,
+   "name": "emb_meta_committed_buildaround",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 492,
+   "name": "emb_meta_is_meta",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 493,
+   "name": "emb_meta_is_rare",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 494,
+   "name": "emb_meta_is_salty",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 495,
+   "name": "emb_meta_is_high_skimmer",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 496,
+   "name": "emb_meta_is_good_51st",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 497,
+   "name": "emb_meta_is_buildaround",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 498,
+   "name": "emb_meta_is_good_topdeck",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 499,
+   "name": "emb_meta_is_hidden_gem",
+   "tier": "embedding",
+   "rule": "enhanced card embedding (EnhancedCardEmbeddings.ts:512)"
+  },
+  {
+   "index": 500,
+   "name": "opp_aggression_score",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 501,
+   "name": "opp_resource_efficiency",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 502,
+   "name": "opp_play_tempo",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 503,
+   "name": "opp_removal_tendency",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 504,
+   "name": "opp_board_focus",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 505,
+   "name": "opp_hand_holding",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 506,
+   "name": "opp_leader_usage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 507,
+   "name": "opp_threat_escalation",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 508,
+   "name": "opp_damage_pressure",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 509,
+   "name": "opp_combo_tendency",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 510,
+   "name": "opp_resource_denial",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 511,
+   "name": "opp_target_priority",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 512,
+   "name": "opp_defensive_plays",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 513,
+   "name": "opp_mulligan_aggression",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 514,
+   "name": "opp_late_game_bias",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 515,
+   "name": "opp_reaction_speed",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 516,
+   "name": "opp_value_trading",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 517,
+   "name": "opp_all_in_tendency",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 518,
+   "name": "opp_recovery_ability",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 519,
+   "name": "opp_predictability",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 520,
+   "name": "delta_my_resources",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 521,
+   "name": "delta_opp_resources",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 522,
+   "name": "delta_my_board_power",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 523,
+   "name": "delta_opp_board_power",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 524,
+   "name": "delta_my_hand_size",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 525,
+   "name": "delta_opp_hand_size",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 526,
+   "name": "delta_my_base_damage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 527,
+   "name": "delta_opp_base_damage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 528,
+   "name": "board_momentum",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 529,
+   "name": "damage_momentum",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 530,
+   "name": "resource_momentum",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 531,
+   "name": "card_advantage_momentum",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 532,
+   "name": "recent_swing_magnitude",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 533,
+   "name": "turns_since_advantage_flip",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 534,
+   "name": "comeback_potential",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 535,
+   "name": "actions_this_turn",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 536,
+   "name": "opponent_actions_last_turn",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 537,
+   "name": "consecutive_passes",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 538,
+   "name": "consecutive_attacks",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 539,
+   "name": "early_game",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 540,
+   "name": "mid_game",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 541,
+   "name": "late_game",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 542,
+   "name": "turns_remaining_estimate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 543,
+   "name": "game_clock_pressure",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 544,
+   "name": "decision_fatigue",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 545,
+   "name": "target_is_highest_power",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 546,
+   "name": "target_is_highest_hp",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 547,
+   "name": "target_has_keyword_threat",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 548,
+   "name": "target_is_leader",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 549,
+   "name": "target_is_engine",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 550,
+   "name": "target_is_payoff",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 551,
+   "name": "target_can_attack_base",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 552,
+   "name": "attack_kills_target",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 553,
+   "name": "attack_survives",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 554,
+   "name": "trades_up_power",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 555,
+   "name": "trades_up_cost",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 556,
+   "name": "overwhelm_damage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 557,
+   "name": "raid_bonus_active",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 558,
+   "name": "friendly_synergy_count",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 559,
+   "name": "enemy_counter_count",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 560,
+   "name": "upgrade_target_quality",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 561,
+   "name": "experience_target_value",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 562,
+   "name": "triggers_friendly_ability",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 563,
+   "name": "triggers_enemy_ability",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 564,
+   "name": "removes_threat_keyword",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 565,
+   "name": "enables_combo_piece",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 566,
+   "name": "smuggle_value",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 567,
+   "name": "bounty_target_value",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 568,
+   "name": "resource_opportunity_cost",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 569,
+   "name": "sentinel_blocks_attack",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 570,
+   "name": "shield_absorbs_damage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 571,
+   "name": "saboteur_bypasses_shield",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 572,
+   "name": "ambush_threatens_next",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 573,
+   "name": "threat_level_played",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 574,
+   "name": "board_threat_delta",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 575,
+   "name": "my_leader_deployed",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 576,
+   "name": "opp_leader_deployed",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 577,
+   "name": "my_leader_exhausted",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 578,
+   "name": "opp_leader_exhausted",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 579,
+   "name": "my_leader_can_deploy",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 580,
+   "name": "opp_leader_can_deploy",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 581,
+   "name": "my_leader_meta_winrate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 582,
+   "name": "opp_leader_meta_winrate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 583,
+   "name": "leader_matchup_winrate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 584,
+   "name": "my_base_damage_percent",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 585,
+   "name": "opp_base_damage_percent",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 586,
+   "name": "my_base_ability_available",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 587,
+   "name": "opp_base_ability_available",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 588,
+   "name": "my_leader_base_pair_winrate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 589,
+   "name": "opp_leader_base_pair_winrate",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 590,
+   "name": "my_leader_base_pair_popularity",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 591,
+   "name": "leader_aspect_coverage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 592,
+   "name": "base_aspect_coverage",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 593,
+   "name": "leader_base_aspect_overlap",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  },
+  {
+   "index": 594,
+   "name": "deck_aspect_diversity",
+   "tier": "unavailable",
+   "rule": "plugin column: needs the old plugin state"
+  }
+ ],
+ "replay": {
+  "inputHash": "680862f994b7ecb266f2f27f49551d495fca82201e62d18c637890274ba2cc3e",
+  "codeCommit": "0630ff610903d36fead22818566430f99c23c705-dirty",
+  "outputHash": "bdb309abe53ef7841c43ddab6479940437bf6165b7550160efd5cd53fdb9def1"
+ }
+}

@@ -18,3 +18,7 @@ sha256, then file:
 ## sim-ladder-v1/
 
 One gate record per bot-ladder step (#114, D79), written by `scripts/sims/ladder.ts`: the candidate and baseline policies with their params hashes, the engine pin, the sha256 of every table the rungs read, the six-deck panel with each list's sha256, the seed range and its purpose (tuning, evaluation or deck check), the sign test, Wilson shares, per-deck shares, the pass verdict, non-decisive and fallback counts and a sha256 over every game's trace. No field holds a wall-clock time, so the same code, inputs and seeds rewrite the same bytes. The results are bot play, never human win rates; `docs/verification/2026-10-31-bot-ladder.md` reads them.
+
+## sim-models/
+
+The inventory of the models already trained on /Volumes/Models/swu (#123, D93), written by `pnpm sims:inventory --parity` and `pnpm sims:feature-map`: `manifest.json` holds each model file's sha256, size, format, objective, feature layout, producer and the enums provenance, d22, verdict, reason and parity; `feature-map.json` tiers the old harness's 595 feature columns; `README.md` lists them. Weights and metrics are never here: every entry is D22 quarantined (D52), and recorded metrics go to the git-ignored data/originals/sims/model-inventory/.

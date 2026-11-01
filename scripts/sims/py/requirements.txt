@@ -1,0 +1,6 @@
+# Python 3.12 environment for scripts/sims/py, created in the git-ignored <repo>/.venv with every cache under <repo>/tmp (CLAUDE.md:45):
+#   TMPDIR="$PWD/tmp" UV_CACHE_DIR="$PWD/tmp/uv-cache" uv venv --python 3.12 .venv
+#   TMPDIR="$PWD/tmp" UV_CACHE_DIR="$PWD/tmp/uv-cache" uv pip install --python .venv/bin/python -r scripts/sims/py/requirements.txt
+# xgboost 3.1.3 is the version that wrote the four models/*-trained files; numpy matches scripts/embed/requirements.txt.
+numpy==2.5.4
+xgboost==3.1.3
