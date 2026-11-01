@@ -261,7 +261,7 @@ export const gateRecordSchema = z.strictObject({
     replayMatches: z.int().positive(),
     minN: z.int().positive(),
   }),
-  seeds: z.strictObject({ from: z.int().nonnegative(), to: z.int().nonnegative(), gamesPerPair: z.int().positive(), scheme: z.string().min(1) }),
+  seeds: z.strictObject({ from: z.int().nonnegative(), to: z.int().nonnegative(), gamesPerPair: z.int().positive(), scheme: z.string().min(1), listsPerArchetype: z.int().positive().optional() }),
   panel: z.array(
     z.strictObject({ archetype: z.string().min(1), name: z.string().min(1), leader: z.string().min(1), baseAspects: z.string(), share, list: z.string().min(1), sha256: hex64 }),
   ),
@@ -341,4 +341,99 @@ export function choosePilot(records: readonly GateRecord[], requested: string | 
   if (passing.length > 0) return { spec: passing[0].policy.spec, record: passing[0] };
   const reasons = records.map((r) => (r.engine.commit !== engineCommit ? `${r.policy.spec} was measured on engine commit ${r.engine.commit}, not the pinned ${engineCommit}.` : failedGateSentence(r))).filter((s): s is string => s !== null);
   return { error: `no bot rung has passed every calibration gate, so simulate_matchup reports no win share.${reasons.length > 0 ? ` ${reasons.join(" ")}` : " No calibration gate record exists yet."}` };
+}
+
+const Z95 = 1.959964;
+
+/**
+ * 95% interval of a Spearman coefficient: Fisher's z with the Bonett-Wright variance (1 + rho^2 / 2) / (n - 3); null
+ * below four points.
+ */
+export function spearmanInterval(rho: number, n: number): { low: number; high: number } | null {
+  if (n < 4) return null;
+  const z = Math.atanh(rho);
+  const se = Math.sqrt((1 + (rho * rho) / 2) / (n - 3));
+  return { low: r4(Math.tanh(z - Z95 * se)), high: r4(Math.tanh(z + Z95 * se)) };
+}
+
+export const INTERVAL_METHOD = "Spearman: Fisher z with the Bonett-Wright variance; favourite agreement: Wilson score on agree / counted; both 95%";
+
+/** The external gate's two figures with 95% intervals (#171), derived from a record's own fields; reported beside the gate, never part of its verdict. */
+export function externalIntervals(ext: { spearman: number | null; pairs: number; favourite: { counted: number; agree: number } }) {
+  const s = ext.spearman === null ? null : spearmanInterval(ext.spearman, ext.pairs);
+  const f = wilson(ext.favourite.agree, ext.favourite.counted);
+  return { spearman95: s === null ? null : ([s.low, s.high] as [number, number]), favourite95: f === null ? null : ([f.low, f.high] as [number, number]), method: INTERVAL_METHOD };
+}
+
+export const CALIBRATION_SEED0 = 4_000_000;
+
+/** One calibration game: archetypes i < j in panel order, list ai of i against list bi of j. */
+export interface CalibrationJob {
+  pair: number;
+  i: number;
+  j: number;
+  seed: number;
+  /** True when archetype i sits in seat 1. */
+  iFirst: boolean;
+  ai: number;
+  bi: number;
+}
+
+/**
+ * Every archetype pair i < j plays seeds 4,000,000 + 1,000p + q for q < gamesPerPair / 2, each seed twice with the seats
+ * swapped. With k lists per archetype seed q plays list pairing q mod k^2 (list floor(c / k) of i against list c mod k of
+ * j), so every pairing gets the same seeds in both seat orders; k = 1 is the pinned v1 layout.
+ */
+export function calibrationJobs(archetypes: number, gamesPerPair: number, lists = 1): { pairs: [number, number][]; jobs: CalibrationJob[] } {
+  if (!Number.isInteger(gamesPerPair) || gamesPerPair < 2 || gamesPerPair % 2 !== 0) throw new Error("games per pair must be an even integer >= 2");
+  const combos = lists * lists;
+  if ((gamesPerPair / 2) % combos !== 0) throw new Error(`${gamesPerPair / 2} seeds per pair do not divide evenly over ${combos} list pairings`);
+  const pairs: [number, number][] = [];
+  for (let i = 0; i < archetypes; i++) for (let j = i + 1; j < archetypes; j++) pairs.push([i, j]);
+  const jobs: CalibrationJob[] = [];
+  pairs.forEach(([i, j], p) => {
+    for (let q = 0; q < gamesPerPair / 2; q++) {
+      const c = q % combos;
+      const base = { pair: p, i, j, seed: CALIBRATION_SEED0 + 1000 * p + q, ai: Math.floor(c / lists), bi: c % lists };
+      jobs.push({ ...base, iFirst: true }, { ...base, iFirst: false });
+    }
+  });
+  return { pairs, jobs };
+}
+
+/** Archetype and list in seat 1, then seat 2. */
+export const seats = (jb: CalibrationJob): [{ archetype: number; list: number }, { archetype: number; list: number }] =>
+  jb.iFirst
+    ? [
+        { archetype: jb.i, list: jb.ai },
+        { archetype: jb.j, list: jb.bi },
+      ]
+    : [
+        { archetype: jb.j, list: jb.bi },
+        { archetype: jb.i, list: jb.ai },
+      ];
+
+/** The part of a match footer (src/sims/schemas.ts) the gate reads. */
+export interface FooterResult {
+  result: { winner: 1 | 2 | null; endCondition: string };
+}
+
+export const isDecisive = (f: FooterResult): boolean => f.result.endCondition === "base_destroyed" && f.result.winner !== null;
+
+/** Archetype i's decisive record in pair p; footers[k] is the result of jobs[k]. Seat 1 wins for i exactly when i sat in seat 1. */
+export function simRecordOf(jobs: readonly CalibrationJob[], footers: readonly FooterResult[], pair: number): { wins: number; n: number; nonDecisive: number } {
+  let wins = 0;
+  let n = 0;
+  let nonDecisive = 0;
+  jobs.forEach((jb, k) => {
+    if (jb.pair !== pair) return;
+    const f = footers[k];
+    if (!isDecisive(f)) {
+      nonDecisive++;
+      return;
+    }
+    n++;
+    if ((f.result.winner === 1) === jb.iFirst) wins++;
+  });
+  return { wins, n, nonDecisive };
 }

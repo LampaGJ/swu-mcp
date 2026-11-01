@@ -5,19 +5,20 @@
  * swumetastats' tournament results do. Bot play and tournament results sit side by side, never pooled (D21); no
  * Karabast data is read (D22).
  * @tacticalObjective Takes the top archetypes by share with distinct leader and base aspects (one highest-placing
- * buildable melee list each, the sampler's deckPanel), plays every archetype pair on seeded seat-swapped game pairs
+ * buildable melee list each, the sampler's deckPanel; or, with --lists k, the first k distinct lists of the sampler's
+ * seeded placement-weighted draw per archetype, #171), plays every archetype pair on seeded seat-swapped game pairs
  * with the rung on both seats on the warm worker pool, reads the tournament matchup of each pair from
  * meta/winrates.json, replays a spread sample of the matches in this thread (worker equals thread, replay to the
  * same trace, undo on equals off for rungs 0 to 2), checks health from the same games and the ladder from the pinned
  * ladder records, and writes one deterministic gate record (src/sims/calibration.ts gateRecordSchema) per rung.
  * Emits pollable progress to reports/.progress/sims-calibration-<rung>.json.
  *
- * Seeds: the calibration range 4,000,000+, disjoint from the ladder's (scripts/sims/ladder.ts). Pair p (archetypes
- * i < j in panel order) plays seeds 4,000,000 + 1,000p + q for q < gamesPerPair / 2, each seed twice with the seats
- * swapped.
+ * Seeds: the calibration range 4,000,000+, disjoint from the ladder's (scripts/sims/ladder.ts); the layout is
+ * calibrationJobs (src/sims/calibration.ts).
  *
  *   node --import tsx --import ./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung1 [--games 40] [--top 12]
  *   ... --policy rung3:k=8 --ladder rung3-vs-rung0.json:random-spike,rung3-vs-rung1.json:rung1
+ *   ... --policy rung1 --lists 3 --games 72 --out data/pinned/sim-calibration-v1/lists3
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -27,18 +28,25 @@ import { loadStore } from "../../src/data.js";
 import { winRatesFileSchema } from "../../src/meta/schema.js";
 import { REPO_ROOT } from "../../src/paths.js";
 import {
+  CALIBRATION_SEED0,
   CALIBRATION_THRESHOLDS,
   CALIBRATION_VERSION,
+  calibrationJobs,
   externalGate,
+  externalIntervals,
   gateRecordSchema,
   healthGate,
+  isDecisive,
   ladderStep,
+  seats,
+  simRecordOf,
   tournamentRecord,
+  type CalibrationJob,
   type CalibrationRow,
 } from "../../src/sims/calibration.js";
 import { DEFAULT_FORCETEKI } from "../../src/sims/engine-pin.js";
 import { playMatch, replayMatch, type DeckInput, type MatchSpec } from "../../src/sims/match.js";
-import { deckPanel, engineSetCodes, engineUnmappedCards, loadOpponentPool, mapCardKeyOf, storeAspectsOf } from "../../src/sims/opponents.js";
+import { deckPanel, engineSetCodes, engineUnmappedCards, loadOpponentPool, mapCardKeyOf, sampleStratified, storeAspectsOf, type OpponentList } from "../../src/sims/opponents.js";
 import { parsePolicySpec, policyHeader } from "../../src/sims/policies/index.js";
 import { shareOf } from "../../src/sims/policies/ladder-stats.js";
 import { loadTables } from "../../src/sims/policies/tables.js";
@@ -52,8 +60,10 @@ import { progress } from "../lib/progress.mjs";
 import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
 import { prepareDeck } from "./decks.js";
 
-const SEED0 = 4_000_000;
-const GAMES_PER_WORKER_PER_CHUNK = 40;
+/** The sampler seed of the --lists draw; fixed, so the same pool gives the same lists. */
+const LIST_SEED = "calibration-lists-v1";
+/** Draws per archetype from which the first k distinct lists are kept. */
+const LIST_DRAWS = 200;
 const FIDELITY_RECORD = "data/pinned/sim-ladder-v1/rung3-fidelity.json";
 /** Default ladder steps per rung: against rung 0, and against its promoted predecessor (D79: rung 2 is not promoted). */
 const DEFAULT_LADDER: Record<string, string> = {
@@ -73,8 +83,11 @@ async function main(): Promise<void> {
       policy: { type: "string" },
       top: { type: "string", default: "12" },
       games: { type: "string", default: "40" },
+      lists: { type: "string", default: "1" },
       replay: { type: "string", default: String(CALIBRATION_THRESHOLDS.replayMatches) },
       workers: { type: "string", default: "12" },
+      /** Games per worker per pool batch; progress ticks once a batch, so a slow rung needs a small one. */
+      chunk: { type: "string", default: "40" },
       heap: { type: "string" },
       run: { type: "string", default: path.join(REPO_ROOT, "data/runs/2026-10-31") },
       meta: { type: "string", default: path.join(REPO_ROOT, "data/runs/2026-11-01") },
@@ -91,7 +104,8 @@ async function main(): Promise<void> {
   const name = driverName(spec);
   const searches = ["lookahead", "montecarlo"].includes(parsePolicySpec(spec).kind);
   const gamesPerPair = Number(values.games);
-  if (!Number.isInteger(gamesPerPair) || gamesPerPair < 2 || gamesPerPair % 2 !== 0) throw new Error("--games must be an even integer >= 2");
+  const listsPer = Number(values.lists);
+  if (!Number.isInteger(listsPer) || listsPer < 1) throw new Error("--lists must be a positive integer");
   const pilotRun = path.resolve(values.run);
   const metaRun = path.resolve(values.meta);
   const decksDir = path.resolve(values.decks);
@@ -115,39 +129,35 @@ async function main(): Promise<void> {
   });
   const info = new Map(pool.archetypes.map((a) => [a.id, a]));
   const seen = new Set<string>();
-  const panel: { archetype: string; name: string; leader: string; baseAspects: string; share: number; list: string; sha256: string; deck: DeckInput }[] = [];
+  /** The first k distinct buildable lists of the sampler's seeded placement-weighted draw of one archetype. */
+  const drawnLists = (archetypeId: string, archetypeName: string): OpponentList[] => {
+    const out: OpponentList[] = [];
+    const draws = sampleStratified(pool, [{ id: archetypeId, name: archetypeName, weight: 1, n: LIST_DRAWS, archetypeIds: [archetypeId] }], { seed: LIST_SEED }).draws;
+    for (const d of draws) if (!out.some((l) => l.key === d.list.key) && out.length < listsPer) out.push(d.list);
+    if (out.length < listsPer) throw new Error(`${archetypeId}: only ${out.length} distinct buildable lists in ${LIST_DRAWS} draws, fewer than --lists ${listsPer}`);
+    return out;
+  };
+  const panel: { archetype: string; name: string; leader: string; baseAspects: string; share: number; lists: { list: string; sha256: string; deck: DeckInput }[] }[] = [];
   for (const e of deckPanel(pool, { top: pool.archetypes.length })) {
     const a = info.get(e.archetypeId);
     if (a === undefined || e.list === null) continue;
     const k = `${a.leaderKey}|${a.baseAspects}`;
     if (seen.has(k)) continue;
     seen.add(k);
-    const file = path.join(decksDir, `${e.list.key}.json`);
-    const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
-    panel.push({ archetype: a.id, name: a.name, leader: a.leaderKey, baseAspects: a.baseAspects, share: a.share, list: `file:${rel(file)}`, sha256: sha256(JSON.stringify(raw)), deck: prepareDeck(ctx.bridge, raw, `file:${rel(file)}`) });
+    const chosen = listsPer === 1 ? [e.list] : drawnLists(a.id, a.name);
+    const lists = chosen.map((l) => {
+      const file = path.join(decksDir, `${l.key}.json`);
+      const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
+      return { list: `file:${rel(file)}`, sha256: sha256(JSON.stringify(raw)), deck: prepareDeck(ctx.bridge, raw, `file:${rel(file)}`) };
+    });
+    panel.push({ archetype: a.id, name: a.name, leader: a.leaderKey, baseAspects: a.baseAspects, share: a.share, lists });
     if (panel.length === Number(values.top)) break;
   }
 
-  interface Job {
-    pair: number;
-    i: number;
-    j: number;
-    seed: number;
-    /** True when archetype i sits in seat 1. */
-    iFirst: boolean;
-  }
-  const pairs: [number, number][] = [];
-  for (let i = 0; i < panel.length; i++) for (let j = i + 1; j < panel.length; j++) pairs.push([i, j]);
-  const jobs: Job[] = [];
-  pairs.forEach(([i, j], p) => {
-    for (let q = 0; q < gamesPerPair / 2; q++) {
-      const seed = SEED0 + 1000 * p + q;
-      jobs.push({ pair: p, i, j, seed, iFirst: true }, { pair: p, i, j, seed, iFirst: false });
-    }
-  });
-  const toSpec = (jb: Job, recordMode: MatchSpec["recordMode"] = "none", undo = searches): MatchSpec => ({
+  const { pairs, jobs } = calibrationJobs(panel.length, gamesPerPair, listsPer);
+  const toSpec = (jb: CalibrationJob, recordMode: MatchSpec["recordMode"] = "none", undo = searches): MatchSpec => ({
     seed: String(jb.seed),
-    decks: jb.iFirst ? [panel[jb.i].deck, panel[jb.j].deck] : [panel[jb.j].deck, panel[jb.i].deck],
+    decks: ((o) => [panel[o[0].archetype].lists[o[0].list].deck, panel[o[1].archetype].lists[o[1].list].deck] as const)(seats(jb)),
     policies: [name, name],
     recordMode,
     undo,
@@ -166,10 +176,10 @@ async function main(): Promise<void> {
   const sim = await createPool({ workers, pin, resourceLimits });
   const footers: MatchFooter[] = [];
   try {
-    const parts: Job[][] = [];
-    const chunk = GAMES_PER_WORKER_PER_CHUNK * workers;
+    const parts: CalibrationJob[][] = [];
+    const chunk = Number(values.chunk) * workers;
     for (let k = 0; k < jobs.length; k += chunk) parts.push(jobs.slice(k, k + chunk));
-    const start = (part: Job[]) => sim.run({ specs: part.map((jb) => toSpec(jb)), cardKeys: keys });
+    const start = (part: CalibrationJob[]) => sim.run({ specs: part.map((jb) => toSpec(jb)), cardKeys: keys });
     let next = parts.length > 0 ? start(parts[0]) : null;
     for (let c = 0; c < parts.length; c++) {
       const current = next as ReturnType<typeof start>;
@@ -220,7 +230,6 @@ async function main(): Promise<void> {
   };
 
   // Health gate, from the calibration games.
-  const decisive = (f: MatchFooter): boolean => f.result.endCondition === "base_destroyed" && f.result.winner !== null;
   const ends: Record<string, number> = {};
   let decisions = 0;
   let answered = 0;
@@ -231,7 +240,7 @@ async function main(): Promise<void> {
     answered += f.coverage.answered[0] + f.coverage.answered[1];
   }
   const health = {
-    ...healthGate({ games: footers.length, nonDecisive: footers.filter((f) => !decisive(f)).length, decisions, fallback: decisions - answered }, CALIBRATION_THRESHOLDS),
+    ...healthGate({ games: footers.length, nonDecisive: footers.filter((f) => !isDecisive(f)).length, decisions, fallback: decisions - answered }, CALIBRATION_THRESHOLDS),
     endConditions: Object.fromEntries(Object.entries(ends).sort(([a], [b]) => compareCodePoints(a, b))),
   };
 
@@ -252,19 +261,7 @@ async function main(): Promise<void> {
   pairs.forEach(([i, j], pIdx) => {
     const t = tournamentRecord(winrates.matchups?.pairs ?? [], { leader: panel[i].leader, baseAspects: panel[i].baseAspects }, { leader: panel[j].leader, baseAspects: panel[j].baseAspects }, CALIBRATION_THRESHOLDS.minN);
     if (t === null) return;
-    let wins = 0;
-    let n = 0;
-    let nonDecisive = 0;
-    jobs.forEach((jb, k) => {
-      if (jb.pair !== pIdx) return;
-      const f = footers[k];
-      if (!decisive(f)) {
-        nonDecisive++;
-        return;
-      }
-      n++;
-      if ((f.result.winner === 1) === jb.iFirst) wins++;
-    });
+    const { wins, n, nonDecisive } = simRecordOf(jobs, footers, pIdx);
     const s = shareOf(wins, n);
     rows.push({ a: panel[i].archetype, b: panel[j].archetype, aName: panel[i].name, bName: panel[j].name, tournament: t, sim: { wins, n, share: s.share, low: s.low, high: s.high, nonDecisive } });
   });
@@ -272,7 +269,7 @@ async function main(): Promise<void> {
   const m = winrates.matchups;
   const external = {
     ...ext,
-    simLabel: `bot play (forceteki ${spec}), not human results: ${gamesPerPair} games per archetype pair, one highest-placing buildable melee list per archetype, the rung on both seats`,
+    simLabel: `bot play (forceteki ${spec}), not human results: ${gamesPerPair} games per archetype pair, ${listsPer === 1 ? "one highest-placing buildable melee list per archetype" : `${listsPer} placement-weighted buildable melee lists per archetype (sampler seed ${LIST_SEED}), every list pairing on the same number of seeds`}, the rung on both seats`,
     tournamentLabel: `${m?.label ?? "tournament matchups"}, ${m?.period.from} to ${m?.period.to}, minN ${CALIBRATION_THRESHOLDS.minN}`,
     rows,
   };
@@ -300,8 +297,14 @@ async function main(): Promise<void> {
     decks: rel(decksDir),
     codeCommit: ctx.codeCommit,
     thresholds: { ...CALIBRATION_THRESHOLDS },
-    seeds: { from: SEED0, to: SEED0 + 1000 * (pairs.length - 1) + gamesPerPair / 2 - 1, gamesPerPair, scheme: "engine seed <seed>; pair p (archetypes i < j in panel order) plays seeds 4000000 + 1000p + q, q < gamesPerPair / 2, each seed twice with the seats swapped" },
-    panel: panel.map((e) => ({ archetype: e.archetype, name: e.name, leader: e.leader, baseAspects: e.baseAspects, share: e.share, list: e.list, sha256: e.sha256 })),
+    seeds: {
+      from: CALIBRATION_SEED0,
+      to: Math.max(...jobs.map((jb) => jb.seed)),
+      gamesPerPair,
+      scheme: `engine seed <seed>; pair p (archetypes i < j in panel order) plays seeds 4000000 + 1000p + q, q < gamesPerPair / 2, each seed twice with the seats swapped${listsPer === 1 ? "" : `; seed q plays list pairing c = q mod ${listsPer * listsPer}, list floor(c / ${listsPer}) of i against list c mod ${listsPer} of j (panel entries of an archetype in list order)`}`,
+      ...(listsPer === 1 ? {} : { listsPerArchetype: listsPer }),
+    },
+    panel: panel.flatMap((e) => e.lists.map((l) => ({ archetype: e.archetype, name: e.name, leader: e.leader, baseAspects: e.baseAspects, share: e.share, list: l.list, sha256: l.sha256 }))),
     gates,
     pass: failedGates.length === 0,
     servesWinShare: failedGates.length === 0,
@@ -312,7 +315,7 @@ async function main(): Promise<void> {
     writeFileSync(path.join(values.out, recordFileName(spec)), `${JSON.stringify(record, null, 1)}\n`);
   }
   p.done({ pass: record.pass, failedGates });
-  const brief = { policy: spec, pass: record.pass, failedGates, replay: { ...replayGate }, health, ladder: steps.map((s) => ({ record: s.record, pass: s.pass, stale: s.stale })), external: { spearman: ext.spearman, favourite: ext.favourite, pairs: ext.pairs, failed: ext.failed } };
+  const brief = { policy: spec, pass: record.pass, failedGates, replay: { ...replayGate }, health, ladder: steps.map((s) => ({ record: s.record, pass: s.pass, stale: s.stale })), external: { spearman: ext.spearman, favourite: ext.favourite, pairs: ext.pairs, failed: ext.failed, intervals: externalIntervals(ext) } };
   process.stdout.write(`${JSON.stringify(brief, null, 1)}\n`);
 }
 
