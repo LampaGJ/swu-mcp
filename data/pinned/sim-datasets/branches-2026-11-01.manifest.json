@@ -1,0 +1,122 @@
+{
+ "schemaVersion": 1,
+ "label": "bot play (D21): continuation values under the named rung, never pooled with tournament data",
+ "purpose": "dataset",
+ "trainingEligible": true,
+ "parameters": {
+  "runSeed": "dataset-2026-11-01",
+  "rate": 1,
+  "target": 10100,
+  "K": 8,
+  "N": 1,
+  "rung": 1,
+  "maxContinuationDecisions": 2000,
+  "maxSourceDecisions": 2000,
+  "date": "2026-11-01"
+ },
+ "determinization": {
+  "mode": "multiset",
+  "primitive": "src/sims/policies/flat-mc.ts determinize"
+ },
+ "engine": {
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataSha256": "bb374aa938f8d907fbf460b23d54ba6b94997efa2146fe26f3579c6f53e96e27",
+  "node": "v26.4.0",
+  "undoMode": "free"
+ },
+ "continuationPolicy": {
+  "rung": 1,
+  "spec": "rung1:sacGuard=1,handCap=1",
+  "policyId": "rung1-rules",
+  "version": "1",
+  "paramsSha256": "13bd2dd481a0af4b726915fd4fb7b1db13287883fc47c5b11a4db4f5c733ca31",
+  "evaluatorManifestSha256": null,
+  "ladder": {
+   "step": "rung1-pilot-vs-rung0",
+   "file": "data/pinned/sim-ladder-v1/rung1-pilot-vs-rung0.json",
+   "sha256": "4ff8e9e367b45416c803d1e810cf77dc46d417d9fdc1986f33ce20ffd9dca45d",
+   "passed": true
+  }
+ },
+ "vocab": {
+  "dataVersion": "2026-10-30.r6.v2",
+  "contentSha256": "4254d5928c4a50926cdb2d5fb3c43ea57696527ddeaa7c7fde9d08932d8ad2fc"
+ },
+ "state": {
+  "stateVersion": 1,
+  "layoutSha256": "74c8292c3f21a2575bb06a6ee578993f5121b64bbacda92aa38c7d459a8efc35"
+ },
+ "source": {
+  "batchSha256": "a7959c03331a95ac23d31a0f79cc4406265509339bd1e935f12b7bc8b3cc48b3",
+  "generator": "in-run",
+  "policy": "rung1:sacGuard=1,handCap=1",
+  "seedRanges": [
+   {
+    "from": 6000000,
+    "count": 600
+   }
+  ],
+  "splits": {
+   "train": {
+    "from": 6000000,
+    "count": 420
+   },
+   "validation": {
+    "from": 6000420,
+    "count": 90
+   },
+   "test": {
+    "from": 6000510,
+    "count": 90
+   }
+  },
+  "evaluationSeedRange": {
+   "from": 9000000,
+   "count": 2000
+  },
+  "deckSources": [
+   "melee"
+  ]
+ },
+ "counts": {
+  "sourceGames": 600,
+  "sourceErrors": 4,
+  "sourceTimeouts": 1,
+  "sourceReplayMismatch": 3,
+  "candidates": 33956,
+  "singleAnswerSkipped": 3593,
+  "sampled": 10100,
+  "sampledGames": 594,
+  "testGames": 88,
+  "records": 10062,
+  "rootMismatch": 0,
+  "actions": 49649,
+  "continuations": 397192,
+  "draws": 537,
+  "timeouts": 49,
+  "afterTerminal": 408,
+  "errors": {
+   "afterstate error: Cannot read properties of undefined (reading 'willDefeat')": 2,
+   "branch: Contract assertion failure: Attempting to read property 'exhausted' on 'poe-dame": 3,
+   "continuation: Cannot read properties of null (reading 'length')": 2,
+   "continuation: Cannot read properties of undefined (reading 'title')": 47,
+   "continuation: Cannot read properties of undefined (reading 'willDefeat')": 1203,
+   "continuation: Contract assertion failure: Attempting to read property 'activeAttack' on 'razor": 1,
+   "continuation: Contract assertion failure: Do not set playerChoosingOptional or optionalButtonT": 6,
+   "continuation: Contract assertion failure: Null-like object value: null": 451
+  },
+  "unknownCards": 287,
+  "unitOverflow": 0
+ },
+ "humanDerivedInputs": [],
+ "outputs": {
+  "records": 10062,
+  "jsonlSha256": "16672bb38fa2d1fdc3f03e6e455b0346796147587377dd4f472a186334a0c575",
+  "gzSha256": "2ad00810a223994e4337cb014c473254e2bc9330156010253543599efd9de35d"
+ },
+ "replay": {
+  "inputHash": "66b08b20935724ece75d15206814d83f5f37e1472f468a2e439adaf568f4e809",
+  "codeCommit": "8ee9932e70dd9e82d41d1ab66b04cf2b5c4c4eff-dirty",
+  "outputHash": "16672bb38fa2d1fdc3f03e6e455b0346796147587377dd4f472a186334a0c575"
+ }
+}

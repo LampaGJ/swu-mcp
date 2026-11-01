@@ -51,7 +51,8 @@
     "sims:branch-probe": "tsx scripts/sims/branch-probe.ts",
     "sims:feature-map": "tsx scripts/sims/feature-map.ts",
     "sims:inventory": "tsx scripts/sims/inventory-models.ts",
-    "sims:vocab": "tsx scripts/sims/build-vocab.ts"
+    "sims:vocab": "tsx scripts/sims/build-vocab.ts",
+    "sims:branches": "tsx scripts/sims/sample-branches.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",
