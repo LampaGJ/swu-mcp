@@ -3,7 +3,7 @@
  * @strategicPurpose Manipulation node (LampaGJ/swu-mcp#8): the built run data/runs/<date>/ in, one deterministic
  * tar.gz out (the GitHub Release asset) plus the committed pin src/data-release.json, so the server can verify what
  * it downloads. Same run in, same bytes out.
- * @tacticalObjective Archives only what the server reads (llm, features, scores, synergy, market, rules, similarity, meta, sleepers)
+ * @tacticalObjective Archives only what the server reads (llm, features, scores, synergy, market, rules, similarity, meta, sleepers, deck-index)
  * plus the build records (build.json, replay.json, README.md). Entries are sorted by code point; mtime, owner and mode
  * are fixed by tar's portable mode and a fixed mtime; the gzip header carries no time and a fixed OS byte.
  * Prints the `gh release create` command and never runs it.
@@ -25,7 +25,7 @@ import { buildRecordSchema } from "./lib/build-record.js";
 import { compareCodePoints } from "../src/swu/canonical.js";
 
 const REPO = "LampaGJ/swu-mcp";
-const SERVER_DIRS = ["docs", "features", "llm", "market", "meta", "rules", "scores", "similarity", "sleepers", "synergy"];
+const SERVER_DIRS = ["deck-index", "docs", "features", "llm", "market", "meta", "rules", "scores", "similarity", "sleepers", "synergy"];
 const RECORD_FILES = ["README.md", "build.json", "replay.json"];
 const FIXED_MTIME = new Date(0);
 

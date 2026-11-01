@@ -32,6 +32,7 @@
     "meta:capture-matchups": "tsx scripts/meta/capture-matchups.ts",
     "meta:capture-decklists": "tsx scripts/meta/capture-decklists.ts",
     "meta:sleepers": "tsx scripts/meta/sleepers.ts",
+    "meta:deck-index": "tsx scripts/meta/deck-index.ts",
     "meta:sleepers-report": "tsx scripts/meta/sleepers-report.ts",
     "meta:counter-fixture": "tsx scripts/meta/make-counter-fixture.ts",
     "verify:audit": "tsx scripts/verify/audit.ts",

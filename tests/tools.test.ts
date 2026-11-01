@@ -114,6 +114,7 @@ describe("MCP protocol", () => {
       "data_version",
       "deck_audit",
       "deck_legality_check",
+      "deck_remixer",
       "explain_rubric",
       "explain_synergy",
       "find_by_effect",

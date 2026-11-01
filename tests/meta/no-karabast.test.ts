@@ -36,7 +36,7 @@ function importClosure(entry: string): string[] {
 }
 
 describe("no Karabast number can ship (D22)", () => {
-  it.each(["scripts/meta.ts", "scripts/meta/sleepers.ts", "scripts/meta/capture-decklists.ts", "src/tools/meta.ts"])("%s and everything it imports never read Karabast data", (entry) => {
+  it.each(["scripts/meta.ts", "scripts/meta/sleepers.ts", "scripts/meta/capture-decklists.ts", "scripts/meta/deck-index.ts", "src/tools/meta.ts", "src/tools/deck-remixer.ts"])("%s and everything it imports never read Karabast data", (entry) => {
     const closure = importClosure(entry);
     expect(closure.length).toBeGreaterThan(3);
     expect(closure.filter((f) => f.startsWith("scripts/bench/") && !/card-map|code-commit/.test(f))).toEqual([]);

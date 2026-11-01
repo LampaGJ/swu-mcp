@@ -141,6 +141,13 @@ function main(): void {
       owns: ["sleepers"],
       replay: "sleepers/replay.json",
     },
+    {
+      name: "deck-index",
+      script: "scripts/meta/deck-index.ts",
+      args: ["--data", runDir, "--originals", originals],
+      owns: ["deck-index"],
+      replay: "deck-index/replay.json",
+    },
   ];
 
   const p = progress("build-data", { total: steps.length, everyN: 1 });
