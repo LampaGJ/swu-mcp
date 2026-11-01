@@ -8,32 +8,12 @@
  *
  *   node node_modules/tsx/dist/cli.mjs scripts/sims/watch.ts [--all] [--once] [--interval 2] [--no-color]
  */
-import { execFile } from "node:child_process";
-import path from "node:path";
 import { parseArgs, styleText } from "node:util";
 import { REPO_ROOT } from "../../src/paths.js";
-import { discoverJobs, parseWorktreeList, plain, renderScreen, type Paint, type Source } from "../../src/sims/watch.js";
+import { isAlive, listSources } from "../../src/sims/sources.js";
+import { discoverJobs, plain, renderScreen, type Paint, type Source } from "../../src/sims/watch.js";
 
 const WORKTREE_REFRESH_MS = 30_000;
-
-function listWorktrees(): Promise<Source[]> {
-  return new Promise((resolve) => {
-    execFile("git", ["-C", REPO_ROOT, "worktree", "list", "--porcelain"], { encoding: "utf8", timeout: 60_000 }, (err, stdout) => {
-      const trees = err === null ? parseWorktreeList(stdout) : [];
-      if (trees.length === 0) return resolve([{ root: REPO_ROOT, label: path.basename(REPO_ROOT), branch: null }]);
-      resolve(trees.map((t) => ({ root: t.path, label: t.main ? `${path.basename(t.path)} (main checkout)` : path.basename(t.path), branch: t.branch })));
-    });
-  });
-}
-
-const isAlive = (pid: number): boolean => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (e) {
-    return (e as NodeJS.ErrnoException).code === "EPERM";
-  }
-};
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -47,7 +27,7 @@ async function main(): Promise<void> {
     return `${renderScreen({ jobs: found.jobs, all: values.all === true, skipped: found.skipped, sources, nowMs, paint }).join("\n")}\n`;
   };
 
-  let sources = await listWorktrees();
+  let sources = await listSources(REPO_ROOT);
   if (values.once === true || !tty || !process.stdin.isTTY) {
     process.stdout.write(frame(sources));
     return;
@@ -60,7 +40,7 @@ async function main(): Promise<void> {
     out.write(`\x1b[H${frame(sources).split("\n").map((l) => `${l}\x1b[K`).join("\n")}\x1b[J`);
     if (Date.now() - refreshed > WORKTREE_REFRESH_MS) {
       refreshed = Date.now();
-      void listWorktrees().then((s) => {
+      void listSources(REPO_ROOT).then((s) => {
         sources = s;
       });
     }

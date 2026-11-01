@@ -125,6 +125,29 @@ How the payload travels. The writers are `scripts/sims/ladder.ts`, `calibration-
 
 Reading a stall. The Pool rule below still holds: a heartbeat that has not moved in 5 minutes is checked, and the job is killed only if you started it. STALLED with a live pid and a growing `last progress` is a hung pool; DEAD is a crash (read the job's stderr).
 
+## Condensed summary for widgets
+
+`pnpm sims:summary` reads the same heartbeats as `sims:watch` (the main checkout and every linked worktree, `reports/.progress/*.json` and `tmp/sims-jobs/*/progress.json`; discovery and the running, stalled, dead and done classification are `src/sims/watch.ts`, the checkout list is `src/sims/sources.ts`) and prints a small versioned document for a schickso in-pull plugin and a TerminalWidget provider (D100, #179). Call it as `node "<repo>/node_modules/tsx/dist/cli.mjs" "<repo>/scripts/sims/summary.ts" --json`; a bare `pnpm` call costs about 30 s on this volume. `--text` is the default.
+
+Exit codes. 0 with an empty `jobs` list when nothing ran recently. 2 when the repo cannot be read, when both flags are given, or when the summary fails its own schema (the emitter gate, `simsSummarySchema.parse` at the end of `summarize`, `src/sims/summary.ts:180`).
+
+The JSON (schemaVersion 1; the schema is `simsSummarySchema`, `src/sims/summary.ts:49`, and the JSON Schema export is `docs/schemas/sims-summary.v1.schema.json`):
+
+- `schemaVersion` 1, `generatedAt` (ISO, UTC), `repo` (directory name only).
+- `totals`: `running`, `stalled`, `dead`, `doneLastHour`. They count every visible job, before the cap on `jobs`.
+- `jobs`, at most 8, in this order: stalled, then dead, then running (an urgent job is never cut by the cap), then finished jobs from the last hour, newest first. Within a state the freshest heartbeat comes first. A job is visible by the same rule as the `sims:watch` default view (`selectVisible`, `src/sims/watch.ts`).
+- Per job: `id` (the heartbeat's job name), `worktree` ("main" for the main checkout, else the worktree directory name), `kind` (ladder, field, h2h, tune, cost, calibration, branches, matchup, other; the writer's own kind from the live stats, with grid as other, and for a heartbeat without stats the kind the job name says), `state`, `phase` (at most 80 characters, "done" once finished), `done`, `total`, `pct`, `etaS` (null once finished), `gamesPerS`, `updatedAgeS` (seconds since the file was last written, the keepalive counts), `result`, `health`, `verdict`, `headline`.
+- `result` is null or `{ subject, share, low, high, p, n }`: the subject's share of decisive games with its Wilson 95% interval, `n` the decisive games, `p` the running exact sign test on duplicate pairs or null without pairs. A running `p` is a progress reading, never a stopping rule (D99 point 2). A finished job with no running phase falls back to its last finished phase.
+- `health` is `{ errors, draws, timeouts }` over the whole run; all zero when the heartbeat has no stats, which says nothing about the run's health.
+- `verdict` is null, or `{ pass, failedGates }` for a finished calibration or ladder job whose done heartbeat carries `pass` (`scripts/sims/calibration-gate.ts:352` writes `pass` and `failedGates`; `scripts/sims/ladder.ts:432` writes `pass` only, so a ladder verdict has an empty `failedGates`).
+- `headline` is one line of at most 72 characters, for example `h2h base vs anakin 36% 4560/12600 ETA 1h45 base 51.2% [47.9,54.5] p .31`. STALLED and DEAD jobs start with that word and end the progress part with `quiet <age>` in place of the ETA. A finished job reads `done <done>/<total>` and PASS or FAIL with the failed gates. The contenders (or the shortened job name) shrink first when the line is too long; the progress and the result stay.
+
+`--text` is at most 5 lines of at most 60 characters. Line 1 is the totals, `SWU sims 1 running, 0 stalled, 3 done/1h` (a nonzero stalled count is capitalised and a nonzero dead count adds `, N DEAD`). Then one line per job in the JSON order, with STALLED and DEAD in capitals; with more than four jobs it shows three and a last line `+N more jobs`. A text line drops the counts and the interval to fit.
+
+What it never contains: an absolute path or a hostname (strings are scrubbed in `summarize` and the schema rejects a leak), or any Karabast-derived figure (it reads only simulation heartbeats; D22).
+
+The export. `pnpm sims:summary:schema` rewrites `docs/schemas/sims-summary.v1.schema.json` from the Zod schema with `z.toJSONSchema` (`scripts/sims/export-summary-schema.ts`; `--check` only compares). `tests/sims/summary.test.ts` fails when the committed file is stale. A field change is a new schemaVersion and a new schema file, never an edit of v1.
+
 ## Pool rule
 
 Run one sims pool job at a time. Each job takes 12 workers, the number of performance cores on the dev machine (`src/tools/sims.ts:104`). More workers do not raise throughput and do raise memory. The measurements are in `docs/research/sim-compute-measurements.md`.
@@ -146,5 +169,6 @@ The `pnpm sims:*` scripts in `package.json:45-59`:
 - `sims:inventory`: inventory the models on `/Volumes/Models/swu` into `data/pinned/sim-models/` (D93).
 - `sims:vocab`: build the pinned card vocabulary under `data/pinned/sim-vocab/`.
 - `sims:watch`: the live terminal view of every running simulation job (see "Watching runs").
+- `sims:summary`: the condensed JSON or text summary for widgets (see "Condensed summary for widgets"); `sims:summary:schema` regenerates its JSON Schema.
 
 Other scripts in `scripts/sims/` have no `pnpm` alias: `calibration-gate.ts`, `calibration-report.ts`, `ladder.ts`, `trace-calibration.ts`, `model-parity.ts`, `matchup-job.ts`. Run them with `tsx` and read each file's header for its usage.

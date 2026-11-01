@@ -61,6 +61,8 @@ export interface Source {
   root: string;
   label: string;
   branch: string | null;
+  /** The main checkout, as git lists it first. Absent counts as a linked worktree. */
+  main?: boolean;
 }
 
 export type JobState = "running" | "stalled" | "dead" | "done";

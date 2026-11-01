@@ -56,7 +56,9 @@
     "sims:train-evaluator": "tsx scripts/sims/train-evaluator.ts",
     "sims:bench-evaluator": "node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/bench-evaluator.ts",
     "sims:evaluator-parity": "tsx scripts/sims/evaluator-parity.ts",
-    "sims:watch": "tsx scripts/sims/watch.ts"
+    "sims:watch": "tsx scripts/sims/watch.ts",
+    "sims:summary": "tsx scripts/sims/summary.ts",
+    "sims:summary:schema": "tsx scripts/sims/export-summary-schema.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",

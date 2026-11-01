@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "description": "When this summary was computed (UTC)."
+    },
+    "repo": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Repository directory name, never a path."
+    },
+    "totals": {
+      "type": "object",
+      "properties": {
+        "running": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "stalled": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "dead": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "doneLastHour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "running",
+        "stalled",
+        "dead",
+        "doneLastHour"
+      ],
+      "additionalProperties": false,
+      "description": "Counts over every visible job, before the cap on jobs."
+    },
+    "jobs": {
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Job name (the heartbeat's job field)."
+          },
+          "worktree": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Checkout the heartbeat lives in; \"main\" for the main checkout."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ladder",
+              "field",
+              "h2h",
+              "tune",
+              "cost",
+              "calibration",
+              "branches",
+              "matchup",
+              "other"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "running",
+              "stalled",
+              "dead",
+              "done"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "The phase running now; \"done\" when finished."
+          },
+          "done": {
+            "type": "number",
+            "minimum": 0
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "etaS": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when finished or unknown."
+          },
+          "gamesPerS": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAgeS": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Seconds since the heartbeat file was last written."
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "description": "Whose share this is (the policy or deck whose win share is measured)."
+                  },
+                  "share": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Subject's share of decisive games so far."
+                  },
+                  "low": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Lower end of the Wilson 95% interval."
+                  },
+                  "high": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Upper end of the Wilson 95% interval."
+                  },
+                  "p": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Running exact two-sided sign test on duplicate pairs; a progress reading, not a verdict. Null without pairs."
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Decisive games the share rests on."
+                  }
+                },
+                "required": [
+                  "subject",
+                  "share",
+                  "low",
+                  "high",
+                  "p",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "draws": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "timeouts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "errors",
+              "draws",
+              "timeouts"
+            ],
+            "additionalProperties": false,
+            "description": "Whole-run totals; all zero when the heartbeat carries no stats."
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "pass": {
+                    "type": "boolean"
+                  },
+                  "failedGates": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  }
+                },
+                "required": [
+                  "pass",
+                  "failedGates"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only for finished calibration and ladder jobs whose heartbeat carries pass."
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 72,
+            "description": "One line for a widget."
+          }
+        },
+        "required": [
+          "id",
+          "worktree",
+          "kind",
+          "state",
+          "phase",
+          "done",
+          "total",
+          "pct",
+          "etaS",
+          "gamesPerS",
+          "updatedAgeS",
+          "result",
+          "health",
+          "verdict",
+          "headline"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Stalled, dead and running jobs first (in that order), then finished jobs from the last hour, newest first."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "repo",
+    "totals",
+    "jobs"
+  ],
+  "additionalProperties": false,
+  "title": "swu-mcp sims summary, schemaVersion 1",
+  "description": "Condensed state of the simulation jobs in a swu-mcp checkout and its linked worktrees (pnpm sims:summary --json)."
+}
