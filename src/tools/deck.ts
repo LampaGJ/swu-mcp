@@ -646,7 +646,7 @@ function wideBoardNeed(syn: SynergyCard): number {
  * playable_cards and deck_audit too. D87 (#169): evidenceGap is on every row, so one row does not turn a TOON table into a list;
  * D89 (#170): it holds the measured difference on an ok row too (BD-1 at +7.7 points), null only when unmeasured or thin-control.
  */
-function pairEvidence(env: DeckEnv, pair: { leader: Piece; base: Piece }) {
+export function pairEvidence(env: DeckEnv, pair: { leader: Piece; base: Piece }) {
   const evidence = deckEvidenceOf(env.store);
   const ours = evidenceKeysOf(pair.leader.row.cardKey, cardLabel(pair.leader.row), pair.leader.syn.structured.aspectIcons, pair.base.syn.structured.aspectIcons);
   const evidenceFields = (cardKey: string): { evidenceClass?: EvidenceClass; evidenceGap?: number | null } => {

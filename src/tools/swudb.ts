@@ -90,6 +90,15 @@ export function swudbCandidates(store: CardStore, id: string): CardRow[] {
   return [...(reprint.get(key) ?? [])].sort((a, b) => compareCodePoints(a.cardKey, b.cardKey));
 }
 
+/**
+ * A card's own SET_NNN printing id (its expansion and card number), the id a SWUDB or Karabast import resolves; null when the
+ * table lacks those columns. swudbCandidates maps it back to this card, because a card's own printing wins over a reprint.
+ */
+export function swudbIdOf(row: CardRow): string | null {
+  const columns = cardColumns.safeParse(row);
+  return columns.success ? `${columns.data.expansion}_${pad3(columns.data.cardNumber)}` : null;
+}
+
 /** Whether the table carries the expansion and cardNumber columns the SET_NNN mapping reads. */
 export function hasPrintingColumns(store: CardStore): boolean {
   return printingIndex(store).own.size > 0;
