@@ -1,0 +1,5608 @@
+{
+ "schemaVersion": 1,
+ "populations": [
+  {
+   "method": "human play",
+   "tier": "casual online games",
+   "label": "Human play: casual online games between people, spectated",
+   "window": {
+    "from": "2026-02-08",
+    "to": "2026-02-10"
+   },
+   "games": 13596,
+   "attacks": 182174,
+   "unresolvedAttackers": 586,
+   "unresolvedTargets": 17344,
+   "measuredAttacks": 69627,
+   "attackers": [
+    {
+     "cardKey": "06010t01",
+     "title": "Spy",
+     "attacks": 5728,
+     "games": 2366,
+     "gameShare": 0.174,
+     "attacksPerGame": 2.421,
+     "targets": {
+      "base": 4212,
+      "units": 1516,
+      "unresolvedUnits": 451,
+      "baseShare": 0.7353
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 158,
+       "share": 0.0276
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 39,
+       "share": 0.0068
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 29,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 27,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 27,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 23,
+       "share": 0.004
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 20,
+       "share": 0.0035
+      },
+      {
+       "cardKey": "06010163",
+       "title": "Outer Rim Constable",
+       "attacks": 17,
+       "share": 0.003
+      },
+      {
+       "cardKey": "05010229",
+       "title": "Kylo Ren, I Know Your Story",
+       "attacks": 16,
+       "share": 0.0028
+      },
+      {
+       "cardKey": "06010057",
+       "title": "Lobot, Cloud City Coordinator",
+       "attacks": 16,
+       "share": 0.0028
+      }
+     ],
+     "results": {
+      "measured": 2309,
+      "unitAttacks": 577,
+      "targetDefeated": 344,
+      "attackerDefeated": 433,
+      "both": 254,
+      "neither": 54,
+      "meanDamageToTarget": 1.7227,
+      "baseAttacks": 1707,
+      "meanBaseDamage": 2.0149
+     },
+     "sideResult": {
+      "sides": 2465,
+      "wins": 1530,
+      "winShare": 0.6207,
+      "low": 0.6014,
+      "high": 0.6396
+     }
+    },
+    {
+     "cardKey": "04010096",
+     "title": "Blue Leader, Scarif Air Support",
+     "attacks": 4349,
+     "games": 2367,
+     "gameShare": 0.1741,
+     "attacksPerGame": 1.8373,
+     "targets": {
+      "base": 1348,
+      "units": 3001,
+      "unresolvedUnits": 676,
+      "baseShare": 0.31
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 47,
+       "share": 0.0108
+      },
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 46,
+       "share": 0.0106
+      },
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 46,
+       "share": 0.0106
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 45,
+       "share": 0.0103
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 45,
+       "share": 0.0103
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 44,
+       "share": 0.0101
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 38,
+       "share": 0.0087
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 35,
+       "share": 0.008
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 34,
+       "share": 0.0078
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 33,
+       "share": 0.0076
+      }
+     ],
+     "results": {
+      "measured": 1706,
+      "unitAttacks": 1174,
+      "targetDefeated": 982,
+      "attackerDefeated": 404,
+      "both": 316,
+      "neither": 104,
+      "meanDamageToTarget": 3.1559,
+      "baseAttacks": 495,
+      "meanBaseDamage": 3.6751
+     },
+     "sideResult": {
+      "sides": 2477,
+      "wins": 1332,
+      "winShare": 0.5377,
+      "low": 0.5181,
+      "high": 0.5573
+     }
+    },
+    {
+     "cardKey": "04010t01",
+     "title": "TIE Fighter",
+     "attacks": 2425,
+     "games": 758,
+     "gameShare": 0.0558,
+     "attacksPerGame": 3.1992,
+     "targets": {
+      "base": 2122,
+      "units": 303,
+      "unresolvedUnits": 27,
+      "baseShare": 0.8751
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 18,
+       "share": 0.0074
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 15,
+       "share": 0.0062
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 11,
+       "share": 0.0045
+      },
+      {
+       "cardKey": "04010095",
+       "title": "Phoenix Squadron A-Wing",
+       "attacks": 10,
+       "share": 0.0041
+      },
+      {
+       "cardKey": "i01010031",
+       "title": "Millennium Falcon, Bucket of Bolts",
+       "attacks": 10,
+       "share": 0.0041
+      },
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 8,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "04010119",
+       "title": "Resupply Carrier",
+       "attacks": 8,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 8,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 7,
+       "share": 0.0029
+      },
+      {
+       "cardKey": "04010212",
+       "title": "Republic Y-Wing",
+       "attacks": 7,
+       "share": 0.0029
+      }
+     ],
+     "results": {
+      "measured": 976,
+      "unitAttacks": 131,
+      "targetDefeated": 67,
+      "attackerDefeated": 114,
+      "both": 55,
+      "neither": 5,
+      "meanDamageToTarget": 1.2977,
+      "baseAttacks": 838,
+      "meanBaseDamage": 1.3726
+     },
+     "sideResult": {
+      "sides": 771,
+      "wins": 442,
+      "winShare": 0.5733,
+      "low": 0.5381,
+      "high": 0.6077
+     }
+    },
+    {
+     "cardKey": "05010070",
+     "title": "Anakin Skywalker, Champion of Mortis",
+     "attacks": 2341,
+     "games": 1220,
+     "gameShare": 0.0897,
+     "attacksPerGame": 1.9189,
+     "targets": {
+      "base": 1395,
+      "units": 946,
+      "unresolvedUnits": 385,
+      "baseShare": 0.5959
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 30,
+       "share": 0.0128
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 28,
+       "share": 0.012
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 28,
+       "share": 0.012
+      },
+      {
+       "cardKey": "04010197",
+       "title": "Anakin Skywalker, I'll Try Spinning",
+       "attacks": 18,
+       "share": 0.0077
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 16,
+       "share": 0.0068
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 15,
+       "share": 0.0064
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 11,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 9,
+       "share": 0.0038
+      },
+      {
+       "cardKey": "05010100",
+       "title": "Kelleran Beq, The Sabered Hand",
+       "attacks": 9,
+       "share": 0.0038
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 9,
+       "share": 0.0038
+      }
+     ],
+     "results": {
+      "measured": 738,
+      "unitAttacks": 310,
+      "targetDefeated": 242,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 68,
+      "meanDamageToTarget": 3.5452,
+      "baseAttacks": 411,
+      "meanBaseDamage": 4.4646
+     },
+     "sideResult": {
+      "sides": 1269,
+      "wins": 804,
+      "winShare": 0.6336,
+      "low": 0.6067,
+      "high": 0.6596
+     }
+    },
+    {
+     "cardKey": "05010002",
+     "title": "Mother Talzin, Power Through Magick",
+     "attacks": 1975,
+     "games": 773,
+     "gameShare": 0.0569,
+     "attacksPerGame": 2.555,
+     "targets": {
+      "base": 1322,
+      "units": 653,
+      "unresolvedUnits": 235,
+      "baseShare": 0.6694
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 51,
+       "share": 0.0258
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 21,
+       "share": 0.0106
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 21,
+       "share": 0.0106
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 17,
+       "share": 0.0086
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 12,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "0301198",
+       "title": "Enfys Nest, Champion of Justice",
+       "attacks": 11,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "05010200",
+       "title": "Qui-Gon Jinn, The Negotiations Will Be Short",
+       "attacks": 11,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 9,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 9,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "0201029",
+       "title": "Pyke Sentinel",
+       "attacks": 7,
+       "share": 0.0035
+      }
+     ],
+     "results": {
+      "measured": 767,
+      "unitAttacks": 226,
+      "targetDefeated": 0,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 226,
+      "meanDamageToTarget": 0,
+      "baseAttacks": 522,
+      "meanBaseDamage": 0.41
+     },
+     "sideResult": {
+      "sides": 782,
+      "wins": 462,
+      "winShare": 0.5908,
+      "low": 0.556,
+      "high": 0.6247
+     }
+    },
+    {
+     "cardKey": "0101193",
+     "title": "Millennium Falcon, Piece of Junk",
+     "attacks": 1948,
+     "games": 866,
+     "gameShare": 0.0637,
+     "attacksPerGame": 2.2494,
+     "targets": {
+      "base": 1681,
+      "units": 267,
+      "unresolvedUnits": 47,
+      "baseShare": 0.8629
+     },
+     "topTargets": [
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 15,
+       "share": 0.0077
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 15,
+       "share": 0.0077
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 13,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "04010095",
+       "title": "Phoenix Squadron A-Wing",
+       "attacks": 9,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "06010219",
+       "title": "Ebon Hawk, Cause and Effect",
+       "attacks": 8,
+       "share": 0.0041
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 7,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "0201135",
+       "title": "Kylo's TIE Silencer, Ruthlessly Efficient",
+       "attacks": 6,
+       "share": 0.0031
+      },
+      {
+       "cardKey": "0201195",
+       "title": "Cartel Turncoat",
+       "attacks": 6,
+       "share": 0.0031
+      },
+      {
+       "cardKey": "05010131",
+       "title": "Strikeship",
+       "attacks": 6,
+       "share": 0.0031
+      },
+      {
+       "cardKey": "06010254",
+       "title": "Heroic ARC-170",
+       "attacks": 6,
+       "share": 0.0031
+      }
+     ],
+     "results": {
+      "measured": 773,
+      "unitAttacks": 94,
+      "targetDefeated": 80,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 14,
+      "meanDamageToTarget": 2.8298,
+      "baseAttacks": 673,
+      "meanBaseDamage": 3.467
+     },
+     "sideResult": {
+      "sides": 883,
+      "wins": 546,
+      "winShare": 0.6183,
+      "low": 0.5859,
+      "high": 0.6498
+     }
+    },
+    {
+     "cardKey": "06010094",
+     "title": "Mina Bonteri, Stop This War",
+     "attacks": 1932,
+     "games": 889,
+     "gameShare": 0.0654,
+     "attacksPerGame": 2.1732,
+     "targets": {
+      "base": 1277,
+      "units": 655,
+      "unresolvedUnits": 167,
+      "baseShare": 0.661
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 63,
+       "share": 0.0326
+      },
+      {
+       "cardKey": "06010148",
+       "title": "Karis Nemik, Freedom is a Pure Idea",
+       "attacks": 12,
+       "share": 0.0062
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 11,
+       "share": 0.0057
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 11,
+       "share": 0.0057
+      },
+      {
+       "cardKey": "05010031",
+       "title": "Karis, We Don't Like Strangers",
+       "attacks": 10,
+       "share": 0.0052
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 9,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 9,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 9,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "0201029",
+       "title": "Pyke Sentinel",
+       "attacks": 8,
+       "share": 0.0041
+      },
+      {
+       "cardKey": "05010061",
+       "title": "Secretive Sage",
+       "attacks": 8,
+       "share": 0.0041
+      }
+     ],
+     "results": {
+      "measured": 813,
+      "unitAttacks": 273,
+      "targetDefeated": 150,
+      "attackerDefeated": 103,
+      "both": 58,
+      "neither": 78,
+      "meanDamageToTarget": 1.9341,
+      "baseAttacks": 524,
+      "meanBaseDamage": 2.1718
+     },
+     "sideResult": {
+      "sides": 909,
+      "wins": 520,
+      "winShare": 0.5721,
+      "low": 0.5397,
+      "high": 0.6039
+     }
+    },
+    {
+     "cardKey": "05010061",
+     "title": "Secretive Sage",
+     "attacks": 1887,
+     "games": 757,
+     "gameShare": 0.0557,
+     "attacksPerGame": 2.4927,
+     "targets": {
+      "base": 1182,
+      "units": 705,
+      "unresolvedUnits": 204,
+      "baseShare": 0.6264
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 74,
+       "share": 0.0392
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 25,
+       "share": 0.0132
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 14,
+       "share": 0.0074
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 13,
+       "share": 0.0069
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 11,
+       "share": 0.0058
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 10,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "06010094",
+       "title": "Mina Bonteri, Stop This War",
+       "attacks": 10,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 9,
+       "share": 0.0048
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 8,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 8,
+       "share": 0.0042
+      }
+     ],
+     "results": {
+      "measured": 799,
+      "unitAttacks": 297,
+      "targetDefeated": 165,
+      "attackerDefeated": 52,
+      "both": 30,
+      "neither": 110,
+      "meanDamageToTarget": 1.8586,
+      "baseAttacks": 489,
+      "meanBaseDamage": 2.188
+     },
+     "sideResult": {
+      "sides": 766,
+      "wins": 413,
+      "winShare": 0.5392,
+      "low": 0.5038,
+      "high": 0.5742
+     }
+    },
+    {
+     "cardKey": "05010045",
+     "title": "Yaddle, A Chance To Make Things Right",
+     "attacks": 1789,
+     "games": 818,
+     "gameShare": 0.0602,
+     "attacksPerGame": 2.187,
+     "targets": {
+      "base": 1257,
+      "units": 532,
+      "unresolvedUnits": 139,
+      "baseShare": 0.7026
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 59,
+       "share": 0.033
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 17,
+       "share": 0.0095
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 12,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 10,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "05010094",
+       "title": "Jedi Consular",
+       "attacks": 10,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "06010094",
+       "title": "Mina Bonteri, Stop This War",
+       "attacks": 9,
+       "share": 0.005
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 9,
+       "share": 0.005
+      },
+      {
+       "cardKey": "06010148",
+       "title": "Karis Nemik, Freedom is a Pure Idea",
+       "attacks": 9,
+       "share": 0.005
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 8,
+       "share": 0.0045
+      },
+      {
+       "cardKey": "07010039",
+       "title": "Latts Razzi, Deadly Whipmaster",
+       "attacks": 8,
+       "share": 0.0045
+      }
+     ],
+     "results": {
+      "measured": 765,
+      "unitAttacks": 212,
+      "targetDefeated": 17,
+      "attackerDefeated": 4,
+      "both": 4,
+      "neither": 195,
+      "meanDamageToTarget": 0.25,
+      "baseAttacks": 541,
+      "meanBaseDamage": 0.2477
+     },
+     "sideResult": {
+      "sides": 835,
+      "wins": 476,
+      "winShare": 0.5701,
+      "low": 0.5362,
+      "high": 0.6032
+     }
+    },
+    {
+     "cardKey": "05010031",
+     "title": "Karis, We Don't Like Strangers",
+     "attacks": 1775,
+     "games": 807,
+     "gameShare": 0.0594,
+     "attacksPerGame": 2.1995,
+     "targets": {
+      "base": 1021,
+      "units": 754,
+      "unresolvedUnits": 212,
+      "baseShare": 0.5752
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 54,
+       "share": 0.0304
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 23,
+       "share": 0.013
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 22,
+       "share": 0.0124
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 17,
+       "share": 0.0096
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 13,
+       "share": 0.0073
+      },
+      {
+       "cardKey": "05010031",
+       "title": "Karis, We Don't Like Strangers",
+       "attacks": 10,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 10,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 9,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 9,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "0301198",
+       "title": "Enfys Nest, Champion of Justice",
+       "attacks": 7,
+       "share": 0.0039
+      }
+     ],
+     "results": {
+      "measured": 770,
+      "unitAttacks": 301,
+      "targetDefeated": 108,
+      "attackerDefeated": 133,
+      "both": 35,
+      "neither": 95,
+      "meanDamageToTarget": 1.7741,
+      "baseAttacks": 452,
+      "meanBaseDamage": 2.3132
+     },
+     "sideResult": {
+      "sides": 829,
+      "wins": 450,
+      "winShare": 0.5428,
+      "low": 0.5088,
+      "high": 0.5765
+     }
+    },
+    {
+     "cardKey": "05010231",
+     "title": "Darth Tyranus, Servant of Sidious",
+     "attacks": 1762,
+     "games": 823,
+     "gameShare": 0.0605,
+     "attacksPerGame": 2.1409,
+     "targets": {
+      "base": 634,
+      "units": 1128,
+      "unresolvedUnits": 356,
+      "baseShare": 0.3598
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 45,
+       "share": 0.0255
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 22,
+       "share": 0.0125
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 20,
+       "share": 0.0114
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 19,
+       "share": 0.0108
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 16,
+       "share": 0.0091
+      },
+      {
+       "cardKey": "06010094",
+       "title": "Mina Bonteri, Stop This War",
+       "attacks": 16,
+       "share": 0.0091
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 15,
+       "share": 0.0085
+      },
+      {
+       "cardKey": "04010197",
+       "title": "Anakin Skywalker, I'll Try Spinning",
+       "attacks": 14,
+       "share": 0.0079
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 14,
+       "share": 0.0079
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 14,
+       "share": 0.0079
+      }
+     ],
+     "results": {
+      "measured": 733,
+      "unitAttacks": 453,
+      "targetDefeated": 301,
+      "attackerDefeated": 36,
+      "both": 22,
+      "neither": 138,
+      "meanDamageToTarget": 2.9536,
+      "baseAttacks": 257,
+      "meanBaseDamage": 4.0779
+     },
+     "sideResult": {
+      "sides": 849,
+      "wins": 469,
+      "winShare": 0.5524,
+      "low": 0.5188,
+      "high": 0.5856
+     }
+    },
+    {
+     "cardKey": "05010008",
+     "title": "Obi-Wan Kenobi, Courage Makes Heroes",
+     "attacks": 1698,
+     "games": 845,
+     "gameShare": 0.0622,
+     "attacksPerGame": 2.0095,
+     "targets": {
+      "base": 1202,
+      "units": 496,
+      "unresolvedUnits": 161,
+      "baseShare": 0.7079
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 46,
+       "share": 0.0271
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 16,
+       "share": 0.0094
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 14,
+       "share": 0.0082
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 12,
+       "share": 0.0071
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 12,
+       "share": 0.0071
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 12,
+       "share": 0.0071
+      },
+      {
+       "cardKey": "0101146",
+       "title": "Zeb Orrelios, Headstrong Warrior",
+       "attacks": 10,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "07010075",
+       "title": "Interrogation Droid",
+       "attacks": 9,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "0301150",
+       "title": "Saw Gerrera, Resistance is Not Terrorism",
+       "attacks": 7,
+       "share": 0.0041
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 7,
+       "share": 0.0041
+      }
+     ],
+     "results": {
+      "measured": 628,
+      "unitAttacks": 189,
+      "targetDefeated": 1,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 188,
+      "meanDamageToTarget": 0.0265,
+      "baseAttacks": 426,
+      "meanBaseDamage": 0.5516
+     },
+     "sideResult": {
+      "sides": 860,
+      "wins": 503,
+      "winShare": 0.5849,
+      "low": 0.5516,
+      "high": 0.6174
+     }
+    },
+    {
+     "cardKey": "04010151",
+     "title": "Red Five, Running the Trench",
+     "attacks": 1686,
+     "games": 844,
+     "gameShare": 0.0621,
+     "attacksPerGame": 1.9976,
+     "targets": {
+      "base": 1450,
+      "units": 236,
+      "unresolvedUnits": 39,
+      "baseShare": 0.86
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 10,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 9,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 9,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "05010144",
+       "title": "Jedi Starfighter",
+       "attacks": 7,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "07010076",
+       "title": "Vult Skerris's Defender, Secret Project",
+       "attacks": 7,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 6,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "04010t01",
+       "title": "TIE Fighter",
+       "attacks": 6,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 4,
+       "share": 0.0024
+      },
+      {
+       "cardKey": "04010212",
+       "title": "Republic Y-Wing",
+       "attacks": 4,
+       "share": 0.0024
+      },
+      {
+       "cardKey": "i01010031",
+       "title": "Millennium Falcon, Bucket of Bolts",
+       "attacks": 4,
+       "share": 0.0024
+      }
+     ],
+     "results": {
+      "measured": 646,
+      "unitAttacks": 88,
+      "targetDefeated": 15,
+      "attackerDefeated": 2,
+      "both": 2,
+      "neither": 73,
+      "meanDamageToTarget": 0.5568,
+      "baseAttacks": 553,
+      "meanBaseDamage": 1.1216
+     },
+     "sideResult": {
+      "sides": 856,
+      "wins": 536,
+      "winShare": 0.6262,
+      "low": 0.5933,
+      "high": 0.6579
+     }
+    },
+    {
+     "cardKey": "05010093",
+     "title": "Gungi, Finding Himself",
+     "attacks": 1648,
+     "games": 742,
+     "gameShare": 0.0546,
+     "attacksPerGame": 2.221,
+     "targets": {
+      "base": 1029,
+      "units": 619,
+      "unresolvedUnits": 175,
+      "baseShare": 0.6244
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 49,
+       "share": 0.0297
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 13,
+       "share": 0.0079
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 12,
+       "share": 0.0073
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 12,
+       "share": 0.0073
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 10,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "05010094",
+       "title": "Jedi Consular",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "0101146",
+       "title": "Zeb Orrelios, Headstrong Warrior",
+       "attacks": 7,
+       "share": 0.0042
+      }
+     ],
+     "results": {
+      "measured": 718,
+      "unitAttacks": 265,
+      "targetDefeated": 169,
+      "attackerDefeated": 46,
+      "both": 37,
+      "neither": 87,
+      "meanDamageToTarget": 1.917,
+      "baseAttacks": 437,
+      "meanBaseDamage": 2.4388
+     },
+     "sideResult": {
+      "sides": 752,
+      "wins": 423,
+      "winShare": 0.5625,
+      "low": 0.5268,
+      "high": 0.5975
+     }
+    },
+    {
+     "cardKey": "05010035",
+     "title": "Talzin's Assassin",
+     "attacks": 1639,
+     "games": 846,
+     "gameShare": 0.0622,
+     "attacksPerGame": 1.9374,
+     "targets": {
+      "base": 1050,
+      "units": 589,
+      "unresolvedUnits": 197,
+      "baseShare": 0.6406
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 37,
+       "share": 0.0226
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 14,
+       "share": 0.0085
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 13,
+       "share": 0.0079
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 11,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 10,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 10,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 10,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "05010200",
+       "title": "Qui-Gon Jinn, The Negotiations Will Be Short",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "06010094",
+       "title": "Mina Bonteri, Stop This War",
+       "attacks": 9,
+       "share": 0.0055
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 8,
+       "share": 0.0049
+      }
+     ],
+     "results": {
+      "measured": 554,
+      "unitAttacks": 209,
+      "targetDefeated": 135,
+      "attackerDefeated": 61,
+      "both": 39,
+      "neither": 52,
+      "meanDamageToTarget": 2.7225,
+      "baseAttacks": 333,
+      "meanBaseDamage": 3.7157
+     },
+     "sideResult": {
+      "sides": 863,
+      "wins": 522,
+      "winShare": 0.6049,
+      "low": 0.5719,
+      "high": 0.637
+     }
+    },
+    {
+     "cardKey": "0301004",
+     "title": "Yoda, Sensing Darkness",
+     "attacks": 1613,
+     "games": 672,
+     "gameShare": 0.0494,
+     "attacksPerGame": 2.4003,
+     "targets": {
+      "base": 990,
+      "units": 623,
+      "unresolvedUnits": 216,
+      "baseShare": 0.6138
+     },
+     "topTargets": [
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 36,
+       "share": 0.0223
+      },
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 36,
+       "share": 0.0223
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 17,
+       "share": 0.0105
+      },
+      {
+       "cardKey": "06010034",
+       "title": "Cad Bane, Impressed Now?",
+       "attacks": 11,
+       "share": 0.0068
+      },
+      {
+       "cardKey": "0201084",
+       "title": "Phase-III Dark Trooper",
+       "attacks": 9,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 9,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 9,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "0201134",
+       "title": "Guavian Antagonizer",
+       "attacks": 7,
+       "share": 0.0043
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 7,
+       "share": 0.0043
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 7,
+       "share": 0.0043
+      }
+     ],
+     "results": {
+      "measured": 563,
+      "unitAttacks": 196,
+      "targetDefeated": 134,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 62,
+      "meanDamageToTarget": 2.3163,
+      "baseAttacks": 346,
+      "meanBaseDamage": 3.295
+     },
+     "sideResult": {
+      "sides": 685,
+      "wins": 435,
+      "winShare": 0.635,
+      "low": 0.5983,
+      "high": 0.6702
+     }
+    },
+    {
+     "cardKey": "05010096",
+     "title": "Obi-Wan Kenobi, Protective Padawan",
+     "attacks": 1610,
+     "games": 895,
+     "gameShare": 0.0658,
+     "attacksPerGame": 1.7989,
+     "targets": {
+      "base": 1029,
+      "units": 581,
+      "unresolvedUnits": 186,
+      "baseShare": 0.6391
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 61,
+       "share": 0.0379
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 21,
+       "share": 0.013
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 12,
+       "share": 0.0075
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 12,
+       "share": 0.0075
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 11,
+       "share": 0.0068
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 9,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "06010057",
+       "title": "Lobot, Cloud City Coordinator",
+       "attacks": 9,
+       "share": 0.0056
+      },
+      {
+       "cardKey": "0201029",
+       "title": "Pyke Sentinel",
+       "attacks": 7,
+       "share": 0.0043
+      },
+      {
+       "cardKey": "05010017",
+       "title": "Darth Revan, Scourge of the Old Republic",
+       "attacks": 6,
+       "share": 0.0037
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 6,
+       "share": 0.0037
+      }
+     ],
+     "results": {
+      "measured": 635,
+      "unitAttacks": 234,
+      "targetDefeated": 168,
+      "attackerDefeated": 49,
+      "both": 36,
+      "neither": 53,
+      "meanDamageToTarget": 2.3248,
+      "baseAttacks": 383,
+      "meanBaseDamage": 2.9867
+     },
+     "sideResult": {
+      "sides": 912,
+      "wins": 532,
+      "winShare": 0.5833,
+      "low": 0.5511,
+      "high": 0.6149
+     }
+    },
+    {
+     "cardKey": "06010101",
+     "title": "Queen Amidala, Championing Her People",
+     "attacks": 1584,
+     "games": 953,
+     "gameShare": 0.0701,
+     "attacksPerGame": 1.6621,
+     "targets": {
+      "base": 1022,
+      "units": 562,
+      "unresolvedUnits": 206,
+      "baseShare": 0.6452
+     },
+     "topTargets": [
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 18,
+       "share": 0.0114
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 18,
+       "share": 0.0114
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 12,
+       "share": 0.0076
+      },
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 10,
+       "share": 0.0063
+      },
+      {
+       "cardKey": "05010101",
+       "title": "Yoda, My Ally is the Force",
+       "attacks": 9,
+       "share": 0.0057
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 8,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 7,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "06010034",
+       "title": "Cad Bane, Impressed Now?",
+       "attacks": 7,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 7,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 6,
+       "share": 0.0038
+      }
+     ],
+     "results": {
+      "measured": 589,
+      "unitAttacks": 220,
+      "targetDefeated": 45,
+      "attackerDefeated": 31,
+      "both": 29,
+      "neither": 173,
+      "meanDamageToTarget": 0.8455,
+      "baseAttacks": 361,
+      "meanBaseDamage": 4.6925
+     },
+     "sideResult": {
+      "sides": 976,
+      "wins": 623,
+      "winShare": 0.6383,
+      "low": 0.6077,
+      "high": 0.6679
+     }
+    },
+    {
+     "cardKey": "0201013",
+     "title": "Han Solo, Worth the Risk",
+     "attacks": 1486,
+     "games": 733,
+     "gameShare": 0.0539,
+     "attacksPerGame": 2.0273,
+     "targets": {
+      "base": 972,
+      "units": 514,
+      "unresolvedUnits": 196,
+      "baseShare": 0.6541
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 36,
+       "share": 0.0242
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 21,
+       "share": 0.0141
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 19,
+       "share": 0.0128
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 10,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 9,
+       "share": 0.0061
+      },
+      {
+       "cardKey": "0201134",
+       "title": "Guavian Antagonizer",
+       "attacks": 7,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "05010191",
+       "title": "BD-1, Beep Boo Boo Bweep",
+       "attacks": 7,
+       "share": 0.0047
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 5,
+       "share": 0.0034
+      },
+      {
+       "cardKey": "05010044",
+       "title": "Loth-Wolf",
+       "attacks": 5,
+       "share": 0.0034
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 5,
+       "share": 0.0034
+      }
+     ],
+     "results": {
+      "measured": 556,
+      "unitAttacks": 167,
+      "targetDefeated": 119,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 48,
+      "meanDamageToTarget": 2.3772,
+      "baseAttacks": 353,
+      "meanBaseDamage": 2.9565
+     },
+     "sideResult": {
+      "sides": 742,
+      "wins": 444,
+      "winShare": 0.5984,
+      "low": 0.5627,
+      "high": 0.6331
+     }
+    },
+    {
+     "cardKey": "04010221",
+     "title": "Stolen AT-Hauler",
+     "attacks": 1462,
+     "games": 673,
+     "gameShare": 0.0495,
+     "attacksPerGame": 2.1724,
+     "targets": {
+      "base": 1312,
+      "units": 150,
+      "unresolvedUnits": 23,
+      "baseShare": 0.8974
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 15,
+       "share": 0.0103
+      },
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 9,
+       "share": 0.0062
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 9,
+       "share": 0.0062
+      },
+      {
+       "cardKey": "0201195",
+       "title": "Cartel Turncoat",
+       "attacks": 5,
+       "share": 0.0034
+      },
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 5,
+       "share": 0.0034
+      },
+      {
+       "cardKey": "i01010031",
+       "title": "Millennium Falcon, Bucket of Bolts",
+       "attacks": 5,
+       "share": 0.0034
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 4,
+       "share": 0.0027
+      },
+      {
+       "cardKey": "04010222",
+       "title": "Kimogila Heavy Fighter",
+       "attacks": 4,
+       "share": 0.0027
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 4,
+       "share": 0.0027
+      },
+      {
+       "cardKey": "04010102",
+       "title": "Resistance Blue Squadron",
+       "attacks": 3,
+       "share": 0.0021
+      }
+     ],
+     "results": {
+      "measured": 552,
+      "unitAttacks": 51,
+      "targetDefeated": 47,
+      "attackerDefeated": 12,
+      "both": 11,
+      "neither": 3,
+      "meanDamageToTarget": 3.2941,
+      "baseAttacks": 493,
+      "meanBaseDamage": 4.0491
+     },
+     "sideResult": {
+      "sides": 736,
+      "wins": 483,
+      "winShare": 0.6563,
+      "low": 0.6212,
+      "high": 0.6897
+     }
+    },
+    {
+     "cardKey": "04010250",
+     "title": "Sabine's Masterpiece, Crazy Colorful",
+     "attacks": 1363,
+     "games": 659,
+     "gameShare": 0.0485,
+     "attacksPerGame": 2.0683,
+     "targets": {
+      "base": 1146,
+      "units": 217,
+      "unresolvedUnits": 27,
+      "baseShare": 0.8408
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 9,
+       "share": 0.0066
+      },
+      {
+       "cardKey": "0201042",
+       "title": "Concord Dawn Interceptors",
+       "attacks": 8,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 8,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 7,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "06010060",
+       "title": "Defense Fleet X-Wing",
+       "attacks": 7,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 6,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 6,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "04010143",
+       "title": "Devastator, Hunting the Rebellion",
+       "attacks": 5,
+       "share": 0.0037
+      },
+      {
+       "cardKey": "04010t01",
+       "title": "TIE Fighter",
+       "attacks": 5,
+       "share": 0.0037
+      },
+      {
+       "cardKey": "05010069",
+       "title": "Graceful Purrgil",
+       "attacks": 5,
+       "share": 0.0037
+      }
+     ],
+     "results": {
+      "measured": 497,
+      "unitAttacks": 96,
+      "targetDefeated": 10,
+      "attackerDefeated": 3,
+      "both": 3,
+      "neither": 86,
+      "meanDamageToTarget": 0.3229,
+      "baseAttacks": 399,
+      "meanBaseDamage": 0.5564
+     },
+     "sideResult": {
+      "sides": 671,
+      "wins": 378,
+      "winShare": 0.5633,
+      "low": 0.5256,
+      "high": 0.6004
+     }
+    },
+    {
+     "cardKey": "06010148",
+     "title": "Karis Nemik, Freedom is a Pure Idea",
+     "attacks": 1360,
+     "games": 757,
+     "gameShare": 0.0557,
+     "attacksPerGame": 1.7966,
+     "targets": {
+      "base": 908,
+      "units": 452,
+      "unresolvedUnits": 108,
+      "baseShare": 0.6676
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 28,
+       "share": 0.0206
+      },
+      {
+       "cardKey": "06010110",
+       "title": "GNK Power Droid",
+       "attacks": 23,
+       "share": 0.0169
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 17,
+       "share": 0.0125
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 14,
+       "share": 0.0103
+      },
+      {
+       "cardKey": "05010044",
+       "title": "Loth-Wolf",
+       "attacks": 8,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 8,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "06010057",
+       "title": "Lobot, Cloud City Coordinator",
+       "attacks": 8,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 7,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 7,
+       "share": 0.0051
+      },
+      {
+       "cardKey": "04010218",
+       "title": "Guerilla Soldier",
+       "attacks": 6,
+       "share": 0.0044
+      }
+     ],
+     "results": {
+      "measured": 664,
+      "unitAttacks": 206,
+      "targetDefeated": 118,
+      "attackerDefeated": 136,
+      "both": 80,
+      "neither": 32,
+      "meanDamageToTarget": 2.3447,
+      "baseAttacks": 447,
+      "meanBaseDamage": 3.0618
+     },
+     "sideResult": {
+      "sides": 774,
+      "wins": 419,
+      "winShare": 0.5413,
+      "low": 0.5061,
+      "high": 0.5762
+     }
+    },
+    {
+     "cardKey": "04010005",
+     "title": "Admiral Piett, Commanding the Armada",
+     "attacks": 1302,
+     "games": 693,
+     "gameShare": 0.051,
+     "attacksPerGame": 1.8788,
+     "targets": {
+      "base": 894,
+      "units": 408,
+      "unresolvedUnits": 97,
+      "baseShare": 0.6866
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 79,
+       "share": 0.0607
+      },
+      {
+       "cardKey": "06010148",
+       "title": "Karis Nemik, Freedom is a Pure Idea",
+       "attacks": 7,
+       "share": 0.0054
+      },
+      {
+       "cardKey": "06010163",
+       "title": "Outer Rim Constable",
+       "attacks": 7,
+       "share": 0.0054
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "04010132",
+       "title": "First Order Stormtrooper",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 5,
+       "share": 0.0038
+      },
+      {
+       "cardKey": "04010201",
+       "title": "Ahsoka Tano, Chasing Whispers",
+       "attacks": 5,
+       "share": 0.0038
+      },
+      {
+       "cardKey": "07010012",
+       "title": "Sebulba, Especially Dangerous Dug",
+       "attacks": 5,
+       "share": 0.0038
+      },
+      {
+       "cardKey": "0101062",
+       "title": "Regional Governor",
+       "attacks": 4,
+       "share": 0.0031
+      },
+      {
+       "cardKey": "04010048",
+       "title": "Cassian Andor, Threading the Eye",
+       "attacks": 4,
+       "share": 0.0031
+      }
+     ],
+     "results": {
+      "measured": 526,
+      "unitAttacks": 168,
+      "targetDefeated": 115,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 53,
+      "meanDamageToTarget": 1.744,
+      "baseAttacks": 345,
+      "meanBaseDamage": 1.9615
+     },
+     "sideResult": {
+      "sides": 702,
+      "wins": 428,
+      "winShare": 0.6097,
+      "low": 0.5731,
+      "high": 0.6451
+     }
+    },
+    {
+     "cardKey": "05010100",
+     "title": "Kelleran Beq, The Sabered Hand",
+     "attacks": 1291,
+     "games": 792,
+     "gameShare": 0.0583,
+     "attacksPerGame": 1.6301,
+     "targets": {
+      "base": 821,
+      "units": 470,
+      "unresolvedUnits": 237,
+      "baseShare": 0.6359
+     },
+     "topTargets": [
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 14,
+       "share": 0.0108
+      },
+      {
+       "cardKey": "04010197",
+       "title": "Anakin Skywalker, I'll Try Spinning",
+       "attacks": 11,
+       "share": 0.0085
+      },
+      {
+       "cardKey": "0201089",
+       "title": "Pirate Battle Tank",
+       "attacks": 9,
+       "share": 0.007
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 7,
+       "share": 0.0054
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "05010101",
+       "title": "Yoda, My Ally is the Force",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 6,
+       "share": 0.0046
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 5,
+       "share": 0.0039
+      },
+      {
+       "cardKey": "06010048",
+       "title": "Captain Rex, Into the Firefight",
+       "attacks": 5,
+       "share": 0.0039
+      }
+     ],
+     "results": {
+      "measured": 374,
+      "unitAttacks": 120,
+      "targetDefeated": 98,
+      "attackerDefeated": 25,
+      "both": 21,
+      "neither": 18,
+      "meanDamageToTarget": 4.2083,
+      "baseAttacks": 245,
+      "meanBaseDamage": 6.0936
+     },
+     "sideResult": {
+      "sides": 823,
+      "wins": 547,
+      "winShare": 0.6646,
+      "low": 0.6317,
+      "high": 0.6961
+     }
+    },
+    {
+     "cardKey": "05010037",
+     "title": "Darth Vader, Twilight of the Apprentice",
+     "attacks": 1221,
+     "games": 607,
+     "gameShare": 0.0446,
+     "attacksPerGame": 2.0115,
+     "targets": {
+      "base": 406,
+      "units": 815,
+      "unresolvedUnits": 294,
+      "baseShare": 0.3325
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 23,
+       "share": 0.0188
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 17,
+       "share": 0.0139
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 16,
+       "share": 0.0131
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 15,
+       "share": 0.0123
+      },
+      {
+       "cardKey": "i01010053",
+       "title": "Darth Vader, Don't Fail Me Again",
+       "attacks": 14,
+       "share": 0.0115
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 13,
+       "share": 0.0106
+      },
+      {
+       "cardKey": "05010035",
+       "title": "Talzin's Assassin",
+       "attacks": 11,
+       "share": 0.009
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 11,
+       "share": 0.009
+      },
+      {
+       "cardKey": "05010094",
+       "title": "Jedi Consular",
+       "attacks": 10,
+       "share": 0.0082
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 10,
+       "share": 0.0082
+      }
+     ],
+     "results": {
+      "measured": 432,
+      "unitAttacks": 273,
+      "targetDefeated": 38,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 235,
+      "meanDamageToTarget": 0.5788,
+      "baseAttacks": 127,
+      "meanBaseDamage": 3.4872
+     },
+     "sideResult": {
+      "sides": 624,
+      "wins": 377,
+      "winShare": 0.6042,
+      "low": 0.5653,
+      "high": 0.6418
+     }
+    },
+    {
+     "cardKey": "06010213",
+     "title": "A-Wing",
+     "attacks": 1199,
+     "games": 551,
+     "gameShare": 0.0405,
+     "attacksPerGame": 2.176,
+     "targets": {
+      "base": 1068,
+      "units": 131,
+      "unresolvedUnits": 14,
+      "baseShare": 0.8907
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010184",
+       "title": "Contracted Jumpmaster",
+       "attacks": 7,
+       "share": 0.0058
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 7,
+       "share": 0.0058
+      },
+      {
+       "cardKey": "i01010031",
+       "title": "Millennium Falcon, Bucket of Bolts",
+       "attacks": 6,
+       "share": 0.005
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 4,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "04010t01",
+       "title": "TIE Fighter",
+       "attacks": 4,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "05010131",
+       "title": "Strikeship",
+       "attacks": 4,
+       "share": 0.0033
+      },
+      {
+       "cardKey": "0201187",
+       "title": "Lurking TIE Phantom",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "0301213",
+       "title": "Sanctioner's Shuttle",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "0301228",
+       "title": "Droid Starfighter",
+       "attacks": 3,
+       "share": 0.0025
+      }
+     ],
+     "results": {
+      "measured": 483,
+      "unitAttacks": 54,
+      "targetDefeated": 38,
+      "attackerDefeated": 37,
+      "both": 24,
+      "neither": 3,
+      "meanDamageToTarget": 2.5556,
+      "baseAttacks": 426,
+      "meanBaseDamage": 2.5335
+     },
+     "sideResult": {
+      "sides": 555,
+      "wins": 332,
+      "winShare": 0.5982,
+      "low": 0.5569,
+      "high": 0.6382
+     }
+    },
+    {
+     "cardKey": "04010095",
+     "title": "Phoenix Squadron A-Wing",
+     "attacks": 1196,
+     "games": 591,
+     "gameShare": 0.0435,
+     "attacksPerGame": 2.0237,
+     "targets": {
+      "base": 1011,
+      "units": 185,
+      "unresolvedUnits": 16,
+      "baseShare": 0.8453
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 11,
+       "share": 0.0092
+      },
+      {
+       "cardKey": "04010095",
+       "title": "Phoenix Squadron A-Wing",
+       "attacks": 8,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 8,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "0101134",
+       "title": "Ruthless Raider",
+       "attacks": 6,
+       "share": 0.005
+      },
+      {
+       "cardKey": "07010076",
+       "title": "Vult Skerris's Defender, Secret Project",
+       "attacks": 6,
+       "share": 0.005
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010t02",
+       "title": "X-Wing",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "04010053",
+       "title": "The Ghost, Heart of the Family",
+       "attacks": 4,
+       "share": 0.0033
+      }
+     ],
+     "results": {
+      "measured": 569,
+      "unitAttacks": 83,
+      "targetDefeated": 61,
+      "attackerDefeated": 52,
+      "both": 36,
+      "neither": 6,
+      "meanDamageToTarget": 2.7349,
+      "baseAttacks": 485,
+      "meanBaseDamage": 3.6314
+     },
+     "sideResult": {
+      "sides": 601,
+      "wins": 320,
+      "winShare": 0.5324,
+      "low": 0.4925,
+      "high": 0.572
+     }
+    },
+    {
+     "cardKey": "06010017",
+     "title": "Sabé, Queen's Shadow",
+     "attacks": 1189,
+     "games": 626,
+     "gameShare": 0.046,
+     "attacksPerGame": 1.8994,
+     "targets": {
+      "base": 1051,
+      "units": 138,
+      "unresolvedUnits": 54,
+      "baseShare": 0.8839
+     },
+     "topTargets": [
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 8,
+       "share": 0.0067
+      },
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 7,
+       "share": 0.0059
+      },
+      {
+       "cardKey": "0201029",
+       "title": "Pyke Sentinel",
+       "attacks": 6,
+       "share": 0.005
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 6,
+       "share": 0.005
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 5,
+       "share": 0.0042
+      },
+      {
+       "cardKey": "0101035",
+       "title": "Lieutenant Childsen, Death Star Prison Warden",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "05010004",
+       "title": "Kanan Jarrus, Help Us Survive",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "07010254",
+       "title": "Stalwart Fleet Trooper",
+       "attacks": 3,
+       "share": 0.0025
+      },
+      {
+       "cardKey": "0201084",
+       "title": "Phase-III Dark Trooper",
+       "attacks": 2,
+       "share": 0.0017
+      }
+     ],
+     "results": {
+      "measured": 421,
+      "unitAttacks": 39,
+      "targetDefeated": 32,
+      "attackerDefeated": 6,
+      "both": 6,
+      "neither": 7,
+      "meanDamageToTarget": 2.7436,
+      "baseAttacks": 381,
+      "meanBaseDamage": 4.3
+     },
+     "sideResult": {
+      "sides": 636,
+      "wins": 340,
+      "winShare": 0.5346,
+      "low": 0.4957,
+      "high": 0.573
+     }
+    },
+    {
+     "cardKey": "0101017",
+     "title": "Han Solo, Audacious Smuggler",
+     "attacks": 1136,
+     "games": 608,
+     "gameShare": 0.0447,
+     "attacksPerGame": 1.8684,
+     "targets": {
+      "base": 923,
+      "units": 213,
+      "unresolvedUnits": 82,
+      "baseShare": 0.8125
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 17,
+       "share": 0.015
+      },
+      {
+       "cardKey": "0201043",
+       "title": "Village Protectors",
+       "attacks": 11,
+       "share": 0.0097
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 7,
+       "share": 0.0062
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 6,
+       "share": 0.0053
+      },
+      {
+       "cardKey": "06010017",
+       "title": "Sabé, Queen's Shadow",
+       "attacks": 5,
+       "share": 0.0044
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 4,
+       "share": 0.0035
+      },
+      {
+       "cardKey": "05010085",
+       "title": "Praetorian Guard",
+       "attacks": 4,
+       "share": 0.0035
+      },
+      {
+       "cardKey": "06010134",
+       "title": "Hunting Assassin Droid",
+       "attacks": 4,
+       "share": 0.0035
+      },
+      {
+       "cardKey": "0201084",
+       "title": "Phase-III Dark Trooper",
+       "attacks": 3,
+       "share": 0.0026
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 3,
+       "share": 0.0026
+      }
+     ],
+     "results": {
+      "measured": 398,
+      "unitAttacks": 70,
+      "targetDefeated": 44,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 26,
+      "meanDamageToTarget": 2.6714,
+      "baseAttacks": 322,
+      "meanBaseDamage": 4.474
+     },
+     "sideResult": {
+      "sides": 619,
+      "wins": 440,
+      "winShare": 0.7108,
+      "low": 0.6739,
+      "high": 0.7452
+     }
+    },
+    {
+     "cardKey": "07010012",
+     "title": "Sebulba, Especially Dangerous Dug",
+     "attacks": 1115,
+     "games": 552,
+     "gameShare": 0.0406,
+     "attacksPerGame": 2.0199,
+     "targets": {
+      "base": 919,
+      "units": 196,
+      "unresolvedUnits": 62,
+      "baseShare": 0.8242
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010t01",
+       "title": "Spy",
+       "attacks": 13,
+       "share": 0.0117
+      },
+      {
+       "cardKey": "05010067",
+       "title": "Chirrut Îmwe, Blind, but not Deaf",
+       "attacks": 11,
+       "share": 0.0099
+      },
+      {
+       "cardKey": "05010200",
+       "title": "Qui-Gon Jinn, The Negotiations Will Be Short",
+       "attacks": 10,
+       "share": 0.009
+      },
+      {
+       "cardKey": "06010098",
+       "title": "Captain Typho, All Necessary Precautions",
+       "attacks": 8,
+       "share": 0.0072
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 6,
+       "share": 0.0054
+      },
+      {
+       "cardKey": "07010039",
+       "title": "Latts Razzi, Deadly Whipmaster",
+       "attacks": 6,
+       "share": 0.0054
+      },
+      {
+       "cardKey": "0101146",
+       "title": "Zeb Orrelios, Headstrong Warrior",
+       "attacks": 4,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "04010068",
+       "title": "Perimeter AT-RT",
+       "attacks": 4,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "06010057",
+       "title": "Lobot, Cloud City Coordinator",
+       "attacks": 4,
+       "share": 0.0036
+      },
+      {
+       "cardKey": "06010094",
+       "title": "Mina Bonteri, Stop This War",
+       "attacks": 4,
+       "share": 0.0036
+      }
+     ],
+     "results": {
+      "measured": 468,
+      "unitAttacks": 76,
+      "targetDefeated": 37,
+      "attackerDefeated": 10,
+      "both": 8,
+      "neither": 37,
+      "meanDamageToTarget": 1.4737,
+      "baseAttacks": 389,
+      "meanBaseDamage": 2.3717
+     },
+     "sideResult": {
+      "sides": 561,
+      "wins": 293,
+      "winShare": 0.5223,
+      "low": 0.4809,
+      "high": 0.5633
+     }
+    }
+   ],
+   "notes": [
+    "Casual online play (D21 tier 4); never pooled with tournament results or computer play.",
+    "Combat results come from the board before and after each attack, where both were recorded.",
+    "Win share counts each side that attacked with the card once, by its game result."
+   ]
+  },
+  {
+   "method": "computer play",
+   "tier": "bot simulations",
+   "label": "Computer play: our simulator's bots on both seats",
+   "window": null,
+   "games": 342,
+   "attacks": 3976,
+   "unresolvedAttackers": 237,
+   "unresolvedTargets": 112,
+   "measuredAttacks": 3499,
+   "attackers": [
+    {
+     "cardKey": "05010130",
+     "title": "HK-47, Exclamation: Die, Meatbag!",
+     "attacks": 158,
+     "games": 90,
+     "gameShare": 0.2632,
+     "attacksPerGame": 1.7556,
+     "targets": {
+      "base": 109,
+      "units": 49,
+      "unresolvedUnits": 4,
+      "baseShare": 0.6899
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 13,
+       "share": 0.0823
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 4,
+       "share": 0.0253
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 4,
+       "share": 0.0253
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 3,
+       "share": 0.019
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 3,
+       "share": 0.019
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 2,
+       "share": 0.0127
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 2,
+       "share": 0.0127
+      },
+      {
+       "cardKey": "08010056",
+       "title": "Huyang, Your Aptitude Falls Short",
+       "attacks": 2,
+       "share": 0.0127
+      },
+      {
+       "cardKey": "08010148",
+       "title": "Ninth Sister, Hulking Inquisitor",
+       "attacks": 2,
+       "share": 0.0127
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 2,
+       "share": 0.0127
+      }
+     ],
+     "results": {
+      "measured": 148,
+      "unitAttacks": 45,
+      "targetDefeated": 45,
+      "attackerDefeated": 14,
+      "both": 14,
+      "neither": 0,
+      "meanDamageToTarget": 1.3556,
+      "baseAttacks": 99,
+      "meanBaseDamage": 2.1313
+     },
+     "sideResult": {
+      "sides": 95,
+      "wins": 69,
+      "winShare": 0.7263,
+      "low": 0.6292,
+      "high": 0.8059
+     }
+    },
+    {
+     "cardKey": "08010011",
+     "title": "Cad Bane, Still Faster than You",
+     "attacks": 148,
+     "games": 85,
+     "gameShare": 0.2485,
+     "attacksPerGame": 1.7412,
+     "targets": {
+      "base": 47,
+      "units": 101,
+      "unresolvedUnits": 2,
+      "baseShare": 0.3176
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 12,
+       "share": 0.0811
+      },
+      {
+       "cardKey": "04010006",
+       "title": "Darth Vader, Victor Squadron Leader",
+       "attacks": 10,
+       "share": 0.0676
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 9,
+       "share": 0.0608
+      },
+      {
+       "cardKey": "08010011",
+       "title": "Cad Bane, Still Faster than You",
+       "attacks": 8,
+       "share": 0.0541
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 7,
+       "share": 0.0473
+      },
+      {
+       "cardKey": "06010101",
+       "title": "Queen Amidala, Championing Her People",
+       "attacks": 6,
+       "share": 0.0405
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 5,
+       "share": 0.0338
+      },
+      {
+       "cardKey": "08010079",
+       "title": "Koska Reeves, Warrior of Mandalore",
+       "attacks": 4,
+       "share": 0.027
+      },
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 3,
+       "share": 0.0203
+      },
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 3,
+       "share": 0.0203
+      }
+     ],
+     "results": {
+      "measured": 148,
+      "unitAttacks": 99,
+      "targetDefeated": 0,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 99,
+      "meanDamageToTarget": 0,
+      "baseAttacks": 47,
+      "meanBaseDamage": 0
+     },
+     "sideResult": {
+      "sides": 91,
+      "wins": 65,
+      "winShare": 0.7143,
+      "low": 0.6143,
+      "high": 0.7969
+     }
+    },
+    {
+     "cardKey": "04010006",
+     "title": "Darth Vader, Victor Squadron Leader",
+     "attacks": 132,
+     "games": 80,
+     "gameShare": 0.2339,
+     "attacksPerGame": 1.65,
+     "targets": {
+      "base": 33,
+      "units": 99,
+      "unresolvedUnits": 0,
+      "baseShare": 0.25
+     },
+     "topTargets": [
+      {
+       "cardKey": "07010233",
+       "title": "Galen Erso, Destroying His Creation",
+       "attacks": 15,
+       "share": 0.1136
+      },
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 13,
+       "share": 0.0985
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 11,
+       "share": 0.0833
+      },
+      {
+       "cardKey": "04010006",
+       "title": "Darth Vader, Victor Squadron Leader",
+       "attacks": 9,
+       "share": 0.0682
+      },
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 6,
+       "share": 0.0455
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 6,
+       "share": 0.0455
+      },
+      {
+       "cardKey": "06010046",
+       "title": "Galen Erso, You'll Never Win",
+       "attacks": 4,
+       "share": 0.0303
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 4,
+       "share": 0.0303
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 3,
+       "share": 0.0227
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 3,
+       "share": 0.0227
+      }
+     ],
+     "results": {
+      "measured": 112,
+      "unitAttacks": 94,
+      "targetDefeated": 93,
+      "attackerDefeated": 25,
+      "both": 25,
+      "neither": 1,
+      "meanDamageToTarget": 3.9787,
+      "baseAttacks": 18,
+      "meanBaseDamage": 5
+     },
+     "sideResult": {
+      "sides": 87,
+      "wins": 39,
+      "winShare": 0.4483,
+      "low": 0.3482,
+      "high": 0.5528
+     }
+    },
+    {
+     "cardKey": "07010174",
+     "title": "0-0-0, Translation and Torture",
+     "attacks": 132,
+     "games": 79,
+     "gameShare": 0.231,
+     "attacksPerGame": 1.6709,
+     "targets": {
+      "base": 58,
+      "units": 74,
+      "unresolvedUnits": 4,
+      "baseShare": 0.4394
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 14,
+       "share": 0.1061
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 10,
+       "share": 0.0758
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 9,
+       "share": 0.0682
+      },
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 7,
+       "share": 0.053
+      },
+      {
+       "cardKey": "08010056",
+       "title": "Huyang, Your Aptitude Falls Short",
+       "attacks": 5,
+       "share": 0.0379
+      },
+      {
+       "cardKey": "05010063",
+       "title": "Oggdo Bogdo, Bogano Brute",
+       "attacks": 3,
+       "share": 0.0227
+      },
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 3,
+       "share": 0.0227
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 2,
+       "share": 0.0152
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 2,
+       "share": 0.0152
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 2,
+       "share": 0.0152
+      }
+     ],
+     "results": {
+      "measured": 131,
+      "unitAttacks": 70,
+      "targetDefeated": 43,
+      "attackerDefeated": 12,
+      "both": 12,
+      "neither": 27,
+      "meanDamageToTarget": 1.6571,
+      "baseAttacks": 57,
+      "meanBaseDamage": 1.7193
+     },
+     "sideResult": {
+      "sides": 83,
+      "wins": 61,
+      "winShare": 0.7349,
+      "low": 0.6311,
+      "high": 0.818
+     }
+    },
+    {
+     "cardKey": "04010009",
+     "title": "Boba Fett, Any Methods Necessary",
+     "attacks": 131,
+     "games": 83,
+     "gameShare": 0.2427,
+     "attacksPerGame": 1.5783,
+     "targets": {
+      "base": 45,
+      "units": 86,
+      "unresolvedUnits": 2,
+      "baseShare": 0.3435
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 9,
+       "share": 0.0687
+      },
+      {
+       "cardKey": "04010006",
+       "title": "Darth Vader, Victor Squadron Leader",
+       "attacks": 8,
+       "share": 0.0611
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 8,
+       "share": 0.0611
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 7,
+       "share": 0.0534
+      },
+      {
+       "cardKey": "04010189",
+       "title": "Boba Fett, Feared Bounty Hunter",
+       "attacks": 7,
+       "share": 0.0534
+      },
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 6,
+       "share": 0.0458
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 5,
+       "share": 0.0382
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 5,
+       "share": 0.0382
+      },
+      {
+       "cardKey": "05010063",
+       "title": "Oggdo Bogdo, Bogano Brute",
+       "attacks": 4,
+       "share": 0.0305
+      },
+      {
+       "cardKey": "06010101",
+       "title": "Queen Amidala, Championing Her People",
+       "attacks": 3,
+       "share": 0.0229
+      }
+     ],
+     "results": {
+      "measured": 112,
+      "unitAttacks": 81,
+      "targetDefeated": 79,
+      "attackerDefeated": 21,
+      "both": 20,
+      "neither": 1,
+      "meanDamageToTarget": 2.6173,
+      "baseAttacks": 29,
+      "meanBaseDamage": 3.931
+     },
+     "sideResult": {
+      "sides": 92,
+      "wins": 64,
+      "winShare": 0.6957,
+      "low": 0.5954,
+      "high": 0.7803
+     }
+    },
+    {
+     "cardKey": "04010012",
+     "title": "Luke Skywalker, Hero of Yavin",
+     "attacks": 126,
+     "games": 79,
+     "gameShare": 0.231,
+     "attacksPerGame": 1.5949,
+     "targets": {
+      "base": 43,
+      "units": 83,
+      "unresolvedUnits": 0,
+      "baseShare": 0.3413
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 20,
+       "share": 0.1587
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 8,
+       "share": 0.0635
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 8,
+       "share": 0.0635
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 6,
+       "share": 0.0476
+      },
+      {
+       "cardKey": "04010006",
+       "title": "Darth Vader, Victor Squadron Leader",
+       "attacks": 5,
+       "share": 0.0397
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 4,
+       "share": 0.0317
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 4,
+       "share": 0.0317
+      },
+      {
+       "cardKey": "06010101",
+       "title": "Queen Amidala, Championing Her People",
+       "attacks": 4,
+       "share": 0.0317
+      },
+      {
+       "cardKey": "08010048",
+       "title": "Imperial Armored Commando",
+       "attacks": 4,
+       "share": 0.0317
+      },
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 4,
+       "share": 0.0317
+      }
+     ],
+     "results": {
+      "measured": 114,
+      "unitAttacks": 83,
+      "targetDefeated": 79,
+      "attackerDefeated": 14,
+      "both": 14,
+      "neither": 4,
+      "meanDamageToTarget": 3.1566,
+      "baseAttacks": 31,
+      "meanBaseDamage": 5.0323
+     },
+     "sideResult": {
+      "sides": 89,
+      "wins": 50,
+      "winShare": 0.5618,
+      "low": 0.4583,
+      "high": 0.6602
+     }
+    },
+    {
+     "cardKey": "07010037",
+     "title": "Han Solo, Hibernation Sick",
+     "attacks": 121,
+     "games": 53,
+     "gameShare": 0.155,
+     "attacksPerGame": 2.283,
+     "targets": {
+      "base": 77,
+      "units": 44,
+      "unresolvedUnits": 6,
+      "baseShare": 0.6364
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 5,
+       "share": 0.0413
+      },
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 4,
+       "share": 0.0331
+      },
+      {
+       "cardKey": "06010101",
+       "title": "Queen Amidala, Championing Her People",
+       "attacks": 3,
+       "share": 0.0248
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 3,
+       "share": 0.0248
+      },
+      {
+       "cardKey": "04010006",
+       "title": "Darth Vader, Victor Squadron Leader",
+       "attacks": 2,
+       "share": 0.0165
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 2,
+       "share": 0.0165
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 2,
+       "share": 0.0165
+      },
+      {
+       "cardKey": "05010059",
+       "title": "Nightsister Warrior",
+       "attacks": 2,
+       "share": 0.0165
+      },
+      {
+       "cardKey": "06010087",
+       "title": "Dedra Meero, With Verifiable Data",
+       "attacks": 2,
+       "share": 0.0165
+      },
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 2,
+       "share": 0.0165
+      }
+     ],
+     "results": {
+      "measured": 112,
+      "unitAttacks": 38,
+      "targetDefeated": 29,
+      "attackerDefeated": 6,
+      "both": 6,
+      "neither": 9,
+      "meanDamageToTarget": 1.5526,
+      "baseAttacks": 68,
+      "meanBaseDamage": 2.9412
+     },
+     "sideResult": {
+      "sides": 56,
+      "wins": 27,
+      "winShare": 0.4821,
+      "low": 0.3567,
+      "high": 0.6099
+     }
+    },
+    {
+     "cardKey": "07010008",
+     "title": "Director Krennic, Amidst My Achievement",
+     "attacks": 107,
+     "games": 52,
+     "gameShare": 0.152,
+     "attacksPerGame": 2.0577,
+     "targets": {
+      "base": 31,
+      "units": 76,
+      "unresolvedUnits": 2,
+      "baseShare": 0.2897
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010079",
+       "title": "Koska Reeves, Warrior of Mandalore",
+       "attacks": 6,
+       "share": 0.0561
+      },
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 5,
+       "share": 0.0467
+      },
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 5,
+       "share": 0.0467
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 4,
+       "share": 0.0374
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 4,
+       "share": 0.0374
+      },
+      {
+       "cardKey": "07010008",
+       "title": "Director Krennic, Amidst My Achievement",
+       "attacks": 4,
+       "share": 0.0374
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 4,
+       "share": 0.0374
+      },
+      {
+       "cardKey": "08010056",
+       "title": "Huyang, Your Aptitude Falls Short",
+       "attacks": 4,
+       "share": 0.0374
+      },
+      {
+       "cardKey": "04010012",
+       "title": "Luke Skywalker, Hero of Yavin",
+       "attacks": 3,
+       "share": 0.028
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 3,
+       "share": 0.028
+      }
+     ],
+     "results": {
+      "measured": 100,
+      "unitAttacks": 69,
+      "targetDefeated": 65,
+      "attackerDefeated": 14,
+      "both": 14,
+      "neither": 4,
+      "meanDamageToTarget": 2.8551,
+      "baseAttacks": 29,
+      "meanBaseDamage": 4.0345
+     },
+     "sideResult": {
+      "sides": 61,
+      "wins": 16,
+      "winShare": 0.2623,
+      "low": 0.1684,
+      "high": 0.3844
+     }
+    },
+    {
+     "cardKey": "04010151",
+     "title": "Red Five, Running the Trench",
+     "attacks": 91,
+     "games": 48,
+     "gameShare": 0.1404,
+     "attacksPerGame": 1.8958,
+     "targets": {
+      "base": 33,
+      "units": 58,
+      "unresolvedUnits": 4,
+      "baseShare": 0.3626
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 8,
+       "share": 0.0879
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 7,
+       "share": 0.0769
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 6,
+       "share": 0.0659
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 5,
+       "share": 0.0549
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 4,
+       "share": 0.044
+      },
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 3,
+       "share": 0.033
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 2,
+       "share": 0.022
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 2,
+       "share": 0.022
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 2,
+       "share": 0.022
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 2,
+       "share": 0.022
+      }
+     ],
+     "results": {
+      "measured": 90,
+      "unitAttacks": 54,
+      "targetDefeated": 10,
+      "attackerDefeated": 5,
+      "both": 5,
+      "neither": 44,
+      "meanDamageToTarget": 0.5,
+      "baseAttacks": 32,
+      "meanBaseDamage": 0.375
+     },
+     "sideResult": {
+      "sides": 52,
+      "wins": 33,
+      "winShare": 0.6346,
+      "low": 0.4987,
+      "high": 0.752
+     }
+    },
+    {
+     "cardKey": "06010186",
+     "title": "Garindan, Information Broker",
+     "attacks": 84,
+     "games": 41,
+     "gameShare": 0.1199,
+     "attacksPerGame": 2.0488,
+     "targets": {
+      "base": 66,
+      "units": 18,
+      "unresolvedUnits": 2,
+      "baseShare": 0.7857
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 7,
+       "share": 0.0833
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 3,
+       "share": 0.0357
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 3,
+       "share": 0.0357
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 1,
+       "share": 0.0119
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 1,
+       "share": 0.0119
+      },
+      {
+       "cardKey": "07010037",
+       "title": "Han Solo, Hibernation Sick",
+       "attacks": 1,
+       "share": 0.0119
+      }
+     ],
+     "results": {
+      "measured": 83,
+      "unitAttacks": 16,
+      "targetDefeated": 16,
+      "attackerDefeated": 5,
+      "both": 5,
+      "neither": 0,
+      "meanDamageToTarget": 1.375,
+      "baseAttacks": 65,
+      "meanBaseDamage": 1.3846
+     },
+     "sideResult": {
+      "sides": 46,
+      "wins": 20,
+      "winShare": 0.4348,
+      "low": 0.3021,
+      "high": 0.5775
+     }
+    },
+    {
+     "cardKey": "06010101",
+     "title": "Queen Amidala, Championing Her People",
+     "attacks": 82,
+     "games": 38,
+     "gameShare": 0.1111,
+     "attacksPerGame": 2.1579,
+     "targets": {
+      "base": 45,
+      "units": 37,
+      "unresolvedUnits": 2,
+      "baseShare": 0.5488
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010056",
+       "title": "Huyang, Your Aptitude Falls Short",
+       "attacks": 5,
+       "share": 0.061
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 3,
+       "share": 0.0366
+      },
+      {
+       "cardKey": "05010093",
+       "title": "Gungi, Finding Himself",
+       "attacks": 3,
+       "share": 0.0366
+      },
+      {
+       "cardKey": "07010037",
+       "title": "Han Solo, Hibernation Sick",
+       "attacks": 3,
+       "share": 0.0366
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 3,
+       "share": 0.0366
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 2,
+       "share": 0.0244
+      },
+      {
+       "cardKey": "06010046",
+       "title": "Galen Erso, You'll Never Win",
+       "attacks": 2,
+       "share": 0.0244
+      },
+      {
+       "cardKey": "07010097",
+       "title": "Imperial Door Technician",
+       "attacks": 2,
+       "share": 0.0244
+      },
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 2,
+       "share": 0.0244
+      },
+      {
+       "cardKey": "08010077",
+       "title": "Ryder Azadi, Restored Governor",
+       "attacks": 2,
+       "share": 0.0244
+      }
+     ],
+     "results": {
+      "measured": 77,
+      "unitAttacks": 35,
+      "targetDefeated": 10,
+      "attackerDefeated": 4,
+      "both": 3,
+      "neither": 24,
+      "meanDamageToTarget": 0.9714,
+      "baseAttacks": 40,
+      "meanBaseDamage": 5.35
+     },
+     "sideResult": {
+      "sides": 43,
+      "wins": 24,
+      "winShare": 0.5581,
+      "low": 0.4111,
+      "high": 0.6957
+     }
+    },
+    {
+     "cardKey": "08010248",
+     "title": "Neel, The Cutest Boy",
+     "attacks": 75,
+     "games": 36,
+     "gameShare": 0.1053,
+     "attacksPerGame": 2.0833,
+     "targets": {
+      "base": 61,
+      "units": 14,
+      "unresolvedUnits": 0,
+      "baseShare": 0.8133
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 5,
+       "share": 0.0667
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 2,
+       "share": 0.0267
+      },
+      {
+       "cardKey": "07010038",
+       "title": "Lepi Lookout",
+       "attacks": 2,
+       "share": 0.0267
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 1,
+       "share": 0.0133
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 1,
+       "share": 0.0133
+      },
+      {
+       "cardKey": "07010039",
+       "title": "Latts Razzi, Deadly Whipmaster",
+       "attacks": 1,
+       "share": 0.0133
+      },
+      {
+       "cardKey": "08010062",
+       "title": "The Mandalorian, Devoted Rescuer",
+       "attacks": 1,
+       "share": 0.0133
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 1,
+       "share": 0.0133
+      }
+     ],
+     "results": {
+      "measured": 74,
+      "unitAttacks": 14,
+      "targetDefeated": 12,
+      "attackerDefeated": 7,
+      "both": 7,
+      "neither": 2,
+      "meanDamageToTarget": 0.8571,
+      "baseAttacks": 60,
+      "meanBaseDamage": 0.9833
+     },
+     "sideResult": {
+      "sides": 40,
+      "wins": 19,
+      "winShare": 0.475,
+      "low": 0.3294,
+      "high": 0.625
+     }
+    },
+    {
+     "cardKey": "04010096",
+     "title": "Blue Leader, Scarif Air Support",
+     "attacks": 74,
+     "games": 43,
+     "gameShare": 0.1257,
+     "attacksPerGame": 1.7209,
+     "targets": {
+      "base": 44,
+      "units": 30,
+      "unresolvedUnits": 2,
+      "baseShare": 0.5946
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 3,
+       "share": 0.0405
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 3,
+       "share": 0.0405
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 3,
+       "share": 0.0405
+      },
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "08010011",
+       "title": "Cad Bane, Still Faster than You",
+       "attacks": 2,
+       "share": 0.027
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 1,
+       "share": 0.0135
+      }
+     ],
+     "results": {
+      "measured": 70,
+      "unitAttacks": 27,
+      "targetDefeated": 27,
+      "attackerDefeated": 13,
+      "both": 13,
+      "neither": 0,
+      "meanDamageToTarget": 2.5185,
+      "baseAttacks": 41,
+      "meanBaseDamage": 3.878
+     },
+     "sideResult": {
+      "sides": 47,
+      "wins": 24,
+      "winShare": 0.5106,
+      "low": 0.3724,
+      "high": 0.6472
+     }
+    },
+    {
+     "cardKey": "04010147",
+     "title": "Black One, Straight At Them",
+     "attacks": 70,
+     "games": 42,
+     "gameShare": 0.1228,
+     "attacksPerGame": 1.6667,
+     "targets": {
+      "base": 36,
+      "units": 34,
+      "unresolvedUnits": 2,
+      "baseShare": 0.5143
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 6,
+       "share": 0.0857
+      },
+      {
+       "cardKey": "08010153",
+       "title": "Green Leader, Crynyd's Sacrifice",
+       "attacks": 4,
+       "share": 0.0571
+      },
+      {
+       "cardKey": "05010147",
+       "title": "Kit Fisto's Aethersprite, Good Hunting",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "07010211",
+       "title": "Black Sun Patroller",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "08010194",
+       "title": "Snub Fighter Squadron",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "04010081",
+       "title": "First Order TIE Fighter",
+       "attacks": 1,
+       "share": 0.0143
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 1,
+       "share": 0.0143
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 1,
+       "share": 0.0143
+      }
+     ],
+     "results": {
+      "measured": 68,
+      "unitAttacks": 32,
+      "targetDefeated": 31,
+      "attackerDefeated": 23,
+      "both": 23,
+      "neither": 1,
+      "meanDamageToTarget": 1.5938,
+      "baseAttacks": 34,
+      "meanBaseDamage": 2.3235
+     },
+     "sideResult": {
+      "sides": 46,
+      "wins": 29,
+      "winShare": 0.6304,
+      "low": 0.486,
+      "high": 0.7548
+     }
+    },
+    {
+     "cardKey": "04010250",
+     "title": "Sabine's Masterpiece, Crazy Colorful",
+     "attacks": 70,
+     "games": 36,
+     "gameShare": 0.1053,
+     "attacksPerGame": 1.9444,
+     "targets": {
+      "base": 43,
+      "units": 27,
+      "unresolvedUnits": 0,
+      "baseShare": 0.6143
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 6,
+       "share": 0.0857
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 4,
+       "share": 0.0571
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "06010099",
+       "title": "Naboo Royal Starship, Fit For A Queen",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "08010153",
+       "title": "Green Leader, Crynyd's Sacrifice",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 1,
+       "share": 0.0143
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 1,
+       "share": 0.0143
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 1,
+       "share": 0.0143
+      }
+     ],
+     "results": {
+      "measured": 70,
+      "unitAttacks": 27,
+      "targetDefeated": 5,
+      "attackerDefeated": 4,
+      "both": 4,
+      "neither": 22,
+      "meanDamageToTarget": 0.4074,
+      "baseAttacks": 43,
+      "meanBaseDamage": 0.0698
+     },
+     "sideResult": {
+      "sides": 37,
+      "wins": 18,
+      "winShare": 0.4865,
+      "low": 0.3345,
+      "high": 0.6411
+     }
+    },
+    {
+     "cardKey": "05010147",
+     "title": "Kit Fisto's Aethersprite, Good Hunting",
+     "attacks": 70,
+     "games": 38,
+     "gameShare": 0.1111,
+     "attacksPerGame": 1.8421,
+     "targets": {
+      "base": 15,
+      "units": 55,
+      "unresolvedUnits": 3,
+      "baseShare": 0.2143
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 6,
+       "share": 0.0857
+      },
+      {
+       "cardKey": "05010147",
+       "title": "Kit Fisto's Aethersprite, Good Hunting",
+       "attacks": 5,
+       "share": 0.0714
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 4,
+       "share": 0.0571
+      },
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "07010211",
+       "title": "Black Sun Patroller",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010102",
+       "title": "Resistance Blue Squadron",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "04010158",
+       "title": "Crackshot V-Wing",
+       "attacks": 2,
+       "share": 0.0286
+      }
+     ],
+     "results": {
+      "measured": 64,
+      "unitAttacks": 50,
+      "targetDefeated": 48,
+      "attackerDefeated": 14,
+      "both": 13,
+      "neither": 1,
+      "meanDamageToTarget": 2.5,
+      "baseAttacks": 11,
+      "meanBaseDamage": 4
+     },
+     "sideResult": {
+      "sides": 47,
+      "wins": 26,
+      "winShare": 0.5532,
+      "low": 0.4125,
+      "high": 0.6859
+     }
+    },
+    {
+     "cardKey": "07010211",
+     "title": "Black Sun Patroller",
+     "attacks": 70,
+     "games": 38,
+     "gameShare": 0.1111,
+     "attacksPerGame": 1.8421,
+     "targets": {
+      "base": 27,
+      "units": 43,
+      "unresolvedUnits": 2,
+      "baseShare": 0.3857
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010194",
+       "title": "Snub Fighter Squadron",
+       "attacks": 5,
+       "share": 0.0714
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 4,
+       "share": 0.0571
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 3,
+       "share": 0.0429
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "05010147",
+       "title": "Kit Fisto's Aethersprite, Good Hunting",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 2,
+       "share": 0.0286
+      },
+      {
+       "cardKey": "07010211",
+       "title": "Black Sun Patroller",
+       "attacks": 2,
+       "share": 0.0286
+      }
+     ],
+     "results": {
+      "measured": 63,
+      "unitAttacks": 38,
+      "targetDefeated": 34,
+      "attackerDefeated": 9,
+      "both": 7,
+      "neither": 2,
+      "meanDamageToTarget": 1.7632,
+      "baseAttacks": 23,
+      "meanBaseDamage": 2.6957
+     },
+     "sideResult": {
+      "sides": 42,
+      "wins": 21,
+      "winShare": 0.5,
+      "low": 0.3553,
+      "high": 0.6447
+     }
+    },
+    {
+     "cardKey": "08010052",
+     "title": "Chimaera, A Frightening Reality",
+     "attacks": 68,
+     "games": 45,
+     "gameShare": 0.1316,
+     "attacksPerGame": 1.5111,
+     "targets": {
+      "base": 24,
+      "units": 44,
+      "unresolvedUnits": 1,
+      "baseShare": 0.3529
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 7,
+       "share": 0.1029
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 6,
+       "share": 0.0882
+      },
+      {
+       "cardKey": "06010099",
+       "title": "Naboo Royal Starship, Fit For A Queen",
+       "attacks": 6,
+       "share": 0.0882
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 5,
+       "share": 0.0735
+      },
+      {
+       "cardKey": "06010088",
+       "title": "First Light, Threatening Elegance",
+       "attacks": 3,
+       "share": 0.0441
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 2,
+       "share": 0.0294
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 2,
+       "share": 0.0294
+      },
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 1,
+       "share": 0.0147
+      },
+      {
+       "cardKey": "04010095",
+       "title": "Phoenix Squadron A-Wing",
+       "attacks": 1,
+       "share": 0.0147
+      },
+      {
+       "cardKey": "04010102",
+       "title": "Resistance Blue Squadron",
+       "attacks": 1,
+       "share": 0.0147
+      }
+     ],
+     "results": {
+      "measured": 57,
+      "unitAttacks": 43,
+      "targetDefeated": 43,
+      "attackerDefeated": 8,
+      "both": 8,
+      "neither": 0,
+      "meanDamageToTarget": 3.2791,
+      "baseAttacks": 13,
+      "meanBaseDamage": 6.1538
+     },
+     "sideResult": {
+      "sides": 45,
+      "wins": 29,
+      "winShare": 0.6444,
+      "low": 0.4984,
+      "high": 0.7678
+     }
+    },
+    {
+     "cardKey": "04010140",
+     "title": "IG-2000, Assassin's Aggressor",
+     "attacks": 65,
+     "games": 50,
+     "gameShare": 0.1462,
+     "attacksPerGame": 1.3,
+     "targets": {
+      "base": 16,
+      "units": 49,
+      "unresolvedUnits": 1,
+      "baseShare": 0.2462
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 6,
+       "share": 0.0923
+      },
+      {
+       "cardKey": "07010211",
+       "title": "Black Sun Patroller",
+       "attacks": 6,
+       "share": 0.0923
+      },
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 5,
+       "share": 0.0769
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 3,
+       "share": 0.0462
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 3,
+       "share": 0.0462
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 3,
+       "share": 0.0462
+      },
+      {
+       "cardKey": "04010239",
+       "title": "TIE Dagger Vanguard",
+       "attacks": 3,
+       "share": 0.0462
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 3,
+       "share": 0.0462
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 2,
+       "share": 0.0308
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 2,
+       "share": 0.0308
+      }
+     ],
+     "results": {
+      "measured": 64,
+      "unitAttacks": 47,
+      "targetDefeated": 46,
+      "attackerDefeated": 24,
+      "both": 24,
+      "neither": 1,
+      "meanDamageToTarget": 2.0213,
+      "baseAttacks": 16,
+      "meanBaseDamage": 3
+     },
+     "sideResult": {
+      "sides": 54,
+      "wins": 39,
+      "winShare": 0.7222,
+      "low": 0.5911,
+      "high": 0.8238
+     }
+    },
+    {
+     "cardKey": "04010221",
+     "title": "Stolen AT-Hauler",
+     "attacks": 64,
+     "games": 32,
+     "gameShare": 0.0936,
+     "attacksPerGame": 2,
+     "targets": {
+      "base": 19,
+      "units": 45,
+      "unresolvedUnits": 2,
+      "baseShare": 0.2969
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010194",
+       "title": "Snub Fighter Squadron",
+       "attacks": 5,
+       "share": 0.0781
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 4,
+       "share": 0.0625
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 4,
+       "share": 0.0625
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 3,
+       "share": 0.0469
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "04010217",
+       "title": "Death Space Skirmisher",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 2,
+       "share": 0.0313
+      }
+     ],
+     "results": {
+      "measured": 60,
+      "unitAttacks": 42,
+      "targetDefeated": 40,
+      "attackerDefeated": 14,
+      "both": 14,
+      "neither": 2,
+      "meanDamageToTarget": 2.5238,
+      "baseAttacks": 16,
+      "meanBaseDamage": 4.625
+     },
+     "sideResult": {
+      "sides": 37,
+      "wins": 17,
+      "winShare": 0.4595,
+      "low": 0.3104,
+      "high": 0.6162
+     }
+    },
+    {
+     "cardKey": "08010056",
+     "title": "Huyang, Your Aptitude Falls Short",
+     "attacks": 64,
+     "games": 35,
+     "gameShare": 0.1023,
+     "attacksPerGame": 1.8286,
+     "targets": {
+      "base": 38,
+      "units": 26,
+      "unresolvedUnits": 2,
+      "baseShare": 0.5938
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 4,
+       "share": 0.0625
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 3,
+       "share": 0.0469
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "07010038",
+       "title": "Lepi Lookout",
+       "attacks": 2,
+       "share": 0.0313
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 1,
+       "share": 0.0156
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 1,
+       "share": 0.0156
+      },
+      {
+       "cardKey": "05010059",
+       "title": "Nightsister Warrior",
+       "attacks": 1,
+       "share": 0.0156
+      },
+      {
+       "cardKey": "05010093",
+       "title": "Gungi, Finding Himself",
+       "attacks": 1,
+       "share": 0.0156
+      }
+     ],
+     "results": {
+      "measured": 61,
+      "unitAttacks": 23,
+      "targetDefeated": 11,
+      "attackerDefeated": 2,
+      "both": 2,
+      "neither": 12,
+      "meanDamageToTarget": 0.9565,
+      "baseAttacks": 36,
+      "meanBaseDamage": 0.3889
+     },
+     "sideResult": {
+      "sides": 38,
+      "wins": 13,
+      "winShare": 0.3421,
+      "low": 0.2121,
+      "high": 0.5011
+     }
+    },
+    {
+     "cardKey": "04010149",
+     "title": "Red Squadron Y-Wing",
+     "attacks": 61,
+     "games": 34,
+     "gameShare": 0.0994,
+     "attacksPerGame": 1.7941,
+     "targets": {
+      "base": 45,
+      "units": 16,
+      "unresolvedUnits": 5,
+      "baseShare": 0.7377
+     },
+     "topTargets": [
+      {
+       "cardKey": "08010153",
+       "title": "Green Leader, Crynyd's Sacrifice",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 2,
+       "share": 0.0328
+      },
+      {
+       "cardKey": "04010081",
+       "title": "First Order TIE Fighter",
+       "attacks": 1,
+       "share": 0.0164
+      },
+      {
+       "cardKey": "04010085",
+       "title": "Victor Leader, Leading from the Front",
+       "attacks": 1,
+       "share": 0.0164
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 1,
+       "share": 0.0164
+      },
+      {
+       "cardKey": "07010211",
+       "title": "Black Sun Patroller",
+       "attacks": 1,
+       "share": 0.0164
+      },
+      {
+       "cardKey": "08010052",
+       "title": "Chimaera, A Frightening Reality",
+       "attacks": 1,
+       "share": 0.0164
+      },
+      {
+       "cardKey": "08010191",
+       "title": "Shin Hati's Fiend Fighter, Compact and Agile",
+       "attacks": 1,
+       "share": 0.0164
+      }
+     ],
+     "results": {
+      "measured": 57,
+      "unitAttacks": 10,
+      "targetDefeated": 9,
+      "attackerDefeated": 7,
+      "both": 7,
+      "neither": 1,
+      "meanDamageToTarget": 0.9,
+      "baseAttacks": 42,
+      "meanBaseDamage": 4.0476
+     },
+     "sideResult": {
+      "sides": 35,
+      "wins": 22,
+      "winShare": 0.6286,
+      "low": 0.4634,
+      "high": 0.7683
+     }
+    },
+    {
+     "cardKey": "08010079",
+     "title": "Koska Reeves, Warrior of Mandalore",
+     "attacks": 61,
+     "games": 43,
+     "gameShare": 0.1257,
+     "attacksPerGame": 1.4186,
+     "targets": {
+      "base": 13,
+      "units": 48,
+      "unresolvedUnits": 1,
+      "baseShare": 0.2131
+     },
+     "topTargets": [
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 5,
+       "share": 0.082
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "06010133",
+       "title": "Syril Karn, Where Is He?",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 3,
+       "share": 0.0492
+      },
+      {
+       "cardKey": "05010059",
+       "title": "Nightsister Warrior",
+       "attacks": 2,
+       "share": 0.0328
+      },
+      {
+       "cardKey": "06010163",
+       "title": "Outer Rim Constable",
+       "attacks": 2,
+       "share": 0.0328
+      }
+     ],
+     "results": {
+      "measured": 56,
+      "unitAttacks": 47,
+      "targetDefeated": 45,
+      "attackerDefeated": 22,
+      "both": 21,
+      "neither": 1,
+      "meanDamageToTarget": 2.7234,
+      "baseAttacks": 8,
+      "meanBaseDamage": 4
+     },
+     "sideResult": {
+      "sides": 44,
+      "wins": 33,
+      "winShare": 0.75,
+      "low": 0.6056,
+      "high": 0.8543
+     }
+    },
+    {
+     "cardKey": "04010033",
+     "title": "Onyx Squadron Brute",
+     "attacks": 57,
+     "games": 40,
+     "gameShare": 0.117,
+     "attacksPerGame": 1.425,
+     "targets": {
+      "base": 31,
+      "units": 26,
+      "unresolvedUnits": 0,
+      "baseShare": 0.5439
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 7,
+       "share": 0.1228
+      },
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 6,
+       "share": 0.1053
+      },
+      {
+       "cardKey": "06010099",
+       "title": "Naboo Royal Starship, Fit For A Queen",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "08010153",
+       "title": "Green Leader, Crynyd's Sacrifice",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 1,
+       "share": 0.0175
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 1,
+       "share": 0.0175
+      },
+      {
+       "cardKey": "06010088",
+       "title": "First Light, Threatening Elegance",
+       "attacks": 1,
+       "share": 0.0175
+      },
+      {
+       "cardKey": "06010189",
+       "title": "Lurking Snub Fighter",
+       "attacks": 1,
+       "share": 0.0175
+      },
+      {
+       "cardKey": "06010213",
+       "title": "A-Wing",
+       "attacks": 1,
+       "share": 0.0175
+      }
+     ],
+     "results": {
+      "measured": 54,
+      "unitAttacks": 25,
+      "targetDefeated": 25,
+      "attackerDefeated": 19,
+      "both": 19,
+      "neither": 0,
+      "meanDamageToTarget": 1.52,
+      "baseAttacks": 29,
+      "meanBaseDamage": 2.0345
+     },
+     "sideResult": {
+      "sides": 41,
+      "wins": 23,
+      "winShare": 0.561,
+      "low": 0.4104,
+      "high": 0.7011
+     }
+    },
+    {
+     "cardKey": "08010062",
+     "title": "The Mandalorian, Devoted Rescuer",
+     "attacks": 57,
+     "games": 34,
+     "gameShare": 0.0994,
+     "attacksPerGame": 1.6765,
+     "targets": {
+      "base": 18,
+      "units": 39,
+      "unresolvedUnits": 2,
+      "baseShare": 0.3158
+     },
+     "topTargets": [
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 4,
+       "share": 0.0702
+      },
+      {
+       "cardKey": "06010046",
+       "title": "Galen Erso, You'll Never Win",
+       "attacks": 4,
+       "share": 0.0702
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 3,
+       "share": 0.0526
+      },
+      {
+       "cardKey": "07010174",
+       "title": "0-0-0, Translation and Torture",
+       "attacks": 3,
+       "share": 0.0526
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 3,
+       "share": 0.0526
+      },
+      {
+       "cardKey": "04010133",
+       "title": "Allegiant General Pryde, Ruthless and Loyal",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "06010101",
+       "title": "Queen Amidala, Championing Her People",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "06010133",
+       "title": "Syril Karn, Where Is He?",
+       "attacks": 2,
+       "share": 0.0351
+      },
+      {
+       "cardKey": "07010038",
+       "title": "Lepi Lookout",
+       "attacks": 2,
+       "share": 0.0351
+      }
+     ],
+     "results": {
+      "measured": 55,
+      "unitAttacks": 37,
+      "targetDefeated": 34,
+      "attackerDefeated": 8,
+      "both": 8,
+      "neither": 3,
+      "meanDamageToTarget": 3,
+      "baseAttacks": 16,
+      "meanBaseDamage": 5.375
+     },
+     "sideResult": {
+      "sides": 37,
+      "wins": 19,
+      "winShare": 0.5135,
+      "low": 0.3589,
+      "high": 0.6655
+     }
+    },
+    {
+     "cardKey": "08010030",
+     "title": "Marrok, Mysterious Warrior",
+     "attacks": 53,
+     "games": 37,
+     "gameShare": 0.1082,
+     "attacksPerGame": 1.4324,
+     "targets": {
+      "base": 36,
+      "units": 17,
+      "unresolvedUnits": 2,
+      "baseShare": 0.6792
+     },
+     "topTargets": [
+      {
+       "cardKey": "07010037",
+       "title": "Han Solo, Hibernation Sick",
+       "attacks": 4,
+       "share": 0.0755
+      },
+      {
+       "cardKey": "05010096",
+       "title": "Obi-Wan Kenobi, Protective Padawan",
+       "attacks": 2,
+       "share": 0.0377
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 2,
+       "share": 0.0377
+      },
+      {
+       "cardKey": "04010032",
+       "title": "Director Krennic, On the Verge of Greatness",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "06010046",
+       "title": "Galen Erso, You'll Never Win",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "06010163",
+       "title": "Outer Rim Constable",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "06010172",
+       "title": "Cinta Kaz, The Struggle Comes First",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "07010038",
+       "title": "Lepi Lookout",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "08010077",
+       "title": "Ryder Azadi, Restored Governor",
+       "attacks": 1,
+       "share": 0.0189
+      },
+      {
+       "cardKey": "08010248",
+       "title": "Neel, The Cutest Boy",
+       "attacks": 1,
+       "share": 0.0189
+      }
+     ],
+     "results": {
+      "measured": 50,
+      "unitAttacks": 15,
+      "targetDefeated": 14,
+      "attackerDefeated": 7,
+      "both": 6,
+      "neither": 0,
+      "meanDamageToTarget": 1.4667,
+      "baseAttacks": 33,
+      "meanBaseDamage": 1.9394
+     },
+     "sideResult": {
+      "sides": 36,
+      "wins": 27,
+      "winShare": 0.75,
+      "low": 0.5893,
+      "high": 0.8625
+     }
+    },
+    {
+     "cardKey": "06010172",
+     "title": "Cinta Kaz, The Struggle Comes First",
+     "attacks": 52,
+     "games": 40,
+     "gameShare": 0.117,
+     "attacksPerGame": 1.3,
+     "targets": {
+      "base": 26,
+      "units": 26,
+      "unresolvedUnits": 0,
+      "baseShare": 0.5
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 9,
+       "share": 0.1731
+      },
+      {
+       "cardKey": "04010009",
+       "title": "Boba Fett, Any Methods Necessary",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "07010037",
+       "title": "Han Solo, Hibernation Sick",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "08010077",
+       "title": "Ryder Azadi, Restored Governor",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "05010045",
+       "title": "Yaddle, A Chance To Make Things Right",
+       "attacks": 1,
+       "share": 0.0192
+      },
+      {
+       "cardKey": "05010063",
+       "title": "Oggdo Bogdo, Bogano Brute",
+       "attacks": 1,
+       "share": 0.0192
+      },
+      {
+       "cardKey": "05010130",
+       "title": "HK-47, Exclamation: Die, Meatbag!",
+       "attacks": 1,
+       "share": 0.0192
+      },
+      {
+       "cardKey": "06010046",
+       "title": "Galen Erso, You'll Never Win",
+       "attacks": 1,
+       "share": 0.0192
+      },
+      {
+       "cardKey": "06010133",
+       "title": "Syril Karn, Where Is He?",
+       "attacks": 1,
+       "share": 0.0192
+      },
+      {
+       "cardKey": "06010163",
+       "title": "Outer Rim Constable",
+       "attacks": 1,
+       "share": 0.0192
+      }
+     ],
+     "results": {
+      "measured": 43,
+      "unitAttacks": 24,
+      "targetDefeated": 22,
+      "attackerDefeated": 16,
+      "both": 14,
+      "neither": 0,
+      "meanDamageToTarget": 3.0833,
+      "baseAttacks": 19,
+      "meanBaseDamage": 5
+     },
+     "sideResult": {
+      "sides": 44,
+      "wins": 23,
+      "winShare": 0.5227,
+      "low": 0.3794,
+      "high": 0.6625
+     }
+    },
+    {
+     "cardKey": "08010146",
+     "title": "Justifier, Relentless",
+     "attacks": 52,
+     "games": 36,
+     "gameShare": 0.1053,
+     "attacksPerGame": 1.4444,
+     "targets": {
+      "base": 7,
+      "units": 45,
+      "unresolvedUnits": 2,
+      "baseShare": 0.1346
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010140",
+       "title": "IG-2000, Assassin's Aggressor",
+       "attacks": 5,
+       "share": 0.0962
+      },
+      {
+       "cardKey": "04010033",
+       "title": "Onyx Squadron Brute",
+       "attacks": 4,
+       "share": 0.0769
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 4,
+       "share": 0.0769
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 4,
+       "share": 0.0769
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 3,
+       "share": 0.0577
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "04010151",
+       "title": "Red Five, Running the Trench",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "04010221",
+       "title": "Stolen AT-Hauler",
+       "attacks": 2,
+       "share": 0.0385
+      },
+      {
+       "cardKey": "05010147",
+       "title": "Kit Fisto's Aethersprite, Good Hunting",
+       "attacks": 2,
+       "share": 0.0385
+      }
+     ],
+     "results": {
+      "measured": 52,
+      "unitAttacks": 43,
+      "targetDefeated": 0,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 43,
+      "meanDamageToTarget": 0,
+      "baseAttacks": 7,
+      "meanBaseDamage": 0
+     },
+     "sideResult": {
+      "sides": 39,
+      "wins": 22,
+      "winShare": 0.5641,
+      "low": 0.4098,
+      "high": 0.707
+     }
+    },
+    {
+     "cardKey": "06010189",
+     "title": "Lurking Snub Fighter",
+     "attacks": 51,
+     "games": 39,
+     "gameShare": 0.114,
+     "attacksPerGame": 1.3077,
+     "targets": {
+      "base": 26,
+      "units": 25,
+      "unresolvedUnits": 1,
+      "baseShare": 0.5098
+     },
+     "topTargets": [
+      {
+       "cardKey": "04010162",
+       "title": "Droid Missile Platform",
+       "attacks": 5,
+       "share": 0.098
+      },
+      {
+       "cardKey": "04010237",
+       "title": "TIE Bomber",
+       "attacks": 2,
+       "share": 0.0392
+      },
+      {
+       "cardKey": "04010250",
+       "title": "Sabine's Masterpiece, Crazy Colorful",
+       "attacks": 2,
+       "share": 0.0392
+      },
+      {
+       "cardKey": "05010147",
+       "title": "Kit Fisto's Aethersprite, Good Hunting",
+       "attacks": 2,
+       "share": 0.0392
+      },
+      {
+       "cardKey": "07010135",
+       "title": "Pirate Snub Fighter",
+       "attacks": 2,
+       "share": 0.0392
+      },
+      {
+       "cardKey": "04010096",
+       "title": "Blue Leader, Scarif Air Support",
+       "attacks": 1,
+       "share": 0.0196
+      },
+      {
+       "cardKey": "04010147",
+       "title": "Black One, Straight At Them",
+       "attacks": 1,
+       "share": 0.0196
+      },
+      {
+       "cardKey": "04010149",
+       "title": "Red Squadron Y-Wing",
+       "attacks": 1,
+       "share": 0.0196
+      },
+      {
+       "cardKey": "04010240",
+       "title": "Fett's Firespray, Feared Silhouette",
+       "attacks": 1,
+       "share": 0.0196
+      },
+      {
+       "cardKey": "06010099",
+       "title": "Naboo Royal Starship, Fit For A Queen",
+       "attacks": 1,
+       "share": 0.0196
+      }
+     ],
+     "results": {
+      "measured": 50,
+      "unitAttacks": 23,
+      "targetDefeated": 23,
+      "attackerDefeated": 15,
+      "both": 15,
+      "neither": 0,
+      "meanDamageToTarget": 1.9565,
+      "baseAttacks": 26,
+      "meanBaseDamage": 2.3846
+     },
+     "sideResult": {
+      "sides": 40,
+      "wins": 18,
+      "winShare": 0.45,
+      "low": 0.3071,
+      "high": 0.6017
+     }
+    },
+    {
+     "cardKey": "04010133",
+     "title": "Allegiant General Pryde, Ruthless and Loyal",
+     "attacks": 48,
+     "games": 29,
+     "gameShare": 0.0848,
+     "attacksPerGame": 1.6552,
+     "targets": {
+      "base": 39,
+      "units": 9,
+      "unresolvedUnits": 3,
+      "baseShare": 0.8125
+     },
+     "topTargets": [
+      {
+       "cardKey": "06010111",
+       "title": "Jar Jar Binks, Mesa Propose…",
+       "attacks": 2,
+       "share": 0.0417
+      },
+      {
+       "cardKey": "06010082",
+       "title": "Chancellor Palpatine, I Am the Senate",
+       "attacks": 1,
+       "share": 0.0208
+      },
+      {
+       "cardKey": "06010186",
+       "title": "Garindan, Information Broker",
+       "attacks": 1,
+       "share": 0.0208
+      },
+      {
+       "cardKey": "07010037",
+       "title": "Han Solo, Hibernation Sick",
+       "attacks": 1,
+       "share": 0.0208
+      },
+      {
+       "cardKey": "08010056",
+       "title": "Huyang, Your Aptitude Falls Short",
+       "attacks": 1,
+       "share": 0.0208
+      }
+     ],
+     "results": {
+      "measured": 48,
+      "unitAttacks": 6,
+      "targetDefeated": 3,
+      "attackerDefeated": 0,
+      "both": 0,
+      "neither": 3,
+      "meanDamageToTarget": 0.6667,
+      "baseAttacks": 39,
+      "meanBaseDamage": 1.0256
+     },
+     "sideResult": {
+      "sides": 30,
+      "wins": 24,
+      "winShare": 0.8,
+      "low": 0.6269,
+      "high": 0.9049
+     }
+    }
+   ],
+   "notes": [
+    "Bot simulations (D21 tier 5); never pooled with human play."
+   ]
+  }
+ ],
+ "build": {
+  "inputHash": "2d13254367b28edc5ca9fac58f186c0831b4503c97176bda44bfd591d5dbbc06",
+  "codeCommit": "56f827ea43156481397de1f7e83ea8e974d3dbb4-dirty"
+ }
+}

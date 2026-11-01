@@ -59,6 +59,9 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 - Cards that win more than their popularity suggests, or help strong players more: \`sleeper_cards\` (the whole field, aspects, or leader and base). Each row has a 95% range, a false-discovery q, the decks behind it and status candidate; simulator rows are computer play, kept apart.
 - Every win rate comes from swumetastats (melee.gg tournaments) with its window, n and a 95% interval. Card evidence compares comparable decks with and without the card; opponents are unknown, so it is not a rate against an archetype.
 
+## Observed play
+- Which cards attack most, what they attack and what happens, human play and computer play side by side and never pooled: \`attack_patterns\` (method, cardKey, limit). Each population names its method, tier, games and the attacks whose card was not recognised.
+
 ## Formats
 - Is a card legal: \`format_legality\`. It reads set printings only; there is no ban list in the data, so confirm bans on the official site.
 

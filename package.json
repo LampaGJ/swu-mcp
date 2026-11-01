@@ -96,6 +96,7 @@
     "data/curated-rules.json",
     "data/counters.json",
     "data/cluster-labels.json",
+    "data/attack-patterns.json",
     "src/data-release.json"
   ]
 }

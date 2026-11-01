@@ -11,6 +11,7 @@ import { DECK_TOOLS } from "./tools/deck.js";
 import { BUILD_DECK_TOOLS } from "./tools/build-deck.js";
 import { DECK_REMIXER_TOOLS } from "./tools/deck-remixer.js";
 import { META_TOOLS } from "./tools/meta.js";
+import { PLAY_TOOLS } from "./tools/play.js";
 import { SIMS_TOOLS } from "./tools/sims.js";
 import { ok, fail, lower, hasValue } from "./tools/common.js";
 
@@ -198,6 +199,7 @@ export const TOOLS = {
   ...BUILD_DECK_TOOLS,
   ...DECK_REMIXER_TOOLS,
   ...META_TOOLS,
+  ...PLAY_TOOLS,
   // Local only: the public endpoint runs without SWU_MCP_SIMS, so it never starts the engine.
   ...(process.env.SWU_MCP_SIMS === "1" ? SIMS_TOOLS : {}),
 } as const;

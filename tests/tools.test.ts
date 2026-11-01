@@ -103,6 +103,7 @@ describe("MCP protocol", () => {
     const tools = await client.listTools();
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "aspect_cover",
+      "attack_patterns",
       "budget_alternatives",
       "build_deck",
       "card_features",
