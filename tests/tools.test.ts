@@ -104,6 +104,7 @@ describe("MCP protocol", () => {
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
       "aspect_cover",
       "budget_alternatives",
+      "build_deck",
       "card_features",
       "card_price",
       "card_rulings",

@@ -42,6 +42,7 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 ## Decks and collections
 - Whole-deck report under a leader and base: \`deck_audit\`. Construction legality: \`deck_legality_check\`. Best leader and base for a pile of cards: \`suggest_leader_base\`.
 - Best cards for a leader and base, cards the leader's tournament decks play first: \`playable_cards\`. Substitutes for the cards of a deck: \`fungible_in_deck\`. Cheaper substitutes: \`budget_alternatives\`.
+- A whole 50-card list for a leader and base as the SWUDB JSON document (Karabast import), with a why line per card, swaps against a starting list and the legality check: \`build_deck\`.
 - Price a list: \`price_list\`. Compare two lists: \`trade_balance\`. What a deck still needs from a collection: \`owned_vs_needed\`.
 - Cards played most or least per dollar: \`play_value_vs_price\`. Cards whose score and play rank disagree: \`score_vs_play\`.
 

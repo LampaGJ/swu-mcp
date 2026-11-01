@@ -72,6 +72,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   search_rulings: { query: "damage", since: "2024-01-01", limit: 3 },
   deck_audit: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
   deck_legality_check: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
+  build_deck: { leader: "09010018", base: "09010024", sideboard: [{ card: "LOF_213", count: 2 }] },
   suggest_leader_base: { decklist: DECKLIST, limit: 3 },
   playable_cards: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, decklist: DECKLIST, limit: 5 },
   fungible_in_deck: { decklist: DECKLIST, leader: ASAJJ_VENTRESS, base: CHOPPER_BASE },
