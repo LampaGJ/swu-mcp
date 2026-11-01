@@ -55,6 +55,7 @@ Every tool is read-only. Results are TOON tables. Cite the data version (\`data_
 - The current archetypes (tournament decklists, placement-weighted; community lists apart): \`meta_archetypes\`. One archetype's key units, curve, keywords and threats: \`meta_threats\`.
 - Cards in your aspects that answer the most meta share, with clause evidence and tournament deck evidence: \`meta_answers\` (leader and base, or a decklist). Then check the swaps with \`deck_audit\`.
 - The cards a leader's decklists actually play, with inclusion, mean copies and lift over decks that could play them: \`leader_cards\` (sortBy inclusion or lift). It names the population, window and deck count.
+- Cards that win more than their popularity suggests, or help strong players more: \`sleeper_cards\` (the whole field, aspects, or leader and base). Each row has a 95% range, a false-discovery q, the decks behind it and status candidate; simulator rows are computer play, kept apart.
 - Every win rate comes from swumetastats (melee.gg tournaments) with its window, n and a 95% interval. Card evidence compares comparable decks with and without the card; opponents are unknown, so it is not a rate against an archetype.
 
 ## Formats

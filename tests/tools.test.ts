@@ -149,6 +149,7 @@ describe("MCP protocol", () => {
       "search_cards",
       "search_rulings",
       "similar_cards",
+      "sleeper_cards",
       "suggest_leader_base",
       "trade_balance",
       "value_vs_price",

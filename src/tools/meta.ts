@@ -69,6 +69,7 @@ import {
   type DeckEnv,
 } from "./deck.js";
 import { expandSwudb, swudbField } from "./swudb.js";
+import { sleeperCards, sleeperCardsShape, sleepersOf } from "./sleepers.js";
 import { fail, ok, round } from "./common.js";
 import { deferRepeatedLinks } from "./synergy.js";
 
@@ -1109,4 +1110,18 @@ export const META_TOOLS = {
     leaderCardsShape,
     leaderCards,
   ),
+  sleeper_cards: {
+    title: "Sleeper cards",
+    description:
+      "Cards that win more than their play rate suggests, and cards whose advantage grows with the player's skill, from tournament decklists with their whole-event match record (swumetastats.com, melee.gg Premier events). For the whole field, one aspect set (aspects), or one leader and base (leader with base). Per card: the share of comparable decks that play it (playRate), the match win rate with it minus comparable decks without it (same meta period, leader and base aspects) with a 95% range from a bootstrap over whole events (winAdvantagePts, rangePts), Benjamini-Yekutieli and Benjamini-Hochberg q-values, the decks and events behind it, how much more it helps the strongest third of players than the weakest third (skill, from each player's other events), the same comparison inside one player's own decks and inside one build style, and, for cards in the owner's tested swaps, the simulator view (computer play, labelled, with the hidden-card caveat of #183). show sleepers (default) lists cards passing the false-discovery gate as underplayed winners or as helping strong players more, then up to 5 unconfirmed leads; show all lists every measured card. Cards from sets Premier has rotated out are left out unless includeRotated is true. Every row is status: candidate.",
+    shape: sleeperCardsShape,
+    handler: (store: CardStore, input: unknown): ToolResult => {
+      try {
+        return sleeperCards(store, deckEnvOf(store).dataVersion, sleepersOf(store), input);
+      } catch (error) {
+        if (error instanceof z.ZodError) throw error;
+        return fail(error instanceof Error ? error.message : String(error));
+      }
+    },
+  },
 } as const;

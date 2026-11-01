@@ -86,6 +86,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   meta_threats: { archetype: "t001" },
   meta_answers: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, archetypes: 5, limit: 5 },
   leader_cards: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, limit: 5 },
+  sleeper_cards: { show: "all", limit: 3 },
   ...(servableRung ? { simulate_matchup: { swudb: OWNER_DECK, opponent: "field", dryRun: true } } : {}),
 };
 

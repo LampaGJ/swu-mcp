@@ -134,6 +134,13 @@ function main(): void {
     },
     { name: "similarity", script: "scripts/similarity.ts", args: ["--data", runDir], owns: ["similarity"], replay: "similarity/replay.json" },
     { name: "meta", script: "scripts/meta.ts", args: ["--data", runDir, "--originals", originals], owns: ["meta"], replay: "meta/replay.json" },
+    {
+      name: "sleepers",
+      script: "scripts/meta/sleepers.ts",
+      args: ["--data", runDir, "--originals", originals],
+      owns: ["sleepers"],
+      replay: "sleepers/replay.json",
+    },
   ];
 
   const p = progress("build-data", { total: steps.length, everyN: 1 });
