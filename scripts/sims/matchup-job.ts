@@ -43,9 +43,11 @@ import { createPool } from "../../src/sims/pool.js";
 import type { MatchFooter } from "../../src/sims/schemas.js";
 import { canonicalJson, compareCodePoints } from "../../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap } from "../bench/card-map.js";
+import { LiveStats } from "../../src/sims/live-stats.js";
 import { progress } from "../lib/progress.mjs";
 import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
 import { prepareDeck } from "./decks.js";
+import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
 import type { CardBridge } from "./card-bridge.js";
 
 /** The ladder's 40 games per worker per batch is the throughput best (D81); a job takes about a tenth of its games per batch, at least 4 per worker, so the tool's progress moves. */
@@ -197,8 +199,11 @@ async function main(): Promise<void> {
 
     process.env.SIMS_POLICY_SPECS = name;
     process.env.SIMS_RUN = pilotRun;
-    const p = progress("progress", { dir, total: slots.length, everyN: 10, everyMs: 3000 });
-    p.log({ phase: "starting workers" });
+    const p = progress("progress", { dir, total: slots.length, everyN: 10, everyMs: 3000, keepAliveMs: KEEP_ALIVE_MS });
+    // The running stats go to progress.json and the tool's status reply; result.json is built from the footers alone.
+    const live = new LiveStats({ kind: "matchup", provenance: provenanceOf({ specs: [input.policy], seeds: null, enginePin: ctx.engine.pin.commit, codeCommit: ctx.codeCommit, run: record.pilotRun }) });
+    live.beginPhase("games", slots.length, { subject: "your deck", other: String(population.opponent) });
+    p.log(() => ({ phase: "starting workers", stats: live.snapshot() }));
     const sim = await createPool({ workers: job.workers, pin: ctx.engine.pin });
     const footers: MatchFooter[] = [];
     try {
@@ -210,8 +215,30 @@ async function main(): Promise<void> {
       for (let c = 0; c < parts.length; c++) {
         const current = next as ReturnType<typeof start>;
         next = c + 1 < parts.length ? start(parts[c + 1]) : null;
-        for (const r of await current) footers.push(r.footer);
-        p.tick(footers.length, { phase: "games" });
+        for (const r of await current) {
+          const slot = slots[footers.length];
+          const f = r.footer;
+          const [d0, d1] = f.coverage.decisions;
+          const [a0, a1] = f.coverage.answered;
+          const decided = f.result.endCondition === "base_destroyed" && f.result.winner !== null;
+          live.add({
+            seed: slot.spec.seed,
+            winnerSeat: f.result.winner,
+            endCondition: f.result.endCondition,
+            error: f.error,
+            rounds: f.result.rounds,
+            decisions: f.result.decisions,
+            won: slot.ourSeat === null || !decided ? null : f.result.winner === slot.ourSeat + 1,
+            stratum: slot.group === "mirror" || slot.group === "h2h" ? undefined : slot.stratum,
+            group: slot.group === "variant" ? "variant" : undefined,
+            pair: slot.group === "h2h" ? slot.spec.seed : undefined,
+            mirror: slot.group === "mirror",
+            headline: slot.group !== "variant",
+            fallback: { decisions: d0 + d1, fallback: d0 + d1 - (a0 + a1) },
+          });
+          footers.push(f);
+        }
+        p.tick(footers.length, () => ({ phase: "games", stats: live.snapshot() }));
       }
     } finally {
       await sim.close();
@@ -287,7 +314,7 @@ async function main(): Promise<void> {
     const header = policyHeader(parsePolicySpec(input.policy));
     const result = renderResult({ body, policy: input.policy, policyVersion: `${header.id} v${header.version} params ${header.paramsSha256.slice(0, 12)}`, inputHash: job.inputHash, codeCommit: ctx.codeCommit, engine: { commit: ctx.engine.pin.commit, cardDataVersion: ctx.engine.pin.cardDataVersion }, seed: input.seed });
     writeFileSync(path.join(dir, "result.json"), `${JSON.stringify(result)}\n`);
-    p.done({});
+    p.done({ stats: live.snapshot() });
     writeStatus("done", null);
   } catch (e) {
     writeStatus("failed", String((e as Error)?.message ?? e));

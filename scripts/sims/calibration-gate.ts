@@ -56,9 +56,11 @@ import { createPool } from "../../src/sims/pool.js";
 import type { MatchFooter } from "../../src/sims/schemas.js";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap } from "../bench/card-map.js";
+import { LiveStats } from "../../src/sims/live-stats.js";
 import { progress } from "../lib/progress.mjs";
 import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
 import { prepareDeck } from "./decks.js";
+import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
 
 /** The sampler seed of the --lists draw; fixed, so the same pool gives the same lists. */
 const LIST_SEED = "calibration-lists-v1";
@@ -167,12 +169,15 @@ async function main(): Promise<void> {
   const nReplay = Math.min(Number(values.replay), jobs.length);
   const replayIdx = Array.from({ length: nReplay }, (_, k) => Math.floor((k * jobs.length) / nReplay));
   const job = `sims-calibration-${name.replace(/[^A-Za-z0-9]+/g, "-")}`;
-  const p = progress(job, { total: jobs.length + nReplay * (searches ? 2 : 3), everyN: 25 });
+  const p = progress(job, { total: jobs.length + nReplay * (searches ? 2 : 3), everyN: 25, keepAliveMs: KEEP_ALIVE_MS });
+  // The live payload goes to the heartbeat only; the gate record below is built from footers and gates alone.
+  const live = new LiveStats({ kind: "calibration", provenance: provenanceOf({ specs: [spec], seeds: { from: CALIBRATION_SEED0, to: Math.max(...jobs.map((jb) => jb.seed)) }, enginePin: pin.commit, codeCommit: ctx.codeCommit, run: path.basename(pilotRun) }) });
+  live.beginPhase("games", jobs.length, null);
   process.env.SIMS_POLICY_SPECS = name;
   process.env.SIMS_RUN = pilotRun;
   const workers = Number(values.workers);
   const resourceLimits = values.heap === undefined ? undefined : { maxOldGenerationSizeMb: Number(values.heap), maxYoungGenerationSizeMb: 24 };
-  p.log({ phase: "starting workers", pairs: pairs.length, archetypes: panel.length });
+  p.log(() => ({ phase: "starting workers", pairs: pairs.length, archetypes: panel.length, stats: live.snapshot() }));
   const sim = await createPool({ workers, pin, resourceLimits });
   const footers: MatchFooter[] = [];
   try {
@@ -184,8 +189,28 @@ async function main(): Promise<void> {
     for (let c = 0; c < parts.length; c++) {
       const current = next as ReturnType<typeof start>;
       next = c + 1 < parts.length ? start(parts[c + 1]) : null;
-      for (const r of await current) footers.push(r.footer);
-      p.tick(footers.length, { phase: "games" });
+      for (const r of await current) {
+        const jb = jobs[footers.length];
+        const f = r.footer;
+        const decisive = isDecisive(f);
+        const [d0, d1] = f.coverage.decisions;
+        const [a0, a1] = f.coverage.answered;
+        // Archetype i of the pair is the subject: a row per archetype pair, not pooled (the headline stays empty).
+        live.add({
+          seed: jb.seed,
+          winnerSeat: f.result.winner,
+          endCondition: f.result.endCondition,
+          error: f.error,
+          rounds: f.result.rounds,
+          decisions: f.result.decisions,
+          won: decisive ? (f.result.winner === 1) === jb.iFirst : null,
+          stratum: `${panel[jb.i].archetype} vs ${panel[jb.j].archetype}`,
+          headline: false,
+          fallback: { decisions: d0 + d1, fallback: d0 + d1 - (a0 + a1) },
+        });
+        footers.push(f);
+      }
+      p.tick(footers.length, () => ({ phase: "games", stats: live.snapshot() }));
     }
   } finally {
     await sim.close();
@@ -198,21 +223,31 @@ async function main(): Promise<void> {
   let replayed = 0;
   let undoIdentical = searches ? null : 0;
   const failures: string[] = [];
+  live.setCounter("replayChecksTotal", nReplay * (searches ? 2 : 3));
+  const tickCheck = (phase: string): void => {
+    done++;
+    live.setCounter("replayChecksDone", done - jobs.length);
+    live.setCounter("workerEqualsThread", workerEqualsThread);
+    live.setCounter("replayed", replayed);
+    if (undoIdentical !== null) live.setCounter("undoIdentical", undoIdentical);
+    live.setCounter("replayFailures", failures.length);
+    p.tick(done, () => ({ phase, stats: live.snapshot() }));
+  };
   for (const idx of replayIdx) {
     const jb = jobs[idx];
     const rec = (await playMatch(ctx.engine, toSpec(jb, "compact"), keys)).record;
     if (rec.footer.traceSha256 === footers[idx].traceSha256) workerEqualsThread++;
     else failures.push(`seed ${jb.seed} pair ${jb.pair}: thread trace differs from the worker's`);
-    p.tick(++done, { phase: "replay" });
+    tickCheck("replay");
     const out = await replayMatch(ctx.engine, JSON.parse(JSON.stringify(rec)), keys, { byDescriptor: searches });
     if (out.ok && out.traceSha256 === rec.footer.traceSha256) replayed++;
     else failures.push(`seed ${jb.seed} pair ${jb.pair}: replay ${JSON.stringify(out.mismatch)}`);
-    p.tick(++done, { phase: "replay" });
+    tickCheck("replay");
     if (!searches) {
       const undo = (await playMatch(ctx.engine, toSpec(jb, "none", true), keys)).record;
       if (undo.footer.traceSha256 === rec.footer.traceSha256) undoIdentical = (undoIdentical ?? 0) + 1;
       else failures.push(`seed ${jb.seed} pair ${jb.pair}: undo on changes the trace`);
-      p.tick(++done, { phase: "undo" });
+      tickCheck("undo");
     }
   }
   const evidence = searches && existsSync(path.join(REPO_ROOT, FIDELITY_RECORD)) ? [{ file: FIDELITY_RECORD, sha256: sha256(readFileSync(path.join(REPO_ROOT, FIDELITY_RECORD))) }] : [];
@@ -314,7 +349,7 @@ async function main(): Promise<void> {
     mkdirSync(values.out, { recursive: true });
     writeFileSync(path.join(values.out, recordFileName(spec)), `${JSON.stringify(record, null, 1)}\n`);
   }
-  p.done({ pass: record.pass, failedGates });
+  p.done({ pass: record.pass, failedGates, stats: live.snapshot() });
   const brief = { policy: spec, pass: record.pass, failedGates, replay: { ...replayGate }, health, ladder: steps.map((s) => ({ record: s.record, pass: s.pass, stale: s.stale })), external: { spearman: ext.spearman, favourite: ext.favourite, pairs: ext.pairs, failed: ext.failed, intervals: externalIntervals(ext) } };
   process.stdout.write(`${JSON.stringify(brief, null, 1)}\n`);
 }

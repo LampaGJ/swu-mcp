@@ -101,6 +101,30 @@ Each rerun posts its measurement on #118 before any threshold or default moves (
 - New rung or new policy params hash, including a new evaluator capture: the ladder step against its promoted predecessor, then the four gates.
 - A rung is served only from a record whose engine commit equals the pinned one (`src/sims/calibration.ts:331-336`), so a stale record serves nothing.
 
+## Watching runs
+
+`pnpm sims:watch` shows every running or just-finished simulation job in one terminal (D99, #178). Run it in a second terminal; it only reads and writes nothing. Options: `--all` (every heartbeat file, not only live jobs and jobs from the last hour), `--once` (print one frame and exit; also the default when output is not a terminal), `--interval <s>` (default 2), `--no-color`. `q` or Ctrl-C quits. Without the pnpm shim: `node node_modules/tsx/dist/cli.mjs scripts/sims/watch.ts`.
+
+Where it looks. It lists the main checkout and every linked worktree with `git worktree list --porcelain` (`src/sims/watch.ts:47`, `scripts/sims/watch.ts`), and reads `reports/.progress/*.json` in each, plus `tmp/sims-jobs/<key>/progress.json` for `simulate_matchup` jobs (`src/sims/watch.ts:107`). A file that does not parse is counted in the last line of the screen, never dropped silently. By default it shows live jobs, a stalled job whose process still exists, and anything that finished or went quiet in the last hour (`src/sims/watch.ts:135`).
+
+What each block shows, top to bottom:
+
+- Header: job name, `[worktree branch]`, state, heartbeat age. RUNNING is a fresh heartbeat. STALLED means the heartbeat file is older than 5 minutes (`STALLED_AFTER_S`, `src/sims/watch.ts:18`). DEAD means the pid in the heartbeat no longer exists. DONE means the job wrote `phase: done`.
+- `x of y games (pct)`, a bar, ETA and games per second. These come from the heartbeat envelope (`scripts/lib/progress.mjs`): `done`, `total`, `eta_s` and the new `games_per_s` (two decimals; `rate_per_s` stays the rounded integer). In the calibration gate the count is games first, then replay and undo checks, and the block says so.
+- `phase n: <name> (a of b games in this phase)`: the running phase of a multi-phase job (each ladder step, each h2h variant, the mirror, a field policy).
+- The subject's share of decisive games with the Wilson 95% interval (`shareOf`, `src/sims/policies/ladder-stats.ts:49`). A draw, timeout, stuck game or error is not decisive and is not in the share.
+- `paired:` for duplicate pairs (the same seed with the seats swapped): pairs the subject won in both seats against pairs it lost in both, and the exact two-sided sign test on those (`signTest`, `src/sims/policies/ladder-stats.ts:16`). It is the same test the pinned record reports at the end, run on the pairs finished so far, so an early p is a progress reading and not a verdict.
+- `health:` decisive games, draws, timeouts, stuck games and errors, mean rounds and decisions per game, and the share of decisions that fell back to rung 0. Error seeds are listed so a failing game can be replayed.
+- `seat 1 won`: seat 1's share, over the mirror games when the phase has some, else over all games. A share far from 50% in a mirror is a seat bias.
+- Groups and rows: one line per candidate or subject (with its own sign test), and one entry per opponent archetype or archetype pair.
+- `counters:` named integers where a job exposes them. The branch sampler reports rollbacks, determinizations, continuations, replay and trace mismatches, and the drift counters that must stay 0. The calibration gate reports replay checks. The cost mode reports search bookmarks and rollbacks. Games on the worker pool return footers only, so a ladder or calibration run has no per-game search counters.
+- `provenance:` policy names with the first 12 characters of their params hash, the seed range, the engine pin, the code commit and the run date.
+- `last progress`: seconds since a tick last wrote. The heartbeat age counts the keepalive (below), so a live process that moves nothing shows a fresh heartbeat and a growing `last progress`.
+
+How the payload travels. The writers are `scripts/sims/ladder.ts`, `calibration-gate.ts`, `sample-branches.ts` and `matchup-job.ts`. Each feeds finished games into `LiveStats` (`src/sims/live-stats.ts:173`) and passes the snapshot to the heartbeat under the key `stats`, parsed by `liveStatsSchema` (`src/sims/live-stats.ts:46`, a strict Zod v4 schema) in the reader. The payload goes to the heartbeat only: no gate, ladder or match record contains it, so a record keeps its bytes (D99). It holds no clock field; ETA and rate belong to the envelope. The pool returns a batch of games at a time (40 per worker), so the counts move once per batch: a rung 3 batch can take minutes. `KEEP_ALIVE_MS` (`scripts/sims/live.ts:13`) rewrites the latest heartbeat every 15 s so a long batch does not read as STALLED. `simulate_matchup` status replies carry the same payload as `progress.stats` (`src/tools/sims.ts:155`).
+
+Reading a stall. The Pool rule below still holds: a heartbeat that has not moved in 5 minutes is checked, and the job is killed only if you started it. STALLED with a live pid and a growing `last progress` is a hung pool; DEAD is a crash (read the job's stderr).
+
 ## Pool rule
 
 Run one sims pool job at a time. Each job takes 12 workers, the number of performance cores on the dev machine (`src/tools/sims.ts:104`). More workers do not raise throughput and do raise memory. The measurements are in `docs/research/sim-compute-measurements.md`.
@@ -109,7 +133,7 @@ Bound every wait. Check a backgrounded run within 5 minutes and kill it if its `
 
 ## Scripts
 
-The `pnpm sims:*` scripts in `package.json:45-54`:
+The `pnpm sims:*` scripts in `package.json:45-59`:
 
 - `sims:pin`: verify, set up or re-pin the forceteki engine (`scripts/sims/pin-engine.ts`).
 - `sims:bridge-coverage`: engine id coverage report over a deck folder (`scripts/sims/bridge-coverage.ts`).
@@ -121,5 +145,6 @@ The `pnpm sims:*` scripts in `package.json:45-54`:
 - `sims:feature-map`: the legacy feature map the existing models use (`scripts/sims/feature-map.ts`).
 - `sims:inventory`: inventory the models on `/Volumes/Models/swu` into `data/pinned/sim-models/` (D93).
 - `sims:vocab`: build the pinned card vocabulary under `data/pinned/sim-vocab/`.
+- `sims:watch`: the live terminal view of every running simulation job (see "Watching runs").
 
 Other scripts in `scripts/sims/` have no `pnpm` alias: `calibration-gate.ts`, `calibration-report.ts`, `ladder.ts`, `trace-calibration.ts`, `model-parity.ts`, `matchup-job.ts`. Run them with `tsx` and read each file's header for its usage.

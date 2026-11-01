@@ -39,7 +39,9 @@ import { swapCards, type DeckFile } from "../../src/sims/policies/deck-swap.js";
 import { driverName, registerRungs, type DriverPolicy } from "../../src/sims/policies/typed-adapter.js";
 import { loadTables } from "../../src/sims/policies/tables.js";
 import { codeCommit } from "../bench/code-commit.js";
+import { LiveStats, type GameObs, type LiveKind } from "../../src/sims/live-stats.js";
 import { progress } from "../lib/progress.mjs";
+import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
 import { prepareLearned, registerLearned } from "./policy/learned.js";
 
 const SEEDS = { tuning: 1_000_000, evaluation: 2_000_000, deckCheck: 3_000_000, headToHead: 1 } as const;
@@ -113,6 +115,36 @@ interface GameResult {
   /** Per seat: decisions, and how many the seat's top policy answered (the rest fell back to rung 0). */
   coverage: { decisions: [number, number]; answered: [number, number] };
 }
+
+/** What a finished game means for the running stats: who the subject was and which row, group and pair it belongs to. The live payload goes to the heartbeat only, never into a record. */
+interface Observe {
+  won: boolean | null;
+  subjectSeat?: 0 | 1;
+  stratum?: string;
+  group?: string;
+  pair?: string;
+  mirror?: boolean;
+  headline?: boolean;
+}
+interface PhasePlan {
+  sides: { subject: string; other: string | null } | null;
+  observe(j: Job, g: GameResult, i: number): Observe;
+}
+const toObs = (g: GameResult, o: Observe): GameObs => ({
+  seed: g.seed,
+  winnerSeat: g.winner,
+  endCondition: g.endCondition,
+  error: g.error,
+  rounds: g.rounds,
+  decisions: g.decisions,
+  won: o.won,
+  stratum: o.stratum,
+  group: o.group,
+  pair: o.pair,
+  mirror: o.mirror,
+  headline: o.headline,
+  fallback: o.subjectSeat === undefined ? undefined : { decisions: g.coverage.decisions[o.subjectSeat], fallback: g.coverage.decisions[o.subjectSeat] - g.coverage.answered[o.subjectSeat] },
+});
 
 const sha256 = (s: string | Buffer): string => createHash("sha256").update(s).digest("hex");
 const r4 = (x: number): number => Math.round(x * 1e4) / 1e4;
@@ -254,6 +286,8 @@ async function main(): Promise<void> {
   const workers = values.workers === "auto" ? driver.engine.topCoreClassSize() : Number(values.workers);
   const t0 = performance.now();
   let played = 0;
+  const provenance = (specs: readonly string[], seeds: { from: number; to: number } | null) => provenanceOf({ specs, seeds, enginePin: pin.commit, codeCommit: myCommit, run: path.basename(runDir) });
+  const live = new LiveStats({ kind: values.mode as LiveKind, provenance: provenance([], null) });
 
   const searches = (spec: string): boolean => ["lookahead", "montecarlo", "learned"].includes(parsePolicySpec(spec).kind);
   const toSpec = (j: Job) => ({ seed: String(j.seed), decks: [deckInputs[j.deck1], deckInputs[j.deck2]], policies: j.specs.map(driverName), recordMode: "none", undo: j.specs.some(searches), codeCommit: myCommit });
@@ -271,9 +305,11 @@ async function main(): Promise<void> {
   // A search worker holds the engine's undo snapshots on top of the game; --heap raises the driver's 128 MB old-generation cap.
   const resourceLimits = values.heap === undefined ? undefined : { maxOldGenerationSizeMb: Number(values.heap), maxYoungGenerationSizeMb: 24 };
   const pool = values.mode === "cost" ? null : await driver.pool.createPool({ workers, forceteki, pin: ctx.engine.pin, resourceLimits });
-  const runJobs = async (jobs: readonly Job[], p: ReturnType<typeof progress>, phase: string): Promise<GameResult[]> => {
+  const runJobs = async (jobs: readonly Job[], p: ReturnType<typeof progress>, phase: string, plan: PhasePlan): Promise<GameResult[]> => {
     if (pool === null) throw new Error("no pool");
     const out: GameResult[] = [];
+    live.beginPhase(phase, jobs.length, plan.sides);
+    p.log(() => ({ phase, stats: live.snapshot() }));
     // Two chunks in flight: a worker done with its share of one chunk starts the next instead of idling until the
     // chunk's slowest game ends (search games vary several-fold in length). Records are per seed, so order is kept.
     const parts: Job[][] = [];
@@ -285,9 +321,13 @@ async function main(): Promise<void> {
       const current = next as ReturnType<typeof start>;
       next = c + 1 < parts.length ? start(parts[c + 1]) : null;
       const records = await current;
-      records.forEach((r, k) => out.push(toResult(parts[c][k], r.footer)));
+      records.forEach((r, k) => {
+        const res = toResult(parts[c][k], r.footer);
+        out.push(res);
+        live.add(toObs(res, plan.observe(parts[c][k], res, c * chunk + k)));
+      });
       played += parts[c].length;
-      p.tick(played, { phase });
+      p.tick(played, () => ({ phase, stats: live.snapshot() }));
     }
     return out;
   };
@@ -312,8 +352,16 @@ async function main(): Promise<void> {
     }
     return pairs;
   };
+  /** Ladder jobs alternate: the candidate in seat 1, then in seat 2, on one seed. */
+  const ladderPlan = (cand: string, base: string): PhasePlan => ({
+    sides: { subject: driverName(cand), other: driverName(base) },
+    observe: (j, g, i) => {
+      const seat = (i % 2) as 0 | 1;
+      return { won: g.winner === null ? null : g.winner === seat + 1, subjectSeat: seat, stratum: deckNames[seat === 0 ? j.deck1 : j.deck2], pair: String(j.seed) };
+    },
+  });
   const ladder = async (cand: string, base: string, seed0: number, from: number, to: number, p: ReturnType<typeof progress>): Promise<{ pairs: LadderPair[]; games: GameResult[] }> => {
-    const games = await runJobs(ladderJobs(cand, base, seed0, from, to), p, `${driverName(cand)} vs ${driverName(base)}`);
+    const games = await runJobs(ladderJobs(cand, base, seed0, from, to), p, `${driverName(cand)} vs ${driverName(base)}`, ladderPlan(cand, base));
     const pairs: LadderPair[] = [];
     for (let k = 0; k < games.length; k += 2) {
       const [i, j] = ordered[(from + k / 2) % ordered.length];
@@ -355,8 +403,9 @@ async function main(): Promise<void> {
       if (!values.candidate || !values.baseline) throw new Error("--candidate and --baseline are required");
       const seed0 = Number(values.seed0 ?? SEEDS.evaluation);
       let n = Number(values.pairs);
+      live.setProvenance(provenance([values.candidate, values.baseline], { from: seed0, to: seed0 + (values.escalate ? Math.max(n, 800) : n) - 1 }));
       // With --escalate the total is the 800-pair ceiling; a step that passes early ends below it.
-      const p = progress(job, { total: (values.escalate ? Math.max(n, 800) : n) * 2, everyN: 50 });
+      const p = progress(job, { total: (values.escalate ? Math.max(n, 800) : n) * 2, everyN: 50, keepAliveMs: KEEP_ALIVE_MS });
       let { pairs, games } = await ladder(values.candidate, values.baseline, seed0, 0, n, p);
       let summary = summarizeLadder(pairs, deckNames);
       if (values.escalate && !summary.pass && summary.discordant.pValue >= LADDER_ALPHA && n < 800) {
@@ -380,13 +429,14 @@ async function main(): Promise<void> {
         health: health(games, ladderSeat),
       };
       write(record.step, record);
-      p.done({ pass: summary.pass });
+      p.done({ pass: summary.pass, stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ ...record, speed: wall(games.length) }, null, 1)}\n`);
     } else if (values.mode === "grid") {
       const seed0 = Number(values.seed0 ?? SEEDS.tuning);
       const n = Number(values.pairs);
       const points = gridPoints();
-      const p = progress(job, { total: points.length * n * 2, everyN: 50 });
+      live.setProvenance(provenance(["rung1", ...points.map((pt) => `rung2:mu=${pt.mu},lambda=${pt.lambda}`)], { from: seed0, to: seed0 + n - 1 }));
+      const p = progress(job, { total: points.length * n * 2, everyN: 50, keepAliveMs: KEEP_ALIVE_MS });
       const rows = [];
       for (const pt of points) {
         const { pairs, games } = await ladder(`rung2:mu=${pt.mu},lambda=${pt.lambda}`, "rung1", seed0, 0, n, p);
@@ -396,20 +446,28 @@ async function main(): Promise<void> {
       const best = [...rows].sort((a, b) => (b.pooled.share ?? 0) - (a.pooled.share ?? 0) || a.mu + a.lambda - (b.mu + b.lambda) || a.mu - b.mu)[0];
       const record = { schemaVersion: 1, step: "rung2-tuning", label, baseline: policyHeader(parsePolicySpec("rung1")), ...header, seeds: { range: "tuning", from: seed0, to: seed0 + n - 1 }, grid: values.grid, rows, best };
       write("rung2-tuning", record);
-      p.done({ best });
+      p.done({ best, stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ ...record, speed: wall(played) }, null, 1)}\n`);
     } else if (values.mode === "tune") {
       // Candidate specs against one baseline on the tuning seeds; the verdict is a separate held-out ladder run.
       if (tuneSpecs.length === 0 || !values.baseline) throw new Error("--tune and --baseline are required");
       const seed0 = Number(values.seed0 ?? SEEDS.tuning);
       const n = Number(values.pairs);
-      const p = progress(job, { total: tuneSpecs.length * n * 2, everyN: 50 });
+      live.setProvenance(provenance([...tuneSpecs, values.baseline], { from: seed0, to: seed0 + n - 1 }));
+      const p = progress(job, { total: tuneSpecs.length * n * 2, everyN: 50, keepAliveMs: KEEP_ALIVE_MS });
       const rows = [];
       // Every candidate's games in one pipelined batch; a row is the candidate's slice of it.
       const all = await runJobs(
         tuneSpecs.flatMap((cand) => ladderJobs(cand, values.baseline as string, seed0, 0, n)),
         p,
         "tuning",
+        {
+          sides: { subject: "each candidate", other: driverName(values.baseline) },
+          observe: (j, g, i) => {
+            const seat = (i % 2) as 0 | 1;
+            return { won: g.winner === null ? null : g.winner === seat + 1, subjectSeat: seat, group: driverName(j.specs[seat]), pair: String(j.seed), headline: false };
+          },
+        },
       );
       for (const [ci, cand] of tuneSpecs.entries()) {
         const games = all.slice(ci * 2 * n, (ci + 1) * 2 * n);
@@ -420,7 +478,7 @@ async function main(): Promise<void> {
       const step = values.step ?? "tuning";
       const record = { schemaVersion: 1, step, label, baseline: { ...policyHeader(parsePolicySpec(values.baseline)), driverPolicy: driverName(values.baseline) }, ...header, seeds: { range: "tuning", from: seed0, to: seed0 + n - 1 }, candidates: tuneSpecs.map(driverName), rows, best: best.spec };
       write(step, record);
-      p.done({ best: best.spec });
+      p.done({ best: best.spec, stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ ...record, speed: wall(played) }, null, 1)}\n`);
     } else if (values.mode === "h2h") {
       // The first subject against each other subject, both seat orders on one seed (a duplicate pair), plus the first
@@ -432,7 +490,8 @@ async function main(): Promise<void> {
       const base = subjects[0];
       // The variants are the acceptance; the seat control may run on fewer seeds (--mirror-pairs) or be skipped.
       const nMirror = values["skip-mirror"] ? 0 : Number(values["mirror-pairs"] ?? n);
-      const p = progress(job, { total: pols.length * (2 * n * (subjects.length - 1) + nMirror), everyN: 50 });
+      live.setProvenance(provenance(pols, { from: seed0, to: seed0 + n - 1 }));
+      const p = progress(job, { total: pols.length * (2 * n * (subjects.length - 1) + nMirror), everyN: 50, keepAliveMs: KEEP_ALIVE_MS });
       const byPolicy = [];
       const allGames: GameResult[] = [];
       for (const pol of pols) {
@@ -443,7 +502,10 @@ async function main(): Promise<void> {
             jobs.push({ deck1: base.index, deck2: v.index, seed: seed0 + q, specs: [pol, pol] });
             jobs.push({ deck1: v.index, deck2: base.index, seed: seed0 + q, specs: [pol, pol] });
           }
-          const games = await runJobs(jobs, p, `h2h ${base.name} vs ${v.name} ${driverName(pol)}`);
+          const games = await runJobs(jobs, p, `h2h ${base.name} vs ${v.name} ${driverName(pol)}`, {
+            sides: { subject: base.name, other: v.name },
+            observe: (j, g, i) => ({ won: g.winner === null ? null : g.winner === (i % 2 === 0 ? 1 : 2), subjectSeat: (i % 2) as 0 | 1, pair: String(j.seed) }),
+          });
           allGames.push(...games);
           const pairs: LadderPair[] = [];
           for (let k = 0; k < games.length; k += 2) pairs.push({ seed: games[k].seed, deck1: base.name, deck2: base.name, a: { winner: games[k].winner, endCondition: games[k].endCondition }, b: { winner: games[k + 1].winner, endCondition: games[k + 1].endCondition } });
@@ -459,7 +521,7 @@ async function main(): Promise<void> {
           });
         }
         const mirrorJobs: Job[] = Array.from({ length: nMirror }, (_, q) => ({ deck1: base.index, deck2: base.index, seed: seed0 + q, specs: [pol, pol] }));
-        const mirror = nMirror === 0 ? [] : await runJobs(mirrorJobs, p, `h2h mirror ${driverName(pol)}`);
+        const mirror = nMirror === 0 ? [] : await runJobs(mirrorJobs, p, `h2h mirror ${driverName(pol)}`, { sides: null, observe: () => ({ won: null, mirror: true }) });
         allGames.push(...mirror);
         const decided = mirror.filter((g) => g.winner !== null);
         byPolicy.push({
@@ -481,7 +543,7 @@ async function main(): Promise<void> {
         health: health(allGames, () => 0),
       };
       write(step, record);
-      p.done({});
+      p.done({ stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ ...record, speed: wall(allGames.length) }, null, 1)}\n`);
     } else if (values.mode === "field") {
       if (subjects.length === 0) throw new Error("--subject is required");
@@ -491,7 +553,8 @@ async function main(): Promise<void> {
       const slots: { opp: number; seat: 1 | 2; seed: number }[] = [];
       for (let k = 0; k < per; k++) for (let o = 0; o < panel.length; o++) for (const seat of [1, 2] as const) slots.push({ opp: o, seat, seed: seed0 + k * panel.length * 2 + o * 2 + (seat - 1) });
       const compare = values.compare;
-      const p = progress(job, { total: slots.length * subjects.length * (compare ? 2 : 1), everyN: 50 });
+      live.setProvenance(provenance([spec, ...(compare ? [compare] : [])], { from: seed0, to: seed0 + slots.length - 1 }));
+      const p = progress(job, { total: slots.length * subjects.length * (compare ? 2 : 1), everyN: 50, keepAliveMs: KEEP_ALIVE_MS });
       const jobsFor = (pol: string): Job[] => subjects.flatMap((s) => slots.map((slot): Job => ({ deck1: slot.seat === 1 ? s.index : slot.opp, deck2: slot.seat === 1 ? slot.opp : s.index, seed: slot.seed, specs: [pol, pol] })));
       const wonOf = (gs: readonly GameResult[]) =>
         subjects.map((_, si) =>
@@ -500,12 +563,21 @@ async function main(): Promise<void> {
             return g.winner === null ? null : g.winner === slot.seat;
           }),
         );
+      // The first subject is the headline; every subject has its own group row and an opponent row per archetype.
+      const fieldPlan: PhasePlan = {
+        sides: { subject: subjects[0].name, other: "the panel" },
+        observe: (_j, g, i) => {
+          const si = Math.floor(i / slots.length);
+          const slot = slots[i % slots.length];
+          return { won: g.winner === null ? null : g.winner === slot.seat, subjectSeat: slot.seat === 1 ? 0 : 1, group: subjects[si].name, stratum: panel[slot.opp].archetype, headline: si === 0 };
+        },
+      };
       const tField = performance.now();
-      const games = await runJobs(jobsFor(spec), p, "field");
+      const games = await runJobs(jobsFor(spec), p, "field", fieldPlan);
       const fieldSpeed = wall(games.length);
       const fieldWallSeconds = Math.round((performance.now() - tField) / 100) / 10;
       const won = wonOf(games);
-      const cmpGames = compare ? await runJobs(jobsFor(compare), p, `field ${driverName(compare)}`) : null;
+      const cmpGames = compare ? await runJobs(jobsFor(compare), p, `field ${driverName(compare)}`, fieldPlan) : null;
       const cmpWon = cmpGames ? wonOf(cmpGames) : null;
       const results = subjects.map((s, si) => {
         const ws = won[si];
@@ -538,13 +610,14 @@ async function main(): Promise<void> {
         compareHealth: cmpGames ? health(cmpGames, subjectSeat) : null,
       };
       write(record.step, record);
-      p.done({});
+      p.done({ stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ ...record, speed: { ...fieldSpeed, wallSeconds: fieldWallSeconds, gamesPerSecond: Math.round((games.length / fieldWallSeconds) * 10) / 10 } }, null, 1)}\n`);
     } else if (values.mode === "cost") {
       // One thread, so the time inside each policy can be measured beside the engine's.
       const specs = (values.specs as string).split("|");
       const n = Number(values.games);
-      const p = progress(job, { total: specs.length * n, everyN: 10 });
+      live.setProvenance(provenance(specs, { from: SEEDS.evaluation + 500_000, to: SEEDS.evaluation + 500_000 + n - 1 }));
+      const p = progress(job, { total: specs.length * n, everyN: 10, keepAliveMs: KEEP_ALIVE_MS });
       const timing = { ms: 0, calls: 0, mainMs: 0, mainCalls: 0 };
       const instances: DriverPolicy[] = [];
       const timed = (pol: DriverPolicy): DriverPolicy => {
@@ -580,15 +653,20 @@ async function main(): Promise<void> {
         let decisions = 0;
         const engineSearch = { bookmarks: 0, rollbacks: 0 };
         const results: GameResult[] = [];
+        live.beginPhase(spec, n, null);
         for (let g = 0; g < n; g++) {
           const j: Job = { deck1: ordered[g % ordered.length][0], deck2: ordered[g % ordered.length][1], seed: SEEDS.evaluation + 500_000 + g, specs: [spec, spec] };
           const pm = await driver.match.playMatch(ctx.engine, toSpec(j), ctx.bridge.engineCardKeys);
           const f = pm.record.footer;
           engineSearch.bookmarks += pm.session?.search.bookmarks ?? 0;
           engineSearch.rollbacks += pm.session?.search.rollbacks ?? 0;
-          results.push(toResult(j, f));
+          const res = toResult(j, f);
+          results.push(res);
+          live.add(toObs(res, { won: null }));
+          live.setCounter("searchBookmarks", engineSearch.bookmarks);
+          live.setCounter("searchRollbacks", engineSearch.rollbacks);
           decisions += f.result.decisions;
-          p.tick(++played, { phase: spec });
+          p.tick(++played, () => ({ phase: spec, stats: live.snapshot() }));
         }
         const ms = performance.now() - t;
         rows.push({
@@ -610,7 +688,7 @@ async function main(): Promise<void> {
           endConditions: health(results, () => 0).endConditions,
         });
       }
-      p.done({});
+      p.done({ stats: live.snapshot() });
       process.stdout.write(`${JSON.stringify({ rows }, null, 1)}\n`);
     } else throw new Error(`unknown mode ${values.mode}`);
   } finally {

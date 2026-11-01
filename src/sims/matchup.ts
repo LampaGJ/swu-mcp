@@ -342,6 +342,6 @@ export type JobStatus = z.infer<typeof jobStatusSchema>;
 
 export const jobLockSchema = z.strictObject({ key: hex64, pid: z.int().positive() });
 
-export const jobProgressSchema = z.looseObject({ done: z.number(), total: z.number().nullable(), pct: z.number().nullable(), eta_s: z.number().nullable(), phase: z.string().optional() });
+export const jobProgressSchema = z.looseObject({ done: z.number(), total: z.number().nullable(), pct: z.number().nullable(), eta_s: z.number().nullable(), phase: z.string().optional(), games_per_s: z.number().optional(), stats: z.unknown().optional() });
 
 export const jobResultSchema = z.looseObject({ label: z.string().min(1), status: z.literal("candidate"), replay: z.looseObject({ inputHash: hex64, outputHash: hex64 }) });

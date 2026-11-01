@@ -57,10 +57,12 @@ import { parseVocab, vocabRevision } from "../../src/sims/vocab.js";
 import { canonicalJson, compareCodePoints, sha256Hex } from "../../src/swu/canonical.js";
 import { loadCardMap } from "../bench/card-map.js";
 import { isMain } from "../bench/code-commit.js";
+import { LiveStats } from "../../src/sims/live-stats.js";
 import { progress } from "../lib/progress.mjs";
 import type { BranchWorkerInit } from "./branch-worker.js";
 import { DEFAULT_ORIGINALS, DEFAULT_RUN, loadContext } from "./context.js";
 import { prepareDeck } from "./decks.js";
+import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
 
 /** The fields read from a committed ladder record; the record carries more, which parsing strips. */
 const ladderFileSchema = z.object({
@@ -289,7 +291,10 @@ export async function sampleBranches(o: SampleOptions): Promise<{ manifest: Bran
   const job = o.job ?? "sample-branches";
   const { policy, header, seedRange, evaluationSeedRange, deckSources, ctx, specs, batchSha256, vocab, init, ladder, listsSetAside } = prepareSources(o);
   const sim = await createBranchPool(o.workers, init);
-  const p = progress(job, { total: o.games, everyN: 1 });
+  const p = progress(job, { total: o.games, everyN: 1, keepAliveMs: KEEP_ALIVE_MS });
+  // Heartbeat only: the manifest and the branch records below never see it.
+  const live = new LiveStats({ kind: "branches", provenance: provenanceOf({ specs: [policy], seeds: { from: seedRange.from, to: seedRange.from + o.games - 1 }, enginePin: ctx.engine.pin.commit, codeCommit: ctx.codeCommit, run: path.basename(o.run ?? DEFAULT_RUN) }) });
+  live.beginPhase("candidates", o.games, null);
   let candidateResults: CandidateResult[];
   let branchResults: BranchTaskResult[];
   let tasks: BranchTask[];
@@ -298,7 +303,17 @@ export async function sampleBranches(o: SampleOptions): Promise<{ manifest: Bran
   try {
     const candTasks: CandidateTask[] = specs.map((spec) => candidateTaskSchema.parse({ gameId: spec.seed, spec, maxSourceDecisions: maxSource }));
     let doneA = 0;
-    candidateResults = await sim.run("candidates", candTasks, (raw) => candidateResultSchema.parse(raw), () => p.tick(++doneA, { phase: "candidates", total: o.games }));
+    candidateResults = await sim.run(
+      "candidates",
+      candTasks,
+      (raw) => candidateResultSchema.parse(raw),
+      (_, r) => {
+        live.add({ seed: r.gameId, winnerSeat: r.winner, endCondition: r.endCondition, error: null, decisions: r.decisions, won: null });
+        live.addCounter("candidateDecisions", r.candidates.length);
+        live.addCounter("singleAnswerDecisions", r.singleAnswer);
+        p.tick(++doneA, () => ({ phase: "candidates", total: o.games, stats: live.snapshot() }));
+      },
+    );
     tB = performance.now();
     // An error, a timeout at the cap or a stuck engine is a pathology of the source game, not a decision to learn from.
     const usable = candidateResults.filter(finished);
@@ -329,6 +344,7 @@ export async function sampleBranches(o: SampleOptions): Promise<{ manifest: Bran
     const order = tasks.map((_, i) => i).sort((a, b) => tasks[b].ks.length - tasks[a].ks.length || a - b);
     let decisionsDone = 0;
     let beats = 0;
+    live.beginPhase("branches", tasks.length, null);
     let doneB = 0;
     const totalDecisions = selected.length;
     const results = await sim.run(
@@ -337,9 +353,24 @@ export async function sampleBranches(o: SampleOptions): Promise<{ manifest: Bran
       (raw) => branchTaskResultSchema.parse(raw),
       (_, r) => {
         decisionsDone += r.records.length;
-        p.tick(++doneB, { phase: "branches", total: tasks.length, decisions: decisionsDone, decisionsTotal: totalDecisions });
+        live.check();
+        live.setCounter("decisionsInFinishedTasks", decisionsDone);
+        live.setCounter("decisionsTotal", totalDecisions);
+        live.addCounter("rollbacks", r.stats.rollbackMs.length);
+        live.addCounter("determinizations", r.stats.determinizeMs.length);
+        live.addCounter("continuations", r.stats.continuations);
+        live.addCounter("replayMismatches", r.replayMismatchAt === null ? 0 : 1);
+        live.addCounter("traceMismatches", r.traceMatched ? 0 : 1);
+        live.addCounter("branchErrors", Object.values(r.errors).reduce((a, b) => a + b, 0));
+        live.addCounter("multisetViolations", r.stats.multisetViolations);
+        live.addCounter("dealDrift", r.stats.dealDrift);
+        live.addCounter("rootDrift", r.stats.rootDrift);
+        p.tick(++doneB, () => ({ phase: "branches", total: tasks.length, decisions: decisionsDone, decisionsTotal: totalDecisions, stats: live.snapshot() }));
       },
-      () => p.tick(doneB, { phase: "branches", total: tasks.length, decisionsBranched: ++beats, decisionsTotal: totalDecisions }),
+      () => {
+        live.setCounter("decisionsBranched", ++beats);
+        p.tick(doneB, () => ({ phase: "branches", total: tasks.length, decisionsBranched: beats, decisionsTotal: totalDecisions, stats: live.snapshot() }));
+      },
     );
     branchResults = new Array(tasks.length);
     order.forEach((ti, pos) => (branchResults[ti] = results[pos]));
@@ -474,7 +505,7 @@ export async function sampleBranches(o: SampleOptions): Promise<{ manifest: Bran
     mkdirSync(dir, { recursive: true });
     writeOnce(path.join(dir, `branches-${o.date}.manifest.json`), manifestBytes);
   }
-  p.done({ records: records.length, jsonlSha256 });
+  p.done({ records: records.length, jsonlSha256, stats: live.snapshot() });
   if (report.errorStop === true) throw new Error(`more than 5% of continuations errored (${continuationErrors} of ${continuations}); file the errors against #110`);
   return { manifest, report, outDir: o.out };
 }

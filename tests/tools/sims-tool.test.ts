@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CardRow, CardStore } from "../../src/data.js";
+import { LiveStats } from "../../src/sims/live-stats.js";
 import { simulateMatchup, type SimsDeps } from "../../src/tools/sims.js";
 
 const LEADER = "09010018";
@@ -119,6 +120,24 @@ describe("simulate_matchup tool", () => {
     expect(text(third)).toMatch(/jobState: done/);
     expect(text(third)).toMatch(/winShare: 0.41/);
     expect(text(third)).toMatch(/status: candidate/);
+  });
+
+  it("carries the running stats of the heartbeat in the status reply, and drops a payload that does not parse (#178)", () => {
+    writeRecord(passingRecord("rung1", 1), "calibration-rung1.json");
+    simulateMatchup(store, { deck, opponent: "field", games: 10 }, deps());
+    const dir = path.dirname(spawned[0]);
+    const live = new LiveStats({ kind: "matchup", provenance: { policies: [{ name: "rung1", paramsSha256: "a".repeat(64) }], seeds: null, enginePin: "445792e6185c", codeCommit: "abcdef1", run: "2026-10-31" } });
+    live.beginPhase("games", 70, { subject: "your deck", other: "the field" });
+    for (let i = 0; i < 10; i++) live.add({ seed: String(i), winnerSeat: 1, endCondition: "base_destroyed", error: null, rounds: 6, decisions: 90, won: i < 6 });
+    writeFileSync(path.join(dir, "progress.json"), JSON.stringify({ done: 10, total: 70, pct: 14.3, eta_s: 40, phase: "games", games_per_s: 2.25, stats: live.snapshot() }));
+    const reply = text(simulateMatchup(store, { deck, opponent: "field", games: 10 }, deps()));
+    expect(reply).toMatch(/gamesPerSecond: 2.25/);
+    expect(reply).toMatch(/wins: 6/);
+    expect(reply).toMatch(/share: 0.6/);
+    writeFileSync(path.join(dir, "progress.json"), JSON.stringify({ done: 10, total: 70, pct: 14.3, eta_s: 40, phase: "games", stats: { version: 9 } }));
+    const bad = text(simulateMatchup(store, { deck, opponent: "field", games: 10 }, deps()));
+    expect(bad).toMatch(/done: 10/);
+    expect(bad).toMatch(/stats: null/);
   });
 
   it("runs one job at a time and reports the other job as busy", () => {

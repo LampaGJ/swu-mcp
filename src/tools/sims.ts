@@ -25,6 +25,7 @@ import {
   type JobFile,
   type MatchupDeck,
 } from "../sims/matchup.js";
+import { liveStatsSchema } from "../sims/live-stats.js";
 import { parsePolicySpec, policyHeader } from "../sims/policies/index.js";
 import { compareCodePoints } from "../swu/canonical.js";
 import type { ToolResult } from "../tools.js";
@@ -149,7 +150,10 @@ const readJsonIf = (file: string): unknown => (existsSync(file) ? JSON.parse(rea
 
 function progressOf(dir: string): Record<string, unknown> | null {
   const p = jobProgressSchema.safeParse(readJsonIf(path.join(dir, "progress.json")));
-  return p.success ? { done: p.data.done, total: p.data.total, pct: p.data.pct, etaSeconds: p.data.eta_s, phase: p.data.phase ?? null } : null;
+  if (!p.success) return null;
+  // The running stats (#178): a payload that does not parse is left out, never passed on half-read.
+  const stats = liveStatsSchema.safeParse(p.data.stats);
+  return { done: p.data.done, total: p.data.total, pct: p.data.pct, etaSeconds: p.data.eta_s, gamesPerSecond: p.data.games_per_s ?? null, phase: p.data.phase ?? null, stats: stats.success ? stats.data : null };
 }
 
 export function simulateMatchup(store: CardStore, raw: unknown, deps: SimsDeps = defaultDeps()): ToolResult {
