@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { compareCodePoints } from "../../swu/canonical.js";
 import { makeRandomPolicy } from "./random.js";
-import { HORIZON, MC_LENGTH, MC_PARAMS, MC_PLAYOUT, MC_VERSION, RUNG3_PARAMS, RUNG3_VERSION, type LookaheadParams, type MonteCarloParams } from "./lookahead.js";
-import { makeRulePolicy, RUNG1_PARAMS, type RuleParams } from "./rules.js";
+import { HORIZON, LOOKAHEAD_PILOT_KEYS, MC_LENGTH, MC_PARAMS, MC_PLAYOUT, MC_VERSION, RUNG3_PARAMS, RUNG3_VERSION, type LookaheadParams, type MonteCarloParams } from "./lookahead.js";
+import { makeRulePolicy, RULE_PILOT_KEYS, RUNG1_PARAMS, type RuleParams } from "./rules.js";
 import type { CardTables } from "./tables.js";
 import type { BotPolicy } from "./types.js";
 
@@ -51,12 +51,24 @@ function monteCarloName(p: MonteCarloParams): string {
 }
 
 const RUNG3_TUNABLE = ["k", "wBase", "wBoard", "wHand", "wResources", "wReady", "wScore", "maxTrialDecisions"] as const;
+/** Rung 3 pilot switches (#174): rung 1's switches for its ranking and rollouts, then its own. */
+const RUNG3_PILOT_KEYS = [...RULE_PILOT_KEYS, ...LOOKAHEAD_PILOT_KEYS] as const;
+
+/** A pilot switch is 0 or 1; it enters the params (and so the params hash and the name) only when it is 1. */
+function setSwitch(params: Record<string, number>, k: string, v: string, text: string): void {
+  if (v !== "0" && v !== "1") throw new Error(`pilot switch ${k} takes 0 or 1 in ${text}`);
+  if (v === "1") params[k] = 1;
+  else delete params[k];
+}
+
+const switchSuffix = (p: Readonly<Record<string, number | undefined>>, keys: readonly string[]): string[] => keys.filter((k) => p[k] === 1).map((k) => `${k}=1`);
 
 function parseLookahead(text: string, rest: string | undefined): PolicySpec {
   const params: LookaheadParams = { ...RUNG3_PARAMS };
   for (const kv of (rest ?? "").split(",").filter(Boolean)) {
     const [k, v] = kv.split("=");
     if (k === "horizon" && (v === "reply" || v === "round")) params.horizon = HORIZON[v];
+    else if ((RUNG3_PILOT_KEYS as readonly string[]).includes(k)) setSwitch(params as unknown as Record<string, number>, k, v, text);
     else if ((RUNG3_TUNABLE as readonly string[]).includes(k) && Number.isFinite(Number(v))) (params as unknown as Record<string, number>)[k] = Number(v);
     else throw new Error(`bad policy parameter ${kv} in ${text}`);
   }
@@ -69,6 +81,7 @@ function lookaheadName(p: LookaheadParams): string {
   const parts: string[] = [];
   if (p.horizon !== RUNG3_PARAMS.horizon) parts.push(`horizon=${p.horizon === HORIZON.reply ? "reply" : "round"}`);
   for (const k of RUNG3_TUNABLE) if (p[k] !== RUNG3_PARAMS[k]) parts.push(`${k}=${p[k]}`);
+  parts.push(...switchSuffix(p as unknown as Record<string, number>, RUNG3_PILOT_KEYS));
   return parts.length === 0 ? "rung3" : `rung3:${parts.join(",")}`;
 }
 
@@ -83,6 +96,10 @@ export function parsePolicySpec(text: string): PolicySpec {
   const params: RuleParams = { ...RUNG1_PARAMS };
   for (const kv of (rest ?? "").split(",").filter(Boolean)) {
     const [k, v] = kv.split("=");
+    if (name === "rung1" && (RULE_PILOT_KEYS as readonly string[]).includes(k)) {
+      setSwitch(params as unknown as Record<string, number>, k, v, text);
+      continue;
+    }
     if (!(k in params) || !Number.isFinite(Number(v))) throw new Error(`bad policy parameter ${kv} in ${text}`);
     (params as unknown as Record<string, number>)[k] = Number(v);
   }
@@ -96,7 +113,9 @@ export const specName = (s: PolicySpec): string =>
     : s.kind === "lookahead"
     ? lookaheadName(s.params)
     : s.kind === "rules"
-    ? `rung${s.rung}${s.rung === 2 ? `:mu=${s.params.mu},lambda=${s.params.lambda}` : ""}`
+    ? s.rung === 2
+      ? `rung2:mu=${s.params.mu},lambda=${s.params.lambda}`
+      : ((sw) => (sw.length === 0 ? "rung1" : `rung1:${sw.join(",")}`))(switchSuffix(s.params as unknown as Record<string, number>, RULE_PILOT_KEYS))
     : s.kind;
 
 export function paramsSha256(params: Readonly<Record<string, number>>): string {

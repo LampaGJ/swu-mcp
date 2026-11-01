@@ -437,3 +437,35 @@ export function simRecordOf(jobs: readonly CalibrationJob[], footers: readonly F
   });
   return { wins, n, nonDecisive };
 }
+
+export interface MeanShare {
+  mean: number;
+  low: number;
+  high: number;
+}
+
+/**
+ * One archetype across its matchups (#174): the mean of its sim shares and of its tournament shares, each matchup
+ * weighted equally and read from the archetype's side, with a 95% normal interval from the per-matchup binomial
+ * variances (Agresti-Coull adjusted, so a 0% or 100% matchup still adds variance). The two tiers are reported side by
+ * side, never pooled (D21); `error` is the sim mean minus the tournament mean over the same matchups.
+ */
+export function archetypeShares(rows: readonly CalibrationRow[], id: string): { matchups: number; sim: MeanShare | null; tournament: MeanShare; error: number | null } {
+  const mine = rows.filter((r) => (r.a === id || r.b === id) && r.sim.n > 0);
+  const side = (r: CalibrationRow, wins: number, n: number): number => (r.a === id ? wins : n - wins);
+  const meanOf = (xs: readonly { wins: number; n: number }[]): MeanShare => {
+    const m = xs.length;
+    const mean = xs.reduce((s, x) => s + x.wins / x.n, 0) / m;
+    const variance = xs.reduce((s, x) => {
+      const p = (x.wins + 2) / (x.n + 4);
+      return s + (p * (1 - p)) / (x.n + 4);
+    }, 0) / (m * m);
+    const half = Z95 * Math.sqrt(variance);
+    return { mean: r4(mean), low: r4(Math.max(0, mean - half)), high: r4(Math.min(1, mean + half)) };
+  };
+  const t = rows.filter((r) => r.a === id || r.b === id);
+  const tournament = meanOf((mine.length > 0 ? mine : t).map((r) => ({ wins: side(r, r.tournament.wins, r.tournament.n), n: r.tournament.n })));
+  if (mine.length === 0) return { matchups: 0, sim: null, tournament, error: null };
+  const sim = meanOf(mine.map((r) => ({ wins: side(r, r.sim.wins, r.sim.n), n: r.sim.n })));
+  return { matchups: mine.length, sim, tournament, error: r4(sim.mean - tournament.mean) };
+}

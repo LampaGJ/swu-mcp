@@ -176,6 +176,7 @@ export class ViewBuilder {
       aspects: safe(() => [...(c.aspects as string[])].map(String), []),
       score: this.tables.score(cardKey),
       effects: this.tables.effects(cardKey),
+      ability: this.tables.ability(cardKey, inPlay && safe(() => Boolean(c.isLeader()), false) ? "deployBox" : "text"),
       upgradePower: up.power,
       upgradeHp: up.hp,
     };
@@ -308,7 +309,12 @@ export class ViewBuilder {
       cards.set(v.id, v);
       return v;
     });
-    const me: MySideView = { ...mine, hand, maxDeckCost: this.maxDeckCost(p) };
+    const deckAspects = (): Record<string, number> => {
+      const counts: Record<string, number> = {};
+      for (const c of safe(() => p.drawDeck, []) as EngineCard[]) for (const a of safe(() => [...(c.aspects as string[])].map(String), [])) counts[a] = (counts[a] ?? 0) + 1;
+      return counts;
+    };
+    const me: MySideView = { ...mine, hand, maxDeckCost: this.maxDeckCost(p), deckAspects };
     const basePrompt = this.prompt(activeStep(game), p, cards);
     const pr = safe(() => p.currentPrompt(), {} as Record<string, unknown>);
     const display = (safe(() => pr.displayCards, []) as { internalName: string; cardUuid: string; selectionState?: string }[]) ?? [];

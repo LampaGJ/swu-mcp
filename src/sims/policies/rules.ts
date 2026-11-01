@@ -34,9 +34,29 @@ export interface RuleParams {
   mulliganCheap: number;
   /** Resource while fewer than min(max deck cost, this) resources are in play (estimate). */
   resourceCap: number;
+  /**
+   * Pilot switches (#174), 0 or 1, absent from RUNG1_PARAMS so rung 1's params hash and trace stay as pinned.
+   * sacGuard: an ability whose cost defeats a friendly unit is used only on a token or a When Defeated unit.
+   * initDraw: the resources a "When you take the initiative" leader trigger asks for are kept back from plays.
+   * handCap: resource past resourceCap while the hand holds a card that costs more than the resources in play.
+   * aspectCall: an aspect-naming prompt names the commonest aspect of our own draw deck and discards from our own deck.
+   */
+  sacGuard?: number;
+  initDraw?: number;
+  handCap?: number;
+  aspectCall?: number;
 }
 
+export const RULE_PILOT_KEYS = ["sacGuard", "initDraw", "handCap", "aspectCall"] as const;
+
 export const RUNG1_PARAMS: RuleParams = { mu: 0, lambda: 0, handWeight: 0.5, protectThreshold: 1, tempo: 0.5, mulliganCheap: 2, resourceCap: 7 };
+
+/**
+ * A friendly unit whose loss costs little: a token (cardKey null; unmapped cards also read null, kept rare by the
+ * bridge), or a When Defeated unit that is cheap (cost 2 or less) or already damaged. A healthy costlier unit stays on
+ * the board, because the traced losses (#174) were boards emptied every round.
+ */
+export const isFodder = (c: CardView): boolean => !c.leader && (c.cardKey === null || (c.ability?.whenDefeated === true && (c.cost <= 2 || c.damage > 0)));
 
 export interface PairLookups {
   leaderInclusion(leaderKey: string | null, cardKey: string | null): number;
@@ -192,7 +212,8 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
     const exact = /select (\d+) cards?/i.exec(view.prompt.title);
     const min = range ? Number(range[1]) : exact ? Number(exact[1]) : 0;
     const max = range ? Number(range[2]) : exact ? Number(exact[1]) : 1;
-    const target = Math.min(view.me.maxDeckCost, params.resourceCap);
+    const handTop = params.handCap === 1 ? Math.max(0, ...view.me.hand.map((c) => c.cost)) : 0;
+    const target = Math.min(view.me.maxDeckCost, Math.max(params.resourceCap, handTop));
     const want = Math.max(min, view.me.resources.total < target ? max : 0);
     const selected = new Set(view.prompt.selectedIds);
     if (selected.size < want) {
@@ -262,8 +283,11 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
         cost: c.card.cost + (c.card.zone === "hand" ? aspectPenalty(c.card, view.me.aspects) : 0),
         value: Math.max(0.01, utility(c.card, view) + params.tempo * c.card.cost),
       }));
-      const chosen = knapsack(items, view.me.resources.ready).map((k) => sensible[k]);
-      const pool = chosen.length > 0 ? chosen : sensible;
+      const lead = view.me.leader;
+      const reserve =
+        params.initDraw === 1 && !view.me.leaderDeployed && buttonIndex(answers, /claim initiative/i) >= 0 ? (lead.ability?.takeInitiativeCost ?? 0) : 0;
+      const chosen = knapsack(items, Math.max(0, view.me.resources.ready - reserve)).map((k) => sensible[k]);
+      const pool = chosen.length > 0 ? chosen : reserve > 0 ? [] : sensible;
       const pick = pickMax(answers, pool, (c) => utility(c.card, view) + 1e-4 * c.card.cost);
       if (pick) return rule(pick.i);
     }
@@ -277,7 +301,8 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
     if (leader && !view.me.leaderDeployed && view.me.resources.total >= leader.card.cost) return rule(leader.i);
 
     // 6. Card abilities still available (leader, base, units), highest utility first.
-    const abilities = clickable.filter((c) => c.card.mine && (c.card.zone === "base" || isUnitInPlay(c.card)));
+    const fodder = params.sacGuard === 1 && view.me.units.some(isFodder);
+    const abilities = clickable.filter((c) => c.card.mine && (c.card.zone === "base" || isUnitInPlay(c.card)) && !(params.sacGuard === 1 && c.card.ability?.sacrificeAction === true && !fodder));
     const ability = pickMax(answers, abilities, (c) => utility(c.card, view));
     if (ability) return rule(ability.i);
 
@@ -392,7 +417,8 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
       }
       case "defeatOwn": {
         if (p.multiple && done >= 0) return rule(done);
-        const pick = pickMax(answers, own.length > 0 ? own : cards, (c) => -(utility(c.card, view) + 0.1 * c.card.remainingHp + (c.card.exhausted ? 0 : 0.05)));
+        const cheap = (c: CardView): number => (params.sacGuard === 1 && c.mine && isFodder(c) ? 100 : 0);
+        const pick = pickMax(answers, own.length > 0 ? own : cards, (c) => cheap(c.card) - (utility(c.card, view) + 0.1 * c.card.remainingHp + (c.card.exhausted ? 0 : 0.05)));
         return pick ? rule(pick.i) : null;
       }
       default:
@@ -453,6 +479,16 @@ export function makeRulePolicy(opts: { id: string; version: string; rung: number
       const weight = (aspect: string): number => view.opp.units.filter((u) => u.aspects.includes(aspect)).reduce((sum, u) => sum + threat(u), 0);
       const pick = pickMax(answers, aspectButtons, ({ a }) => weight(a.label.slice(1, -1)));
       if (pick) return rule(pick.i);
+    }
+    if (params.aspectCall === 1 && /^choose an aspect$/i.test(title) && view.me.deckAspects !== undefined) {
+      const counts = view.me.deckAspects();
+      const named = answers.map((a, i) => ({ a, i })).filter(({ a }) => a.kind === "button" && counts[a.label] !== undefined);
+      const pick = pickMax(answers, named, ({ a }) => counts[a.label] ?? 0);
+      if (pick) return rule(pick.i);
+    }
+    if (params.aspectCall === 1 && /choose a deck to discard from/i.test(title)) {
+      const own = buttonIndex(answers, /^your deck$/i);
+      if (own >= 0) return rule(own);
     }
     if (/^trigger the effect/i.test(title)) {
       const go = answers.findIndex((a) => a.kind === "button" && !IS_PASS.test(a.label));

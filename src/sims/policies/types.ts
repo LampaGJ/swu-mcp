@@ -35,6 +35,15 @@ export interface EffectProfile {
   heal: boolean;
 }
 
+/** Ability facts from the parsed face in use (the leader side off the board, the unit side of a deployed leader). */
+export interface AbilityProfile {
+  /** An Action ability whose cost defeats a friendly unit (a token or Credit cost does not count). */
+  sacrificeAction: boolean;
+  whenDefeated: boolean;
+  /** Resources a "When you take the initiative" trigger asks for; null without such a trigger. */
+  takeInitiativeCost: number | null;
+}
+
 /** One card a policy can see: every card in play, both bases and leaders, our hand, and any card a legal answer names. */
 export interface CardView {
   /** The engine's per-game object id; identity within one game only, never logged across engine versions. */
@@ -65,6 +74,8 @@ export interface CardView {
   /** playCalibrated, a null score taking its type's median; 0 for an unmapped card (tokens). */
   score: number;
   effects: EffectProfile;
+  /** Absent in hand-built fixtures; read only by the pilot rules (#174). */
+  ability?: AbilityProfile;
   /** Upgrade stat modifiers from the parsed card (an upgrade with a negative sum harms its host). */
   upgradePower: number;
   upgradeHp: number;
@@ -88,6 +99,8 @@ export interface MySideView extends SideView {
   hand: readonly CardView[];
   /** The costliest card in our own decklist (own information), used for the resource target. */
   maxDeckCost: number;
+  /** Aspect icon counts over our own draw deck (own decklist, never its order), computed on call; absent in fixtures. */
+  deckAspects?: () => Readonly<Record<string, number>>;
 }
 
 export type PromptKind =

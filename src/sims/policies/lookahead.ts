@@ -32,6 +32,23 @@ export interface LookaheadParams {
   maxTrialDecisions: number;
   /** Version of V and the mask, in the params hash so every record names it. */
   vVersion: number;
+  /** Rung 1's pilot switches (rules.ts RuleParams) for the ranking, the rollouts and every other prompt; absent is 0. */
+  sacGuard?: number;
+  initDraw?: number;
+  handCap?: number;
+  aspectCall?: number;
+  /** 1: Pass is a candidate only when rung 1 itself passes (a rollout after Pass plays the card a real Pass never plays, #174). */
+  noPass?: number;
+}
+
+export const LOOKAHEAD_PILOT_KEYS = ["noPass"] as const;
+
+const IS_PASS_ANSWER = (a: LegalAnswer): boolean => a.kind === "button" && /^pass\b/i.test(a.label);
+
+/** Rung 1's order without its Pass answers, unless rung 1's own pick is Pass. */
+export function withoutPass(order: readonly number[], answers: readonly LegalAnswer[]): number[] {
+  if (order.length === 0 || IS_PASS_ANSWER(answers[order[0]])) return [...order];
+  return order.filter((i) => !IS_PASS_ANSWER(answers[i]));
 }
 
 export const RUNG3_PARAMS: LookaheadParams = { k: 3, horizon: HORIZON.round, wBase: 1.5, wBoard: 1, wHand: 1, wResources: 1, wReady: 1, wScore: 0, maxTrialDecisions: 400, vVersion: 1 };

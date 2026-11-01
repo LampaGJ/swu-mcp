@@ -7,7 +7,7 @@ import { indexLeaderCards, type LeaderCardsIndex } from "../../meta/schema.js";
 import { scoresFileSchema } from "../../scorer/scores-file.js";
 import { LINK_KINDS } from "../../synergy/schema.js";
 import { compareCodePoints } from "../../swu/canonical.js";
-import type { EffectProfile } from "./types.js";
+import type { AbilityProfile, EffectProfile } from "./types.js";
 
 /**
  * @displayName Bot policy lookup tables
@@ -37,12 +37,47 @@ export function normalizeCardName(title: string, subtitle: string | null | undef
     .toLowerCase();
 }
 
+const faceEntrySchema = z.discriminatedUnion("kind", [
+  z.looseObject({
+    kind: z.literal("ability"),
+    triggers: z.array(z.looseObject({ trigger: z.string(), cost: z.looseObject({ other: z.array(z.string()).optional() }).optional() })),
+    clauses: z.array(z.looseObject({ text: z.string() })),
+  }),
+  z.looseObject({ kind: z.literal("keyword") }),
+]);
+const facesSchema = z.looseObject({ text: z.array(faceEntrySchema).optional(), deployBox: z.array(faceEntrySchema).optional() });
+export type CardFaces = z.infer<typeof facesSchema>;
+
 const featureRowSchema = z.looseObject({
   cardKey: z.string().min(1),
   type: z.string(),
   structured: z.looseObject({ upgradePower: z.number().nullable(), upgradeHp: z.number().nullable(), aspects: z.array(z.string()) }),
   vector: z.looseObject({ effects: z.record(z.string(), z.looseObject({ byTarget: z.record(z.string(), z.number()) })) }),
+  faces: facesSchema.optional(),
 });
+
+const NO_ABILITY: AbilityProfile = { sacrificeAction: false, whenDefeated: false, takeInitiativeCost: null };
+const SACRIFICE_COST = /^defeat (a|another) friendly unit$/i;
+
+/** The pilot rules' ability facts from one parsed face; a leader's `text` face is its leader side, `deployBox` its unit side. */
+export function abilityProfileOf(faces: CardFaces | undefined, face: "text" | "deployBox"): AbilityProfile {
+  const abilities = faces?.[face] ?? [];
+  let sacrificeAction = false;
+  let whenDefeated = false;
+  let takeInitiativeCost: number | null = null;
+  for (const a of abilities) {
+    if (a.kind !== "ability") continue;
+    for (const t of a.triggers) {
+      if (t.trigger === "action" && (t.cost?.other ?? []).some((o) => SACRIFICE_COST.test(o))) sacrificeAction = true;
+      if (t.trigger === "when_defeated") whenDefeated = true;
+      if (t.trigger === "take_initiative") {
+        const pay = a.clauses.map((c) => /pay (\d+) resources?/i.exec(c.text)).find((m) => m !== null);
+        takeInitiativeCost = pay ? Number(pay[1]) : 0;
+      }
+    }
+  }
+  return { sacrificeAction, whenDefeated, takeInitiativeCost };
+}
 const featuresSchema = z.array(featureRowSchema);
 
 const pairRowSchema = z.strictObject({
@@ -97,6 +132,7 @@ export interface CardTables {
   /** playCalibrated with a null score at its type's median; 0 for an unknown key. */
   score(cardKey: string | null): number;
   effects(cardKey: string | null): EffectProfile;
+  ability(cardKey: string | null, face: "text" | "deployBox"): AbilityProfile;
   upgradeStats(cardKey: string | null): { power: number; hp: number };
   /** Printed aspects from the parsed card. */
   aspects(cardKey: string): readonly string[];
@@ -189,6 +225,7 @@ export function loadTables({ runDir, complementarity, pairs }: TableFiles): Card
   const featureOf = new Map(features.map((f) => [f.cardKey, f]));
   const effectCache = new Map<string, EffectProfile>();
   const NO_EFFECTS: EffectProfile = { removal: false, heal: false };
+  const abilityCache = new Map<string, AbilityProfile>();
 
   const pairTable = pairs === true ? loadPairTable(runDir, complementarity) : pairs === false ? null : pairs;
   const edge = new Map(pairTable?.edges ?? []);
@@ -203,6 +240,15 @@ export function loadTables({ runDir, complementarity, pairs }: TableFiles): Card
       const f = featureOf.get(key);
       const p = f ? effectProfileOf(f.vector.effects) : NO_EFFECTS;
       effectCache.set(key, p);
+      return p;
+    },
+    ability: (key, face) => {
+      if (key === null) return NO_ABILITY;
+      const ck = `${face}|${key}`;
+      const hit = abilityCache.get(ck);
+      if (hit) return hit;
+      const p = abilityProfileOf(featureOf.get(key)?.faces, face);
+      abilityCache.set(ck, p);
       return p;
     },
     upgradeStats: (key) => {

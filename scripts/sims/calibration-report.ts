@@ -14,7 +14,7 @@
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { externalIntervals, gateRecordSchema, spearman, type GateRecord } from "../../src/sims/calibration.js";
+import { archetypeShares, externalIntervals, gateRecordSchema, spearman, type GateRecord } from "../../src/sims/calibration.js";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 
 type Row = GateRecord["gates"]["external"]["rows"][number];
@@ -96,6 +96,20 @@ export function report(files: readonly string[]): string {
       return `${label(k)} ${n === 0 ? "n/a" : `${s / n >= 0 ? "+" : ""}${((s / n) * 100).toFixed(1)} points over ${n}`}`;
     });
     out.push(`- ${name} (${id}): ${parts.join("; ")}`);
+  }
+
+  out.push(
+    "",
+    "## Per archetype: mean share over its matchups with a 95% interval, sim and tournament side by side (#174)",
+    "Each matchup weighs equally and is read from the archetype's side; the interval is normal on the per-matchup binomial variances (archetypeShares, src/sims/calibration.ts). The two tiers are never pooled (D21).",
+  );
+  for (const [id, name] of [...names].sort(([a], [b]) => compareCodePoints(a, b))) {
+    const t = archetypeShares(base, id).tournament;
+    const parts = recs.map((_, k) => {
+      const s = archetypeShares(recs[k].rec.gates.external.rows, id);
+      return s.sim === null ? `${label(k)} n/a` : `${label(k)} ${pct(s.sim.mean)} [${pct(s.sim.low)}, ${pct(s.sim.high)}], error ${(s.error ?? 0) >= 0 ? "+" : ""}${((s.error ?? 0) * 100).toFixed(1)} points`;
+    });
+    out.push(`- ${name} (${id}): tournament ${pct(t.mean)} [${pct(t.low)}, ${pct(t.high)}]; ${parts.join("; ")}`);
   }
   return `${out.join("\n")}\n`;
 }

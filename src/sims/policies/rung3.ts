@@ -5,8 +5,8 @@ import type { SearchHooks } from "../policy.js";
 import { decidingSeats } from "../search-leaf.js";
 import { ViewBuilder, type TypedAction } from "./engine-view.js";
 import { RUNG1_VERSION } from "./index.js";
-import { evaluateV, HORIZON, maskState, pickCandidate, rankByExclusion, RUNG3_VERSION, type Candidate, type LookaheadParams, type RawSide, type RawState } from "./lookahead.js";
-import { makeRulePolicy, RUNG1_PARAMS } from "./rules.js";
+import { evaluateV, HORIZON, maskState, pickCandidate, rankByExclusion, RUNG3_VERSION, withoutPass, type Candidate, type LookaheadParams, type RawSide, type RawState } from "./lookahead.js";
+import { makeRulePolicy, RULE_PILOT_KEYS, RUNG1_PARAMS, type RuleParams } from "./rules.js";
 import type { CardTables } from "./tables.js";
 import type { BotPolicy, LegalAnswer } from "./types.js";
 import type { DriverPolicy } from "./typed-adapter.js";
@@ -30,7 +30,12 @@ type AnyCard = any;
 
 export const RUNG3_POLICY_ID = "rung3-lookahead";
 
-const rung1 = (): BotPolicy => makeRulePolicy({ id: "rung1-rules", version: RUNG1_VERSION, rung: 1, params: RUNG1_PARAMS });
+/** Rung 1 with the lookahead's pilot switches (#174); with none set it is rung 1 exactly. */
+const rung1 = (p: LookaheadParams): BotPolicy => {
+  const params: RuleParams = { ...RUNG1_PARAMS };
+  for (const k of RULE_PILOT_KEYS) if (p[k] === 1) params[k] = 1;
+  return makeRulePolicy({ id: "rung1-rules", version: RUNG1_VERSION, rung: 1, params });
+};
 
 /** Work counters for one policy instance; the cost harness reads them in-thread. */
 export interface LookaheadCounters {
@@ -140,7 +145,7 @@ interface View {
 export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inputs: Record<string, string>): DriverPolicy & { counters: LookaheadCounters } {
   let game: unknown = null;
   let builder: ViewBuilder | null = null;
-  const bot = rung1();
+  const bot = rung1(params);
   const decide = bot.decide;
   if (decide === undefined) throw new Error("rung 1 exposes no pure decide");
   const counters: LookaheadCounters = { searches: 0, trials: 0, trialDecisions: 0, trialErrors: 0, overrides: 0, cutAtCap: 0 };
@@ -160,7 +165,7 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
         const fresh = enumerateActions(g, players, v.seat, hooks.cardKeys);
         if (fresh.length !== actions.length || fresh.some((a, i) => a.action.descriptor !== actions[i].descriptor)) throw new Error(`rung 3: legal actions changed across a rollback at decision ${v.k}`);
         const builders = [new ViewBuilder(g, 1, tables), new ViewBuilder(g, 2, tables)] as const;
-        const bots = [rung1(), rung1()] as const;
+        const bots = [rung1(params), rung1(params)] as const;
         builders[v.seat - 1].record(rootView, answers[idx]);
         const random = seededRandom(`trial|${hooks.seed}|${v.seat}|${v.k}|${idx}`);
         let value: number | null;
@@ -206,7 +211,8 @@ export function lookaheadPolicy(tables: CardTables, params: LookaheadParams, inp
       if (top === null) return null;
       let pick = top;
       if (v.promptKind === "mainAction" && params.k > 1) {
-        const order = rankByExclusion(answers, gv, decide, params.k);
+        const ranked = rankByExclusion(answers, gv, decide, params.k);
+        const order = params.noPass === 1 ? withoutPass(ranked, answers) : ranked;
         if (order[0] !== top) throw new Error(`rung 3: rung 1's pure order starts at ${order[0]}, its choice was ${top}`);
         if (order.length > 1) pick = search(actions, answers, order, v, gv);
       }
