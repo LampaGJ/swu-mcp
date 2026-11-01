@@ -9,6 +9,7 @@ import { RULES_TOOLS } from "./tools/rules.js";
 import { CATALOG_TOOLS } from "./tools/catalog.js";
 import { DECK_TOOLS } from "./tools/deck.js";
 import { META_TOOLS } from "./tools/meta.js";
+import { SIMS_TOOLS } from "./tools/sims.js";
 import { ok, fail, lower, hasValue } from "./tools/common.js";
 
 export interface ToolResult {
@@ -193,4 +194,6 @@ export const TOOLS = {
   ...CATALOG_TOOLS,
   ...DECK_TOOLS,
   ...META_TOOLS,
+  // Local only: the public endpoint runs without SWU_MCP_SIMS, so it never starts the engine.
+  ...(process.env.SWU_MCP_SIMS === "1" ? SIMS_TOOLS : {}),
 } as const;

@@ -170,6 +170,8 @@ Measured budget (this machine, 16 worker threads, warm pool would save the 0.25 
 
 Not yet tested for this tool: a cardKey deck (we tested set-code lists only), deck sizes other than 50 to 60 (the 60-card lists in the repo ran), arbitrary leader and base pairs, and non-Premier formats.
 
+Built (#116, D88): `simulate_matchup` (`src/tools/sims.ts`) takes a cardKey deck or a SWUDB document and sends each cardKey through the engine bridge, refusing a card the engine lacks by name; it rejects decks outside 50 to 60 main-deck cards, more than 3 copies, and a non-Leader or non-Base in those slots, and plays Premier only (`validateDeck`, `src/sims/matchup.ts`). Games run in a detached job on the warm worker pool, the rung on both seats, keyed by input and pins, one job at a time. Measured on 12 workers with rung 3 top-K (`rung3:k=8`) on both seats, 2026-11-01: a head-to-head job (100 seeds played twice with the seats swapped, plus a 100-game mirror) took 336 s for 300 games, and a field job (7 strata of 100) took 571 s for 700 games, 0.9 and 1.2 games per second including about 10 s of worker start-up; the 2,640 calibration games took 2,502 s. Rung 1 plays about 47 games per second (2,640 games in 56 s). So a default field request is a ten-minute background job, not a 30 s interactive call, which is why the tool returns at once and reports progress. Neither rung may report a win share yet: both fail the calibration gate (`docs/verification/2026-10-31-sim-calibration.md`).
+
 ## Proposed committed step `scripts/sims/run-games.ts`
 
 Manipulation node (expands): inputs are pinned decklists plus a seed list; output is `data/originals/sims/<date>/records.jsonl.gz` plus a manifest.

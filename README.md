@@ -146,6 +146,12 @@ Provenance
 
 - `data_version` package date, rubric version, code commit and input hashes behind every score.
 
+### Local only: simulate_matchup (bot play)
+
+Registered only when the server runs with `SWU_MCP_SIMS=1` and needs the built forceteki clone (`pnpm sims:pin --setup`); the public endpoint and the `npx` path run without it, so they never start the engine.
+
+- `simulate_matchup` battle-tests a deck (`deck` by cardKey, or `swudb`) on the forceteki rules engine with one calibrated bot rung on both seats. `opponent` is an archetype id from `meta_archetypes`, a melee tournament list key, or `"field"` (the six largest archetypes plus a rest-of-field stratum, each with its own n, combined by share with a stratified bootstrap interval). `variant` (OUT>IN cardKey swaps) alone plays the deck head-to-head against its variant: each seed twice with the seats swapped, an exact sign test, and a mirror control on the same seeds; with `opponent`, both decks play the same opponent lists, seeds and seats, compared pair by pair. `opponentDeck` plays my deck against my deck the same way. Output: population (source, lists, window), n, wins, winShare, wilson95, perArchetype rows with their own n and interval, drawRate, errorRate, meanRounds, endBoardTopCards and a replay record (input hash, code commit, engine commit, seed, policy version, the rung on both seats, output hash), labelled `bot play (forceteki <policy>), not human results` with `status: candidate`: it describes the deck as this bot plays it, never a tournament win rate (D21), and no Karabast data enters it (D22). Games run as one background job keyed by the canonical input, code commit, engine pin and calibration record: the first call starts it and returns at once, an identical repeat call returns progress or the finished result (cached under `tmp/sims-jobs/`), and `dryRun: true` returns the plan and an estimated time. One job runs at a time; `games` defaults to 100 per opponent (per stratum for the field, seeds for a head-to-head), at most 400, and a job plays at most 3,000 games. Decks must be Premier: 50 to 60 cards, at most 3 copies, a Leader and a Base. A rung reports a win share only when its calibration gate record under `data/pinned/sim-calibration-v1/` passes all four gates (replay, health, ladder, and rank agreement with tournament matchups); otherwise the tool returns an error naming the failed gate. On 2026-10-31 rung 1 and rung 3 top-K both fail the external gate (Spearman -0.17 and -0.21 against tournament matchup ranks), so the tool reports no win share yet; see [the calibration write-up](docs/verification/2026-10-31-sim-calibration.md).
+
 ### Resources and prompts
 
 - `swu://rubric` the card value rubric, `swu://glossary` the game glossary (JSON), `swu://usage-guide` which tool answers which question, `swu://rules/{section}` one Comprehensive Rules section, and `rules://core-primer`. The rubric and glossary are read from the data package's `docs/`, so an npx install serves them.
@@ -212,6 +218,7 @@ Assembles the zip for readers (default destination: the iCloud `_temp` folder) f
     pnpm build              # bundle dist/server.js
     pnpm fit:coefficients [--check]
     pnpm rules:check [--verify-hash]
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung3:k=8   # local only: the sim calibration gate -> data/pinned/sim-calibration-v1/
 
 `tests/e2e.test.ts` starts the real server over stdio, lists the tools, calls every one with valid arguments and reads `rules://core-primer`. It has an arguments entry per tool and fails if a registered tool lacks one. It skips when `data/runs` has no dated run.
 

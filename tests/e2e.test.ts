@@ -2,12 +2,27 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { gateRecordSchema } from "../src/sims/calibration.js";
+import { BUILT_MARKER, DEFAULT_FORCETEKI, readPin } from "../src/sims/engine-pin.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RUNS = path.join(REPO_ROOT, "data/runs");
 const hasBuiltData = existsSync(RUNS) && readdirSync(RUNS).some((name) => /^\d{4}-\d{2}-\d{2}$/.test(name));
+/** simulate_matchup is local only: the server registers it under SWU_MCP_SIMS=1, which the main client sets only when the engine clone is built and a rung may serve a win share. */
+const hasEngine = existsSync(path.join(DEFAULT_FORCETEKI, BUILT_MARKER));
+const CALIBRATION = path.join(REPO_ROOT, "data/pinned/sim-calibration-v1");
+const servableRung =
+  hasEngine &&
+  existsSync(CALIBRATION) &&
+  readdirSync(CALIBRATION)
+    .filter((name) => name.endsWith(".json"))
+    .some((name) => {
+      const rec = gateRecordSchema.parse(JSON.parse(readFileSync(path.join(CALIBRATION, name), "utf8")));
+      return rec.servesWinShare && rec.engine.commit === readPin().commit;
+    });
+const OWNER_DECK: unknown = JSON.parse(readFileSync(path.join(REPO_ROOT, "tests/fixtures/decks/warrior-chewie-raid.swudb.json"), "utf8"));
 
 const ELIA_KANE = "06010242";
 const IDEN_VERSIO = "0101002";
@@ -70,6 +85,7 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   meta_threats: { archetype: "t001" },
   meta_answers: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, archetypes: 5, limit: 5 },
   leader_cards: { leader: ASAJJ_VENTRESS, base: CHOPPER_BASE, limit: 5 },
+  ...(servableRung ? { simulate_matchup: { swudb: OWNER_DECK, opponent: "field", dryRun: true } } : {}),
 };
 
 describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => {
@@ -77,7 +93,7 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
   let toolNames: string[] = [];
 
   beforeAll(async () => {
-    await client.connect(new StdioClientTransport({ command: "pnpm", args: ["--silent", "mcp"], cwd: REPO_ROOT, stderr: "ignore" }));
+    await client.connect(new StdioClientTransport({ command: "pnpm", args: ["--silent", "mcp"], cwd: REPO_ROOT, stderr: "ignore", env: { ...getDefaultEnvironment(), SWU_MCP_SIMS: servableRung ? "1" : "0" } }));
     toolNames = (await client.listTools()).tools.map((tool) => tool.name);
   }, 60_000);
 
@@ -150,4 +166,31 @@ describe.skipIf(!hasBuiltData)("stdio end to end against the built data", () => 
     const prompts = (await client.listPrompts()).prompts.map((prompt) => prompt.name);
     expect(prompts).toEqual(expect.arrayContaining(["rules_question", "build_deck_for_leader", "meta_defense"]));
   });
+});
+
+describe.skipIf(!hasBuiltData || !hasEngine)("simulate_matchup over stdio (local only, SWU_MCP_SIMS=1)", () => {
+  const client = new Client({ name: "swu-mcp-e2e-sims", version: "0.0.0" });
+
+  beforeAll(async () => {
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: ["--import", "tsx", "src/server.ts"], cwd: REPO_ROOT, stderr: "ignore", env: { ...getDefaultEnvironment(), SWU_MCP_SIMS: "1" } }));
+  }, 60_000);
+
+  afterAll(async () => {
+    await client.close();
+  });
+
+  it("is registered and plans the owner's deck against the field, or names the failed calibration gate when no rung may serve a win share (D9)", async () => {
+    expect((await client.listTools()).tools.map((tool) => tool.name)).toContain("simulate_matchup");
+    const result = await client.callTool({ name: "simulate_matchup", arguments: { swudb: OWNER_DECK, opponent: "field", dryRun: true } });
+    const text = (result.content as { text?: string }[]).map((part) => part.text ?? "").join("");
+    if (servableRung) {
+      expect(result.isError, text.slice(0, 200)).toBeUndefined();
+      expect(text).toContain("jobState: plan");
+      expect(text).toContain("plannedGames: 700");
+    } else {
+      expect(result.isError).toBe(true);
+      expect(text).toMatch(/^no bot rung has passed every calibration gate, so simulate_matchup reports no win share\./);
+      expect(text).toMatch(/failed the external calibration gate/);
+    }
+  }, 60_000);
 });
