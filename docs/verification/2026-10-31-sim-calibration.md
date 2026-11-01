@@ -13,6 +13,8 @@ Both measured bot rungs fail the external calibration gate, so `simulate_matchup
 
 Follow-up (#171, D90): the negative correlation is real. A committed test traces three matchups from the raw swumetastats rows to the sim's seat and winner fields and finds no inversion or identity error. Rung 1 on three placement-weighted lists per archetype, none of them a v1 list, scores -0.21 [95% interval -0.43, 0.04]; its shares rank the pairs like the one-list run (0.87). A rung 3 Monte Carlo probe (10 games per pair) scores -0.20 [-0.42, 0.05]. The bots carry a tempo bias: they underrate decks that need lines (Krennic, the Mandalorian, Lando) and overrate proactive ones.
 
+Pilot quality (#174, D92): decision logs of lost games name the misplays. Krennic's leader eats the unit just played every round. The Mandalorian takes the initiative with no resource left for its paid draw, and under search it passes a castable 6-drop until the phase ends. Lando names an aspect its own list does not hold, and both decks sit on uncastable cards above the resource cap. Two rule switches are kept: a sacrifice guard, and resourcing toward the costliest card in hand. Together they move all three toward their tournament share: Krennic from 9.8% to 30.4% against 57.4%, the Mandalorian from 21.8% to 24.4% against 51.6%, Lando from 37.6% to 40.6% against 58.7%. The ranking does not improve: the rung 1 pilot scores Spearman -0.17 [-0.39, 0.08] and 16 of 37 under D88's unchanged gate. The rung 3 pilot passes replay, health and ladder and scores -0.21 [-0.43, 0.04] and 17 of 37, so it fails only the external gate. Even exact play of all 30 matchups of the three archetypes would lift Spearman only to 0.40 to 0.45, so the error is pilot-wide. The next lever is E9's learned evaluator (#125, #126, #128).
+
 Every sim figure here is bot play (D21's last tier), named with its rung, the engine pin and the seeds. Every tournament figure is swumetastats' melee.gg matchup table. The two sit side by side; they are never pooled. No Karabast data is read (D22).
 
 ## What was measured
@@ -188,9 +190,99 @@ Mean signed error is the sim share minus the tournament share, from the archetyp
 
 The pattern is a tempo bias. The bots overrate proactive decks (Boba Fett, both Lukes, Darth Maul, Cad Bane, Vader) and underrate decks that need lines (Krennic, the Mandalorian, Lando). The gate exists to catch exactly that bias.
 
+## Pilot quality: misplays, pilot changes, recalibration (#174, D92)
+
+### How the games were read
+
+`scripts/sims/trace-calibration.ts` replays an archetype's calibration games from a pinned gate record's own panel and seed layout (`calibrationJobs`), in one thread, with full decision records. It keeps the games the archetype lost, replays each record to its trace, and writes a JSONL record plus a text log. The log lists every decision: index k, round, phase, prompt, the chosen answer and the number of answers. At each of the archetype's main-action prompts it adds the hand, resources, both boards and both bases. Every traced record below replayed to the same trace. These are bot games (D21's last tier); no Karabast data is read (D22). Rung 1 traces come from `calibration-rung1.json`, rung 3 traces from `calibration-rung3-k-8.json`, and the decision indices hold for those records.
+
+### Misplays, with decision indices
+
+Director Krennic (leader text: "Action [Exhaust, defeat a friendly unit]: Create a Credit token").
+
+- Rung 1, seed 4001000, Krennic in seat 1 against Luke Skywalker, Hero of Yavin. At k=14 the leader defeats Onyx Squadron Brute, which was played at k=10. At k=24 it defeats Moff Gideon, Remnant Commander (a 2/5 Sentinel for 3, played at k=21), and the board is empty again at k=29. At k=70 it defeats Nightsister Warrior, played at k=64. Luke's base stays at 30 for the whole game. Krennic loses in round 6.
+- Rung 1, seed 4000000, seat 1 against Cad Bane. The leader action is clicked 14 times in 12 rounds. At k=29 it defeats Imperial Door Technician (played at k=14). At k=44 it defeats Moff Gideon while an Imperial Armored Commando stands beside it.
+- The cause is rung 1's ability step: it uses any available ability, by utility, once nothing else is left to play (`src/sims/policies/rules.ts:304`). The list's When Defeated units are what the leader should spend, but rung 1 spends the healthy 3-cost Sentinel as readily as a 1-cost technician, every round.
+- Rung 3, seed 4001000, seat 1 against Luke Skywalker, Hero of Yavin. At k=10, k=18 and k=28 it claims the initiative as its first action of rounds 1 to 3, with 2 of 2, 3 of 3 and 4 of 4 resources ready. Onyx Squadron Brute (2) and Moff Gideon (3) sit in hand. Its first unit lands at k=59, in round 5. The search rolls out both seats with rung 1, and rung 1 sacrifices the unit just played, so a trial that plays a unit scores below one that passes the round.
+
+The Mandalorian, We Can't Keep Running (leader text: "When you take the initiative: You may pay 1 resource. If you do, draw a card").
+
+- Rung 1, seed 4058000, seat 1 against Darth Maul. At k=11, k=22 and k=43 it claims the initiative with 0 ready resources, so the paid draw cannot fire. Only k=62, with 2 of 5 left, reaches the trigger (k=63). Over the four traced rung 1 losses, 13 of 37 claims came with 0 resources, and 11 of 28 over the three rung 3 losses.
+- Rung 3, same seed. At k=19 and k=33 it claims with 0 resources. At k=73, k=75 and k=77 it passes three times in round 5 with 6 of 6 resources, an empty board and Anakin Skywalker (6) castable, facing Old Daka 6/6. The round ends with Anakin unplayed, and Old Daka hits the base for 6 (33 to 27). A rollout after Pass plays rung 1's card on the next turn, so Pass looks free. The real next decision passes again, until the opponent passes and the phase ends. Over the three rung 3 Mandalorian losses, 7 main-action Passes came while other actions were legal; the rung 1 losses had 1.
+- Hand clog: the list's top end is never cast. Rung 1 stops resourcing at 7 (`resourceCap`), and the hand keeps its costliest cards.
+
+Lando Calrissian, Full Sabacc (leader text: "Action [1 resource, Exhaust]: Choose an aspect, then discard a card from a deck. If it has the chosen aspect, create a Credit token").
+
+- Rung 1, seed 4063000, seat 1 against Darth Maul. At k=110 and k=111 it names Aggression and the opponent's deck: the menu rule's first button. All 17 aspect calls in the six traced Lando losses (13 under rung 1, 4 under rung 3) were Aggression on the opponent's deck. Lando's own list holds no Aggression card: its aspect icons are 50 Vigilance, 24 Heroism, 10 Cunning and 3 Villainy.
+- At k=75 the hand is Home One (8) and Bo-Katan Kryze (9) with 6 resources, and resourcing stops at 7. Neither card can be cast without Credits.
+- At k=84 it deploys Lando with 6 resources into Darth Maul's board. Maul attacks it at k=90 and finishes it at k=92.
+
+Replay commands (each writes the logs under `tmp/sims-trace/` and states "replay identical" in each log's first line):
+
+    node --import tsx scripts/sims/trace-calibration.ts --policy rung1 --archetype t001 --vs t002,t003,t005 --seeds 4 --max 2
+    node --import tsx scripts/sims/trace-calibration.ts --policy rung1 --archetype t008 --vs t012,t014,t009,t002 --seeds 4 --max 1
+    node --import tsx scripts/sims/trace-calibration.ts --policy rung1 --archetype t010 --vs t012,t002,t009,t005 --seeds 4 --max 1
+    node --import tsx scripts/sims/trace-calibration.ts --policy rung3:k=8 --record data/pinned/sim-calibration-v1/calibration-rung3-k-8.json --archetype t001 --vs t002,t003,t012 --seeds 3 --max 1
+
+The same command with `--archetype t008 --vs t012,t014,t009` or `--archetype t010 --vs t012,t009,t005` gives the rung 3 Mandalorian and Lando logs.
+
+### Pilot changes
+
+Each change is a 0-or-1 switch in the policy name. With a switch off, a rung keeps its pinned name, params hash and trace. A rerun of plain `rung1` on this code reproduced all 66 rows of `calibration-rung1.json`. The ability facts come from the parsed card faces, not from card names (`abilityProfileOf`, `src/sims/policies/tables.ts:63`), and the view builder attaches them to every card (`src/sims/policies/engine-view.ts:179`).
+
+- `sacGuard` (Krennic): an ability whose cost defeats a friendly unit is used only while a token or a cheap or damaged When Defeated unit is in play, and that unit pays the cost (`isFodder`, `src/sims/policies/rules.ts:59`; `src/sims/policies/rules.ts:304`, `src/sims/policies/rules.ts:420`). A first version allowed every When Defeated unit and changed no Krennic trace, because every unit the leader ate in the traced losses has a When Defeated ability.
+- `initDraw` (the Mandalorian): plays leave back the resources a "When you take the initiative" leader trigger asks for while the initiative can still be taken (`src/sims/policies/rules.ts:287`).
+- `handCap` (the Mandalorian, Lando): resourcing continues past the cap of 7 while the hand holds a costlier card (`src/sims/policies/rules.ts:215`).
+- `aspectCall` (Lando): an aspect call names the commonest aspect of our own draw deck and discards from our own deck (`src/sims/policies/rules.ts:483`). It reads aspect counts of our own decklist, never its order.
+- `noPass` (rung 3): Pass is a search candidate only when rung 1's own pick is Pass (`withoutPass`, `src/sims/policies/lookahead.ts:49`; `src/sims/policies/rung3.ts:215`). Rung 3 passes its rung 1 switches to its ranking, its rollouts and its other prompts.
+
+### Rung 1, measured per change
+
+Calibration panel, 40 games per pair, seeds and lists as the v1 gate. The exploratory runs replayed 10 matches each, and every one replayed. Figures come from `scripts/sims/calibration-report.ts`. Per archetype is the mean share over the archetype's 11 matchups, from its own side, with a 95% interval (`archetypeShares`, `src/sims/calibration.ts:453`). The tournament means are Krennic 57.4% [55.3, 59.5], the Mandalorian 51.6% [48.5, 54.8] and Lando 58.7% [55.6, 61.8].
+
+- `rung1` (baseline): Krennic 9.8% [6.9, 12.7], the Mandalorian 21.8% [18.3, 25.4], Lando 37.6% [33.9, 41.3]. Spearman -0.17 [-0.40, 0.08]; favourite 15 of 37.
+- `rung1:sacGuard=1`: Krennic 30.9% [27.1, 34.7] (+21.1 points), the Mandalorian 17.9% [14.5, 21.4], Lando 34.4% [30.6, 38.3]. Spearman -0.16 [-0.39, 0.09]; favourite 15 of 37. Kept. The other two lose about 3 points through their matchups with the stronger Krennic.
+- `rung1:initDraw=1`: Krennic 11.4%, the Mandalorian 13.0% [9.8, 16.1] (-8.8 points), Lando 38.3%. Spearman -0.17. Rejected. The paid draw does not make up for the tempo the kept resource costs this pilot.
+- `rung1:handCap=1`: Krennic 9.3%, the Mandalorian 28.7% [25.1, 32.2] (+6.9 points), Lando 42.0% [38.1, 45.8] (+4.4 points). Spearman -0.18; favourite 15 of 37. Kept. It also lowers Ahsoka from 33.0% to 24.6% and raises Aurra Sing from 53.1% to 59.7%, both away from their tournament means.
+- `rung1:aspectCall=1`: Krennic 10.2%, the Mandalorian 22.3%, Lando 34.8% [31.2, 38.4] (-2.8 points). Spearman -0.17. Rejected.
+- `rung1:sacGuard=1,handCap=1` (the rung 1 pilot): Krennic 30.4% [26.6, 34.3] (-27.0 points from the tournament, was -47.6), the Mandalorian 24.4% [20.8, 27.9] (-27.3, was -29.8), Lando 40.6% [36.7, 44.5] (-18.1, was -21.1). Spearman -0.17 [-0.39, 0.08]; favourite 16 of 37 (p = 0.84). All three underrated archetypes move toward their tournament means, and the ranking does not improve.
+
+### Rung 3 top-K, screened per change
+
+A rung 3 game with both seats searching costs about 40 rung 1 games, so each rung 3 change was screened on the same panel at 10 games per pair (seeds q < 5, a subset of the v1 seeds), with 10 replays: 660 games, about 11 minutes on 12 workers. Every screen replayed 10 of 10 by descriptor, played every game to a decision and fell back on 0.35% of decisions or fewer. Per-archetype intervals are about 7 points wide on each side, so only moves larger than that count. Records: `data/pinned/sim-calibration-v1/pilot/screen10/`.
+
+- `rung3:k=8` (baseline screen): Krennic 36.4% [29.0, 43.7], the Mandalorian 27.3% [20.0, 34.5], Lando 30.0% [22.8, 37.2]. Spearman -0.24 [-0.46, 0.01]; favourite 13 of 37. The 40-game record gave -0.21.
+- `rung3:k=8,sacGuard=1,handCap=1`: Krennic 38.2% [30.5, 45.9], the Mandalorian 41.8% [34.2, 49.4] (+14.5 points), Lando 33.6% [26.2, 41.0]. Spearman -0.24 [-0.46, 0.01]; favourite 11 of 37. The Mandalorian moves most. Under search, `sacGuard` adds little to Krennic, because search already avoided most of the sacrifices. The ranking does not move.
+- `rung3:k=8,sacGuard=1,handCap=1,noPass=1`: Krennic 41.8% [34.6, 49.0], the Mandalorian 31.8% [24.9, 38.8] (10 points back), Lando 30.0% [22.7, 37.4]. Spearman -0.20 [-0.42, 0.05]; favourite 13 of 37. Rejected: it moves two of the three archetypes away from their tournament share, though Spearman rises by 0.04, inside the noise of a 10-game screen. Darth Maul comes down to 47.3% (tournament 45.6%). It is the only overrated deck the switch brings to its tournament mean; Boba Fett, Vader and Luke Skywalker, I Can Save Him each rise by 2 to 4 points.
+
+### Recalibration of the best pilot, D88 unchanged
+
+Both kept pilots were run through the full gate: 40 games per pair, 50 replays, and the thresholds in `src/sims/calibration.ts:23`. The rung 1 pilot `rung1:sacGuard=1,handCap=1` ranks best on Spearman. The rung 3 pilot `rung3:k=8,sacGuard=1,handCap=1` passes the most gates. Records: `data/pinned/sim-calibration-v1/pilot/calibration-rung1-sacGuard-1-handCap-1.json` and `data/pinned/sim-calibration-v1/pilot/calibration-rung3-k-8-sacGuard-1-handCap-1.json`.
+
+Rung 1 pilot:
+
+- Replay: 50 of 50 thread traces equal the worker's, 50 of 50 replay, 50 of 50 identical with undo on. Pass.
+- Health: 2,640 games, 12 not decisive (0.45%: 11 engine errors, 1 draw), fallback 0.25% of 419,665 decisions. Pass.
+- Ladder: against rung 0 (`data/pinned/sim-ladder-v1/rung1-pilot-vs-rung0.json`) 400 of 400, discordant 200 to 0. Pass. Against rung 1 (`rung1-pilot-vs-rung1.json`) 54.3% [49.4, 59.1], discordant 17 to 0 (p = 1.5e-5), but the pass rule also asks every panel deck above 50% and none wholly below. A rung 1 variant changes few decks, so a deck that is weak under rung 1 stays weak: Krennic played by the pilot wins 34.3% [24.3, 46.0] against rung 1 opponents, and Ahsoka 36.5% [25.7, 48.9]. Fail.
+- External: Spearman -0.17 [-0.39, 0.08] over 66 pairs; the favourite agrees in 16 of 37 clear matchups (43.2% [28.7, 59.1], one-sided p = 0.84). Fail.
+
+Rung 3 pilot:
+
+- Replay: 50 of 50 thread traces equal the worker's, 50 of 50 replay by descriptor; rollback fidelity cited from `data/pinned/sim-ladder-v1/rung3-fidelity.json` (sha256 `8d5a3376…`). Pass.
+- Health: 2,640 games, all decisive, fallback 0.31% of 378,947 decisions. Pass.
+- Ladder: against rung 0 (`rung3-pilot-vs-rung0.json`) 400 of 400, discordant 200 to 0; against rung 1 (`rung3-pilot-vs-rung1.json`) 83.7% [79.8, 87.0], discordant 134 to 0 (p = 9.2e-41), all six panel decks above 50%. Unpiloted `rung3:k=8` scored 83.0% on the same seeds. Pass.
+- External: Spearman -0.21 [-0.43, 0.04] over 66 pairs; the favourite agrees in 17 of 37 clear matchups, with one sim tie (45.9% [31.0, 61.6], one-sided p = 0.74). Fail.
+- Per archetype, against unpiloted `rung3:k=8` at 40 games: Krennic 31.4% to 38.2% [34.0, 42.4], the Mandalorian 27.3% to 33.0% [28.9, 37.0], Lando 27.7% to 30.4% [26.5, 34.4]. All three move toward their tournament means (57.4%, 51.6%, 58.7%) and stay far below them. Boba Fett rises from 65.9% to 69.5% and Ahsoka falls from 38.4% to 30.9%, both away from theirs (48.1%, 53.4%).
+
+Neither pilot passes, so neither record goes into the folder the tool reads, and `simulate_matchup` still answers with the failed-gate sentence. The rung 3 pilot is the closest: it fails only the external gate, by as wide a margin as the unpiloted rung did.
+
+### Why three archetypes cannot carry the gate
+
+If every one of the 30 matchups involving Krennic, the Mandalorian or Lando were set to its tournament share, the rest left as the bot played it, Spearman would reach 0.40 under rung 1 and 0.45 under rung 3 top-K. Both stay below the 0.5 bar. The 36 pairs among the other nine archetypes rank at Spearman 0.07 under rung 1 and 0.10 under rung 3 top-K. So the miscalibration is broad. Overrated proactive decks (Boba Fett +31 points under the rung 1 pilot, Luke Skywalker, I Can Save Him +24) are as much of it as the underrated ones. Rule patches aimed at three leaders cannot pass the external gate.
+
 ## Decision
 
-`simulate_matchup` may not show a win share. No rung has a record that passes all four gates, so the tool answers every simulation request with an error that names the failed gate and its figures (`failedGateSentence`, `src/sims/calibration.ts:310`); it still checks the deck and states the plan, and its job machinery, tested on fixtures and on the engine, serves a rung the moment a record for it passes. The thresholds (Spearman 0.5, sign test p < 0.05) were fixed before either measurement and are unchanged; both rungs miss them by a wide margin, so no threshold between the estimate and the measurements would have changed the verdict. #171 (D90) ruled out an orientation or identity bug and the list choice; see the follow-up section. The rung 3 Monte Carlo probe fails the external gate the same way (-0.20) and has no ladder record against rung 0. What remains is the pilot: a bot that plays control and hidden-information decks better, measured with this same gate.
+`simulate_matchup` may not show a win share. No rung has a record that passes all four gates, so the tool answers every simulation request with an error that names the failed gate and its figures (`failedGateSentence`, `src/sims/calibration.ts:310`); it still checks the deck and states the plan, and its job machinery, tested on fixtures and on the engine, serves a rung the moment a record for it passes. The thresholds (Spearman 0.5, sign test p < 0.05) were fixed before either measurement and are unchanged; both rungs miss them by a wide margin, so no threshold between the estimate and the measurements would have changed the verdict. #171 (D90) ruled out an orientation or identity bug and the list choice; see the follow-up section. The rung 3 Monte Carlo probe fails the external gate the same way (-0.20) and has no ladder record against rung 0. What remains is the pilot: a bot that plays control and hidden-information decks better, measured with this same gate. #174 (D92) tried that with rule switches aimed at the misplays its decision logs named. The kept switches move Krennic, the Mandalorian and Lando toward their tournament shares, and no pilot passes the external gate. Even exact play of those three archetypes' 30 matchups stays below the bar, so the work moves to E9's learned evaluator (#125 branch-sampled values, #126 a captured evaluator, #128 search with it). The pilot records sit in `data/pinned/sim-calibration-v1/pilot/`, which the tool does not read.
 
 ## Why the gate exists: the spike's example
 
@@ -205,5 +297,19 @@ A random-move win share is dominated by how often each deck's cards get played a
     node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung3mc:playout=rung1,n=2 --games 10 --chunk 4 --replay 10 --out data/pinned/sim-calibration-v1/mc-probe
     node --import tsx scripts/sims/calibration-report.ts data/pinned/sim-calibration-v1/calibration-rung1.json data/pinned/sim-calibration-v1/calibration-rung3-k-8.json data/pinned/sim-calibration-v1/lists3/calibration-rung1.json data/pinned/sim-calibration-v1/mc-probe/calibration-rung3mc-playout-rung1-n-2.json
     TMPDIR="$PWD/tmp" node node_modules/vitest/vitest.mjs run tests/sims/calibration-orientation.test.ts
+
+Pilot quality (#174). Each per-change run uses `--replay 10 --ladder rung1-vs-rung0.json:random-spike --out data/pinned/sim-calibration-v1/pilot`, with one switch: `rung1:sacGuard=1`, `rung1:initDraw=1`, `rung1:handCap=1` or `rung1:aspectCall=1`. The rung 3 screens add `--games 10 --chunk 4 --ladder rung3-vs-rung0.json:random-spike --out data/pinned/sim-calibration-v1/pilot/screen10`. Those runs pass a ladder file for another candidate, so their ladder gate fails by design; they are measurements, not gate records.
+
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung1:sacGuard=1 --replay 10 --ladder rung1-vs-rung0.json:random-spike --out data/pinned/sim-calibration-v1/pilot
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung3:k=8,sacGuard=1,handCap=1,noPass=1 --games 10 --chunk 4 --replay 10 --ladder rung3-vs-rung0.json:random-spike --out data/pinned/sim-calibration-v1/pilot/screen10
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode ladder --candidate rung1:sacGuard=1,handCap=1 --baseline rung0 --pairs 200 --workers 12 --step rung1-pilot-vs-rung0
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode ladder --candidate rung1:sacGuard=1,handCap=1 --baseline rung1 --pairs 200 --workers 12 --step rung1-pilot-vs-rung1
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung1:sacGuard=1,handCap=1 --ladder rung1-pilot-vs-rung0.json:random-spike,rung1-pilot-vs-rung1.json:rung1 --out data/pinned/sim-calibration-v1/pilot
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode ladder --candidate rung3:k=8,sacGuard=1,handCap=1 --baseline rung0 --pairs 200 --workers 12 --step rung3-pilot-vs-rung0
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/ladder.ts --mode ladder --candidate rung3:k=8,sacGuard=1,handCap=1 --baseline rung1 --pairs 200 --workers 12 --step rung3-pilot-vs-rung1
+    node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/calibration-gate.ts --policy rung3:k=8,sacGuard=1,handCap=1 --chunk 8 --ladder rung3-pilot-vs-rung0.json:random-spike,rung3-pilot-vs-rung1.json:rung1 --out data/pinned/sim-calibration-v1/pilot
+    node --import tsx scripts/sims/calibration-report.ts data/pinned/sim-calibration-v1/calibration-rung1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-sacGuard-1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-initDraw-1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-handCap-1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-aspectCall-1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-sacGuard-1-handCap-1.json
+    node --import tsx scripts/sims/calibration-report.ts data/pinned/sim-calibration-v1/calibration-rung3-k-8.json data/pinned/sim-calibration-v1/pilot/calibration-rung3-k-8-sacGuard-1-handCap-1.json data/pinned/sim-calibration-v1/pilot/calibration-rung1-sacGuard-1-handCap-1.json
+    TMPDIR="$PWD/tmp" node node_modules/vitest/vitest.mjs run tests/sims/policies/pilot.test.ts
 
 Each record holds no clock field; the same seeds, code, engine and inputs give the same record.
