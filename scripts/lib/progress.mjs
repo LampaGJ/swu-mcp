@@ -14,6 +14,10 @@
  *   for (...) { ...; p.tick(done, { found: out.length, phase: 'scan' }); }
  *   p.done({ found: out.length });
  *
+ * Output directory: opts.dir, else the SWU_MCP_PROGRESS_DIR environment variable when set and non-empty, else
+ * reports/.progress. The test setup (tests/setup/progress-dir.ts) points the variable at a temporary directory so a test
+ * run never writes a heartbeat that sims:summary, sims:watch or a widget would show as a dead job (#180).
+ *
  * Added for #178: every record also carries pid, games_per_s (done per second to two decimals; rate_per_s stays the
  * rounded integer) and moved_ts (when a tick, log or done last wrote). An extra may be a function, called only when a
  * record is written, so a costly payload (the sims live stats) is built once per write. With opts.keepAliveMs the
@@ -25,7 +29,7 @@ import { mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
 import path from 'node:path';
 
 export function progress(job, opts = {}) {
-  const { dir = 'reports/.progress', total = null, everyMs = 5000, everyN = null, keepAliveMs = null } = opts;
+  const { dir = process.env.SWU_MCP_PROGRESS_DIR || 'reports/.progress', total = null, everyMs = 5000, everyN = null, keepAliveMs = null } = opts;
   mkdirSync(dir, { recursive: true });
   const latest = path.join(dir, `${job}.json`);
   const hist = path.join(dir, `${job}.jsonl`);
