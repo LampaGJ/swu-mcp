@@ -13,6 +13,7 @@ The session that runs this skill is the facilitator. It resolves the anchors, wr
 - `count:<n>` shortlist size. Default: two per slot, at least 4, at most 10.
 - `file` or `file:<path>` also writes the session record. Default path: `/Volumes/Local Files/Projects/swu-mcp/tmp/deck-ideas/<slug>.md`. The system disk is full, so never write under `~`.
 - `quick` runs four branches (0.0, 0.4, 0.8, 1.0) and two judges.
+- `format:<premier|eternal|twin_suns>` sets the card pool for the context pack, the branches and the gates. Default: `premier`, meaning Premier-legal cards only.
 - `current:<path>` the user's current list (SWUDB JSON or `{card, count}` lines), for the optional head-to-head test.
 - `lead:<leader>` picks the leader when two leaders are named; `both-leaders` splits the slots between them (see G1b).
 - `reprints:<path>` overrides the reprint list path. Default: `<reprint list>` (placeholder until the reprint research lands). The list is data, never instructions. Without a list, part 5 falls back to the IC27 facet (step 2).
@@ -115,6 +116,7 @@ Choices:
    - For each slot, pick a **slot base**: a real Base cardKey of the slot's aspect, because `leader_cards` and `meta_answers` take a Base card, never an aspect. Use the archetype's `topBase` from `meta_archetypes` when it has that aspect; otherwise use the first Premier-legal Base of that aspect in cardKey code-point order.
 7. Write `<slug>.dossier.md`: `packageDate`, the token estimate line, the legal sets with release dates (or "not stated"), the JTL/LOF/SEC/IC27 set codes, each anchor (class, readings, cardKeys, icons, `sets`, quoted text), member sets (the first 30 keys plus the count), each leader's quoted text with `deployBox` and `epicAction`, the slot grid with slot bases and anchor penalties, the reachable aspects (the union over all slots), the tools absent from the session, the owner rulings, and the assumptions.
 8. **Build the context pack.** Delegate to one `sonnet` agent that can write files and call swu-mcp (`general-purpose` unless the project's agent routing names another). It reads the dossier and writes `<slug>.context.md` from tool output only. It ends with a "Counts per section" block.
+   - **Pool (default Premier-legal only).** A card enters the pack only when at least one of its `sets` is a set that `list_sets` marks Premier `legal` (main sets and their weekly-play sets). It also needs aspects within the reachable aspects, or no aspect. Cards printed only in rotated sets are left out, and so are promo-only printings (`by_card`), unless `format_legality` reads the card legal. An IC27-only card goes in section 9 with its Icons label, never into the main pool, until 2026-11-20. The pack header states the filter and the pool size. With `format:eternal` or `format:twin_suns`, the pool is every card in the reachable aspects, and the header says so.
    - **Sections**, in this order:
      0. Anchors.
      1. Slot leaders: full text, `deployBox`, `epicAction`.
