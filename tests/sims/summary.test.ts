@@ -56,15 +56,16 @@ describe("shape and the emitter gate", () => {
     expect(simsSummarySchema.safeParse({ ...withJob, jobs: [{ ...withJob.jobs[0], phase: "on box.local" }] }).success).toBe(false);
   });
 
-  it("emits the contract's example headline for a live h2h job", () => {
+  it("emits a plain headline for a live h2h job, with no kind word and no interval", () => {
     const st = {
       ...stats("h2h", "base vs anakin", { subject: "base", other: "anakin" }),
       result: { wins: 2335, n: 4560, share: 0.512, low: 0.479, high: 0.545 },
       paired: { pairs: 2280, subjectBoth: 600, otherBoth: 570, pValue: 0.31 },
     };
     const s = summ([view("sims-ladder-h2h-warrior-h2h-rung3v", { done: 4560, total: 12600, pct: 36.2, eta_s: 6300 }, st)]);
-    expect(s.jobs[0].headline).toBe("h2h base vs anakin 36% 4560/12600 ETA 1h45 base 51.2% [47.9,54.5] p .31");
+    expect(s.jobs[0].headline).toBe("Warrior h2h rung3v: 4,560 of 12,600 games, 36%, 1h45 left");
     expect(s.jobs[0].headline.length).toBeLessThanOrEqual(MAX_HEADLINE);
+    expect(s.jobs[0].headline.length).toBeLessThanOrEqual(MAX_TEXT_WIDTH);
     expect(s.jobs[0].result).toEqual({ subject: "base", share: 0.512, low: 0.479, high: 0.545, p: 0.31, n: 4560 });
   });
 });
@@ -98,19 +99,19 @@ describe("ordering and the cap", () => {
     const s = summ([finished("ancient", 99999)]);
     expect(s.jobs).toEqual([]);
     expect(s.totals).toEqual({ running: 0, stalled: 0, dead: 0, doneLastHour: 0 });
-    expect(renderSummaryText(s)).toEqual(["SWU sims 0 running, 0 stalled, 0 done/1h"]);
+    expect(renderSummaryText(s)).toEqual(["Sims: 0 running, 0 finished in the last hour"]);
     expect(summ([]).jobs).toEqual([]);
   });
 });
 
 describe("truncation", () => {
-  it("cuts a long headline to 72 characters and a long phase to 80, ending in dots, and keeps the result", () => {
+  it("cuts a long name at a word boundary or with dots, a long phase to 80, and keeps the counts", () => {
     const longSide = "x".repeat(120);
     const st = { ...stats("h2h", "p".repeat(200), { subject: "base", other: longSide }), result: { wins: 5, n: 10, share: 0.5, low: 0.24, high: 0.76 } };
     const s = summ([view("sims-ladder-h2h-" + "n".repeat(300), {}, st)]);
     const j = s.jobs[0];
     expect(j.headline.length).toBeLessThanOrEqual(MAX_HEADLINE);
-    expect(j.headline).toContain("base 50.0% [24.0,76.0]");
+    expect(j.headline).toContain("50 of 100 games");
     expect(j.phase).toHaveLength(MAX_PHASE);
     expect(j.phase.endsWith("...")).toBe(true);
     expect(j.id.length).toBeLessThanOrEqual(120);
@@ -119,13 +120,13 @@ describe("truncation", () => {
 });
 
 describe("text mode", () => {
-  it("starts with the totals line and flags stalled and dead jobs in capitals", () => {
+  it("starts with the totals line and words stalled and dead jobs plainly", () => {
     const lines = renderSummaryText(summ([stalled("sims-ladder-h2h-a"), dead("sims-ladder-field-b"), view("sims-ladder-cost-c"), finished("sims-ladder-tune-d", 90)]));
-    expect(lines[0]).toBe("SWU sims 1 running, 1 STALLED, 1 DEAD, 1 done/1h");
-    expect(lines[1]).toMatch(/^STALLED h2h a /);
-    expect(lines[2]).toMatch(/^DEAD field b /);
-    expect(lines[3]).toMatch(/^cost c 50% ETA 16s/);
-    expect(lines[4]).toMatch(/^tune d done/);
+    expect(lines[0]).toBe("Sims: 1 running, 1 stalled, 1 dead, 1 finished in 1h");
+    expect(lines[1]).toMatch(/^A: stalled 6m/);
+    expect(lines[2]).toMatch(/^B: stopped \(dead\)/);
+    expect(lines[3]).toBe("C: 50 of 100 games, 50%, 16s left");
+    expect(lines[4]).toBe("D: finished, 100 games");
   });
 
   it("never exceeds 5 lines of 60 characters, with a more-line when jobs overflow", () => {
@@ -143,7 +144,7 @@ describe("text mode", () => {
     const st = { ...stats("calibration", "x", null), result: { wins: 5, n: 10, share: 0.5, low: 0.24, high: 0.76 } };
     const lines = renderSummaryText(summ([finished("sims-calibration-" + "z".repeat(80), 30, { pass: false, failedGates: ["ladder", "external"] }, st)]));
     expect(lines[1].length).toBeLessThanOrEqual(MAX_TEXT_WIDTH);
-    expect(lines[1]).toContain("done FAIL");
+    expect(lines[1]).toContain("finished, 100 games, failed");
   });
 });
 
@@ -162,7 +163,7 @@ describe("kind, health and verdict", () => {
   it("reports the verdict of a finished calibration job with its failed gates", () => {
     const s = summ([finished("sims-calibration-rung3v-k-8", 60, { pass: false, failedGates: ["ladder", "external"] })]);
     expect(s.jobs[0]).toMatchObject({ kind: "calibration", state: "done", verdict: { pass: false, failedGates: ["ladder", "external"] }, etaS: null, phase: "done" });
-    expect(s.jobs[0].headline).toContain("FAIL ladder,external");
+    expect(s.jobs[0].headline).toBe("Rung3v k 8: finished, 100 games, failed (ladder, external)");
   });
 
   it("reports a passing ladder job with no failed gates, and no verdict for other finished kinds or running jobs", () => {
@@ -172,7 +173,7 @@ describe("kind, health and verdict", () => {
     expect(by["sims-ladder-h2h-x"]).toBeNull();
     expect(by["sims-calibration-live"]).toBeNull();
     expect(by["sims-ladder-field-y"]).toBeNull();
-    expect(s.jobs.find((j) => j.id === "sims-ladder-ladder-rung3v-vs-rung0-final")?.headline).toContain("PASS");
+    expect(s.jobs.find((j) => j.id === "sims-ladder-ladder-rung3v-vs-rung0-final")?.headline).toBe("Rung3v vs rung0 final: finished, 100 games, passed");
   });
 
   it("falls back to the last finished phase for the result of a done job", () => {
@@ -182,7 +183,7 @@ describe("kind, health and verdict", () => {
     t.endPhase();
     const s = summ([finished("sims-ladder-ladder-x", 60, { pass: true }, t.snapshot())]);
     expect(s.jobs[0].result).toMatchObject({ subject: "rung1", n: 3 });
-    expect(s.jobs[0].headline).toContain("rung1 66.7%");
+    expect(s.jobs[0].headline).toBe("X: finished, 100 games, passed, rung1 67%");
   });
 
   it("carries whole-run errors, draws and timeouts, and zeros when there are no stats", () => {
@@ -191,14 +192,14 @@ describe("kind, health and verdict", () => {
     expect(s.jobs.find((j) => j.id === "with-stats")?.health).toEqual({ errors: 1, draws: 1, timeouts: 1 });
     const bare = s.jobs.find((j) => j.id === "no-stats");
     expect(bare).toMatchObject({ health: { errors: 0, draws: 0, timeouts: 0 }, result: null, verdict: null, kind: "other", phase: "starting" });
-    expect(bare?.headline).toBe("other no-stats 50% 50/100 ETA 16s");
+    expect(bare?.headline).toBe("No stats: 50 of 100 games, 50%, 16s left");
   });
 
   it("flags stalled and dead in the state, the headline and the totals", () => {
     const s = summ([stalled("sims-ladder-h2h-s", 600), dead("sims-ladder-h2h-d", 45)]);
     expect(s.jobs.map((j) => [j.state, j.updatedAgeS])).toEqual([["stalled", 600], ["dead", 45]]);
-    expect(s.jobs[0].headline).toBe("STALLED h2h s 50% 50/100 quiet 10m");
-    expect(s.jobs[1].headline).toBe("DEAD h2h d 50% 50/100 quiet 45s");
+    expect(s.jobs[0].headline).toBe("S: stalled 10m, 50 of 100 games");
+    expect(s.jobs[1].headline).toBe("D: stopped (dead), 50 of 100 games");
     expect(s.totals).toMatchObject({ stalled: 1, dead: 1, running: 0 });
   });
 });
@@ -246,7 +247,97 @@ describe("the command", () => {
     const lines = txt.stdout.trimEnd().split("\n");
     expect(lines.length).toBeLessThanOrEqual(MAX_TEXT_LINES);
     expect(lines.every((l) => l.length <= MAX_TEXT_WIDTH)).toBe(true);
-    expect(lines[0]).toMatch(/^SWU sims \d+ running, \d+ (stalled|STALLED)/);
+    expect(lines[0]).toMatch(/^Sims: \d+ running, .*\d+ finished in (the last hour|1h)$/);
     expect(run("--json --text").status).toBe(2);
   }, 55_000);
+});
+
+describe("plain wording for the widget (#200)", () => {
+  const gauntletStats = () =>
+    stats("matchup", "screen", null, [
+      ...Array.from({ length: 34 }, (_, i) => g(1000 + i, { endCondition: "error", error: "boom", winnerSeat: null, won: null })),
+      ...Array.from({ length: 38 }, (_, i) => g(2000 + i, { winnerSeat: null, won: null })),
+    ]);
+  const gauntlet = (): JobView[] => [
+    view("gauntlet-jerjerrod-dume-2026-11-01-screen", { label: "Gauntlet screen", phase: "screen", done: 23040, total: 62600, pct: 36.8, eta_s: 840 }, gauntletStats()),
+    finished("gauntlet-smoke-screen", 659, { label: "Gauntlet smoke test", done: 120, total: 120 }, stats("matchup", "screen", null)),
+    finished("tournament-panel", 727, { done: 0, total: null, pct: null, eta_s: null }),
+  ];
+
+  it("writes the plain lines for the gauntlet jobs; the 14m ETA drops because the full line would be 65 characters", () => {
+    expect(renderSummaryText(summ(gauntlet()))).toEqual([
+      "Sims: 1 running, 2 finished in the last hour",
+      "Gauntlet screen: 23,040 of 62,600 games, 37%, 34 errors",
+      "Gauntlet smoke test: finished, 120 games",
+      "Tournament panel: finished",
+    ]);
+  });
+
+  it("shows the ETA when the whole line fits in 60 characters", () => {
+    const s = summ([view("j", { label: "Screen", done: 23040, total: 62600, pct: 36.8, eta_s: 840 }, gauntletStats())]);
+    expect(s.jobs[0].headline).toBe("Screen: 23,040 of 62,600 games, 37%, 14m left, 34 errors");
+  });
+
+  it("shows no internal kind word and never ends a line in dots when the words fit", () => {
+    const s = summ(gauntlet());
+    for (const l of renderSummaryText(s)) expect(l).not.toMatch(/\b(matchup|other)\b|\.\.\./);
+    expect(s.jobs.map((j) => j.headline)).toEqual(["Gauntlet screen: 23,040 of 62,600 games, 37%, 34 errors", "Gauntlet smoke test: finished, 120 games", "Tournament panel: finished"]);
+  });
+
+  it("names a job without a label from its id: kind prefix, dates and dashes removed, sentence case", () => {
+    const s = summ([view("gauntlet-jerjerrod-dume-2026-11-01-screen", { done: 5, total: 10, pct: 50, eta_s: 30 }), finished("matchup-2026-11-01-abc", 60, { done: 3, total: 3 }, stats("matchup", "p", null))]);
+    expect(s.jobs[0].headline.startsWith("Gauntlet jerjerrod dume screen: 5 of 10 games")).toBe(true);
+    expect(s.jobs[1].headline).toBe("Abc: finished, 3 games");
+  });
+
+  it("keeps the warning wording for stalled and dead jobs, plainer, and lists them first", () => {
+    const lines = renderSummaryText(summ([view("run-a", { label: "Run A" }), stalled("stall-b", 360), dead("dead-c")]));
+    expect(lines[0]).toBe("Sims: 1 running, 1 stalled, 1 dead, 0 finished in 1h");
+    expect(renderSummaryText(summ([stalled("only-stall")]))[0]).toBe("Sims: 0 running, 1 stalled, 0 finished in the last hour");
+    expect(lines[1]).toMatch(/^Stall b: stalled 6m, 50 of 100 games/);
+    expect(lines[2]).toMatch(/^Dead c: stopped \(dead\)/);
+    expect(lines[3]).toMatch(/^Run A: 50 of 100 games/);
+  });
+
+  it("drops the ETA, then the percent, before the counts, and never cuts a number", () => {
+    const long = (label: string) => summ([view("j", { label, done: 23040, total: 62600, pct: 36.8, eta_s: 840 }, gauntletStats())]).jobs[0].headline;
+    expect(long("Gauntlet screen pass")).toBe("Gauntlet screen pass: 23,040 of 62,600 games, 37%, 34 errors");
+    expect(long("Gauntlet screen pass two")).toBe("Gauntlet screen pass two: 23,040 of 62,600 games, 34 errors");
+    const tight = long("Gauntlet screen with a much longer name than fits");
+    expect(tight.length).toBeLessThanOrEqual(MAX_TEXT_WIDTH);
+    expect(tight).toContain("23,040 of 62,600 games");
+    expect(tight).toContain("34 errors");
+    expect(tight).toMatch(/^Gauntlet screen with a\.\.\.: /);
+  });
+
+  it("groups thousands with a fixed formatter and shows errors only when above zero", () => {
+    const s = summ([view("a", { label: "A", done: 1234567, total: 2000000, pct: 61.7, eta_s: 5400 })]);
+    expect(s.jobs[0].headline).toBe("A: 1,234,567 of 2,000,000 games, 62%, 1h30 left");
+  });
+
+  it("reads a finished job with a verdict and a single game in plain words", () => {
+    const s = summ([finished("sims-calibration-rung3v", 60, { pass: true, done: 1, total: 1 }), finished("sims-ladder-ladder-x", 70, { pass: false, failedGates: ["ladder", "external"], done: 8, total: 8 })]);
+    expect(s.jobs[0].headline).toBe("Rung3v: finished, 1 game, passed");
+    expect(s.jobs[1].headline).toBe("X: finished, 8 games, failed (ladder, external)");
+  });
+
+  it("keeps every text line within 60 characters even for an unbroken long name", () => {
+    const lines = renderSummaryText(summ([view("x".repeat(200), { done: 23040, total: 62600, pct: 36.8, eta_s: 840 })]));
+    expect(lines[1].length).toBeLessThanOrEqual(MAX_TEXT_WIDTH);
+    expect(lines[1]).toContain("23,040 of 62,600 games");
+  });
+
+  it("totals line falls back to a short form when stalled and dead make it too long", () => {
+    const jobs = [...Array.from({ length: 12 }, (_, i) => view(`r${i}`)), stalled("s"), dead("d")];
+    const first = renderSummaryText(summ(jobs))[0];
+    expect(first.length).toBeLessThanOrEqual(MAX_TEXT_WIDTH);
+    expect(first).toMatch(/^Sims: 12 running, 1 stalled, 1 dead, 0 finished/);
+  });
+
+  it("accepts an optional heartbeat label and still parses a heartbeat without one", () => {
+    expect(heartbeatSchema.safeParse({ ts: iso(1), job: "a", done: 0, total: null, pct: null, eta_s: null, label: "Nice name" }).success).toBe(true);
+    const bad = heartbeatSchema.parse({ ts: iso(1), job: "a", done: 0, total: null, pct: null, eta_s: null, label: 5 });
+    expect(bad.label).toBeUndefined();
+    expect(heartbeatSchema.safeParse({ ts: iso(1), job: "a", done: 0, total: null, pct: null, eta_s: null }).success).toBe(true);
+  });
 });

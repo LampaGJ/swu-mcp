@@ -102,8 +102,6 @@ function fmtShort(s: number): string {
   return `${Math.floor(t / 3600)}h${String(Math.floor((t % 3600) / 60)).padStart(2, "0")}`;
 }
 
-const fmtP = (p: number): string => (p < 0.01 ? "<.01" : p >= 0.995 ? "1.00" : p.toFixed(2).slice(1));
-const fmtPct1 = (x: number): string => `${(x * 100).toFixed(1)}%`;
 
 const NAME_KINDS: [RegExp, SummaryKind][] = [
   [/^sims-calibration-/, "calibration"],
@@ -127,9 +125,9 @@ function verdictOf(v: JobView, kind: SummaryKind): SummaryJob["verdict"] {
   return r.success ? { pass: r.data.pass, failedGates: (r.data.failedGates ?? []).map((g) => truncate(scrub(g), 40)).slice(0, 10) } : null;
 }
 
-function resultOf(v: JobView): { result: SummaryJob["result"]; sides: string | null } {
+function resultOf(v: JobView): SummaryJob["result"] {
   const stats = v.stats;
-  if (stats === null) return { result: null, sides: null };
+  if (stats === null) return null;
   let share = stats.result;
   let paired = stats.paired;
   let sides = stats.sides;
@@ -137,15 +135,15 @@ function resultOf(v: JobView): { result: SummaryJob["result"]; sides: string | n
     const last = [...stats.completed].reverse().find((c) => c.result !== null);
     if (last !== undefined) ({ result: share, paired, sides } = last);
   }
-  const sidesText = sides === null ? null : sides.other === null ? sides.subject : `${sides.subject} vs ${sides.other}`;
-  if (share === null || share.share === null || share.low === null || share.high === null) return { result: null, sides: sidesText };
-  return {
-    result: { subject: truncate(scrub(sides?.subject ?? "subject"), 40), share: share.share, low: share.low, high: share.high, p: paired !== null && paired.pairs > 0 ? paired.pValue : null, n: share.n },
-    sides: sidesText,
-  };
+  if (share === null || share.share === null || share.low === null || share.high === null) return null;
+  return { subject: truncate(scrub(sides?.subject ?? "subject"), 40), share: share.share, low: share.low, high: share.high, p: paired !== null && paired.pairs > 0 ? paired.pValue : null, n: share.n };
 }
 
-const FLAG: Partial<Record<JobState, string>> = { stalled: "STALLED", dead: "DEAD" };
+/** Groups of three digits with commas; a fixed formatter because toLocaleString depends on the machine's locale. */
+const fmtInt = (n: number): string => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const plural = (n: number, one: string, many: string): string => `${fmtInt(n)} ${n === 1 ? one : many}`;
+
+const DATE = /\d{4}-\d{2}-\d{2}/g;
 
 /** "sims-ladder-h2h-warrior-h2h-rung3v" with kind h2h is "warrior-h2h-rung3v": the name without what the line already says. */
 function shortId(id: string, kind: SummaryKind): string {
@@ -153,26 +151,63 @@ function shortId(id: string, kind: SummaryKind): string {
   return s.startsWith(`${kind}-`) ? s.slice(kind.length + 1) : s;
 }
 
-/** One line for a widget. `sides` (full headline only) names the contenders; without it the shortened job name does. */
-function composeLine(j: Omit<SummaryJob, "headline">, max: number, full: boolean, sides: string | null): string {
-  const tail: string[] = [];
-  const total = j.total === null ? "" : `/${j.total}`;
+/** The heartbeat's label when it has one, else the job id without kind prefix, dates and dashes, in sentence case. */
+function nameOf(id: string, kind: SummaryKind, label: string | undefined): string {
+  const words = (x: string): string => x.split(/[-\s]+/).filter((w) => w !== "").join(" ");
+  const named = label === undefined ? "" : words(scrub(label));
+  const plain = named !== "" ? named : words(shortId(scrub(id), kind).replace(DATE, " "));
+  const name = plain !== "" ? plain : "Job";
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
+
+/** A piece of a line after the colon. Rank 0 is never dropped; a higher rank goes first, replaced by `short` when it has one. */
+interface Part {
+  text: string;
+  rank: number;
+  short?: string;
+}
+
+/**
+ * One plain line for a widget: "<name>: <done> of <total> games, <pct>, <eta> left, <n> errors". When it is too long the
+ * parts go whole, result then failed gates then ETA then percent, then the name loses words from its end; a number is
+ * never cut.
+ */
+function composeLine(j: Omit<SummaryJob, "headline">, name: string, max: number): string {
+  const games = j.total === null ? (j.done > 0 ? `${plural(j.done, "game", "games")} so far` : null) : `${fmtInt(j.done)} of ${fmtInt(j.total)} games`;
+  const parts: Part[] = [];
   if (j.state === "done") {
-    if (full) tail.push(`done ${j.done}${total}`);
-    else tail.push("done");
-    if (j.verdict !== null) tail.push(j.verdict.pass ? "PASS" : full && j.verdict.failedGates.length > 0 ? `FAIL ${j.verdict.failedGates.join(",")}` : "FAIL");
+    parts.push({ text: j.done > 0 ? `finished, ${plural(j.done, "game", "games")}` : "finished", rank: 0 });
+    if (j.verdict !== null) {
+      const gates = j.verdict.failedGates.join(", ");
+      parts.push(j.verdict.pass ? { text: "passed", rank: 0 } : gates === "" ? { text: "failed", rank: 0 } : { text: `failed (${gates})`, rank: 6, short: "failed" });
+    }
+  } else if (j.state === "running") {
+    if (games !== null) parts.push({ text: games, rank: 0 });
+    if (j.pct !== null) parts.push({ text: `${Math.round(j.pct)}%`, rank: 4 });
+    if (j.etaS !== null) parts.push({ text: `${fmtShort(j.etaS)} left`, rank: 5 });
   } else {
-    if (j.pct !== null) tail.push(`${Math.round(j.pct)}%`);
-    if (full) tail.push(`${j.done}${total}`);
-    if (j.state === "running" && j.etaS !== null) tail.push(`ETA ${fmtShort(j.etaS)}`);
-    if (j.state !== "running") tail.push(`quiet ${fmtShort(j.updatedAgeS)}`);
+    parts.push({ text: j.state === "stalled" ? `stalled ${fmtShort(j.updatedAgeS)}` : "stopped (dead)", rank: 0 });
+    if (games !== null) parts.push({ text: games, rank: 3 });
   }
-  if (j.result !== null) tail.push(`${j.result.subject} ${full ? fmtPct1(j.result.share) : `${(j.result.share * 100).toFixed(0)}%`}${full ? ` [${(j.result.low * 100).toFixed(1)},${(j.result.high * 100).toFixed(1)}]` : ""}${j.result.p === null ? "" : ` p ${fmtP(j.result.p)}`}`);
-  const head = [FLAG[j.state], j.kind].filter((x): x is string => x !== undefined).join(" ");
-  const fixed = [head, ...tail].join(" ");
-  const room = max - fixed.length - 1;
-  const lead = truncate(sides !== null && full ? sides : shortId(j.id, j.kind), room);
-  return truncate(room >= 6 && lead !== "" ? [head, lead, ...tail].join(" ") : fixed, max);
+  if (j.health.errors > 0) parts.push({ text: plural(j.health.errors, "error", "errors"), rank: 0 });
+  if (j.result !== null) parts.push({ text: `${j.result.subject} ${Math.round(j.result.share * 100)}%`, rank: 7 });
+
+  const rest = (): string => parts.map((p) => p.text).join(", ");
+  while (name.length + 2 + rest().length > max) {
+    const top = parts.reduce((m, p) => Math.max(m, p.rank), 0);
+    const p = parts.find((x) => x.rank === top);
+    if (p === undefined || top === 0) break;
+    if (p.short !== undefined) Object.assign(p, { text: p.short, rank: 0 });
+    else parts.splice(parts.indexOf(p), 1);
+  }
+  const budget = max - 2 - rest().length;
+  const words = name.split(" ");
+  let shown = name;
+  if (name.length > budget) {
+    const cut = words.map((_, k) => `${words.slice(0, words.length - k - 1).join(" ")}...`).filter((c) => c.length > 3).find((c) => c.length <= budget);
+    shown = cut ?? `${name.slice(0, Math.max(1, budget - 3))}...`;
+  }
+  return truncate(`${shown}: ${rest()}`, max);
 }
 
 const ORDER: Record<JobState, number> = { stalled: 0, dead: 1, running: 2, done: 3 };
@@ -190,7 +225,7 @@ export function summarize(o: { jobs: readonly JobView[]; repo: string; nowMs: nu
     .slice(0, MAX_JOBS)
     .map((v): SummaryJob => {
       const kind = kindOf(v.job, v.stats);
-      const { result, sides } = resultOf(v);
+      const result = resultOf(v);
       const base: Omit<SummaryJob, "headline"> = {
         id: truncate(scrub(v.job), 120),
         worktree: truncate(v.source.main === true ? "main" : scrub(path.basename(v.source.root)), 80),
@@ -207,18 +242,23 @@ export function summarize(o: { jobs: readonly JobView[]; repo: string; nowMs: nu
         health: v.stats === null ? { errors: 0, draws: 0, timeouts: 0 } : { errors: v.stats.runTotals.errors, draws: v.stats.runTotals.draws, timeouts: v.stats.runTotals.timeouts },
         verdict: verdictOf(v, kind),
       };
-      return { ...base, headline: composeLine(base, MAX_HEADLINE, true, sides === null ? null : scrub(sides)) };
+      return { ...base, headline: composeLine(base, nameOf(v.job, kind, v.hb.label), MAX_TEXT_WIDTH) };
     });
   return simsSummarySchema.parse({ schemaVersion: SUMMARY_SCHEMA_VERSION, generatedAt: new Date(o.nowMs).toISOString(), repo: scrub(path.basename(o.repo)), totals, jobs });
 }
 
-/** At most 5 lines of 60 characters: totals, then one line per job, most urgent first (3 jobs and "+n more" when there are over 4). */
+/** "Sims: 1 running, 2 finished in the last hour"; stalled and dead appear only when above zero, and "in 1h" replaces "in the last hour" when the long form passes 60 characters. */
+function totalsLine(t: SimsSummary["totals"]): string {
+  const bits = [`${t.running} running`, ...(t.stalled > 0 ? [`${t.stalled} stalled`] : []), ...(t.dead > 0 ? [`${t.dead} dead`] : [])];
+  const long = `Sims: ${[...bits, `${t.doneLastHour} finished in the last hour`].join(", ")}`;
+  return long.length <= MAX_TEXT_WIDTH ? long : `Sims: ${[...bits, `${t.doneLastHour} finished in 1h`].join(", ")}`;
+}
+
+/** At most 5 lines of 60 characters: totals, then each job's headline, most urgent first (3 jobs and "+n more" when there are over 4). */
 export function renderSummaryText(s: SimsSummary): string[] {
-  const { running, stalled, dead, doneLastHour } = s.totals;
-  const head = `SWU sims ${running} running, ${stalled} ${stalled > 0 ? "STALLED" : "stalled"}${dead > 0 ? `, ${dead} DEAD` : ""}, ${doneLastHour} done/1h`;
   const room = MAX_TEXT_LINES - 1;
   const shown = s.jobs.length > room ? s.jobs.slice(0, room - 1) : s.jobs;
-  const lines = [head, ...shown.map((j) => composeLine(j, MAX_TEXT_WIDTH, false, null))];
+  const lines = [totalsLine(s.totals), ...shown.map((j) => j.headline)];
   if (s.jobs.length > shown.length) lines.push(`+${s.jobs.length - shown.length} more jobs`);
   return lines.map((l) => truncate(l, MAX_TEXT_WIDTH));
 }

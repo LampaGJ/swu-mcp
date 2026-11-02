@@ -31,6 +31,8 @@ export const heartbeatSchema = z.looseObject({
   eta_s: z.number().nullable(),
   elapsed_s: z.number().optional(),
   phase: z.string().optional(),
+  /** A short human name for widgets; absent or not a string means the job id names the job. */
+  label: z.string().optional().catch(undefined),
   pid: z.int().positive().optional(),
   moved_ts: z.iso.datetime({ offset: true }).optional(),
   /** Parsed on its own by liveStatsSchema, so one bad payload does not hide the job. */
