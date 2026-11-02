@@ -319,6 +319,16 @@ If fewer than the larger of `count` and 6 ideas pass, stop with the G3 script.
 3. Each judge returns, per idea: surprise, likely to win, fits and covers, as whole numbers 0 to 10; trap flags (cannot work, off the anchors, duplicate of `Ixx`, one card the plan cannot lose, a claimed cover the cards do not support, a **trap card** that works against the plan, with its clause quoted); and one plain risk line. Each judge then spends `count` dots, at most 2 on one idea. Judges may read card text with tools, but a judge's suggested swap or added card is discarded unread. A judge's closing items and gate line still apply; the scores go in its agent-caller block. The facilitator writes each return to `<slug>/judges/J<n>.md`.
 4. A judge that adds ideas or cards gets one re-prompt. If it does so again, drop it and note the gap. Fewer than 2 judges left: stop with G3.
 
+### 6b. Sim evidence: build every passing idea and run the deck gauntlet (local only, #198)
+
+Only in a local checkout with the pinned engine built (`pnpm sims:pin` exits 0). Otherwise write "the deck gauntlet needs the local engine (#198); no sim evidence in this run." and go on. It runs after the gates and the judges, so the judges' trap cards go into `exclude`, and it runs in the background while steps 7 to 9 proceed. Every passing idea is built, not only the shortlist, because the screen is cheap (about 22 minutes for 50 ideas on rung 1).
+
+1. **Build all.** `node --import tsx scripts/sims/gauntlet-ideas.ts --pool <slug>/pool --out <slug>/gauntlet/decks --anchors <anchor cardKeys> --copies 2 --exclude <ideaId>=<trap cardKey> ... --fallback-leaders <leaders with no tournament list>`. It calls `build_deck` per idea (leader, base, key cards and anchors at 2 copies, the trap cards excluded) and writes one SWUDB file per idea plus `manifest.json`. Report every `unresolved` name and every failure verbatim; never fix a list by hand.
+2. **Panel.** Use the newest `data/pinned/sim-panels/tournament-winners-*.json` whose `references` name every idea leader; else run `node --import tsx scripts/sims/tournament-panel.ts --leaders <leader cardKeys>`. A leader with no tournament list needs the `fallback-<leader>.json` from step 1.
+3. **Screen.** Check `node node_modules/tsx/dist/cli.mjs scripts/sims/summary.ts --text` first and wait until no job is RUNNING. Then run `pnpm sims:gauntlet --ideas <slug>/gauntlet/decks --panel <panel> --fallback <leader>=<file> --judges <slug>/judges/<merged judge file> --anon-map <slug>/anon-map.tsv --run <slug> --stage screen` in the background, and check its `reports/.progress/gauntlet-<slug>-screen.json` within 5 minutes; stop it if the file has not moved.
+4. **Confirm.** The same command with `--stage confirm --from-screen data/pinned/sim-gauntlet/<slug>/screen.json --top 8`. It runs the fair computer player (`rung3:k=8,det=4,belief=known`, about 0.5 games a second), so give it smaller sizes (`--pairs 20 --field-games 10`) and say so.
+5. **Read it honestly.** Quote the record's own label and calibration line. If the control check says the results are too small to rank, say that first and treat the ranking as noise. Sim figures sit beside the judges' scores and never change the step 8 ranking; they are bot play, the last tier of play data.
+
 ### 7. Cluster
 
 1. Pre-group deterministically: ideas with the same leader cardKey and the same base aspect whose key cards overlap by 40% or more (shared keys over the union of keys) start in one group. Group by base aspect, never by base cardKey, because a reprinted base carries two cardKeys.
@@ -349,6 +359,7 @@ For each survivor, assemble only from convergence output:
 - **Returning cards:** each with its status label and source; a not-yet-legal card says when or where it was announced.
 - **Rotation:** one line, "rotation: stays", "rotation: rotates (unconfirmed): <cards>" or "rotation: saved by Icons: <cards>" (both card lists when both apply), from gate 9. Add "gains after rotation: <counter>" when part 5 names a counter of this plan in the popular decks that rotates (unconfirmed).
 - **Core link:** cite the `L` link from brief part 1 that the "how it wins" line rests on, with its label and its quoted clauses or rules row. Make one `explain_synergy` call only when part 1 holds no label for that link. A `noLink` result is not a refutation; only clauses or a rules row that refute the link make it a risk line, and the rank stays either way.
+- **Sim evidence (step 6b):** the gauntlet's figure against the tournament decks and its head-to-head line, in wins per 100 games with the range, the stage it came from, and the control verdict. "No sim evidence" when 6b did not run.
 - **Variations:** the other members of its cluster, named. These are existing ideas, never new ones.
 - **Finishing step**, ready to run:
   1. `build_deck` (in sessions that reconnected `/mcp` after the server gained it) with `leader`, `base`, `mustInclude` (the key cardKeys that are legal now, minus the cards to replace) and `exclude` (the trap cards), plus the user's `sideboard` if one was given. A not-yet-legal returning card is listed as "add once legal from <date>", never in `mustInclude`. Read `build_deck`'s `why` lines for base-location facts ("base enables it: <Location>") and correct any "location unverified" line with them. When the user asks, save each built list as a Karabast JSON file at `<slug>.<Ixx>.karabast.json` (the `build_deck` document as returned), then `Glob` and `Read` it to confirm it exists. Without `build_deck`, write "build_deck is not available in this session; run `/mcp` to reconnect." and give `playable_cards` with the leader, base and key cardKeys as the fill step instead.
@@ -379,6 +390,7 @@ For each survivor, assemble only from convergence output:
    - how it wins, in one plain line;
    - how it holds up against our weaknesses and the popular decks;
    - why it made the cut;
+   - judges' scores and sim evidence side by side (step 6b), with the sim label;
    - risks;
    - cards to replace when building, with the clause quoted;
    - variations;
