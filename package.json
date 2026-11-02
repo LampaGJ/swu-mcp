@@ -17,6 +17,7 @@
     "format": "prettier --check .",
     "mcp": "tsx src/server.ts",
     "build:data": "tsx scripts/build-data.ts",
+    "export:warrior-decks": "tsx scripts/export-warrior-decks.ts",
     "package:zip": "tsx scripts/package-zip.ts",
     "export:package": "tsx scripts/export-swu-data-package.ts",
     "card-features": "tsx scripts/card-features.ts",
