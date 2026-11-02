@@ -2,7 +2,7 @@
 type: spec
 status: active
 title: SWU strategist agent that fully uses swu-mcp
-goal: A Fable-model agent template, built with the llm-agent-maker (/birth), that answers Star Wars Unlimited deckbuilding, rules, synergy, collecting and trading questions by driving every swu-mcp tool, resource and prompt correctly, and never claims more than the data supports.
+goal: An agent template (opus by default; Fable only when the owner asks), built with the llm-agent-maker (/birth), that answers Star Wars Unlimited deckbuilding, rules, synergy, collecting and trading questions by driving every swu-mcp tool, resource and prompt correctly, and never claims more than the data supports.
 items:
   - id: capability-map
     title: Runtime map of tools, resources and prompts
@@ -51,7 +51,7 @@ constraints:
   - Every pairing, trio and substitute is presented as a candidate until its clause evidence has been checked.
   - Every substantive answer names the data version (data_version tool) it rests on.
   - The agent reads its tool guidance at runtime (swu://usage-guide, tools/list) instead of baking tool names into its prompt, so it does not drift as the server grows.
-  - Model is Fable, by the owner's request for this agent.
+  - Model is opus by default; Fable is used only when the owner asks for it (owner ruling, 2026-11-01, replacing the earlier Fable requirement).
 tracker: github
 related: ["#5", "#16", "#18", "#19", "#20", "#25"]
 review_by: 2027-01-17
