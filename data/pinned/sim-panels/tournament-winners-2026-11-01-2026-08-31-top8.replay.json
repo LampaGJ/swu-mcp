@@ -1,0 +1,14 @@
+{
+ "inputHash": {
+  "captureManifest": "741f77e20816c14a38c6c08423ab947648dddeb0cc5d39b270c8cf81b2d041f1",
+  "rawPages": "512b44f1d48cb8353dc4f43a3f7fb032e96603f0fed473a9aa9fba97682ba2e6",
+  "features.json": "37a77f951b0f72e0f3c18467720a55dd2ac6c27e26ead6ecd0b098e6a01f239a",
+  "rawManifest": "53160b2d9309704286ce6186af1c606a6f111978aaf5a7c33921bc29f34c913f",
+  "engineSetCodeMap": "c0598711c897bbb8ca8a6549bfdcf9a256ba853aadb6fed84277e2ff5cc58472",
+  "options": "1afc7b8968564f59c44ff18c04d1114720bc0a91be8eefb4bfeafb34a42f608a"
+ },
+ "codeCommit": "ebac08bd92805118849894f165a994bb7db86b31-dirty",
+ "outputHash": {
+  "tournament-winners-2026-11-01-2026-08-31-top8.json": "617b8bfe6a66fe0ee760473d8c1757a780143bf007028a0ac0faea9e03999827"
+ }
+}

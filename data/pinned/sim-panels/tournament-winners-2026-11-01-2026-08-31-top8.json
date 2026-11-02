@@ -1,0 +1,1261 @@
+{
+ "kind": "sim-tournament-panel",
+ "version": "tournament-panel-v1",
+ "source": "swumetastats.com",
+ "population": "tournament decklists with placement and whole-event match record (melee.gg Premier events via swumetastats.com)",
+ "tier": "tournament results joined to decklists and placements (the top tier of the owner's play-data order)",
+ "capture": "pinned swumetastats capture 2026-11-01",
+ "window": {
+  "from": "2026-08-31",
+  "to": "2026-10-08",
+  "label": "ASH (Suspension Update v4.0), the newest meta period with at least 200 captured lists; newer: Homeworlds (0 lists)"
+ },
+ "top": 8,
+ "listsInWindow": 5188,
+ "archetypesInWindow": 196,
+ "incompleteInWindow": 834,
+ "entries": [
+  {
+   "id": "p01",
+   "archetype": {
+    "key": "07010008|Vigilance",
+    "leader": "07010008",
+    "leaderTitle": "Director Krennic, Amidst My Achievement",
+    "baseAspects": [
+     "Vigilance"
+    ],
+    "lists": 523,
+    "share": 0.1008
+   },
+   "weight": 0.20461658841940533,
+   "event": "swumetastats:45806",
+   "eventSize": 56,
+   "date": "2026-09-19",
+   "placement": 1,
+   "record": "9-0-0",
+   "deck": {
+    "leader": "07010008",
+    "base": "06010019",
+    "cards": [
+     {
+      "cardKey": "04010032",
+      "count": 3
+     },
+     {
+      "cardKey": "04010033",
+      "count": 1
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "05010059",
+      "count": 3
+     },
+     {
+      "cardKey": "05010070",
+      "count": 2
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "06010078",
+      "count": 1
+     },
+     {
+      "cardKey": "06010087",
+      "count": 2
+     },
+     {
+      "cardKey": "06010088",
+      "count": 1
+     },
+     {
+      "cardKey": "06010111",
+      "count": 1
+     },
+     {
+      "cardKey": "07010039",
+      "count": 2
+     },
+     {
+      "cardKey": "07010044",
+      "count": 1
+     },
+     {
+      "cardKey": "07010097",
+      "count": 2
+     },
+     {
+      "cardKey": "07010101",
+      "count": 2
+     },
+     {
+      "cardKey": "07010133",
+      "count": 1
+     },
+     {
+      "cardKey": "07010149",
+      "count": 1
+     },
+     {
+      "cardKey": "07010159",
+      "count": 3
+     },
+     {
+      "cardKey": "08010048",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "08010090",
+      "count": 1
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "08010116",
+      "count": 3
+     },
+     {
+      "cardKey": "08010133",
+      "count": 2
+     },
+     {
+      "cardKey": "08010135",
+      "count": 1
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p02",
+   "archetype": {
+    "key": "08010009|Vigilance",
+    "leader": "08010009",
+    "leaderTitle": "Ahsoka Tano, Trust in the Force",
+    "baseAspects": [
+     "Vigilance"
+    ],
+    "lists": 442,
+    "share": 0.0852
+   },
+   "weight": 0.1729264475743349,
+   "event": "swumetastats:44068",
+   "eventSize": 72,
+   "date": "2026-09-05",
+   "placement": 1,
+   "record": "8-0-2",
+   "deck": {
+    "leader": "08010009",
+    "base": "08010020",
+    "cards": [
+     {
+      "cardKey": "04010250",
+      "count": 3
+     },
+     {
+      "cardKey": "05010093",
+      "count": 3
+     },
+     {
+      "cardKey": "05010096",
+      "count": 3
+     },
+     {
+      "cardKey": "05010100",
+      "count": 1
+     },
+     {
+      "cardKey": "06010046",
+      "count": 3
+     },
+     {
+      "cardKey": "06010094",
+      "count": 3
+     },
+     {
+      "cardKey": "06010099",
+      "count": 3
+     },
+     {
+      "cardKey": "06010101",
+      "count": 3
+     },
+     {
+      "cardKey": "06010111",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 1
+     },
+     {
+      "cardKey": "07010035",
+      "count": 2
+     },
+     {
+      "cardKey": "07010037",
+      "count": 3
+     },
+     {
+      "cardKey": "07010038",
+      "count": 2
+     },
+     {
+      "cardKey": "07010039",
+      "count": 3
+     },
+     {
+      "cardKey": "07010041",
+      "count": 3
+     },
+     {
+      "cardKey": "07010127",
+      "count": 2
+     },
+     {
+      "cardKey": "08010056",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "08010248",
+      "count": 3
+     },
+     {
+      "cardKey": "08010255",
+      "count": 1
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p03",
+   "archetype": {
+    "key": "04010006|Cunning",
+    "leader": "04010006",
+    "leaderTitle": "Darth Vader, Victor Squadron Leader",
+    "baseAspects": [
+     "Cunning"
+    ],
+    "lists": 386,
+    "share": 0.0744
+   },
+   "weight": 0.15101721439749607,
+   "event": "swumetastats:43579",
+   "eventSize": 34,
+   "date": "2026-09-05",
+   "placement": 1,
+   "record": "8-0-1",
+   "deck": {
+    "leader": "04010006",
+    "base": "08010026",
+    "cards": [
+     {
+      "cardKey": "04010085",
+      "count": 3
+     },
+     {
+      "cardKey": "04010112",
+      "count": 1
+     },
+     {
+      "cardKey": "04010115",
+      "count": 3
+     },
+     {
+      "cardKey": "04010183",
+      "count": 1
+     },
+     {
+      "cardKey": "04010217",
+      "count": 3
+     },
+     {
+      "cardKey": "04010221",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 3
+     },
+     {
+      "cardKey": "06010082",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 1
+     },
+     {
+      "cardKey": "06010186",
+      "count": 3
+     },
+     {
+      "cardKey": "06010189",
+      "count": 3
+     },
+     {
+      "cardKey": "06010195",
+      "count": 1
+     },
+     {
+      "cardKey": "06010215",
+      "count": 3
+     },
+     {
+      "cardKey": "07010066",
+      "count": 1
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "07010211",
+      "count": 3
+     },
+     {
+      "cardKey": "07010217",
+      "count": 3
+     },
+     {
+      "cardKey": "08010191",
+      "count": 2
+     },
+     {
+      "cardKey": "08010194",
+      "count": 3
+     },
+     {
+      "cardKey": "08010199",
+      "count": 2
+     },
+     {
+      "cardKey": "08010224",
+      "count": 2
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p04",
+   "archetype": {
+    "key": "04010012|Command",
+    "leader": "04010012",
+    "leaderTitle": "Luke Skywalker, Hero of Yavin",
+    "baseAspects": [
+     "Command"
+    ],
+    "lists": 366,
+    "share": 0.0705
+   },
+   "weight": 0.1431924882629108,
+   "event": "swumetastats:43657",
+   "eventSize": 73,
+   "date": "2026-09-05",
+   "placement": 1,
+   "record": "8-0-2",
+   "deck": {
+    "leader": "04010012",
+    "base": "04010024",
+    "cards": [
+     {
+      "cardKey": "04010095",
+      "count": 2
+     },
+     {
+      "cardKey": "04010096",
+      "count": 3
+     },
+     {
+      "cardKey": "04010102",
+      "count": 3
+     },
+     {
+      "cardKey": "04010103",
+      "count": 3
+     },
+     {
+      "cardKey": "04010125",
+      "count": 3
+     },
+     {
+      "cardKey": "04010147",
+      "count": 3
+     },
+     {
+      "cardKey": "04010149",
+      "count": 2
+     },
+     {
+      "cardKey": "04010151",
+      "count": 3
+     },
+     {
+      "cardKey": "04010174",
+      "count": 3
+     },
+     {
+      "cardKey": "04010250",
+      "count": 2
+     },
+     {
+      "cardKey": "04010252",
+      "count": 2
+     },
+     {
+      "cardKey": "05010100",
+      "count": 2
+     },
+     {
+      "cardKey": "05010144",
+      "count": 3
+     },
+     {
+      "cardKey": "05010147",
+      "count": 3
+     },
+     {
+      "cardKey": "06010163",
+      "count": 2
+     },
+     {
+      "cardKey": "06010172",
+      "count": 3
+     },
+     {
+      "cardKey": "06010176",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 3
+     },
+     {
+      "cardKey": "07010168",
+      "count": 2
+     },
+     {
+      "cardKey": "08010110",
+      "count": 3
+     },
+     {
+      "cardKey": "08010117",
+      "count": 2
+     },
+     {
+      "cardKey": "08010153",
+      "count": 3
+     },
+     {
+      "cardKey": "08010255",
+      "count": 2
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p05",
+   "archetype": {
+    "key": "04010009|",
+    "leader": "04010009",
+    "leaderTitle": "Boba Fett, Any Methods Necessary",
+    "baseAspects": [],
+    "lists": 275,
+    "share": 0.053
+   },
+   "weight": 0.10758998435054773,
+   "event": "swumetastats:45800",
+   "eventSize": 43,
+   "date": "2026-09-19",
+   "placement": 1,
+   "record": "7-0-2",
+   "deck": {
+    "leader": "04010009",
+    "base": "04010031",
+    "cards": [
+     {
+      "cardKey": "04010133",
+      "count": 2
+     },
+     {
+      "cardKey": "04010136",
+      "count": 2
+     },
+     {
+      "cardKey": "04010137",
+      "count": 1
+     },
+     {
+      "cardKey": "04010140",
+      "count": 3
+     },
+     {
+      "cardKey": "04010143",
+      "count": 3
+     },
+     {
+      "cardKey": "04010162",
+      "count": 3
+     },
+     {
+      "cardKey": "04010165",
+      "count": 1
+     },
+     {
+      "cardKey": "04010175",
+      "count": 1
+     },
+     {
+      "cardKey": "04010237",
+      "count": 2
+     },
+     {
+      "cardKey": "04010240",
+      "count": 3
+     },
+     {
+      "cardKey": "05010130",
+      "count": 3
+     },
+     {
+      "cardKey": "06010133",
+      "count": 2
+     },
+     {
+      "cardKey": "06010163",
+      "count": 1
+     },
+     {
+      "cardKey": "06010171",
+      "count": 1
+     },
+     {
+      "cardKey": "06010172",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 3
+     },
+     {
+      "cardKey": "06010182",
+      "count": 1
+     },
+     {
+      "cardKey": "06010183",
+      "count": 3
+     },
+     {
+      "cardKey": "07010173",
+      "count": 3
+     },
+     {
+      "cardKey": "07010174",
+      "count": 3
+     },
+     {
+      "cardKey": "07010208",
+      "count": 1
+     },
+     {
+      "cardKey": "08010146",
+      "count": 3
+     },
+     {
+      "cardKey": "08010148",
+      "count": 2
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p06",
+   "archetype": {
+    "key": "05010009|Vigilance",
+    "leader": "05010009",
+    "leaderTitle": "Darth Maul, Sith Revealed",
+    "baseAspects": [
+     "Vigilance"
+    ],
+    "lists": 258,
+    "share": 0.0497
+   },
+   "weight": 0.10093896713615023,
+   "event": "swumetastats:45084",
+   "eventSize": 90,
+   "date": "2026-09-13",
+   "placement": 1,
+   "record": "8-1-1",
+   "deck": {
+    "leader": "05010009",
+    "base": "05010020",
+    "cards": [
+     {
+      "cardKey": "04010043",
+      "count": 2
+     },
+     {
+      "cardKey": "04010079",
+      "count": 1
+     },
+     {
+      "cardKey": "04010140",
+      "count": 3
+     },
+     {
+      "cardKey": "04010143",
+      "count": 1
+     },
+     {
+      "cardKey": "05010031",
+      "count": 3
+     },
+     {
+      "cardKey": "05010035",
+      "count": 3
+     },
+     {
+      "cardKey": "05010061",
+      "count": 3
+     },
+     {
+      "cardKey": "05010070",
+      "count": 3
+     },
+     {
+      "cardKey": "05010079",
+      "count": 2
+     },
+     {
+      "cardKey": "05010129",
+      "count": 3
+     },
+     {
+      "cardKey": "05010160",
+      "count": 3
+     },
+     {
+      "cardKey": "05010231",
+      "count": 1
+     },
+     {
+      "cardKey": "06010028",
+      "count": 3
+     },
+     {
+      "cardKey": "06010038",
+      "count": 2
+     },
+     {
+      "cardKey": "06010163",
+      "count": 1
+     },
+     {
+      "cardKey": "07010191",
+      "count": 2
+     },
+     {
+      "cardKey": "08010030",
+      "count": 3
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "08010148",
+      "count": 2
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p07",
+   "archetype": {
+    "key": "07010018|Vigilance",
+    "leader": "07010018",
+    "leaderTitle": "Lando Calrissian, Full Sabacc",
+    "baseAspects": [
+     "Vigilance"
+    ],
+    "lists": 170,
+    "share": 0.0328
+   },
+   "weight": 0.06651017214397496,
+   "event": "swumetastats:43587",
+   "eventSize": 22,
+   "date": "2026-09-05",
+   "placement": 1,
+   "record": "7-0-1",
+   "deck": {
+    "leader": "07010018",
+    "base": "04010019",
+    "cards": [
+     {
+      "cardKey": "04010078",
+      "count": 2
+     },
+     {
+      "cardKey": "05010045",
+      "count": 3
+     },
+     {
+      "cardKey": "05010057",
+      "count": 3
+     },
+     {
+      "cardKey": "05010070",
+      "count": 3
+     },
+     {
+      "cardKey": "06010046",
+      "count": 2
+     },
+     {
+      "cardKey": "06010048",
+      "count": 2
+     },
+     {
+      "cardKey": "06010051",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "07010088",
+      "count": 2
+     },
+     {
+      "cardKey": "07010089",
+      "count": 3
+     },
+     {
+      "cardKey": "07010118",
+      "count": 3
+     },
+     {
+      "cardKey": "07010133",
+      "count": 2
+     },
+     {
+      "cardKey": "08010043",
+      "count": 3
+     },
+     {
+      "cardKey": "08010044",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "08010053",
+      "count": 2
+     },
+     {
+      "cardKey": "08010056",
+      "count": 3
+     },
+     {
+      "cardKey": "08010065",
+      "count": 2
+     },
+     {
+      "cardKey": "08010078",
+      "count": 2
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "id": "p08",
+   "archetype": {
+    "key": "08010017|Aggression",
+    "leader": "08010017",
+    "leaderTitle": "Greef Karga, Gracious Magistrate",
+    "baseAspects": [
+     "Aggression"
+    ],
+    "lists": 136,
+    "share": 0.0262
+   },
+   "weight": 0.053208137715179966,
+   "event": "swumetastats:44672",
+   "eventSize": 40,
+   "date": "2026-09-12",
+   "placement": 1,
+   "record": "7-0-2",
+   "deck": {
+    "leader": "08010017",
+    "base": "06010024",
+    "cards": [
+     {
+      "cardKey": "04010147",
+      "count": 3
+     },
+     {
+      "cardKey": "04010203",
+      "count": 3
+     },
+     {
+      "cardKey": "04010221",
+      "count": 3
+     },
+     {
+      "cardKey": "05010192",
+      "count": 2
+     },
+     {
+      "cardKey": "06010148",
+      "count": 2
+     },
+     {
+      "cardKey": "06010176",
+      "count": 2
+     },
+     {
+      "cardKey": "06010179",
+      "count": 3
+     },
+     {
+      "cardKey": "06010204",
+      "count": 3
+     },
+     {
+      "cardKey": "06010215",
+      "count": 3
+     },
+     {
+      "cardKey": "06010233",
+      "count": 3
+     },
+     {
+      "cardKey": "07010078",
+      "count": 3
+     },
+     {
+      "cardKey": "07010223",
+      "count": 2
+     },
+     {
+      "cardKey": "08010040",
+      "count": 3
+     },
+     {
+      "cardKey": "08010159",
+      "count": 2
+     },
+     {
+      "cardKey": "08010161",
+      "count": 2
+     },
+     {
+      "cardKey": "08010171",
+      "count": 3
+     },
+     {
+      "cardKey": "08010208",
+      "count": 2
+     },
+     {
+      "cardKey": "08010222",
+      "count": 3
+     },
+     {
+      "cardKey": "08010253",
+      "count": 3
+     }
+    ]
+   },
+   "setAsideUnbuildable": 0
+  }
+ ],
+ "skippedArchetypes": [],
+ "references": [
+  {
+   "leader": "04010006",
+   "leaderTitle": "Darth Vader, Victor Squadron Leader",
+   "lists": 411,
+   "entry": {
+    "event": "swumetastats:43579",
+    "eventSize": 34,
+    "date": "2026-09-05",
+    "placement": 1,
+    "record": "8-0-1",
+    "deck": {
+     "leader": "04010006",
+     "base": "08010026",
+     "cards": [
+      {
+       "cardKey": "04010085",
+       "count": 3
+      },
+      {
+       "cardKey": "04010112",
+       "count": 1
+      },
+      {
+       "cardKey": "04010115",
+       "count": 3
+      },
+      {
+       "cardKey": "04010183",
+       "count": 1
+      },
+      {
+       "cardKey": "04010217",
+       "count": 3
+      },
+      {
+       "cardKey": "04010221",
+       "count": 3
+      },
+      {
+       "cardKey": "05010091",
+       "count": 3
+      },
+      {
+       "cardKey": "06010082",
+       "count": 3
+      },
+      {
+       "cardKey": "06010179",
+       "count": 1
+      },
+      {
+       "cardKey": "06010186",
+       "count": 3
+      },
+      {
+       "cardKey": "06010189",
+       "count": 3
+      },
+      {
+       "cardKey": "06010195",
+       "count": 1
+      },
+      {
+       "cardKey": "06010215",
+       "count": 3
+      },
+      {
+       "cardKey": "07010066",
+       "count": 1
+      },
+      {
+       "cardKey": "07010135",
+       "count": 3
+      },
+      {
+       "cardKey": "07010211",
+       "count": 3
+      },
+      {
+       "cardKey": "07010217",
+       "count": 3
+      },
+      {
+       "cardKey": "08010191",
+       "count": 2
+      },
+      {
+       "cardKey": "08010194",
+       "count": 3
+      },
+      {
+       "cardKey": "08010199",
+       "count": 2
+      },
+      {
+       "cardKey": "08010224",
+       "count": 2
+      }
+     ]
+    },
+    "baseAspects": [
+     "Cunning"
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "leader": "05010006",
+   "leaderTitle": "Supreme Leader Snoke, In the Seat of Power",
+   "lists": 5,
+   "entry": {
+    "event": "swumetastats:45805",
+    "eventSize": 20,
+    "date": "2026-09-19",
+    "placement": 11,
+    "record": "2-3-0",
+    "deck": {
+     "leader": "05010006",
+     "base": "08010019",
+     "cards": [
+      {
+       "cardKey": "04010032",
+       "count": 3
+      },
+      {
+       "cardKey": "04010041",
+       "count": 1
+      },
+      {
+       "cardKey": "04010043",
+       "count": 3
+      },
+      {
+       "cardKey": "05010091",
+       "count": 3
+      },
+      {
+       "cardKey": "06010069",
+       "count": 2
+      },
+      {
+       "cardKey": "07010037",
+       "count": 3
+      },
+      {
+       "cardKey": "07010039",
+       "count": 3
+      },
+      {
+       "cardKey": "07010041",
+       "count": 2
+      },
+      {
+       "cardKey": "07010101",
+       "count": 3
+      },
+      {
+       "cardKey": "07010129",
+       "count": 3
+      },
+      {
+       "cardKey": "07010133",
+       "count": 3
+      },
+      {
+       "cardKey": "08010047",
+       "count": 3
+      },
+      {
+       "cardKey": "08010048",
+       "count": 3
+      },
+      {
+       "cardKey": "08010052",
+       "count": 3
+      },
+      {
+       "cardKey": "08010053",
+       "count": 2
+      },
+      {
+       "cardKey": "08010079",
+       "count": 2
+      },
+      {
+       "cardKey": "08010086",
+       "count": 3
+      },
+      {
+       "cardKey": "08010090",
+       "count": 3
+      },
+      {
+       "cardKey": "08010135",
+       "count": 3
+      },
+      {
+       "cardKey": "08010245",
+       "count": 2
+      }
+     ]
+    },
+    "baseAspects": [
+     "Vigilance"
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "leader": "07010008",
+   "leaderTitle": "Director Krennic, Amidst My Achievement",
+   "lists": 538,
+   "entry": {
+    "event": "swumetastats:45806",
+    "eventSize": 56,
+    "date": "2026-09-19",
+    "placement": 1,
+    "record": "9-0-0",
+    "deck": {
+     "leader": "07010008",
+     "base": "06010019",
+     "cards": [
+      {
+       "cardKey": "04010032",
+       "count": 3
+      },
+      {
+       "cardKey": "04010033",
+       "count": 1
+      },
+      {
+       "cardKey": "04010043",
+       "count": 3
+      },
+      {
+       "cardKey": "05010059",
+       "count": 3
+      },
+      {
+       "cardKey": "05010070",
+       "count": 2
+      },
+      {
+       "cardKey": "05010091",
+       "count": 2
+      },
+      {
+       "cardKey": "06010078",
+       "count": 1
+      },
+      {
+       "cardKey": "06010087",
+       "count": 2
+      },
+      {
+       "cardKey": "06010088",
+       "count": 1
+      },
+      {
+       "cardKey": "06010111",
+       "count": 1
+      },
+      {
+       "cardKey": "07010039",
+       "count": 2
+      },
+      {
+       "cardKey": "07010044",
+       "count": 1
+      },
+      {
+       "cardKey": "07010097",
+       "count": 2
+      },
+      {
+       "cardKey": "07010101",
+       "count": 2
+      },
+      {
+       "cardKey": "07010133",
+       "count": 1
+      },
+      {
+       "cardKey": "07010149",
+       "count": 1
+      },
+      {
+       "cardKey": "07010159",
+       "count": 3
+      },
+      {
+       "cardKey": "08010048",
+       "count": 2
+      },
+      {
+       "cardKey": "08010052",
+       "count": 3
+      },
+      {
+       "cardKey": "08010053",
+       "count": 3
+      },
+      {
+       "cardKey": "08010079",
+       "count": 3
+      },
+      {
+       "cardKey": "08010090",
+       "count": 1
+      },
+      {
+       "cardKey": "08010097",
+       "count": 2
+      },
+      {
+       "cardKey": "08010116",
+       "count": 3
+      },
+      {
+       "cardKey": "08010133",
+       "count": 2
+      },
+      {
+       "cardKey": "08010135",
+       "count": 1
+      }
+     ]
+    },
+    "baseAspects": [
+     "Vigilance"
+    ]
+   },
+   "setAsideUnbuildable": 0
+  },
+  {
+   "leader": "09010003",
+   "leaderTitle": "Doctor Hemlock, Emotion Has No Place Here",
+   "lists": 0,
+   "entry": null,
+   "setAsideUnbuildable": 0
+  }
+ ]
+}

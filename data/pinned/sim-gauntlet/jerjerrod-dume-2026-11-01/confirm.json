@@ -1,0 +1,2873 @@
+{
+ "kind": "sim-gauntlet",
+ "version": "gauntlet-v1",
+ "run": "jerjerrod-dume-2026-11-01",
+ "stage": "confirm",
+ "label": "bot play (forceteki rung3:k=8,det=4,belief=known), relative comparison on identical shuffles, not a human or tournament win rate",
+ "calibration": "rung3:k=8,det=4,belief=known: calibration unmeasured (#183). Every measured computer player fails the outside check against real tournament results: Spearman about -0.2 against swumetastats (D88, #128). They overrate fast, aggressive decks and underrate careful ones, so these figures rank what computer players do well. Read them beside the judges' scores, never instead of them.",
+ "status": "candidate",
+ "pilot": {
+  "policy": "rung3:k=8,det=4,belief=known",
+  "policyVersion": "rung3-lookahead v1 params 5bb8e51be50d",
+  "gateRecord": null
+ },
+ "population": {
+  "field": {
+   "file": "data/pinned/sim-panels/tournament-winners-2026-11-01-2026-08-31-top8.json",
+   "sha256": "617b8bfe6a66fe0ee760473d8c1757a780143bf007028a0ac0faea9e03999827",
+   "source": "swumetastats.com",
+   "population": "tournament decklists with placement and whole-event match record (melee.gg Premier events via swumetastats.com)",
+   "tier": "tournament results joined to decklists and placements (the top tier of the owner's play-data order)",
+   "window": {
+    "from": "2026-08-31",
+    "to": "2026-10-08",
+    "label": "ASH (Suspension Update v4.0), the newest meta period with at least 200 captured lists; newer: Homeworlds (0 lists)"
+   },
+   "entries": [
+    {
+     "id": "p01",
+     "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+     "weight": 0.20461658841940533,
+     "event": "swumetastats:45806",
+     "placement": 1,
+     "record": "9-0-0",
+     "date": "2026-09-19"
+    },
+    {
+     "id": "p02",
+     "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+     "weight": 0.1729264475743349,
+     "event": "swumetastats:44068",
+     "placement": 1,
+     "record": "8-0-2",
+     "date": "2026-09-05"
+    },
+    {
+     "id": "p03",
+     "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+     "weight": 0.15101721439749607,
+     "event": "swumetastats:43579",
+     "placement": 1,
+     "record": "8-0-1",
+     "date": "2026-09-05"
+    },
+    {
+     "id": "p04",
+     "name": "Luke Skywalker, Hero of Yavin [Command]",
+     "weight": 0.1431924882629108,
+     "event": "swumetastats:43657",
+     "placement": 1,
+     "record": "8-0-2",
+     "date": "2026-09-05"
+    },
+    {
+     "id": "p05",
+     "name": "Boba Fett, Any Methods Necessary [no aspect]",
+     "weight": 0.10758998435054773,
+     "event": "swumetastats:45800",
+     "placement": 1,
+     "record": "7-0-2",
+     "date": "2026-09-19"
+    },
+    {
+     "id": "p06",
+     "name": "Darth Maul, Sith Revealed [Vigilance]",
+     "weight": 0.10093896713615023,
+     "event": "swumetastats:45084",
+     "placement": 1,
+     "record": "8-1-1",
+     "date": "2026-09-13"
+    },
+    {
+     "id": "p07",
+     "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+     "weight": 0.06651017214397496,
+     "event": "swumetastats:43587",
+     "placement": 1,
+     "record": "7-0-1",
+     "date": "2026-09-05"
+    },
+    {
+     "id": "p08",
+     "name": "Greef Karga, Gracious Magistrate [Aggression]",
+     "weight": 0.053208137715179966,
+     "event": "swumetastats:44672",
+     "placement": 1,
+     "record": "7-0-2",
+     "date": "2026-09-12"
+    }
+   ]
+  },
+  "references": [
+   {
+    "id": "ref-04010006",
+    "leader": "04010006",
+    "leaderTitle": "Darth Vader, Victor Squadron Leader",
+    "source": "best tournament list for the leader in ASH (Suspension Update v4.0), the newest meta period with at least 200 captured lists; newer: Homeworlds (0 lists): swumetastats:43579, placed 1 of 34, record 8-0-1, 2026-09-05 (411 lists)"
+   },
+   {
+    "id": "ref-09010003",
+    "leader": "09010003",
+    "leaderTitle": "Doctor Hemlock, Emotion Has No Place Here",
+    "source": "named fallback, no tournament list for the leader in ASH (Suspension Update v4.0), the newest meta period with at least 200 captured lists; newer: Homeworlds (0 lists): fallback-09010003.json"
+   }
+  ]
+ },
+ "design": "D108's relative design per idea: the idea against its leader's reference on identical seeds in both seat orders, the idea against itself on the same seeds as a mirror, and the idea and the reference against every panel list on the same seed and seat, the paired difference weighted by the panel's tournament shares; ranked by the low end of that difference's 95% bootstrap interval; the dead-card control of each reference runs as one more idea",
+ "sizes": {
+  "seed": "gauntlet-1",
+  "h2hPairs": 20,
+  "fieldGames": 10,
+  "games": 1560,
+  "ideas": 8,
+  "controls": 2
+ },
+ "confirmOf": {
+  "screenSha256": "db62de03f7881a3dfc41a92b34d1d9bd601b32200943afd477fcb36be866fce8",
+  "top": 8
+ },
+ "decks": [
+  {
+   "id": "T00-4",
+   "role": "idea",
+   "name": "T00-4 Vader Senate Spies",
+   "sha256": "cf7534a7d53e28664b6ba8c350b436182d04c3856aaacd6b9f0d5ec02a0baaa6",
+   "deck": {
+    "leader": "04010006",
+    "base": "08010020",
+    "cards": [
+     {
+      "cardKey": "08010117",
+      "count": 3
+     },
+     {
+      "cardKey": "04010081",
+      "count": 3
+     },
+     {
+      "cardKey": "05010057",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "08010095",
+      "count": 2
+     },
+     {
+      "cardKey": "04010032",
+      "count": 2
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "05010082",
+      "count": 2
+     },
+     {
+      "cardKey": "06010124",
+      "count": 2
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "08010241",
+      "count": 2
+     },
+     {
+      "cardKey": "04010063",
+      "count": 2
+     },
+     {
+      "cardKey": "04010112",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "05010261",
+      "count": 1
+     },
+     {
+      "cardKey": "06010082",
+      "count": 2
+     },
+     {
+      "cardKey": "06010128",
+      "count": 2
+     },
+     {
+      "cardKey": "08010079",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "06010084",
+      "count": 2
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "06010087",
+      "count": 2
+     },
+     {
+      "cardKey": "06010092",
+      "count": 2
+     },
+     {
+      "cardKey": "06010088",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "T00-8",
+   "role": "idea",
+   "name": "T00-8 Hemlock Icons Imperials",
+   "sha256": "f062d1f35d0812ad0dcee776733d1a2a1ad6992d6487955536e9d98b8d1ded8a",
+   "deck": {
+    "leader": "09010003",
+    "base": "04010019",
+    "cards": [
+     {
+      "cardKey": "07010097",
+      "count": 2
+     },
+     {
+      "cardKey": "05010057",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "04010033",
+      "count": 2
+     },
+     {
+      "cardKey": "05010239",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "0101033",
+      "count": 2
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "04010241",
+      "count": 2
+     },
+     {
+      "cardKey": "04010242",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "05010235",
+      "count": 2
+     },
+     {
+      "cardKey": "09010068",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "T04-7",
+   "role": "idea",
+   "name": "T04-7 Vader's Four TIEs",
+   "sha256": "7fee507704ee259188bbaf9e04f93c898703d507962e38a13ce01c2c1f8b4c7f",
+   "deck": {
+    "leader": "04010006",
+    "base": "04010019",
+    "cards": [
+     {
+      "cardKey": "08010117",
+      "count": 3
+     },
+     {
+      "cardKey": "04010081",
+      "count": 2
+     },
+     {
+      "cardKey": "04010122",
+      "count": 2
+     },
+     {
+      "cardKey": "05010057",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "08010095",
+      "count": 2
+     },
+     {
+      "cardKey": "04010033",
+      "count": 2
+     },
+     {
+      "cardKey": "04010076",
+      "count": 2
+     },
+     {
+      "cardKey": "04010082",
+      "count": 2
+     },
+     {
+      "cardKey": "04010084",
+      "count": 2
+     },
+     {
+      "cardKey": "04010256",
+      "count": 2
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "08010241",
+      "count": 2
+     },
+     {
+      "cardKey": "04010085",
+      "count": 2
+     },
+     {
+      "cardKey": "04010112",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "06010082",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 2
+     },
+     {
+      "cardKey": "04010115",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "05010091",
+      "count": 3
+     },
+     {
+      "cardKey": "06010088",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "T06-5",
+   "role": "idea",
+   "name": "T06-5 Experience Parade",
+   "sha256": "2d6308d3b159ddc7a4268abf04bcaf6e9c9b615bea58a7f0938111c484a31190",
+   "deck": {
+    "leader": "09010003",
+    "base": "09010024",
+    "cards": [
+     {
+      "cardKey": "07010037",
+      "count": 2
+     },
+     {
+      "cardKey": "07010165",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "05010082",
+      "count": 2
+     },
+     {
+      "cardKey": "06010029",
+      "count": 2
+     },
+     {
+      "cardKey": "06010124",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 3
+     },
+     {
+      "cardKey": "07010039",
+      "count": 2
+     },
+     {
+      "cardKey": "05010062",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "06010084",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "T08-1",
+   "role": "idea",
+   "name": "T08-1 Ten Spies, Twice",
+   "sha256": "a93509646e8d9403a9c8aff21d0097623282effbc2961ab737c111be3a27e9cd",
+   "deck": {
+    "leader": "04010006",
+    "base": "09010022",
+    "cards": [
+     {
+      "cardKey": "08010117",
+      "count": 3
+     },
+     {
+      "cardKey": "04010081",
+      "count": 3
+     },
+     {
+      "cardKey": "05010057",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "08010095",
+      "count": 2
+     },
+     {
+      "cardKey": "04010032",
+      "count": 2
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "05010082",
+      "count": 2
+     },
+     {
+      "cardKey": "06010124",
+      "count": 2
+     },
+     {
+      "cardKey": "06010246",
+      "count": 2
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "08010241",
+      "count": 2
+     },
+     {
+      "cardKey": "04010063",
+      "count": 2
+     },
+     {
+      "cardKey": "04010112",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "06010082",
+      "count": 2
+     },
+     {
+      "cardKey": "06010128",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "06010084",
+      "count": 2
+     },
+     {
+      "cardKey": "05010091",
+      "count": 3
+     },
+     {
+      "cardKey": "06010087",
+      "count": 2
+     },
+     {
+      "cardKey": "06010092",
+      "count": 2
+     },
+     {
+      "cardKey": "06010088",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "T08-6",
+   "role": "idea",
+   "name": "T08-6 Two Shields, One Unit",
+   "sha256": "e2947f5ed244fedf54a740f7e463dc5181d0b215dc0773c4b00613ed0f3e2632",
+   "deck": {
+    "leader": "09010003",
+    "base": "04010021",
+    "cards": [
+     {
+      "cardKey": "08010069",
+      "count": 2
+     },
+     {
+      "cardKey": "07010113",
+      "count": 2
+     },
+     {
+      "cardKey": "08010086",
+      "count": 2
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "09010101",
+      "count": 2
+     },
+     {
+      "cardKey": "04010032",
+      "count": 2
+     },
+     {
+      "cardKey": "04010076",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "05010064",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "06010034",
+      "count": 2
+     },
+     {
+      "cardKey": "05010037",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "T10-7",
+   "role": "idea",
+   "name": "T10-7 Drengir Garden",
+   "sha256": "0bbec7610c868d5fe0fcf729cff3765e731e6e499e2d258a5fcc88e4d8e75c88",
+   "deck": {
+    "leader": "09010003",
+    "base": "09010020",
+    "cards": [
+     {
+      "cardKey": "05010057",
+      "count": 3
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "09010059",
+      "count": 2
+     },
+     {
+      "cardKey": "09010083",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 2
+     },
+     {
+      "cardKey": "09010064",
+      "count": 3
+     },
+     {
+      "cardKey": "09010087",
+      "count": 2
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "09010089",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "09010067",
+      "count": 2
+     },
+     {
+      "cardKey": "09010090",
+      "count": 2
+     },
+     {
+      "cardKey": "09010272",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "09010094",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "T10-8",
+   "role": "idea",
+   "name": "T10-8 Commandos Take Over",
+   "sha256": "84692afb0bb7d9ad6bd86f2983fab0c6a227b07589579d446cc208537290299f",
+   "deck": {
+    "leader": "09010003",
+    "base": "09010021",
+    "cards": [
+     {
+      "cardKey": "05010057",
+      "count": 3
+     },
+     {
+      "cardKey": "08010094",
+      "count": 2
+     },
+     {
+      "cardKey": "09010059",
+      "count": 2
+     },
+     {
+      "cardKey": "09010060",
+      "count": 2
+     },
+     {
+      "cardKey": "08010076",
+      "count": 2
+     },
+     {
+      "cardKey": "09010061",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "0101033",
+      "count": 2
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "04010036",
+      "count": 2
+     },
+     {
+      "cardKey": "05010055",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "06010034",
+      "count": 2
+     },
+     {
+      "cardKey": "09010068",
+      "count": 2
+     },
+     {
+      "cardKey": "06010036",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "control-04010006",
+   "role": "control",
+   "name": "dead-card control of ref-04010006",
+   "sha256": "c553ecbece5e6f1c775455d8cffc6d846ee5f5339eabd3c553fb30bb6c377139",
+   "deck": {
+    "leader": "04010006",
+    "base": "08010026",
+    "cards": [
+     {
+      "cardKey": "04010085",
+      "count": 3
+     },
+     {
+      "cardKey": "04010112",
+      "count": 1
+     },
+     {
+      "cardKey": "04010115",
+      "count": 2
+     },
+     {
+      "cardKey": "04010183",
+      "count": 1
+     },
+     {
+      "cardKey": "04010217",
+      "count": 3
+     },
+     {
+      "cardKey": "04010221",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "06010082",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 1
+     },
+     {
+      "cardKey": "06010186",
+      "count": 3
+     },
+     {
+      "cardKey": "06010189",
+      "count": 3
+     },
+     {
+      "cardKey": "06010195",
+      "count": 1
+     },
+     {
+      "cardKey": "06010215",
+      "count": 3
+     },
+     {
+      "cardKey": "07010066",
+      "count": 1
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "07010211",
+      "count": 3
+     },
+     {
+      "cardKey": "07010217",
+      "count": 3
+     },
+     {
+      "cardKey": "08010191",
+      "count": 2
+     },
+     {
+      "cardKey": "08010194",
+      "count": 2
+     },
+     {
+      "cardKey": "08010199",
+      "count": 2
+     },
+     {
+      "cardKey": "08010224",
+      "count": 2
+     },
+     {
+      "cardKey": "09010093",
+      "count": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "control-09010003",
+   "role": "control",
+   "name": "dead-card control of ref-09010003",
+   "sha256": "b30375ede8a6cfb7dd33d2ceed8013b20681aab1e8e668171255db811d6d2663",
+   "deck": {
+    "leader": "09010003",
+    "base": "09010024",
+    "cards": [
+     {
+      "cardKey": "04010032",
+      "count": 2
+     },
+     {
+      "cardKey": "04010041",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 2
+     },
+     {
+      "cardKey": "05010057",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "06010088",
+      "count": 2
+     },
+     {
+      "cardKey": "07010101",
+      "count": 1
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010052",
+      "count": 2
+     },
+     {
+      "cardKey": "08010053",
+      "count": 2
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 3
+     },
+     {
+      "cardKey": "09010065",
+      "count": 2
+     },
+     {
+      "cardKey": "09010093",
+      "count": 3
+     },
+     {
+      "cardKey": "09010131",
+      "count": 2
+     },
+     {
+      "cardKey": "09010142",
+      "count": 2
+     },
+     {
+      "cardKey": "09010151",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "ref-04010006",
+   "role": "reference",
+   "name": "Darth Vader, Victor Squadron Leader reference",
+   "sha256": "c79bee0b2896962c1f8fbfb94d7b94b4cb222829ae1b7a6356a47f18bc18d902",
+   "deck": {
+    "leader": "04010006",
+    "base": "08010026",
+    "cards": [
+     {
+      "cardKey": "04010085",
+      "count": 3
+     },
+     {
+      "cardKey": "04010112",
+      "count": 1
+     },
+     {
+      "cardKey": "04010115",
+      "count": 3
+     },
+     {
+      "cardKey": "04010183",
+      "count": 1
+     },
+     {
+      "cardKey": "04010217",
+      "count": 3
+     },
+     {
+      "cardKey": "04010221",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 3
+     },
+     {
+      "cardKey": "06010082",
+      "count": 3
+     },
+     {
+      "cardKey": "06010179",
+      "count": 1
+     },
+     {
+      "cardKey": "06010186",
+      "count": 3
+     },
+     {
+      "cardKey": "06010189",
+      "count": 3
+     },
+     {
+      "cardKey": "06010195",
+      "count": 1
+     },
+     {
+      "cardKey": "06010215",
+      "count": 3
+     },
+     {
+      "cardKey": "07010066",
+      "count": 1
+     },
+     {
+      "cardKey": "07010135",
+      "count": 3
+     },
+     {
+      "cardKey": "07010211",
+      "count": 3
+     },
+     {
+      "cardKey": "07010217",
+      "count": 3
+     },
+     {
+      "cardKey": "08010191",
+      "count": 2
+     },
+     {
+      "cardKey": "08010194",
+      "count": 3
+     },
+     {
+      "cardKey": "08010199",
+      "count": 2
+     },
+     {
+      "cardKey": "08010224",
+      "count": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "ref-09010003",
+   "role": "reference",
+   "name": "Doctor Hemlock, Emotion Has No Place Here reference",
+   "sha256": "3bb325dbe4699e1b39747e397a9de72b0301d73e68243aec2af9f41f784a72f9",
+   "deck": {
+    "leader": "09010003",
+    "base": "09010024",
+    "cards": [
+     {
+      "cardKey": "05010057",
+      "count": 3
+     },
+     {
+      "cardKey": "09010131",
+      "count": 2
+     },
+     {
+      "cardKey": "04010032",
+      "count": 2
+     },
+     {
+      "cardKey": "08010097",
+      "count": 2
+     },
+     {
+      "cardKey": "09010062",
+      "count": 3
+     },
+     {
+      "cardKey": "09010064",
+      "count": 3
+     },
+     {
+      "cardKey": "07010119",
+      "count": 2
+     },
+     {
+      "cardKey": "06010038",
+      "count": 3
+     },
+     {
+      "cardKey": "08010048",
+      "count": 3
+     },
+     {
+      "cardKey": "08010079",
+      "count": 3
+     },
+     {
+      "cardKey": "09010065",
+      "count": 2
+     },
+     {
+      "cardKey": "09010142",
+      "count": 2
+     },
+     {
+      "cardKey": "09010151",
+      "count": 2
+     },
+     {
+      "cardKey": "04010043",
+      "count": 3
+     },
+     {
+      "cardKey": "05010091",
+      "count": 2
+     },
+     {
+      "cardKey": "08010052",
+      "count": 3
+     },
+     {
+      "cardKey": "06010078",
+      "count": 2
+     },
+     {
+      "cardKey": "06010088",
+      "count": 2
+     },
+     {
+      "cardKey": "08010053",
+      "count": 3
+     },
+     {
+      "cardKey": "07010101",
+      "count": 1
+     },
+     {
+      "cardKey": "04010041",
+      "count": 2
+     }
+    ]
+   }
+  }
+ ],
+ "ideas": [
+  {
+   "id": "T00-4",
+   "reference": "ref-04010006",
+   "result": {
+    "headToHead": {
+     "winShare": 0.35,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 14,
+     "wilson95": {
+      "low": 0.2213,
+      "high": 0.5049
+     },
+     "seedsWonBothOrders": {
+      "deck": 3,
+      "variant": 9,
+      "pValue": 0.146
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 9,
+       "n": 20,
+       "share": 0.45,
+       "low": 0.2582,
+       "high": 0.6579
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 7.45
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": -0.1662,
+      "ci95": {
+       "low": -0.2923,
+       "high": -0.0401
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 19,
+     "bothLost": 36,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 7,
+      "variantOnlyWon": 18,
+      "pValue": 0.04329,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 4,
+       "difference": -0.4
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 3,
+       "difference": -0.1
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 5,
+       "difference": -0.4
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 2,
+       "difference": -0.1
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 2,
+       "difference": -0.1
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T00-8",
+   "reference": "ref-09010003",
+   "result": {
+    "headToHead": {
+     "winShare": 0.65,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 26,
+     "wilson95": {
+      "low": 0.4951,
+      "high": 0.7787
+     },
+     "seedsWonBothOrders": {
+      "deck": 9,
+      "variant": 3,
+      "pValue": 0.146
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 8,
+       "n": 20,
+       "share": 0.4,
+       "low": 0.2188,
+       "high": 0.6134
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 13.08
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1002,
+      "ci95": {
+       "low": 0.0169,
+       "high": 0.1892
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 0,
+     "bothLost": 65,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 11,
+      "variantOnlyWon": 4,
+      "pValue": 0.1185,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 4,
+       "variantOnlyWon": 2,
+       "difference": 0.2
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T04-7",
+   "reference": "ref-04010006",
+   "result": {
+    "headToHead": {
+     "winShare": 0.475,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 19,
+     "wilson95": {
+      "low": 0.3294,
+      "high": 0.625
+     },
+     "seedsWonBothOrders": {
+      "deck": 4,
+      "variant": 5,
+      "pValue": 1
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 7,
+       "n": 20,
+       "share": 0.35,
+       "low": 0.1812,
+       "high": 0.5671
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 8.18
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1047,
+      "ci95": {
+       "low": 0.004,
+       "high": 0.2027
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 33,
+     "bothLost": 29,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 14,
+      "variantOnlyWon": 4,
+      "pValue": 0.03088,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 2,
+       "difference": -0.1
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 1,
+       "difference": 0.1
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 1,
+       "difference": 0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 0,
+       "difference": 0.2
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T06-5",
+   "reference": "ref-09010003",
+   "result": {
+    "headToHead": {
+     "winShare": 0.65,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 26,
+     "wilson95": {
+      "low": 0.4951,
+      "high": 0.7787
+     },
+     "seedsWonBothOrders": {
+      "deck": 8,
+      "variant": 2,
+      "pValue": 0.1094
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 10,
+       "n": 20,
+       "share": 0.5,
+       "low": 0.2993,
+       "high": 0.7007
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 12.48
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1772,
+      "ci95": {
+       "low": 0.0752,
+       "high": 0.2762
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 1,
+     "bothLost": 61,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 15,
+      "variantOnlyWon": 3,
+      "pValue": 0.007538,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 5,
+       "variantOnlyWon": 0,
+       "difference": 0.5
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 0,
+       "difference": 0.2
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 1,
+       "difference": 0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T08-1",
+   "reference": "ref-04010006",
+   "result": {
+    "headToHead": {
+     "winShare": 0.4,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 16,
+     "wilson95": {
+      "low": 0.2635,
+      "high": 0.554
+     },
+     "seedsWonBothOrders": {
+      "deck": 3,
+      "variant": 7,
+      "pValue": 0.3438
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 10,
+       "n": 20,
+       "share": 0.5,
+       "low": 0.2993,
+       "high": 0.7007
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 7.9
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": -0.1218,
+      "ci95": {
+       "low": -0.2433,
+       "high": 0.0055
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 20,
+     "bothLost": 32,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 11,
+      "variantOnlyWon": 17,
+      "pValue": 0.3449,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 2,
+       "difference": -0.1
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 5,
+       "difference": -0.3
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 6,
+       "difference": -0.5
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 1,
+       "difference": 0.1
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 2,
+       "difference": 0.1
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T08-6",
+   "reference": "ref-09010003",
+   "result": {
+    "headToHead": {
+     "winShare": 0.525,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 21,
+     "wilson95": {
+      "low": 0.375,
+      "high": 0.6706
+     },
+     "seedsWonBothOrders": {
+      "deck": 5,
+      "variant": 4,
+      "pValue": 1
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 11,
+       "n": 20,
+       "share": 0.55,
+       "low": 0.3421,
+       "high": 0.7418
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 13.33
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1178,
+      "ci95": {
+       "low": 0.0339,
+       "high": 0.2108
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 1,
+     "bothLost": 63,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 13,
+      "variantOnlyWon": 3,
+      "pValue": 0.02127,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 0,
+       "difference": 0.2
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 1,
+       "difference": -0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T10-7",
+   "reference": "ref-09010003",
+   "result": {
+    "headToHead": {
+     "winShare": 0.625,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 25,
+     "wilson95": {
+      "low": 0.4703,
+      "high": 0.7578
+     },
+     "seedsWonBothOrders": {
+      "deck": 8,
+      "variant": 3,
+      "pValue": 0.2266
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 12,
+       "n": 20,
+       "share": 0.6,
+       "low": 0.3866,
+       "high": 0.7812
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 11.8
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1294,
+      "ci95": {
+       "low": 0.0422,
+       "high": 0.225
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 1,
+     "bothLost": 64,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 12,
+      "variantOnlyWon": 3,
+      "pValue": 0.03516,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 1,
+       "difference": 0.1
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "T10-8",
+   "reference": "ref-09010003",
+   "result": {
+    "headToHead": {
+     "winShare": 0.675,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 27,
+     "wilson95": {
+      "low": 0.5202,
+      "high": 0.7992
+     },
+     "seedsWonBothOrders": {
+      "deck": 8,
+      "variant": 1,
+      "pValue": 0.03906
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 12,
+       "n": 20,
+       "share": 0.6,
+       "low": 0.3866,
+       "high": 0.7812
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 12.48
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1294,
+      "ci95": {
+       "low": 0.0488,
+       "high": 0.2187
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 2,
+     "bothLost": 62,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 14,
+      "variantOnlyWon": 2,
+      "pValue": 0.004181,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 0,
+       "difference": 0.2
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 4,
+       "variantOnlyWon": 0,
+       "difference": 0.4
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 4,
+       "variantOnlyWon": 0,
+       "difference": 0.4
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "controls": [
+  {
+   "id": "control-04010006",
+   "reference": "ref-04010006",
+   "swaps": [
+    "05010091>09010093",
+    "04010115>09010093",
+    "08010194>09010093"
+   ],
+   "note": "the three-card version: Premier allows 3 copies of a card, so four cannot go in",
+   "result": {
+    "headToHead": {
+     "winShare": 0.475,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 19,
+     "wilson95": {
+      "low": 0.3294,
+      "high": 0.625
+     },
+     "seedsWonBothOrders": {
+      "deck": 6,
+      "variant": 7,
+      "pValue": 1
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 13,
+       "n": 20,
+       "share": 0.65,
+       "low": 0.4329,
+       "high": 0.8188
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 8.28
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.0404,
+      "ci95": {
+       "low": -0.0836,
+       "high": 0.175
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 27,
+     "bothLost": 28,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 15,
+      "variantOnlyWon": 10,
+      "pValue": 0.4244,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 4,
+       "variantOnlyWon": 2,
+       "difference": 0.2
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 3,
+       "difference": -0.1
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 4,
+       "difference": -0.2
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 2,
+       "variantOnlyWon": 0,
+       "difference": 0.2
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      }
+     ]
+    }
+   },
+   "verdict": {
+    "detected": false,
+    "byField": false,
+    "byHeadToHead": false,
+    "sentence": "The weakened copy of the reference did not score clearly worse against the tournament panel, so these results are too small to rank: differences between ideas of this size are noise."
+   }
+  },
+  {
+   "id": "control-09010003",
+   "reference": "ref-09010003",
+   "swaps": [
+    "08010053>09010093",
+    "08010052>09010093",
+    "04010043>09010093"
+   ],
+   "note": "the three-card version: Premier allows 3 copies of a card, so four cannot go in",
+   "result": {
+    "headToHead": {
+     "winShare": 0.575,
+     "pairs": 20,
+     "games": 40,
+     "n": 40,
+     "nonDecisive": 0,
+     "wins": 23,
+     "wilson95": {
+      "low": 0.422,
+      "high": 0.7149
+     },
+     "seedsWonBothOrders": {
+      "deck": 7,
+      "variant": 4,
+      "pValue": 0.5488
+     },
+     "mirror": {
+      "games": 20,
+      "nonDecisive": 0,
+      "seat1Share": {
+       "wins": 11,
+       "n": 20,
+       "share": 0.55,
+       "low": 0.3421,
+       "high": 0.7418
+      }
+     },
+     "drawRate": 0,
+     "errorRate": 0,
+     "meanRounds": 14
+    },
+    "field": {
+     "deckMinusVariant": {
+      "difference": 0.1061,
+      "ci95": {
+       "low": 0.0194,
+       "high": 0.2004
+      },
+      "method": "share-weighted strata, percentile bootstrap over pairs within each stratum (2000 resamples)",
+      "coverage": 1,
+      "emptyStrata": []
+     },
+     "design": "both decks played the same opponent list, engine seed and seat in every game; only pairs both decks decided count; the difference is deck minus variant, the share-weighted mean over strata of wins only the deck had minus wins only the variant had, per pair",
+     "games": 80,
+     "pairs": 80,
+     "bothWon": 1,
+     "bothLost": 65,
+     "undecided": 0,
+     "pooledPairs": {
+      "deckOnlyWon": 11,
+      "variantOnlyWon": 3,
+      "pValue": 0.05737,
+      "weighting": "exact two-sided sign test with every pair counted once; each stratum was sampled with the same n, so small archetypes weigh more than in the field and this figure can disagree with deckMinusVariant, which weights strata by field share"
+     },
+     "errorRate": 0,
+     "perArchetype": [
+      {
+       "id": "p01",
+       "name": "Director Krennic, Amidst My Achievement [Vigilance]",
+       "weight": 0.2046,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p02",
+       "name": "Ahsoka Tano, Trust in the Force [Vigilance]",
+       "weight": 0.1729,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 0,
+       "difference": 0.3
+      },
+      {
+       "id": "p03",
+       "name": "Darth Vader, Victor Squadron Leader [Cunning]",
+       "weight": 0.151,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      },
+      {
+       "id": "p04",
+       "name": "Luke Skywalker, Hero of Yavin [Command]",
+       "weight": 0.1432,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p05",
+       "name": "Boba Fett, Any Methods Necessary [no aspect]",
+       "weight": 0.1076,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 1,
+       "difference": 0
+      },
+      {
+       "id": "p06",
+       "name": "Darth Maul, Sith Revealed [Vigilance]",
+       "weight": 0.1009,
+       "pairs": 10,
+       "deckOnlyWon": 0,
+       "variantOnlyWon": 0,
+       "difference": 0
+      },
+      {
+       "id": "p07",
+       "name": "Lando Calrissian, Full Sabacc [Vigilance]",
+       "weight": 0.0665,
+       "pairs": 10,
+       "deckOnlyWon": 3,
+       "variantOnlyWon": 1,
+       "difference": 0.2
+      },
+      {
+       "id": "p08",
+       "name": "Greef Karga, Gracious Magistrate [Aggression]",
+       "weight": 0.0532,
+       "pairs": 10,
+       "deckOnlyWon": 1,
+       "variantOnlyWon": 0,
+       "difference": 0.1
+      }
+     ]
+    }
+   },
+   "verdict": {
+    "detected": false,
+    "byField": false,
+    "byHeadToHead": false,
+    "sentence": "The weakened copy of the reference did not score clearly worse against the tournament panel, so these results are too small to rank: differences between ideas of this size are noise."
+   }
+  }
+ ],
+ "ranking": [
+  {
+   "rank": 1,
+   "id": "T06-5",
+   "fieldDifference": 0.1772,
+   "ci95": {
+    "low": 0.0752,
+    "high": 0.2762
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.65,
+    "wilson95": {
+     "low": 0.4951,
+     "high": 0.7787
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 2,
+   "id": "T10-8",
+   "fieldDifference": 0.1294,
+   "ci95": {
+    "low": 0.0488,
+    "high": 0.2187
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.675,
+    "wilson95": {
+     "low": 0.5202,
+     "high": 0.7992
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 3,
+   "id": "T10-7",
+   "fieldDifference": 0.1294,
+   "ci95": {
+    "low": 0.0422,
+    "high": 0.225
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.625,
+    "wilson95": {
+     "low": 0.4703,
+     "high": 0.7578
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 4,
+   "id": "T08-6",
+   "fieldDifference": 0.1178,
+   "ci95": {
+    "low": 0.0339,
+    "high": 0.2108
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.525,
+    "wilson95": {
+     "low": 0.375,
+     "high": 0.6706
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 5,
+   "id": "T00-8",
+   "fieldDifference": 0.1002,
+   "ci95": {
+    "low": 0.0169,
+    "high": 0.1892
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.65,
+    "wilson95": {
+     "low": 0.4951,
+     "high": 0.7787
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 6,
+   "id": "T04-7",
+   "fieldDifference": 0.1047,
+   "ci95": {
+    "low": 0.004,
+    "high": 0.2027
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.475,
+    "wilson95": {
+     "low": 0.3294,
+     "high": 0.625
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 7,
+   "id": "T08-1",
+   "fieldDifference": -0.1218,
+   "ci95": {
+    "low": -0.2433,
+    "high": 0.0055
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.4,
+    "wilson95": {
+     "low": 0.2635,
+     "high": 0.554
+    },
+    "n": 40
+   }
+  },
+  {
+   "rank": 8,
+   "id": "T00-4",
+   "fieldDifference": -0.1662,
+   "ci95": {
+    "low": -0.2923,
+    "high": -0.0401
+   },
+   "fieldPairs": 80,
+   "headToHead": {
+    "winShare": 0.35,
+    "wilson95": {
+     "low": 0.2213,
+     "high": 0.5049
+    },
+    "n": 40
+   }
+  }
+ ],
+ "tooSmallToRank": true,
+ "health": {
+  "games": 1560,
+  "decisive": 1560,
+  "nonDecisive": 0,
+  "errors": 0,
+  "errorSamples": []
+ },
+ "engine": {
+  "commit": "445792e6185c10ca66c27a95893474c25256f3cc",
+  "cardDataVersion": "20260423_00"
+ }
+}
