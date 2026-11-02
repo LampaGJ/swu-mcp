@@ -33,7 +33,6 @@ import {
   summarizeH2H,
   summarizeRelative,
   summarizeVsOpponent,
-  type MatchupDeck,
   type StratumInfo,
   type SubjectGame,
 } from "../../src/sims/matchup.js";
@@ -44,29 +43,18 @@ import { loadTables } from "../../src/sims/policies/tables.js";
 import { driverName } from "../../src/sims/policies/typed-adapter.js";
 import { createPool } from "../../src/sims/pool.js";
 import type { MatchFooter } from "../../src/sims/schemas.js";
-import { canonicalJson, compareCodePoints } from "../../src/swu/canonical.js";
+import { canonicalJson } from "../../src/swu/canonical.js";
 import { DEFAULT_ORIGINALS_ROOT, loadCardMap } from "../bench/card-map.js";
 import { LiveStats } from "../../src/sims/live-stats.js";
 import { progress } from "../lib/progress.mjs";
 import { DEFAULT_ORIGINALS, loadContext } from "./context.js";
-import { prepareDeck } from "./decks.js";
+import { engineDeck, prepareDeck } from "./decks.js";
 import { KEEP_ALIVE_MS, provenanceOf } from "./live.js";
-import type { CardBridge } from "./card-bridge.js";
 
 /** The ladder's 40 games per worker per batch is the throughput best (D81); a job takes about a tenth of its games per batch, at least 4 per worker, so the tool's progress moves. */
 const MAX_PER_WORKER = 40;
 const MIN_PER_WORKER = 4;
 const sha12 = (s: string): string => createHash("sha256").update(s).digest("hex").slice(0, 12);
-
-function engineDeck(bridge: CardBridge, deck: MatchupDeck, source: string): DeckInput {
-  const id = (cardKey: string): string => {
-    const ref = bridge.toEngine(cardKey);
-    if (ref === null) throw new Error(`the engine has no card for cardKey ${cardKey}`);
-    return ref.setCode;
-  };
-  const cards = [...deck.cards].sort((a, b) => compareCodePoints(a.cardKey, b.cardKey));
-  return { list: { leader: { id: id(deck.leader), count: 1 }, base: { id: id(deck.base), count: 1 }, deck: cards.map((c) => ({ id: id(c.cardKey), count: c.count })), sideboard: [] }, leader: deck.leader, base: deck.base, cards, source };
-}
 
 /** An archetype id, or a prefix of exactly one (meta_threats accepts "t001"). */
 function archetypeOf(pool: OpponentPool, ref: string) {

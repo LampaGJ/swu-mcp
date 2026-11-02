@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { REPO_ROOT } from "../../src/paths.js";
 import type { DeckInput } from "../../src/sims/match.js";
+import type { MatchupDeck } from "../../src/sims/matchup.js";
 import { compareCodePoints } from "../../src/swu/canonical.js";
 import { swudbDeckSchema } from "../../src/tools/swudb.js";
 import { translateDeck, type CardBridge } from "./card-bridge.js";
@@ -38,6 +39,17 @@ export function prepareDeck(bridge: CardBridge, raw: unknown, source: string): D
     cards: [...counts].map(([cardKey, count]) => ({ cardKey, count })).sort((a, b) => compareCodePoints(a.cardKey, b.cardKey)),
     source,
   };
+}
+
+/** A cardKey deck (src/sims/matchup.ts) as the engine's list, every card through the bridge. */
+export function engineDeck(bridge: CardBridge, deck: MatchupDeck, source: string): DeckInput {
+  const id = (cardKey: string): string => {
+    const ref = bridge.toEngine(cardKey);
+    if (ref === null) throw new Error(`the engine has no card for cardKey ${cardKey}`);
+    return ref.setCode;
+  };
+  const cards = [...deck.cards].sort((a, b) => compareCodePoints(a.cardKey, b.cardKey));
+  return { list: { leader: { id: id(deck.leader), count: 1 }, base: { id: id(deck.base), count: 1 }, deck: cards.map((c) => ({ id: id(c.cardKey), count: c.count })), sideboard: [] }, leader: deck.leader, base: deck.base, cards, source };
 }
 
 export const loadDeck = (bridge: CardBridge, file: string): DeckInput => prepareDeck(bridge, JSON.parse(readFileSync(file, "utf8")), deckSource(file));

@@ -112,7 +112,7 @@ export function defaultDeps(): SimsDeps {
 const MAIN_TYPES_EXCLUDED = new Set(["Leader", "Base"]);
 
 /** A SWUDB document to a cardKey deck; each id must name one card of the right kind. */
-function deckFromSwudb(store: CardStore, raw: unknown): MatchupDeck | string {
+export function deckFromSwudb(store: CardStore, raw: unknown): MatchupDeck | string {
   const parsed = swudbDeckSchema.safeParse(raw);
   if (!parsed.success) return `swudb is not a SWUDB interchange document: ${z.prettifyError(parsed.error)}`;
   const doc = parsed.data;
@@ -134,7 +134,7 @@ function deckFromSwudb(store: CardStore, raw: unknown): MatchupDeck | string {
   return { leader, base, cards };
 }
 
-function readRecords(root: string): { records: GateRecord[]; files: Map<GateRecord, { file: string; sha256: string }> } | string {
+export function readRecords(root: string): { records: GateRecord[]; files: Map<GateRecord, { file: string; sha256: string }> } | string {
   const dir = path.join(root, CALIBRATION_DIR);
   const records: GateRecord[] = [];
   const files = new Map<GateRecord, { file: string; sha256: string }>();

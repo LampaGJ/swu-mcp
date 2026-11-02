@@ -62,7 +62,10 @@
     "sims:evaluator-parity": "tsx scripts/sims/evaluator-parity.ts",
     "sims:watch": "tsx scripts/sims/watch.ts",
     "sims:summary": "tsx scripts/sims/summary.ts",
-    "sims:summary:schema": "tsx scripts/sims/export-summary-schema.ts"
+    "sims:summary:schema": "tsx scripts/sims/export-summary-schema.ts",
+    "sims:panel": "tsx scripts/sims/tournament-panel.ts",
+    "sims:gauntlet-ideas": "tsx scripts/sims/gauntlet-ideas.ts",
+    "sims:gauntlet": "node --import tsx --import=./scripts/sims/ladder-preload.ts scripts/sims/gauntlet.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9",
