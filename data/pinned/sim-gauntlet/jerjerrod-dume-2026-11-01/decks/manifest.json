@@ -1,0 +1,2715 @@
+{
+ "kind": "gauntlet-ideas",
+ "pool": {
+  "files": [
+   "T00.md",
+   "T02.md",
+   "T04.md",
+   "T06.md",
+   "T08.md",
+   "T10.md"
+  ],
+  "sha256": "8066656a30838ea190aff5bb28db0b7b31ff9c280f7be1b6d88ccda5c363dbf4"
+ },
+ "data": "2026-11-01",
+ "options": {
+  "anchors": [
+   "08010094",
+   "05010055"
+  ],
+  "copies": 2,
+  "exclude": {
+   "T08-5": [
+    "09010065"
+   ],
+   "T10-7": [
+    "09010065"
+   ]
+  }
+ },
+ "unresolved": [],
+ "built": [
+  {
+   "id": "T00-1",
+   "file": "T00-1.json",
+   "input": {
+    "leader": "05010006",
+    "base": "09010022",
+    "name": "T00-1 Snoke Experience Ladder",
+    "mustInclude": [
+     {
+      "card": "04010043",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010091",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "e9b450c43aa729e07c7a19b633093c1fc17001c2be64bd6750182bbf041559e0"
+  },
+  {
+   "id": "T00-2",
+   "file": "T00-2.json",
+   "input": {
+    "leader": "05010006",
+    "base": "08010019",
+    "name": "T00-2 Snoke Upgrade Tower",
+    "mustInclude": [
+     {
+      "card": "04010043",
+      "count": 2
+     },
+     {
+      "card": "04010242",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010062",
+      "count": 2
+     },
+     {
+      "card": "05010073",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "06010029",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010090",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010135",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "dfa9febf7ff523ec3ef5cd7da7e909aae2570e688fa726084fcd2388ab6b0d9a"
+  },
+  {
+   "id": "T00-3",
+   "file": "T00-3.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010021",
+    "name": "T00-3 Vader Fighter Swarm",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010085",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010115",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010091",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "07010135",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "e72477b93cc420fa56a3d65aa7af2da509709033ceb8a6c06e5824fd56b873d5"
+  },
+  {
+   "id": "T00-4",
+   "file": "T00-4.json",
+   "input": {
+    "leader": "04010006",
+    "base": "08010020",
+    "name": "T00-4 Vader Senate Spies",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010091",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010087",
+      "count": 2
+     },
+     {
+      "card": "06010092",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "06010128",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "4a4131e16cbe19820ea8abdd85d4580adc67111b1af8e2db81c521196e3c29e2"
+  },
+  {
+   "id": "T00-5",
+   "file": "T00-5.json",
+   "input": {
+    "leader": "07010008",
+    "base": "04010020",
+    "name": "T00-5 Krennic Credit Engine",
+    "mustInclude": [
+     {
+      "card": "04010032",
+      "count": 2
+     },
+     {
+      "card": "04010043",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "07010097",
+      "count": 2
+     },
+     {
+      "card": "07010159",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     },
+     {
+      "card": "08010116",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "744ad5daafce402bf8328e52bc43a0e91763d211ff66d120ad1693d127a97530"
+  },
+  {
+   "id": "T00-6",
+   "file": "T00-6.json",
+   "input": {
+    "leader": "07010008",
+    "base": "08010019",
+    "name": "T00-6 Krennic Mandalorian Wall",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010047",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010080",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010092",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010140",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "c78690d6f538c1d1cf9513f3f90589db13463b81a5aa9c2b990ecedb5c7a3c68"
+  },
+  {
+   "id": "T00-7",
+   "file": "T00-7.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010022",
+    "name": "T00-7 Hemlock Weakness Garden",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010038",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010062",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010067",
+      "count": 2
+     },
+     {
+      "card": "09010242",
+      "count": 2
+     },
+     {
+      "card": "09010272",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "c1f83f67baa37710036905aeb5f1bd27f73a50da2e444ea290336c94630beb8f"
+  },
+  {
+   "id": "T00-8",
+   "file": "T00-8.json",
+   "input": {
+    "leader": "09010003",
+    "base": "04010019",
+    "name": "T00-8 Hemlock Icons Imperials",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "07010097",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "8d5063ab4a29a5791f7155920bb69f6f0f03595143395eb6cf6f93031f84277c"
+  },
+  {
+   "id": "T02-1",
+   "file": "T02-1.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T02-1 Mandalorian Doubling under Hemlock",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "04010043",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010038",
+      "count": 2
+     },
+     {
+      "card": "08010047",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010140",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "d5c34347c483eeba3d31a2b9a43f319adc624185a4fd2178da766d0ef8f6d950"
+  },
+  {
+   "id": "T02-2",
+   "file": "T02-2.json",
+   "input": {
+    "leader": "09010003",
+    "base": "08010021",
+    "name": "T02-2 Dume Garrison with Official Bodies",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "07010165",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010086",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010060",
+      "count": 2
+     },
+     {
+      "card": "09010061",
+      "count": 2
+     },
+     {
+      "card": "09010101",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "d4c7378e2548f6a32895bd7cffa016c2f9f2df6985cda8de7b5522ca371d8ea7"
+  },
+  {
+   "id": "T02-3",
+   "file": "T02-3.json",
+   "input": {
+    "leader": "05010006",
+    "base": "08010019",
+    "name": "T02-3 Snoke Experience Tower",
+    "mustInclude": [
+     {
+      "card": "04010043",
+      "count": 2
+     },
+     {
+      "card": "04010242",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010091",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "06010029",
+      "count": 2
+     },
+     {
+      "card": "08010048",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     },
+     {
+      "card": "08010135",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "785468ddc04886d3706429f80d8f561206f834f2bd071fae2f612f060f540d4c"
+  },
+  {
+   "id": "T02-4",
+   "file": "T02-4.json",
+   "input": {
+    "leader": "05010006",
+    "base": "08010020",
+    "name": "T02-4 Senate Spies Times Two",
+    "mustInclude": [
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010081",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010087",
+      "count": 2
+     },
+     {
+      "card": "06010092",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "06010128",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "dfcb88c4b5be44b4694054634b26dda55f319816fb8b6113e00f70512f189a5a"
+  },
+  {
+   "id": "T02-5",
+   "file": "T02-5.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010020",
+    "name": "T02-5 TIE Swarm Doubling under Vader",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010039",
+      "count": 2
+     },
+     {
+      "card": "04010078",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010084",
+      "count": 2
+     },
+     {
+      "card": "04010085",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010115",
+      "count": 2
+     },
+     {
+      "card": "04010243",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "e521a448c921edfdf0e6e9cd7c8ab9eef83646145a2c53e3e4ee5169a310257c"
+  },
+  {
+   "id": "T02-6",
+   "file": "T02-6.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010019",
+    "name": "T02-6 Imperial Ground Crew with Dume",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010064",
+      "count": 2
+     },
+     {
+      "card": "05010077",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "06010076",
+      "count": 2
+     },
+     {
+      "card": "08010076",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010061",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "643489284c7941a738ca6b61dc2685b79d79a6af786111aa53ef318f4a258601"
+  },
+  {
+   "id": "T02-7",
+   "file": "T02-7.json",
+   "input": {
+    "leader": "07010008",
+    "base": "04010021",
+    "name": "T02-7 Krennic Credit Doubler",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "07010032",
+      "count": 2
+     },
+     {
+      "card": "07010040",
+      "count": 2
+     },
+     {
+      "card": "07010116",
+      "count": 2
+     },
+     {
+      "card": "07010134",
+      "count": 2
+     },
+     {
+      "card": "07010159",
+      "count": 2
+     },
+     {
+      "card": "07010169",
+      "count": 2
+     },
+     {
+      "card": "07010258",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010116",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "3a83748a7692cde6c3da282b687ca349f41ca926c8ffa16539fab2ad368bdfc8"
+  },
+  {
+   "id": "T02-8",
+   "file": "T02-8.json",
+   "input": {
+    "leader": "07010008",
+    "base": "07010020",
+    "name": "T02-8 Krennic Dume Shield Wall",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010059",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "06010078",
+      "count": 2
+     },
+     {
+      "card": "07010039",
+      "count": 2
+     },
+     {
+      "card": "07010097",
+      "count": 2
+     },
+     {
+      "card": "07010101",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     },
+     {
+      "card": "08010133",
+      "count": 2
+     },
+     {
+      "card": "09010060",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "b4e979f6005b36d07fa1c855245418e07d691609dbfa1b4545e9f6c2ca1a0740"
+  },
+  {
+   "id": "T04-1",
+   "file": "T04-1.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010022",
+    "name": "T04-1 Weakness Garden",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010067",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     },
+     {
+      "card": "09010242",
+      "count": 2
+     },
+     {
+      "card": "09010250",
+      "count": 2
+     },
+     {
+      "card": "09010272",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "98e86b1b5b8935d3f09379a1a67164e0fd28a18862954d42c2e0b77b02a24850"
+  },
+  {
+   "id": "T04-2",
+   "file": "T04-2.json",
+   "input": {
+    "leader": "09010003",
+    "base": "08010019",
+    "name": "T04-2 Mandalorian Wall",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010047",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010080",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010092",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "d4de8a42908cbb90b18f4b9ed423efa87048598154c906b1bc997bfe3f3dc429"
+  },
+  {
+   "id": "T04-3",
+   "file": "T04-3.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T04-3 Official Business",
+    "mustInclude": [
+     {
+      "card": "04010111",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "06010079",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "07010037",
+      "count": 2
+     },
+     {
+      "card": "07010039",
+      "count": 2
+     },
+     {
+      "card": "07010165",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "ea64e8d49bcc0d5deb02b5affebb2f791d02711571a83182da84b7a89ea27055"
+  },
+  {
+   "id": "T04-4",
+   "file": "T04-4.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T04-4 Spy Parade",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "06010083",
+      "count": 2
+     },
+     {
+      "card": "06010087",
+      "count": 2
+     },
+     {
+      "card": "06010092",
+      "count": 2
+     },
+     {
+      "card": "06010128",
+      "count": 2
+     },
+     {
+      "card": "06010246",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010103",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "064fc2965b18d4f68bf9c535381b632386c3f04654601f884f104d30742aba63"
+  },
+  {
+   "id": "T04-5",
+   "file": "T04-5.json",
+   "input": {
+    "leader": "05010006",
+    "base": "04010020",
+    "name": "T04-5 Snoke's Upgraded Bruisers",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010062",
+      "count": 2
+     },
+     {
+      "card": "05010073",
+      "count": 2
+     },
+     {
+      "card": "05010077",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "05010255",
+      "count": 2
+     },
+     {
+      "card": "06010029",
+      "count": 2
+     },
+     {
+      "card": "06010040",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "d70d2131dfc76e15a54975f5590bde1b4d448f6051a2d3fa3a9dad9069b7fcda"
+  },
+  {
+   "id": "T04-6",
+   "file": "T04-6.json",
+   "input": {
+    "leader": "05010006",
+    "base": "09010022",
+    "name": "T04-6 TIE Tide Under Snoke",
+    "mustInclude": [
+     {
+      "card": "04010039",
+      "count": 2
+     },
+     {
+      "card": "04010040",
+      "count": 2
+     },
+     {
+      "card": "04010041",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "04010243",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "c2aaf340007c4235599f0d4f7110eb4144d1f4538956e249ca136d9bcc473646"
+  },
+  {
+   "id": "T04-7",
+   "file": "T04-7.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010019",
+    "name": "T04-7 Vader's Four TIEs",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010076",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010084",
+      "count": 2
+     },
+     {
+      "card": "04010085",
+      "count": 2
+     },
+     {
+      "card": "04010115",
+      "count": 2
+     },
+     {
+      "card": "04010122",
+      "count": 2
+     },
+     {
+      "card": "04010256",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "84eb13f1efffd054e5f662bf7a531bf43be43914c5fbc0e3241701b0b1361d29"
+  },
+  {
+   "id": "T04-8",
+   "file": "T04-8.json",
+   "input": {
+    "leader": "04010006",
+    "base": "08010019",
+    "name": "T04-8 Defeat It, Play It Again",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "04010091",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "05010263",
+      "count": 2
+     },
+     {
+      "card": "07010116",
+      "count": 2
+     },
+     {
+      "card": "07010119",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010247",
+      "count": 2
+     },
+     {
+      "card": "09010253",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "3e883f11b480ebdedc04c63b1605841f6d8a76e8da644ac4393be108c7e440ed"
+  },
+  {
+   "id": "T06-1",
+   "file": "T06-1.json",
+   "input": {
+    "leader": "07010008",
+    "base": "08010019",
+    "name": "T06-1 Credit Factory",
+    "mustInclude": [
+     {
+      "card": "04010091",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "07010032",
+      "count": 2
+     },
+     {
+      "card": "07010040",
+      "count": 2
+     },
+     {
+      "card": "07010097",
+      "count": 2
+     },
+     {
+      "card": "07010116",
+      "count": 2
+     },
+     {
+      "card": "07010134",
+      "count": 2
+     },
+     {
+      "card": "07010169",
+      "count": 2
+     },
+     {
+      "card": "08010052",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010116",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "7b24884c3ed418bed16092cbacff1efa97f59b78c048692cf79487d8f52adf3d"
+  },
+  {
+   "id": "T06-2",
+   "file": "T06-2.json",
+   "input": {
+    "leader": "07010008",
+    "base": "04010020",
+    "name": "T06-2 Mandalorian Mob",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010047",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010080",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010092",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010134",
+      "count": 2
+     },
+     {
+      "card": "08010140",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "499eb238c2d5c9453a7c630e70520b176c3c3c027e102ca7d81bf7ab87767e16"
+  },
+  {
+   "id": "T06-3",
+   "file": "T06-3.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010022",
+    "name": "T06-3 Weakness and Beasts",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010060",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010067",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     },
+     {
+      "card": "09010110",
+      "count": 2
+     },
+     {
+      "card": "09010242",
+      "count": 2
+     },
+     {
+      "card": "09010272",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "379cb537b4931558e584c1d420a388ed83fe398466401bf21f68ca73a5bcabc4"
+  },
+  {
+   "id": "T06-4",
+   "file": "T06-4.json",
+   "input": {
+    "leader": "09010003",
+    "base": "04010019",
+    "name": "T06-4 Sacrifice Sunrise",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010064",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "05010255",
+      "count": 2
+     },
+     {
+      "card": "05010263",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010099",
+      "count": 2
+     },
+     {
+      "card": "09010113",
+      "count": 2
+     },
+     {
+      "card": "09010253",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "1acf7f902896c4b0020194179832962a8d8e66a0954ec1be2c4312672a9fed49"
+  },
+  {
+   "id": "T06-5",
+   "file": "T06-5.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T06-5 Experience Parade",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010062",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "06010029",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "07010037",
+      "count": 2
+     },
+     {
+      "card": "07010039",
+      "count": 2
+     },
+     {
+      "card": "07010165",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "7d24607f442386b839acb8c06e6b132c7a31c427cbb283fbfb1217e8e7100f95"
+  },
+  {
+   "id": "T06-6",
+   "file": "T06-6.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T06-6 Spy Senate",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "06010083",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010087",
+      "count": 2
+     },
+     {
+      "card": "06010092",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "06010128",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "4a2dde42910c0a1bfd310a59b39d0f5809838e31746c8153798802e5eb89ff67"
+  },
+  {
+   "id": "T06-7",
+   "file": "T06-7.json",
+   "input": {
+    "leader": "05010006",
+    "base": "08010019",
+    "name": "T06-7 Snoke's Second Token",
+    "mustInclude": [
+     {
+      "card": "04010091",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010091",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "05010263",
+      "count": 2
+     },
+     {
+      "card": "06010040",
+      "count": 2
+     },
+     {
+      "card": "06010085",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "825078770af9eb5d3f06dbe04e19b081e5dc658ca144c6c28b7fdf8ae1628915"
+  },
+  {
+   "id": "T06-8",
+   "file": "T06-8.json",
+   "input": {
+    "leader": "05010006",
+    "base": "08010020",
+    "name": "T06-8 TIE Swarm and Stone Wall",
+    "mustInclude": [
+     {
+      "card": "04010039",
+      "count": 2
+     },
+     {
+      "card": "04010078",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010084",
+      "count": 2
+     },
+     {
+      "card": "04010085",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "04010243",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "11af537695bd49d9605b640146e622878ddf8da8c5129a52178a9496f75e5969"
+  },
+  {
+   "id": "T08-1",
+   "file": "T08-1.json",
+   "input": {
+    "leader": "04010006",
+    "base": "09010022",
+    "name": "T08-1 Ten Spies, Twice",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "06010082",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010087",
+      "count": 2
+     },
+     {
+      "card": "06010092",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "06010128",
+      "count": 2
+     },
+     {
+      "card": "06010246",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "a290183a50eddb0b25ded74989b59590f2fad4c9fa75ad78a0a3d02cf5828675"
+  },
+  {
+   "id": "T08-2",
+   "file": "T08-2.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010019",
+    "name": "T08-2 Fleet In Reverse",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010039",
+      "count": 2
+     },
+     {
+      "card": "04010078",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010090",
+      "count": 2
+     },
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "2a769c1f4c3b55708745878878f8730442d4efbab3d6038a8cffbb39cf1a5725"
+  },
+  {
+   "id": "T08-3",
+   "file": "T08-3.json",
+   "input": {
+    "leader": "07010008",
+    "base": "08010020",
+    "name": "T08-3 Credit Press",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "07010032",
+      "count": 2
+     },
+     {
+      "card": "07010040",
+      "count": 2
+     },
+     {
+      "card": "07010116",
+      "count": 2
+     },
+     {
+      "card": "07010117",
+      "count": 2
+     },
+     {
+      "card": "07010134",
+      "count": 2
+     },
+     {
+      "card": "07010169",
+      "count": 2
+     },
+     {
+      "card": "07010258",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "1a3ea2f226628e85869565135a8d16fe3b2f8b7efb13c981464565eec4ac6eb6"
+  },
+  {
+   "id": "T08-4",
+   "file": "T08-4.json",
+   "input": {
+    "leader": "07010008",
+    "base": "08010019",
+    "name": "T08-4 Sacrifice Choir",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "04010091",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "06010083",
+      "count": 2
+     },
+     {
+      "card": "07010119",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010097",
+      "count": 2
+     },
+     {
+      "card": "09010253",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "f7ccfcbe0459f5664ca4ab0aac4c52f280a50192c43655d71eeb8b60cb06f3a2"
+  },
+  {
+   "id": "T08-5",
+   "file": "T08-5.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010020",
+    "name": "T08-5 Weakness Garden",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010062",
+      "count": 2
+     },
+     {
+      "card": "09010067",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     },
+     {
+      "card": "09010071",
+      "count": 2
+     },
+     {
+      "card": "09010087",
+      "count": 2
+     },
+     {
+      "card": "09010110",
+      "count": 2
+     }
+    ],
+    "exclude": [
+     "09010065"
+    ]
+   },
+   "legal": true,
+   "sha256": "15b912ed5dbfcd526a79d15d82db3581983ccfaf0fb1528cd782c5dd18cb4074"
+  },
+  {
+   "id": "T08-6",
+   "file": "T08-6.json",
+   "input": {
+    "leader": "09010003",
+    "base": "04010021",
+    "name": "T08-6 Two Shields, One Unit",
+    "mustInclude": [
+     {
+      "card": "04010032",
+      "count": 2
+     },
+     {
+      "card": "04010076",
+      "count": 2
+     },
+     {
+      "card": "05010037",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010064",
+      "count": 2
+     },
+     {
+      "card": "07010113",
+      "count": 2
+     },
+     {
+      "card": "08010069",
+      "count": 2
+     },
+     {
+      "card": "08010086",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010101",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "8c0d5cd6b418754acc7708f71a36db7afc80e4156afbe355f0fc794bb65a5738"
+  },
+  {
+   "id": "T08-7",
+   "file": "T08-7.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "T08-7 Experience Greenhouse",
+    "mustInclude": [
+     {
+      "card": "04010111",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010062",
+      "count": 2
+     },
+     {
+      "card": "05010073",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "05010255",
+      "count": 2
+     },
+     {
+      "card": "06010124",
+      "count": 2
+     },
+     {
+      "card": "07010037",
+      "count": 2
+     },
+     {
+      "card": "07010165",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "0c3de80d91c57a518751c0cba2147a9d168845994771cbe34eb0614f94452ceb"
+  },
+  {
+   "id": "T08-8",
+   "file": "T08-8.json",
+   "input": {
+    "leader": "09010003",
+    "base": "08010021",
+    "name": "T08-8 Mandalorian Wall",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010080",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010092",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010119",
+      "count": 2
+     },
+     {
+      "card": "08010124",
+      "count": 2
+     },
+     {
+      "card": "08010134",
+      "count": 2
+     },
+     {
+      "card": "08010138",
+      "count": 2
+     },
+     {
+      "card": "08010140",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "76126f003336f1e2cc37d3ea2781d5f737944f3ee01ee938bed46ece567c9d5a"
+  },
+  {
+   "id": "T10-1",
+   "file": "T10-1.json",
+   "input": {
+    "leader": "05010006",
+    "base": "05010020",
+    "name": "T10-1 Porg Parade",
+    "mustInclude": [
+     {
+      "card": "05010033",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010064",
+      "count": 2
+     },
+     {
+      "card": "05010069",
+      "count": 2
+     },
+     {
+      "card": "05010254",
+      "count": 2
+     },
+     {
+      "card": "05010255",
+      "count": 2
+     },
+     {
+      "card": "05010257",
+      "count": 2
+     },
+     {
+      "card": "08010068",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010089",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "f0ad24cd3e302002156aa14c7c090a198cdbfb8a835e236205de6f2ce16a6515"
+  },
+  {
+   "id": "T10-2",
+   "file": "T10-2.json",
+   "input": {
+    "leader": "05010006",
+    "base": "04010019",
+    "name": "T10-2 First Order Parade",
+    "mustInclude": [
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010241",
+      "count": 2
+     },
+     {
+      "card": "05010034",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010085",
+      "count": 2
+     },
+     {
+      "card": "06010032",
+      "count": 2
+     },
+     {
+      "card": "06010084",
+      "count": 2
+     },
+     {
+      "card": "06010237",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010238",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "383375669a1aea899007e58244d842f1ee98593d0270771660c298d338319893"
+  },
+  {
+   "id": "T10-3",
+   "file": "T10-3.json",
+   "input": {
+    "leader": "04010006",
+    "base": "05010019",
+    "name": "T10-3 Sith Lords' Gathering",
+    "mustInclude": [
+     {
+      "card": "05010037",
+      "count": 2
+     },
+     {
+      "card": "05010039",
+      "count": 2
+     },
+     {
+      "card": "05010042",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010082",
+      "count": 2
+     },
+     {
+      "card": "05010239",
+      "count": 2
+     },
+     {
+      "card": "06010028",
+      "count": 2
+     },
+     {
+      "card": "06010035",
+      "count": 2
+     },
+     {
+      "card": "06010244",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "2a04bb581e4eeabd3851feba6817cbe171c63bcb768992e6d7a3cb5c2c68246b"
+  },
+  {
+   "id": "T10-4",
+   "file": "T10-4.json",
+   "input": {
+    "leader": "04010006",
+    "base": "04010020",
+    "name": "T10-4 TIE Swarm, Doubled",
+    "mustInclude": [
+     {
+      "card": "04010033",
+      "count": 2
+     },
+     {
+      "card": "04010039",
+      "count": 2
+     },
+     {
+      "card": "04010078",
+      "count": 2
+     },
+     {
+      "card": "04010081",
+      "count": 2
+     },
+     {
+      "card": "04010082",
+      "count": 2
+     },
+     {
+      "card": "04010084",
+      "count": 2
+     },
+     {
+      "card": "04010085",
+      "count": 2
+     },
+     {
+      "card": "04010087",
+      "count": 2
+     },
+     {
+      "card": "04010090",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "8d0295417d8d0a887df76ca513cecb01045e86c26c8fc975a54200f4b27d3fb6"
+  },
+  {
+   "id": "T10-5",
+   "file": "T10-5.json",
+   "input": {
+    "leader": "07010008",
+    "base": "07010020",
+    "name": "T10-5 Rogue One Credit Heist",
+    "mustInclude": [
+     {
+      "card": "04010091",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "05010235",
+      "count": 2
+     },
+     {
+      "card": "07010032",
+      "count": 2
+     },
+     {
+      "card": "07010040",
+      "count": 2
+     },
+     {
+      "card": "07010116",
+      "count": 2
+     },
+     {
+      "card": "07010119",
+      "count": 2
+     },
+     {
+      "card": "07010134",
+      "count": 2
+     },
+     {
+      "card": "07010169",
+      "count": 2
+     },
+     {
+      "card": "07010258",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "76ad1eaa33ff1547772f3aeff01b8502004b5a3b4facd0d3689e2867255a51a1"
+  },
+  {
+   "id": "T10-6",
+   "file": "T10-6.json",
+   "input": {
+    "leader": "07010008",
+    "base": "08010020",
+    "name": "T10-6 Siege of Mandalore",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010047",
+      "count": 2
+     },
+     {
+      "card": "08010053",
+      "count": 2
+     },
+     {
+      "card": "08010079",
+      "count": 2
+     },
+     {
+      "card": "08010080",
+      "count": 2
+     },
+     {
+      "card": "08010091",
+      "count": 2
+     },
+     {
+      "card": "08010092",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "08010119",
+      "count": 2
+     },
+     {
+      "card": "08010140",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "18bd14f4db2d87a31577242a800ce2a0fd9b3e81bd3c9ffa231b502dfc7d157a"
+  },
+  {
+   "id": "T10-7",
+   "file": "T10-7.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010020",
+    "name": "T10-7 Drengir Garden",
+    "mustInclude": [
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010062",
+      "count": 2
+     },
+     {
+      "card": "09010067",
+      "count": 2
+     },
+     {
+      "card": "09010083",
+      "count": 2
+     },
+     {
+      "card": "09010087",
+      "count": 2
+     },
+     {
+      "card": "09010089",
+      "count": 2
+     },
+     {
+      "card": "09010090",
+      "count": 2
+     },
+     {
+      "card": "09010272",
+      "count": 2
+     }
+    ],
+    "exclude": [
+     "09010065"
+    ]
+   },
+   "legal": true,
+   "sha256": "354cbdc88ec0c1c27530223d4962fcca143f031f138de2c16392c639a10968c1"
+  },
+  {
+   "id": "T10-8",
+   "file": "T10-8.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010021",
+    "name": "T10-8 Commandos Take Over",
+    "mustInclude": [
+     {
+      "card": "0101033",
+      "count": 2
+     },
+     {
+      "card": "04010036",
+      "count": 2
+     },
+     {
+      "card": "05010055",
+      "count": 2
+     },
+     {
+      "card": "06010036",
+      "count": 2
+     },
+     {
+      "card": "08010076",
+      "count": 2
+     },
+     {
+      "card": "08010094",
+      "count": 2
+     },
+     {
+      "card": "09010059",
+      "count": 2
+     },
+     {
+      "card": "09010060",
+      "count": 2
+     },
+     {
+      "card": "09010061",
+      "count": 2
+     },
+     {
+      "card": "09010064",
+      "count": 2
+     },
+     {
+      "card": "09010068",
+      "count": 2
+     }
+    ]
+   },
+   "legal": true,
+   "sha256": "8c9b914864ef168c5cdb9c161638be9f0c563bbb238a065b4757762bc56516e6"
+  },
+  {
+   "id": "fallback-09010003",
+   "file": "fallback-09010003.json",
+   "input": {
+    "leader": "09010003",
+    "base": "09010024",
+    "name": "build_deck default for 09010003"
+   },
+   "legal": true,
+   "sha256": "49986e1cc296250ff3efcdf0ce3cb8dda52e288bb667c95cc62b1a8382ef2b6c"
+  }
+ ],
+ "failures": []
+}

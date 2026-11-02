@@ -1,0 +1,103 @@
+{
+ "metadata": {
+  "name": "T02-8 Krennic Dume Shield Wall"
+ },
+ "leader": {
+  "id": "LAW_008",
+  "count": 1
+ },
+ "base": {
+  "id": "LAW_020",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "ASH_116",
+   "count": 3
+  },
+  {
+   "id": "LAW_097",
+   "count": 2
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "HMW_060",
+   "count": 2
+  },
+  {
+   "id": "JTL_032",
+   "count": 2
+  },
+  {
+   "id": "LOF_059",
+   "count": 2
+  },
+  {
+   "id": "LOF_239",
+   "count": 2
+  },
+  {
+   "id": "ASH_097",
+   "count": 2
+  },
+  {
+   "id": "LAW_039",
+   "count": 2
+  },
+  {
+   "id": "ASH_048",
+   "count": 3
+  },
+  {
+   "id": "ASH_079",
+   "count": 2
+  },
+  {
+   "id": "LAW_159",
+   "count": 3
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "JTL_043",
+   "count": 3
+  },
+  {
+   "id": "LOF_091",
+   "count": 2
+  },
+  {
+   "id": "LOF_235",
+   "count": 2
+  },
+  {
+   "id": "SEC_087",
+   "count": 2
+  },
+  {
+   "id": "ASH_052",
+   "count": 3
+  },
+  {
+   "id": "SEC_078",
+   "count": 2
+  },
+  {
+   "id": "ASH_053",
+   "count": 3
+  },
+  {
+   "id": "ASH_133",
+   "count": 2
+  },
+  {
+   "id": "LAW_101",
+   "count": 2
+  }
+ ]
+}

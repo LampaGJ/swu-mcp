@@ -1,0 +1,111 @@
+{
+ "metadata": {
+  "name": "T02-1 Mandalorian Doubling under Hemlock"
+ },
+ "leader": {
+  "id": "HMW_003",
+  "count": 1
+ },
+ "base": {
+  "id": "HMW_024",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "LOF_057",
+   "count": 3
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "HMW_131",
+   "count": 2
+  },
+  {
+   "id": "ASH_047",
+   "count": 2
+  },
+  {
+   "id": "ASH_091",
+   "count": 2
+  },
+  {
+   "id": "ASH_097",
+   "count": 2
+  },
+  {
+   "id": "HMW_062",
+   "count": 3
+  },
+  {
+   "id": "HMW_064",
+   "count": 3
+  },
+  {
+   "id": "LAW_119",
+   "count": 2
+  },
+  {
+   "id": "SEC_038",
+   "count": 2
+  },
+  {
+   "id": "SOR_033",
+   "count": 2
+  },
+  {
+   "id": "ASH_048",
+   "count": 2
+  },
+  {
+   "id": "ASH_079",
+   "count": 2
+  },
+  {
+   "id": "ASH_140",
+   "count": 2
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "HMW_151",
+   "count": 2
+  },
+  {
+   "id": "JTL_043",
+   "count": 2
+  },
+  {
+   "id": "LOF_091",
+   "count": 2
+  },
+  {
+   "id": "ASH_052",
+   "count": 2
+  },
+  {
+   "id": "SEC_078",
+   "count": 2
+  },
+  {
+   "id": "SEC_088",
+   "count": 2
+  },
+  {
+   "id": "ASH_053",
+   "count": 2
+  },
+  {
+   "id": "LAW_101",
+   "count": 1
+  },
+  {
+   "id": "JTL_041",
+   "count": 2
+  }
+ ]
+}

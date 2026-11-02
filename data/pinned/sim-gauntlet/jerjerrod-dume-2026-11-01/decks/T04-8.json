@@ -1,0 +1,107 @@
+{
+ "metadata": {
+  "name": "T04-8 Defeat It, Play It Again"
+ },
+ "leader": {
+  "id": "JTL_006",
+  "count": 1
+ },
+ "base": {
+  "id": "ASH_019",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "ASH_117",
+   "count": 3
+  },
+  {
+   "id": "JTL_081",
+   "count": 3
+  },
+  {
+   "id": "JTL_091",
+   "count": 2
+  },
+  {
+   "id": "LOF_057",
+   "count": 2
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "ASH_095",
+   "count": 2
+  },
+  {
+   "id": "HMW_253",
+   "count": 2
+  },
+  {
+   "id": "JTL_032",
+   "count": 2
+  },
+  {
+   "id": "LAW_116",
+   "count": 2
+  },
+  {
+   "id": "LAW_135",
+   "count": 3
+  },
+  {
+   "id": "LOF_263",
+   "count": 2
+  },
+  {
+   "id": "ASH_097",
+   "count": 2
+  },
+  {
+   "id": "ASH_241",
+   "count": 2
+  },
+  {
+   "id": "ASH_247",
+   "count": 2
+  },
+  {
+   "id": "JTL_112",
+   "count": 2
+  },
+  {
+   "id": "LAW_119",
+   "count": 2
+  },
+  {
+   "id": "SEC_082",
+   "count": 3
+  },
+  {
+   "id": "SOR_033",
+   "count": 2
+  },
+  {
+   "id": "ASH_079",
+   "count": 2
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "LOF_091",
+   "count": 2
+  },
+  {
+   "id": "LOF_235",
+   "count": 2
+  },
+  {
+   "id": "SEC_088",
+   "count": 2
+  }
+ ]
+}

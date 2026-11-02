@@ -1,0 +1,107 @@
+{
+ "metadata": {
+  "name": "T02-5 TIE Swarm Doubling under Vader"
+ },
+ "leader": {
+  "id": "JTL_006",
+  "count": 1
+ },
+ "base": {
+  "id": "JTL_020",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "ASH_117",
+   "count": 3
+  },
+  {
+   "id": "JTL_081",
+   "count": 2
+  },
+  {
+   "id": "LOF_057",
+   "count": 2
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "ASH_095",
+   "count": 2
+  },
+  {
+   "id": "JTL_033",
+   "count": 2
+  },
+  {
+   "id": "JTL_082",
+   "count": 2
+  },
+  {
+   "id": "JTL_084",
+   "count": 2
+  },
+  {
+   "id": "LAW_135",
+   "count": 3
+  },
+  {
+   "id": "ASH_097",
+   "count": 2
+  },
+  {
+   "id": "ASH_241",
+   "count": 2
+  },
+  {
+   "id": "JTL_085",
+   "count": 2
+  },
+  {
+   "id": "JTL_112",
+   "count": 2
+  },
+  {
+   "id": "LAW_119",
+   "count": 2
+  },
+  {
+   "id": "SEC_082",
+   "count": 3
+  },
+  {
+   "id": "JTL_078",
+   "count": 2
+  },
+  {
+   "id": "JTL_087",
+   "count": 2
+  },
+  {
+   "id": "JTL_115",
+   "count": 2
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "LOF_091",
+   "count": 3
+  },
+  {
+   "id": "JTL_039",
+   "count": 2
+  },
+  {
+   "id": "JTL_243",
+   "count": 2
+  },
+  {
+   "id": "SEC_088",
+   "count": 2
+  }
+ ]
+}

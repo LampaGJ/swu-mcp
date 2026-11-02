@@ -1,0 +1,103 @@
+{
+ "metadata": {
+  "name": "T00-8 Hemlock Icons Imperials"
+ },
+ "leader": {
+  "id": "HMW_003",
+  "count": 1
+ },
+ "base": {
+  "id": "JTL_019",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "LAW_097",
+   "count": 2
+  },
+  {
+   "id": "LOF_057",
+   "count": 2
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "JTL_033",
+   "count": 2
+  },
+  {
+   "id": "LOF_239",
+   "count": 2
+  },
+  {
+   "id": "HMW_062",
+   "count": 3
+  },
+  {
+   "id": "HMW_064",
+   "count": 2
+  },
+  {
+   "id": "LAW_119",
+   "count": 2
+  },
+  {
+   "id": "SEC_038",
+   "count": 3
+  },
+  {
+   "id": "SOR_033",
+   "count": 2
+  },
+  {
+   "id": "ASH_048",
+   "count": 3
+  },
+  {
+   "id": "ASH_079",
+   "count": 3
+  },
+  {
+   "id": "JTL_241",
+   "count": 2
+  },
+  {
+   "id": "JTL_242",
+   "count": 2
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "JTL_043",
+   "count": 3
+  },
+  {
+   "id": "LOF_235",
+   "count": 2
+  },
+  {
+   "id": "HMW_068",
+   "count": 2
+  },
+  {
+   "id": "ASH_052",
+   "count": 3
+  },
+  {
+   "id": "SEC_078",
+   "count": 2
+  },
+  {
+   "id": "ASH_053",
+   "count": 3
+  },
+  {
+   "id": "LAW_101",
+   "count": 1
+  }
+ ]
+}

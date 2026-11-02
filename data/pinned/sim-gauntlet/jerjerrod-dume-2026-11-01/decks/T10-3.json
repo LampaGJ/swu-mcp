@@ -1,0 +1,107 @@
+{
+ "metadata": {
+  "name": "T10-3 Sith Lords' Gathering"
+ },
+ "leader": {
+  "id": "JTL_006",
+  "count": 1
+ },
+ "base": {
+  "id": "LOF_019",
+  "count": 1
+ },
+ "deck": [
+  {
+   "id": "ASH_117",
+   "count": 3
+  },
+  {
+   "id": "JTL_081",
+   "count": 3
+  },
+  {
+   "id": "LOF_057",
+   "count": 2
+  },
+  {
+   "id": "ASH_094",
+   "count": 2
+  },
+  {
+   "id": "ASH_095",
+   "count": 2
+  },
+  {
+   "id": "JTL_032",
+   "count": 2
+  },
+  {
+   "id": "LAW_135",
+   "count": 3
+  },
+  {
+   "id": "LOF_082",
+   "count": 2
+  },
+  {
+   "id": "LOF_239",
+   "count": 2
+  },
+  {
+   "id": "SEC_028",
+   "count": 2
+  },
+  {
+   "id": "ASH_097",
+   "count": 2
+  },
+  {
+   "id": "ASH_241",
+   "count": 2
+  },
+  {
+   "id": "JTL_063",
+   "count": 2
+  },
+  {
+   "id": "JTL_112",
+   "count": 2
+  },
+  {
+   "id": "LAW_119",
+   "count": 2
+  },
+  {
+   "id": "SEC_082",
+   "count": 3
+  },
+  {
+   "id": "LOF_042",
+   "count": 2
+  },
+  {
+   "id": "LOF_055",
+   "count": 2
+  },
+  {
+   "id": "LOF_091",
+   "count": 2
+  },
+  {
+   "id": "SEC_035",
+   "count": 2
+  },
+  {
+   "id": "LOF_037",
+   "count": 2
+  },
+  {
+   "id": "SEC_244",
+   "count": 2
+  },
+  {
+   "id": "LOF_039",
+   "count": 2
+  }
+ ]
+}
