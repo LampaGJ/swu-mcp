@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "name": "Warrior (The Warrior, Deft Duelist) sim HMW_212>LAW_232"
+  },
+  "leader": {
+    "id": "HMW_018",
+    "count": 1
+  },
+  "base": {
+    "id": "HMW_024",
+    "count": 1
+  },
+  "deck": [
+    {
+      "id": "ASH_112",
+      "count": 2
+    },
+    {
+      "id": "ASH_114",
+      "count": 1
+    },
+    {
+      "id": "ASH_135",
+      "count": 2
+    },
+    {
+      "id": "ASH_219",
+      "count": 2
+    },
+    {
+      "id": "ASH_236",
+      "count": 1
+    },
+    {
+      "id": "ASH_248",
+      "count": 2
+    },
+    {
+      "id": "HMW_117",
+      "count": 3
+    },
+    {
+      "id": "HMW_127",
+      "count": 1
+    },
+    {
+      "id": "HMW_136",
+      "count": 3
+    },
+    {
+      "id": "HMW_145",
+      "count": 1
+    },
+    {
+      "id": "HMW_196",
+      "count": 2
+    },
+    {
+      "id": "HMW_208",
+      "count": 1
+    },
+    {
+      "id": "HMW_209",
+      "count": 3
+    },
+    {
+      "id": "HMW_212",
+      "count": 1
+    },
+    {
+      "id": "HMW_213",
+      "count": 3
+    },
+    {
+      "id": "HMW_224",
+      "count": 3
+    },
+    {
+      "id": "HMW_225",
+      "count": 2
+    },
+    {
+      "id": "HMW_230",
+      "count": 2
+    },
+    {
+      "id": "HMW_254",
+      "count": 2
+    },
+    {
+      "id": "JTL_201",
+      "count": 1
+    },
+    {
+      "id": "LAW_232",
+      "count": 1
+    },
+    {
+      "id": "LAW_246",
+      "count": 1
+    },
+    {
+      "id": "LOF_105",
+      "count": 1
+    },
+    {
+      "id": "LOF_186",
+      "count": 2
+    },
+    {
+      "id": "LOF_246",
+      "count": 2
+    },
+    {
+      "id": "LOF_261",
+      "count": 1
+    },
+    {
+      "id": "SEC_096",
+      "count": 1
+    },
+    {
+      "id": "SEC_188",
+      "count": 3
+    }
+  ],
+  "sideboard": [
+    {
+      "id": "HMW_238",
+      "count": 2
+    },
+    {
+      "id": "SEC_233",
+      "count": 2
+    },
+    {
+      "id": "SEC_127",
+      "count": 2
+    },
+    {
+      "id": "HMW_137",
+      "count": 2
+    },
+    {
+      "id": "LOF_202",
+      "count": 1
+    },
+    {
+      "id": "JTL_207",
+      "count": 1
+    }
+  ]
+}

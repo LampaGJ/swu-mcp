@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "issue": "#204",
+  "format": "SWUDB JSON interchange, validated by swudbDeckSchema (src/tools/swudb.ts)",
+  "tiers": "tournament and sim are separate populations and are never pooled (D21)",
+  "tournament": {
+    "source": "swumetastats tournament decklists (melee.gg) joined to placements, snapshot 2026-10-17",
+    "definition": "Warrior = leader HMW_018 (The Warrior, Deft Duelist), the leader of the pinned Warrior fixture tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+    "snapshotManifestSha256": "68dc26ffce5373d3826200e296d3dd55618addce37edc2726ee0938166b51fac",
+    "snapshotDecksScanned": 27212,
+    "snapshotDecksUnparsed": 0,
+    "snapshotDecksWithPlacement": 23341,
+    "warriorDecksTotal": 67,
+    "warriorDecksBySource": {
+      "swudb": 67
+    },
+    "warriorDecksWithPlacement": 0,
+    "warriorListingSha256": "16e065032ee0fb88fd091fe66cccd2d2c677a98cad8ee17cbbc25321c1820f74",
+    "decks": [],
+    "rankBasis": "none: no Warrior deck in the snapshot carries a placement, so nothing can be ranked by results",
+    "note": "Community decks (SWUDB, no placement) are a lower tier under the play-data precedence and are not exported here; never pooled with tournament results."
+  },
+  "sim": {
+    "rankBasis": "Within one ladder file: win share of the deck against the 6 panel archetypes (1800 games), highest first; control rows (deliberately weakened probes) excluded. Ranks are per ladder file because each file is a different bot policy; no cross-file ranking.",
+    "decks": [
+      {
+        "file": "sim/warrior-8e6663bed865.swudb.json",
+        "deckSha256": "8e6663bed865e033bc9ce74735135d29ee02b101eaca3b1aefaeb7bc10235e65",
+        "source": "sim-ladder (forceteki bot play, not human results)",
+        "population": "6 tournament archetypes of the panel, 300 games each per ladder file (1800 games), bot vs bot",
+        "baseDeckInput": {
+          "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+          "sha256": "be76571167d6f8fc940ad0631e9da145045409a6a32cf80b8085e76b7f402458"
+        },
+        "swapsFromBase": [
+          "HMW_212>LAW_232"
+        ],
+        "resultsByLadderFile": [
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung1.json",
+            "ladderFileSha256": "feda4cee5fe2d7b9fb6683c58380ae0e091c5d02655bfd98b8ed020293b2ca47",
+            "botPolicy": "rung1",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "chieftain-to-podracer",
+            "rankInFile": 2,
+            "of": 3,
+            "wins": 810,
+            "games": 1800,
+            "winShare": 0.45,
+            "wilson95": [
+              0.4271,
+              0.4731
+            ]
+          }
+        ]
+      },
+      {
+        "file": "sim/warrior-abd43bb58233.swudb.json",
+        "deckSha256": "abd43bb582338ee73dc5a60d1f68d481ef77d38e1ee7c0cf4edc095695802e0f",
+        "source": "sim-ladder (forceteki bot play, not human results)",
+        "population": "6 tournament archetypes of the panel, 300 games each per ladder file (1800 games), bot vs bot",
+        "baseDeckInput": {
+          "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+          "sha256": "be76571167d6f8fc940ad0631e9da145045409a6a32cf80b8085e76b7f402458"
+        },
+        "swapsFromBase": [
+          "LOF_105>LOF_190"
+        ],
+        "resultsByLadderFile": [
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung1.json",
+            "ladderFileSha256": "feda4cee5fe2d7b9fb6683c58380ae0e091c5d02655bfd98b8ed020293b2ca47",
+            "botPolicy": "rung1",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "oppo-to-anakin",
+            "rankInFile": 1,
+            "of": 3,
+            "wins": 818,
+            "games": 1800,
+            "winShare": 0.4544,
+            "wilson95": [
+              0.4316,
+              0.4775
+            ]
+          },
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung3.json",
+            "ladderFileSha256": "65e9d50b711927a67529a56b06bfe9df4ae3ea59052a6e1564563de7e57fb55c",
+            "botPolicy": "rung3:k=8",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "oppo-to-anakin",
+            "rankInFile": 1,
+            "of": 2,
+            "wins": 768,
+            "games": 1800,
+            "winShare": 0.4267,
+            "wilson95": [
+              0.404,
+              0.4496
+            ]
+          },
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung3v.json",
+            "ladderFileSha256": "b1f8e162c31f0d67dc8f97789fe9e5866dac037c660b81bd97b6767d92a77820",
+            "botPolicy": "rung3v:k=8,ev=v1,horizon=round,noPass=1",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "oppo-to-anakin",
+            "rankInFile": 1,
+            "of": 2,
+            "wins": 695,
+            "games": 1800,
+            "winShare": 0.3861,
+            "wilson95": [
+              0.3639,
+              0.4088
+            ]
+          }
+        ]
+      },
+      {
+        "file": "sim/warrior-b2ff47de2e62.swudb.json",
+        "deckSha256": "b2ff47de2e62a7b9627f58c9efe4a24c1ca2bacb4a8318025ae57ae05f56709f",
+        "source": "sim-ladder (forceteki bot play, not human results)",
+        "population": "6 tournament archetypes of the panel, 300 games each per ladder file (1800 games), bot vs bot",
+        "baseDeckInput": {
+          "file": "tests/fixtures/decks/warrior-chewie-raid.swudb.json",
+          "sha256": "be76571167d6f8fc940ad0631e9da145045409a6a32cf80b8085e76b7f402458"
+        },
+        "swapsFromBase": [],
+        "resultsByLadderFile": [
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung1.json",
+            "ladderFileSha256": "feda4cee5fe2d7b9fb6683c58380ae0e091c5d02655bfd98b8ed020293b2ca47",
+            "botPolicy": "rung1",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "base",
+            "rankInFile": 3,
+            "of": 3,
+            "wins": 767,
+            "games": 1800,
+            "winShare": 0.4261,
+            "wilson95": [
+              0.4034,
+              0.4491
+            ]
+          },
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung3.json",
+            "ladderFileSha256": "65e9d50b711927a67529a56b06bfe9df4ae3ea59052a6e1564563de7e57fb55c",
+            "botPolicy": "rung3:k=8",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "base",
+            "rankInFile": 2,
+            "of": 2,
+            "wins": 752,
+            "games": 1800,
+            "winShare": 0.4178,
+            "wilson95": [
+              0.3952,
+              0.4407
+            ]
+          },
+          {
+            "ladderFile": "data/pinned/sim-ladder-v1/warrior-deck-rung3v.json",
+            "ladderFileSha256": "b1f8e162c31f0d67dc8f97789fe9e5866dac037c660b81bd97b6767d92a77820",
+            "botPolicy": "rung3v:k=8,ev=v1,horizon=round,noPass=1",
+            "label": "bot play (forceteki, typed driver), not human results",
+            "variant": "base",
+            "rankInFile": 2,
+            "of": 2,
+            "wins": 671,
+            "games": 1800,
+            "winShare": 0.3728,
+            "wilson95": [
+              0.3507,
+              0.3954
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
