@@ -140,9 +140,15 @@ The JSON (schemaVersion 1; the schema is `simsSummarySchema`, `src/sims/summary.
 - `result` is null or `{ subject, share, low, high, p, n }`: the subject's share of decisive games with its Wilson 95% interval, `n` the decisive games, `p` the running exact sign test on duplicate pairs or null without pairs. A running `p` is a progress reading, never a stopping rule (D99 point 2). A finished job with no running phase falls back to its last finished phase.
 - `health` is `{ errors, draws, timeouts }` over the whole run; all zero when the heartbeat has no stats, which says nothing about the run's health.
 - `verdict` is null, or `{ pass, failedGates }` for a finished calibration or ladder job whose done heartbeat carries `pass` (`scripts/sims/calibration-gate.ts:352` writes `pass` and `failedGates`; `scripts/sims/ladder.ts:432` writes `pass` only, so a ladder verdict has an empty `failedGates`).
-- `headline` is one line of at most 72 characters, for example `h2h base vs anakin 36% 4560/12600 ETA 1h45 base 51.2% [47.9,54.5] p .31`. STALLED and DEAD jobs start with that word and end the progress part with `quiet <age>` in place of the ETA. A finished job reads `done <done>/<total>` and PASS or FAIL with the failed gates. The contenders (or the shortened job name) shrink first when the line is too long; the progress and the result stay.
+- `headline` is one plain line of at most 60 characters (the schema still allows 72), the same text as the job's `--text` line (D111, #200). Each state has its own form:
+  - Running: `<name>: 23,040 of 62,600 games, 37%, 14m left, 34 errors`.
+  - Finished: `<name>: finished, 120 games`, or `<name>: finished` for a job with no games; finished calibration and ladder jobs add `passed` or `failed (<gates>)`.
+  - Stalled: `<name>: stalled 6m, <counts>`.
+  - Dead: `<name>: stopped (dead), <counts>`.
 
-`--text` is at most 5 lines of at most 60 characters. Line 1 is the totals, `SWU sims 1 running, 0 stalled, 3 done/1h` (a nonzero stalled count is capitalised and a nonzero dead count adds `, N DEAD`). Then one line per job in the JSON order, with STALLED and DEAD in capitals; with more than four jobs it shows three and a last line `+N more jobs`. A text line drops the counts and the interval to fit.
+  The name is the heartbeat's optional `label`, else the job id without its kind prefix, dates and dashes, in sentence case. To fit 60 characters, whole parts drop in this order: running share, failed-gate names, ETA, percent. Then the name loses words from its end. A number is never cut, and errors and the game count stay.
+
+`--text` is at most 5 lines of at most 60 characters. Line 1 is the totals, `Sims: 1 running, 3 finished in the last hour`. Stalled and dead counts appear only when above 0, and the line shortens to `... finished in 1h` when it would pass 60 characters. Then one line per job, the job's `headline`, in the JSON order. With more than four jobs it shows three and a last line `+N more jobs`. The TerminalWidget provider (`~/Scripts/tw/providers/swu-sims`) builds the same totals line.
 
 What it never contains: an absolute path or a hostname (strings are scrubbed in `summarize` and the schema rejects a leak), or any Karabast-derived figure (it reads only simulation heartbeats; D22).
 
